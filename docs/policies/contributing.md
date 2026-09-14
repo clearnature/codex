@@ -36,4 +36,4 @@ Open a feature request in the issue tracker, or upvote an existing request that 
 
 ### Security
 
-If you discover a security vulnerability, follow the [security policy](../SECURITY.md) instead of reporting it in a public issue.
+If you discover a security vulnerability, follow the [security policy](../../SECURITY.md) instead of reporting it in a public issue.

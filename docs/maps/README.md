@@ -13,6 +13,7 @@
 | [architecture.md](./architecture.md) | 分层架构、依赖方向、关键执行流 | 各 crate 的 `Cargo.toml` 实测依赖 + 图谱 |
 | [tech-stack.md](./tech-stack.md) | 语言、构建系统、工具链、关键依赖 | 仓库配置 + 本机实测 |
 | [references.md](./references.md) | 关键文件索引、命令速查、外部资料、i18n 落点 | 实测可用性 |
+| [gitnexus.md](./gitnexus.md) | **GitNexus 使用说明**：调用方式、图谱 schema、查询范式与已知坑 | 本机实测 |
 
 ## 基线
 
@@ -70,19 +71,17 @@ TypeScript 用于**代码生成**的协议绑定，Python 提供独立的 SDK。
 
 ## 复现方式
 
-本机 GitNexus 位于 `/data/work/GitNexus`（未全局安装，直接用其构建产物）：
+本目录的统计数字由本机 GitNexus 索引生成。**完整用法、图谱 schema、
+Cypher 方言差异与已知坑见 [gitnexus.md](./gitnexus.md)**，最简形式：
 
 ```bash
 GX=/data/work/GitNexus/gitnexus/dist/cli/index.js
 
 # 索引：--index-only 避免往目标仓库注入 AGENTS.md / CLAUDE.md / skills
-node $GX analyze <repo-path> --index-only --name codex-i18n
+node $GX analyze /data/training/cli/codex --index-only --name codex-i18n
 
-# 状态与查询
-node $GX status
+# 查询（本机索引了多个仓库，必须带 -r）
 node $GX cypher -r codex-i18n "MATCH (n) RETURN labels(n) AS l, count(*) AS c ORDER BY c DESC"
-node $GX context -r codex-i18n <symbol-name>
-node $GX query   -r codex-i18n "<概念描述>"
 ```
 
 > 图谱的 `Community.keywords` 为空数组，说明聚类未做语义增强

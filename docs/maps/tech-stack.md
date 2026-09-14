@@ -20,13 +20,23 @@
 | edition | `2024` | `codex-rs/Cargo.toml` 的 `[workspace.package]` |
 | toolchain | `1.95.0` | `codex-rs/rust-toolchain.toml` |
 | toolchain 组件 | `clippy`、`rustfmt`、`rust-src` | 同上 |
-| workspace version | `0.0.0`（占位） | 真版本由打包流程注入 |
+| workspace version | `0.154.0` | `[workspace.package]`；**release tag 上已是真实版本号** |
 | license | `Apache-2.0` | `[workspace.package]` |
 | workspace 成员 | 145 个条目 | `members = [...]`，含 `ext/*`、`utils/*` 嵌套路径 |
 
-> **注意**：仓库里**没有真实版本号**。`codex-rs/Cargo.toml` 是 `0.0.0`，
-> `codex-cli/package.json` 是 `0.0.0-dev`，`CHANGELOG.md` 指向 GitHub releases 页。
-> 版本号在 CI 打包时注入，因此无法从源码判断版本，只能靠与上游 tag 对照。
+> **版本号有两个状态**（2026-09-15 编译验证时实测确认）：
+> - **release tag 上**（本分支基线）：`codex-rs/Cargo.toml` 的
+>   `[workspace.package] version = "0.154.0"`，各 crate 以 `version.workspace = true`
+>   继承，`codex --version` 经 `env!("CARGO_PKG_VERSION")` 输出 `codex-cli 0.154.0`。
+> - **`main` 分支上**：同一字段是 `0.0.0`（占位），由发版流程在 tag 上改写。
+>
+> 因此在本分支上**可以直接从源码读出真实版本**，不必靠 tag 对照。
+> （`codex-cli/package.json` 是 npm 包侧的 `0.0.0-dev` 占位；`CHANGELOG.md` 指向
+> GitHub releases 页。）
+>
+> **一个副作用**：上游 `Cargo.lock` 里这些 crate 仍写着 `0.0.0`，与 `Cargo.toml`
+> 不一致，**首次 `cargo build` 会自动改写 `Cargo.lock`**（实测 150 处）。
+> 若要提交该改动，按根目录 `AGENTS.md` 的约定需同时刷新 `MODULE.bazel.lock`。
 
 ## 构建系统
 

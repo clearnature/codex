@@ -27,6 +27,23 @@ cargo build                     # 纯 Cargo 构建
 cargo run --bin codex -- "prompt"
 ```
 
+### 本地发布构建（本 fork 新增脚本）
+
+```bash
+# glibc release，版本号由脚本从最近的 rust-v* tag 派生（工作区保持 0.0.0）
+scripts/build-release-local.sh
+scripts/build-release-local.sh --version 0.154.0
+
+# musl release（官方 Linux 发行目标，静态链接）
+scripts/setup-musl-toolchain.sh
+set -a; . /tmp/codex-musl-env-x86_64-unknown-linux-musl.sh; set +a
+scripts/build-release-local.sh x86_64-unknown-linux-musl
+```
+
+产物在 `codex-rs/target/<target>/release/`（`codex`、`codex-code-mode-host`、
+`codex-responses-api-proxy`、`bwrap`）。原理、环境依赖与踩坑记录见
+[`../plan/build-and-versioning.md`](../plan/build-and-versioning.md)。
+
 ### 运行时诊断（已安装的 codex CLI）
 
 ```bash

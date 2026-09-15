@@ -24,19 +24,22 @@
 | license | `Apache-2.0` | `[workspace.package]` |
 | workspace 成员 | 145 个条目 | `members = [...]`，含 `ext/*`、`utils/*` 嵌套路径 |
 
-> **版本号有两个状态**（2026-09-15 编译验证时实测确认）：
-> - **release tag 上**（本分支基线）：`codex-rs/Cargo.toml` 的
->   `[workspace.package] version = "0.154.0"`，各 crate 以 `version.workspace = true`
->   继承，`codex --version` 经 `env!("CARGO_PKG_VERSION")` 输出 `codex-cli 0.154.0`。
-> - **`main` 分支上**：同一字段是 `0.0.0`（占位），由发版流程在 tag 上改写。
+> **版本号：源码里读不到真实版本**（2026-09-16 实测）：
+> - **`main` 与工作区**：`codex-rs/Cargo.toml` 的 `[workspace.package] version` 是
+>   `0.0.0`（占位），各 crate 以 `version.workspace = true` 继承，`codex --version`
+>   经 `env!("CARGO_PKG_VERSION")` 输出 `codex-cli 0.0.0`。
+> - **发版 tag 上**：真实版本由发版工具链写进 tag 指向的一次性提交，例如
+>   `rust-v0.154.0` 的 `6b9826e3a` —— 整个提交只改这一行，且**不在 `main` 上**。
 >
-> 因此在本分支上**可以直接从源码读出真实版本**，不必靠 tag 对照。
+> 本 fork 不改源码，而是用 `scripts/build-release-local.sh` 在**构建期**从 tag 派生
+> 版本、临时写入 manifest、构建后 `trap` 还原：产物携带真实版本，工作区保持
+> `0.0.0`（快照因此天然一致，同步上游也零冲突）。完整方案与证据见
+> [`../plan/build-and-versioning.md`](../plan/build-and-versioning.md)。
+>
+> `Cargo.lock` 里这些 crate（150 处）已是 `0.0.0`，与工作区 manifest 一致，
+> 不再有"首次 `cargo build` 自动改写 lock"的情况。
 > （`codex-cli/package.json` 是 npm 包侧的 `0.0.0-dev` 占位；`CHANGELOG.md` 指向
 > GitHub releases 页。）
->
-> **一个副作用**：上游 `Cargo.lock` 里这些 crate 仍写着 `0.0.0`，与 `Cargo.toml`
-> 不一致，**首次 `cargo build` 会自动改写 `Cargo.lock`**（实测 150 处）。
-> 若要提交该改动，按根目录 `AGENTS.md` 的约定需同时刷新 `MODULE.bazel.lock`。
 
 ## 构建系统
 
@@ -47,6 +50,15 @@
 | **Bazel**（主） | 处理内嵌重型原生依赖（V8、wezterm、Wine） | `MODULE.bazel`（26 KB）、`defs.bzl`（32 KB）、`.bazelrc`（13 KB）、`MODULE.bazel.lock`（1.65 MB）、`patches/`（26 个补丁） |
 | **Cargo** | Rust workspace 日常构建与测试 | `codex-rs/Cargo.toml` |
 | **just** | 任务入口（默认工作目录 `codex-rs`） | `justfile` |
+
+本地发布构建的入口不在 `justfile`，而在 `scripts/`（详见
+[`../plan/build-and-versioning.md`](../plan/build-and-versioning.md)）：
+
+| 脚本 | 作用 |
+| --- | --- |
+| `scripts/build-release-local.sh` | 官方发布流程 + 构建期版本注入（glibc / musl 均可） |
+| `scripts/setup-rusty-v8.sh` | 取 Codex 自建 rusty_v8 产物并校验（本地 `cargo build` 必需） |
+| `scripts/setup-musl-toolchain.sh` | musl 交叉工具链（Zig + 自编译 libcap + 环境变量） |
 
 `third_party/` 下内嵌：`v8/`、`wezterm/`、`powershell/`、`wine/`、`voice/`。
 `patches/` 里 26 个补丁几乎全部服务于让这些依赖在 Bazel + 多平台上可构建

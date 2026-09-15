@@ -27,6 +27,8 @@ use codex_exec_server::ExecServerRuntimePaths;
 use codex_execpolicy::ExecPolicyCheckCommand;
 use codex_http_client::HttpClientFactory;
 use codex_http_client::OutboundProxyPolicy;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_responses_api_proxy::Args as ResponsesApiProxyArgs;
 use codex_rollout_trace::REDUCED_STATE_FILE_NAME;
 use codex_rollout_trace::replay_bundle;
@@ -499,13 +501,13 @@ struct LoginCommand {
 
     #[arg(
         long = "with-api-key",
-        help = "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`)"
+        help = tr(current(), "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`)")
     )]
     with_api_key: bool,
 
     #[arg(
         long = "with-access-token",
-        help = "Read the access token from stdin (e.g. `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`)"
+        help = tr(current(), "Read the access token from stdin (e.g. `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`)")
     )]
     with_access_token: bool,
 
@@ -514,7 +516,7 @@ struct LoginCommand {
         num_args = 0..=1,
         default_missing_value = "",
         value_name = "API_KEY",
-        help = "(deprecated) Previously accepted the API key directly; now exits with guidance to use --with-api-key",
+        help = tr(current(), "(deprecated) Previously accepted the API key directly; now exits with guidance to use --with-api-key"),
         hide = true
     )]
     api_key: Option<String>,
@@ -713,10 +715,16 @@ impl ExecServerCommand {
     fn validate_remote_transport(&self) -> anyhow::Result<()> {
         match (self.remote_transport, self.aws_sigv4) {
             (ExecServerRemoteTransport::Noise, true) => {
-                anyhow::bail!("--aws-sigv4 requires --remote-transport direct");
+                anyhow::bail!(tr(
+                    current(),
+                    "--aws-sigv4 requires --remote-transport direct"
+                ));
             }
             (ExecServerRemoteTransport::Direct, false) => {
-                anyhow::bail!("--remote-transport direct requires --aws-sigv4");
+                anyhow::bail!(tr(
+                    current(),
+                    "--remote-transport direct requires --aws-sigv4"
+                ));
             }
             (ExecServerRemoteTransport::Noise, false)
             | (ExecServerRemoteTransport::Direct, true) => {}
@@ -727,7 +735,10 @@ impl ExecServerCommand {
                 Some(ExecServerSubcommand::Forward { .. })
             )
         {
-            anyhow::bail!("direct exec-server transport does not support forwarding");
+            anyhow::bail!(tr(
+                current(),
+                "direct exec-server transport does not support forwarding"
+            ));
         }
         Ok(())
     }
@@ -907,8 +918,8 @@ fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
             } else {
                 cmd
             };
-            let path_env =
-                std::env::var_os("PATH").ok_or_else(|| anyhow::anyhow!("PATH is not set"))?;
+            let path_env = std::env::var_os("PATH")
+                .ok_or_else(|| anyhow::anyhow!(tr(current(), "PATH is not set")))?;
             let command_path = resolve_windows_update_command_from_path(cmd, &path_env)?;
             // Do not let a project-local command or package-manager config
             // influence the updater after the user accepts the update prompt.
@@ -1016,7 +1027,10 @@ async fn run_session_archive_cli_command(
 
 fn delete_action(target: &str, force: bool) -> anyhow::Result<codex_tui::SessionArchiveAction> {
     if force && codex_protocol::ThreadId::from_string(target).is_err() {
-        anyhow::bail!("--force requires a session UUID; names must be confirmed interactively");
+        anyhow::bail!(tr(
+            current(),
+            "--force requires a session UUID; names must be confirmed interactively"
+        ));
     }
     let confirmation = match force {
         true => codex_tui::DeleteConfirmation::Skip,
@@ -1148,7 +1162,10 @@ async fn cli_main(
         && let Some(agents_endpoint) = &options.remote.remote
         && root_endpoint != agents_endpoint
     {
-        anyhow::bail!("`codex agents` received conflicting remote server endpoints");
+        anyhow::bail!(tr(
+            current(),
+            "`codex agents` received conflicting remote server endpoints"
+        ));
     }
     let root_remote = agents_options
         .and_then(|options| options.remote.remote.clone())
@@ -1178,7 +1195,10 @@ async fn cli_main(
             );
             if open_agents_overview {
                 if interactive.prompt.is_some() || !interactive.images.is_empty() {
-                    anyhow::bail!("`codex agents` does not accept an initial prompt or images");
+                    anyhow::bail!(tr(
+                        current(),
+                        "`codex agents` does not accept an initial prompt or images"
+                    ));
                 }
                 if root_remote.is_some()
                     && (interactive.oss
@@ -1200,9 +1220,10 @@ async fn cli_main(
                     );
                 }
                 if is_workload_identity_selected() {
-                    anyhow::bail!(
+                    anyhow::bail!(tr(
+                        current(),
                         "`codex agents` is unavailable while workload identity is active"
-                    );
+                    ));
                 }
                 if root_remote.is_none() {
                     resolve_remote_endpoint(
@@ -1210,7 +1231,10 @@ async fn cli_main(
                         root_remote_auth_token_env.clone(),
                     )?;
                     #[cfg(not(any(unix, windows)))]
-                    anyhow::bail!("`codex agents` requires `--remote` on this platform");
+                    anyhow::bail!(tr(
+                        current(),
+                        "`codex agents` requires `--remote` on this platform"
+                    ));
                 }
                 interactive.agents_overview = true;
             }
@@ -1595,7 +1619,11 @@ async fn cli_main(
                 None => {
                     if login_cli.with_api_key && login_cli.with_access_token {
                         eprintln!(
-                            "Choose one login credential source: --with-api-key or --with-access-token."
+                            "{}",
+                            tr(
+                                current(),
+                                "Choose one login credential source: --with-api-key or --with-access-token."
+                            )
                         );
                         std::process::exit(1);
                     } else if login_cli.use_device_code {
@@ -1730,7 +1758,10 @@ async fn cli_main(
             #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
             {
                 let _ = loader_overrides;
-                anyhow::bail!("`codex sandbox` is not supported on this operating system");
+                anyhow::bail!(tr(
+                    current(),
+                    "`codex sandbox` is not supported on this operating system"
+                ));
             }
         }
         Some(Subcommand::Debug(DebugCommand { subcommand })) => match subcommand {
@@ -1926,14 +1957,16 @@ async fn run_exec_server_command(
     let codex_self_exe = arg0_paths
         .codex_self_exe
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("Codex executable path is not configured"))?;
+        .ok_or_else(|| anyhow::anyhow!(tr(current(), "Codex executable path is not configured")))?;
     let runtime_paths =
         ExecServerRuntimePaths::new(codex_self_exe, arg0_paths.codex_linux_sandbox_exe.clone())?;
     if let Some(base_url) = cmd.remote.take() {
-        let environment_id = cmd
-            .environment_id
-            .take()
-            .ok_or_else(|| anyhow::anyhow!("--environment-id is required when --remote is set"))?;
+        let environment_id = cmd.environment_id.take().ok_or_else(|| {
+            anyhow::anyhow!(tr(
+                current(),
+                "--environment-id is required when --remote is set"
+            ))
+        })?;
         let config = load_exec_server_config(
             root_config_overrides,
             strict_config,
@@ -2061,17 +2094,26 @@ async fn load_exec_server_remote_auth_provider(
 ) -> anyhow::Result<codex_api::SharedAuthProvider> {
     if use_agent_identity_auth {
         read_codex_access_token_from_env().ok_or_else(|| {
-            anyhow::anyhow!("CODEX_ACCESS_TOKEN is required when --use-agent-identity-auth is set")
+            anyhow::anyhow!(tr(
+                current(),
+                "CODEX_ACCESS_TOKEN is required when --use-agent-identity-auth is set"
+            ))
         })?;
         let auth = AuthManager::shared_from_config(config, /*enable_codex_api_key_env*/ false)
             .await?
             .auth()
             .await
-            .ok_or_else(|| anyhow::anyhow!("Agent Identity authentication is unavailable"))?;
+            .ok_or_else(|| {
+                anyhow::anyhow!(tr(
+                    current(),
+                    "Agent Identity authentication is unavailable"
+                ))
+            })?;
         if !matches!(auth, CodexAuth::AgentIdentity(_)) {
-            anyhow::bail!(
+            anyhow::bail!(tr(
+                current(),
                 "CODEX_ACCESS_TOKEN did not provide permitted Agent Identity authentication"
-            );
+            ));
         }
         return Ok(codex_model_provider::auth_provider_from_auth(&auth));
     }
@@ -2110,7 +2152,10 @@ fn validate_api_key_remote_host(base_url: &str) -> anyhow::Result<()> {
     let url = url::Url::parse(base_url)
         .map_err(|err| anyhow::anyhow!("invalid remote exec-server registration URL: {err}"))?;
     let host = url.host().ok_or_else(|| {
-        anyhow::anyhow!("remote exec-server registration URL must include a host")
+        anyhow::anyhow!(tr(
+            current(),
+            "remote exec-server registration URL must include a host"
+        ))
     })?;
 
     let is_loopback = match &host {
@@ -2489,15 +2534,22 @@ fn reject_unsupported_worktree_for_subcommand(
         None => Ok(()),
         Some(Subcommand::Fork(command)) if command.session_id.is_some() && !command.last => Ok(()),
         Some(Subcommand::Fork(_)) => {
-            anyhow::bail!("`codex fork --worktree` requires an explicit session ID")
+            anyhow::bail!(tr(
+                current(),
+                "`codex fork --worktree` requires an explicit session ID"
+            ))
         }
         Some(Subcommand::Exec(command)) => match &command.command {
             None | Some(ExecCommand::Fork(_)) => Ok(()),
-            Some(ExecCommand::Resume(_)) => anyhow::bail!(
+            Some(ExecCommand::Resume(_)) => anyhow::bail!(tr(
+                current(),
                 "`--worktree` cannot resume an existing session; use `codex exec fork --worktree`"
-            ),
+            )),
             Some(ExecCommand::Review(_)) => {
-                anyhow::bail!("`--worktree` is not supported for code review")
+                anyhow::bail!(tr(
+                    current(),
+                    "`--worktree` is not supported for code review"
+                ))
             }
         },
         _ => {
@@ -2705,7 +2757,7 @@ async fn run_interactive_tui(
         eprintln!(
             "WARNING: TERM is set to \"dumb\". Codex's interactive TUI may not work in this terminal."
         );
-        if !confirm("Continue anyway? [y/N]: ")? {
+        if !confirm(tr(current(), "Continue anyway? [y/N]: "))? {
             return Ok(AppExitInfo::fatal(
                 "Refusing to start the interactive TUI because TERM is set to \"dumb\". Run in a supported terminal or unset TERM.",
             ));
@@ -2715,10 +2767,13 @@ async fn run_interactive_tui(
     #[cfg(any(unix, windows))]
     if interactive.agents_overview && remote.is_none() {
         if !std::io::stdin().is_terminal() {
-            return Ok(AppExitInfo::fatal("stdin is not a terminal"));
+            return Ok(AppExitInfo::fatal(tr(current(), "stdin is not a terminal")));
         }
         if !std::io::stdout().is_terminal() {
-            return Ok(AppExitInfo::fatal("stdout is not a terminal"));
+            return Ok(AppExitInfo::fatal(tr(
+                current(),
+                "stdout is not a terminal",
+            )));
         }
         cloud_config::load_config(&interactive.config_overrides, LoaderOverrides::default())
             .await
@@ -2810,14 +2865,16 @@ fn resolve_remote_endpoint(
         .map_err(std::io::Error::other)?;
     if let Some(remote_auth_token_env) = remote_auth_token_env {
         let Some(endpoint) = remote_endpoint.as_mut() else {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`--remote-auth-token-env` requires `--remote`.",
-            ));
+            )));
         };
         if !codex_tui::remote_addr_supports_auth_token(endpoint) {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`--remote-auth-token-env` requires a `wss://` or loopback `ws://` remote.",
-            ));
+            )));
         }
         let auth_token = read_remote_auth_token_from_env_var(&remote_auth_token_env)
             .map_err(std::io::Error::other)?;
@@ -2825,9 +2882,10 @@ fn resolve_remote_endpoint(
             auth_token: slot, ..
         } = endpoint
         else {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`--remote-auth-token-env` requires a `wss://` or loopback `ws://` remote.",
-            ));
+            )));
         };
         *slot = Some(auth_token);
     }

@@ -23,6 +23,7 @@ doctest = false
 workspace = true
 
 [dependencies]
+codex-i18n = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }

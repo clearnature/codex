@@ -2603,6 +2603,7 @@ dependencies = [
  "codex-history",
  "codex-home",
  "codex-http-client",
+ "codex-i18n",
  "codex-install-context",
  "codex-login",
  "codex-mcp",

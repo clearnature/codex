@@ -2864,6 +2864,106 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Saved {0}, but a higher-priority configuration layer overrides the saved value.",
         "已保存{0}，但更高优先级的配置层覆盖了保存的值。",
     ),
+    (
+        "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`)",
+        "从标准输入读取API key（例如 `printenv OPENAI_API_KEY | codex login --with-api-key`）",
+    ),
+    (
+        "Read the access token from stdin (e.g. `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`)",
+        "从标准输入读取访问令牌（例如 `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`）",
+    ),
+    (
+        "(deprecated) Previously accepted the API key directly; now exits with guidance to use --with-api-key",
+        "（已弃用）过去可直接接受API key；现在会退出并提示使用--with-api-key",
+    ),
+    (
+        "--aws-sigv4 requires --remote-transport direct",
+        "--aws-sigv4需要--remote-transport direct",
+    ),
+    (
+        "--remote-transport direct requires --aws-sigv4",
+        "--remote-transport direct需要--aws-sigv4",
+    ),
+    (
+        "direct exec-server transport does not support forwarding",
+        "直接exec-server传输不支持转发",
+    ),
+    ("PATH is not set", "未设置PATH"),
+    (
+        "--force requires a session UUID; names must be confirmed interactively",
+        "--force需要会话UUID；名称必须在交互模式下确认",
+    ),
+    (
+        "`codex agents` received conflicting remote server endpoints",
+        "`codex agents`收到了冲突的远程服务端地址",
+    ),
+    (
+        "`codex agents` does not accept an initial prompt or images",
+        "`codex agents`不接受初始提示词或图片",
+    ),
+    (
+        "`codex agents` is unavailable while workload identity is active",
+        "工作负载身份启用时`codex agents`不可用",
+    ),
+    (
+        "`codex agents` requires `--remote` on this platform",
+        "此平台上`codex agents`需要`--remote`",
+    ),
+    (
+        "`codex sandbox` is not supported on this operating system",
+        "此操作系统不支持`codex sandbox`",
+    ),
+    (
+        "Choose one login credential source: --with-api-key or --with-access-token.",
+        "请选择一种登录凭据来源：--with-api-key或--with-access-token。",
+    ),
+    (
+        "Codex executable path is not configured",
+        "未配置Codex可执行文件路径",
+    ),
+    (
+        "--environment-id is required when --remote is set",
+        "设置--remote时必须提供--environment-id",
+    ),
+    (
+        "CODEX_ACCESS_TOKEN is required when --use-agent-identity-auth is set",
+        "设置--use-agent-identity-auth时必须提供CODEX_ACCESS_TOKEN",
+    ),
+    (
+        "Agent Identity authentication is unavailable",
+        "Agent Identity认证不可用",
+    ),
+    (
+        "CODEX_ACCESS_TOKEN did not provide permitted Agent Identity authentication",
+        "CODEX_ACCESS_TOKEN未通过Agent Identity认证",
+    ),
+    (
+        "remote exec-server registration URL must include a host",
+        "远程exec-server注册URL必须包含主机名",
+    ),
+    (
+        "`codex fork --worktree` requires an explicit session ID",
+        "`codex fork --worktree`需要显式的会话ID",
+    ),
+    (
+        "`--worktree` cannot resume an existing session; use `codex exec fork --worktree`",
+        "`--worktree`无法恢复已有会话；请使用`codex exec fork --worktree`",
+    ),
+    (
+        "`--worktree` is not supported for code review",
+        "代码审查不支持`--worktree`",
+    ),
+    ("Continue anyway? [y/N]: ", "仍要继续？[y/N]："),
+    ("stdin is not a terminal", "stdin不是终端"),
+    ("stdout is not a terminal", "stdout不是终端"),
+    (
+        "`--remote-auth-token-env` requires `--remote`.",
+        "`--remote-auth-token-env`需要`--remote`。",
+    ),
+    (
+        "`--remote-auth-token-env` requires a `wss://` or loopback `ws://` remote.",
+        "`--remote-auth-token-env`需要`wss://`或回环`ws://`远程地址。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

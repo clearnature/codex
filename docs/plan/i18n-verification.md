@@ -4,7 +4,7 @@
 > 上游文档：[`i18n-design.md`](./i18n-design.md)（参考分析与嵌入点设计）。
 > 基线：`feat/i18n` @ `rust-v0.154.0`（commit `6b9826e3`）。
 
-## 执行结果（2026-09-17 实测）
+## 执行结果（2026-09-16 实测）
 
 | # | 假设 | 结论 | 证据（可复现命令 → 实测值） |
 | --- | --- | --- | --- |
@@ -204,9 +204,20 @@
 
 ## 八、未验证 / 风险
 
-1. **H1 已实测成立**（2026-09-17，见「执行结果」）——不再是推断。残余风险转移到「铺开的广度」：接入面已从最初的 `bottom_pane/footer.rs` 扩到 **44 文件 / 1632 处调用点**（2026-09-16 实测，见「铺开进度」——含 `chatwidget` 11 文件·420 点、`app` 9·179、`bottom_pane` 7·248），**未接入**部分尚余 **≈1831** 个候选（`chatwidget` 344、`app` 312、`bottom_pane` 256 …），故本报告中的「快照零 diff」只保证**已接入部分**无损。
-2. **Bazel 侧成本未评估** —— `AGENTS.md` 要求新增 crate 时同步更新 `BUILD.bazel`
-   （`compile_data` / `build_script_data` 等），本轮未衡量改动量。
+1. **H1 已实测成立**（2026-09-16，见「执行结果」）——不再是推断。残余风险转移到「铺开的广度」：接入面已从最初的 `bottom_pane/footer.rs` 扩到 **44 文件 / 1632 处调用点**（2026-09-16 实测，见「铺开进度」——含 `chatwidget` 11 文件·420 点、`app` 9·179、`bottom_pane` 7·248），**未接入**部分尚余 **≈1831** 个候选（`chatwidget` 344、`app` 312、`bottom_pane` 256 …），故本报告中的「快照零 diff」只保证**已接入部分**无损。
+2. ~~**Bazel 侧成本未评估**~~ **已评估（2026-09-16）**：改动量是 **1 行** —— `codex-rs/i18n-check/BUILD.bazel`
+   加 `crate_srcs = []`（纯 bin crate，否则默认的 `src/**/*.rs` glob 会把 `*_tests.rs` 一并编成 library）。
+   **不需要**任何 `compile_data` / `build_script_data`：本分支没有新增 `include_str!` / `include_bytes!`。
+   验证：`bazel build //codex-rs/cli:codex //codex-rs/exec:all` → 4512 actions / exit 0；
+   `bazel test //codex-rs/i18n-check:i18n-check-tests` → 2/2 PASSED。细节见
+   [`i18n-bazel-handoff.md`](./i18n-bazel-handoff.md)。
 3. **`tui` 的文案量与扫描口径未定** —— [`../maps/references.md`](../maps/references.md) 里的
    12,681 条是启发式**上界**（含测试代码），实际可翻译量要靠 H2 的扫描结果确定。
 4. **未评估构建时长影响** —— 新增 workspace crate 会增大构建规模。
+5. **`unused 0` 不是纯精确匹配** —— `codex-i18n-check` 除静态调用点外，还会把「文件里出现过
+   `codex_i18n`」且带 `label: "<字面量>"` 字段的字符串计为**已渲染**（本次报 bound keys **28** 条）。
+   方向是保守的（宁可少报 unused），但读「unused 0」时要知道里面有这层启发式；key 是否真的到达
+   渲染输出，仍要靠快照与 `codex-i18n` 的插值测试兜底。
+6. **日期更正** —— 本文早先多处写「2026-09-17」，而实际测量与提交都是 **2026-09-16**（`git log` 时间戳 +
+   本机系统日期一致）。已更正；台账里更早的几条流水也写成了 09-15/09-17，那批是未经核对的估值，
+   按纪律**不追改历史**，以本文与提交时间戳为准。

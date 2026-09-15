@@ -29,6 +29,7 @@ use codex_http_client::HttpClientFactory;
 use codex_http_client::OutboundProxyPolicy;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_responses_api_proxy::Args as ResponsesApiProxyArgs;
 use codex_rollout_trace::REDUCED_STATE_FILE_NAME;
 use codex_rollout_trace::replay_bundle;
@@ -870,15 +871,20 @@ struct StdioToUdsCommand {
 }
 
 fn parse_socket_path(raw: &str) -> Result<AbsolutePathBuf, String> {
-    AbsolutePathBuf::relative_to_current_dir(raw)
-        .map_err(|err| format!("failed to resolve socket path `{raw}`: {err}"))
+    AbsolutePathBuf::relative_to_current_dir(raw).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to resolve socket path `{0}`: {1}",
+            &[&raw.to_string(), &err.to_string()],
+        )
+    })
 }
 
 /// Handle the app exit and print the results. Optionally run the update action.
 fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
     let is_fatal = match &exit_info.exit_reason {
         ExitReason::Fatal(message) => {
-            eprintln!("ERROR: {message}");
+            eprintln!("{}", tr_with(current(), "ERROR: {0}", &[&message]));
             true
         }
         ExitReason::UserRequested
@@ -906,7 +912,10 @@ fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
 fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     println!();
     let cmd_str = action.command_str();
-    println!("Updating Codex via `{cmd_str}`...");
+    println!(
+        "{}",
+        tr_with(current(), "Updating Codex via `{0}`...", &[&cmd_str])
+    );
     let status = {
         #[cfg(windows)]
         {
@@ -946,9 +955,19 @@ fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
         }
     };
     if !status.success() {
-        anyhow::bail!("`{cmd_str}` failed with status {status}");
+        anyhow::bail!(tr_with(
+            current(),
+            "`{0}` failed with status {1}",
+            &[&cmd_str, &status.to_string()],
+        ));
     }
-    println!("\n🎉 Update ran successfully! Please restart Codex.");
+    println!(
+        "{}",
+        tr(
+            current(),
+            "\n🎉 Update ran successfully! Please restart Codex."
+        )
+    );
     Ok(())
 }
 
@@ -960,13 +979,21 @@ fn resolve_windows_update_command_from_path(
     let path_env =
         std::env::join_paths(std::env::split_paths(path_env).filter(|path| path.is_absolute()))?;
     if path_env.is_empty() {
-        anyhow::bail!(
-            "Could not find an absolute update command `{command}` on PATH. Please update manually: https://developers.openai.com/codex/cli/"
-        );
+        anyhow::bail!(tr_with(
+            current(),
+            "Could not find an absolute update command `{0}` on PATH. Please update manually: https://developers.openai.com/codex/cli/",
+            &[&command],
+        ));
     }
     which::which_in_global(command, Some(&path_env))?
         .next()
-        .ok_or_else(|| anyhow::anyhow!("could not find update command `{command}` on PATH"))
+        .ok_or_else(|| {
+            anyhow::anyhow!(tr_with(
+                current(),
+                "could not find update command `{0}` on PATH",
+                &[&command],
+            ))
+        })
 }
 
 fn run_update_command() -> anyhow::Result<()> {
@@ -980,9 +1007,10 @@ fn run_update_command() -> anyhow::Result<()> {
     #[cfg(not(debug_assertions))]
     {
         let Some(action) = codex_tui::get_update_action() else {
-            anyhow::bail!(
-                "Could not detect the Codex installation method. Please update manually: https://developers.openai.com/codex/cli/"
-            );
+            anyhow::bail!(tr(
+                current(),
+                "Could not detect the Codex installation method. Please update manually: https://developers.openai.com/codex/cli/",
+            ));
         };
         run_update_action(action)
     }
@@ -1092,7 +1120,7 @@ impl FeatureToggles {
         if is_known_feature_key(feature) {
             Ok(())
         } else {
-            anyhow::bail!("Unknown feature flag: {feature}")
+            anyhow::bail!(tr_with(current(), "Unknown feature flag: {0}", &[&feature]))
         }
     }
 }
@@ -2149,8 +2177,13 @@ fn is_supported_exec_server_remote_auth(auth: &CodexAuth) -> bool {
 }
 
 fn validate_api_key_remote_host(base_url: &str) -> anyhow::Result<()> {
-    let url = url::Url::parse(base_url)
-        .map_err(|err| anyhow::anyhow!("invalid remote exec-server registration URL: {err}"))?;
+    let url = url::Url::parse(base_url).map_err(|err| {
+        anyhow::anyhow!(tr_with(
+            current(),
+            "invalid remote exec-server registration URL: {0}",
+            &[&err.to_string()],
+        ))
+    })?;
     let host = url.host().ok_or_else(|| {
         anyhow::anyhow!(tr(
             current(),
@@ -2250,7 +2283,14 @@ async fn enable_feature_in_config(feature: &str) -> anyhow::Result<()> {
         .set_feature_enabled(feature, /*enabled*/ true)
         .apply()
         .await?;
-    println!("Enabled feature `{feature}` in config.toml.");
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "Enabled feature `{0}` in config.toml.",
+            &[&feature]
+        )
+    );
     maybe_print_under_development_feature_warning(&codex_home, feature);
     Ok(())
 }
@@ -2262,7 +2302,14 @@ async fn disable_feature_in_config(feature: &str) -> anyhow::Result<()> {
         .set_feature_enabled(feature, /*enabled*/ false)
         .apply()
         .await?;
-    println!("Disabled feature `{feature}` in config.toml.");
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "Disabled feature `{0}` in config.toml.",
+            &[&feature]
+        )
+    );
     Ok(())
 }
 
@@ -2469,9 +2516,17 @@ async fn run_debug_clear_memories_command(
     clear_memory_roots_contents(&config.codex_home).await?;
 
     let mut message = if cleared_memories_db {
-        format!("Cleared memory state from {}.", memories_path.display())
+        tr_with(
+            current(),
+            "Cleared memory state from {0}.",
+            &[&memories_path.display().to_string()],
+        )
     } else {
-        format!("No memories db found at {}.", memories_path.display())
+        tr_with(
+            current(),
+            "No memories db found at {0}.",
+            &[&memories_path.display().to_string()],
+        )
     };
     message.push_str(&format!(
         " Cleared memory directories under {}.",
@@ -2647,7 +2702,11 @@ fn reject_strict_config_for_unsupported_subcommand(
     subcommand: &str,
 ) -> anyhow::Result<()> {
     if strict_config {
-        anyhow::bail!("`--strict-config` is not supported for `codex {subcommand}`");
+        anyhow::bail!(tr_with(
+            current(),
+            "`--strict-config` is not supported for `codex {0}`",
+            &[&subcommand],
+        ));
     }
     Ok(())
 }
@@ -2699,7 +2758,14 @@ fn updater_http_client_factory(
     match config {
         Ok(config) => config.http_client_factory(),
         Err(error) => {
-            eprintln!("warning: failed to load updater network configuration: {error}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "warning: failed to load updater network configuration: {0}",
+                    &[&error.to_string()],
+                )
+            );
             codex_http_client::HttpClientFactory::new(
                 codex_http_client::OutboundProxyPolicy::ReqwestDefault,
             )
@@ -2722,11 +2788,20 @@ fn read_remote_auth_token_from_env_var_with<F>(
 where
     F: FnOnce(&str) -> Result<String, std::env::VarError>,
 {
-    let auth_token = get_var(env_var_name)
-        .map_err(|_| anyhow::anyhow!("environment variable `{env_var_name}` is not set"))?;
+    let auth_token = get_var(env_var_name).map_err(|_| {
+        anyhow::anyhow!(tr_with(
+            current(),
+            "environment variable `{0}` is not set",
+            &[&env_var_name],
+        ))
+    })?;
     let auth_token = auth_token.trim().to_string();
     if auth_token.is_empty() {
-        anyhow::bail!("environment variable `{env_var_name}` is empty");
+        anyhow::bail!(tr_with(
+            current(),
+            "environment variable `{0}` is empty",
+            &[&env_var_name],
+        ));
     }
     Ok(auth_token)
 }

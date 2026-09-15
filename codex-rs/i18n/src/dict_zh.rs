@@ -2964,6 +2964,57 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`--remote-auth-token-env` requires a `wss://` or loopback `ws://` remote.",
         "`--remote-auth-token-env`需要`wss://`或回环`ws://`远程地址。",
     ),
+    (
+        "failed to resolve socket path `{0}`: {1}",
+        "解析socket路径`{0}`失败：{1}",
+    ),
+    ("ERROR: {0}", "错误：{0}"),
+    ("Updating Codex via `{0}`...", "正在通过`{0}`更新Codex…"),
+    ("`{0}` failed with status {1}", "`{0}`失败，状态码{1}"),
+    (
+        "Could not find an absolute update command `{0}` on PATH. Please update manually: https://developers.openai.com/codex/cli/",
+        "在PATH中找不到绝对路径的更新命令`{0}`。请手动更新：https://developers.openai.com/codex/cli/",
+    ),
+    (
+        "could not find update command `{0}` on PATH",
+        "在PATH中找不到更新命令`{0}`",
+    ),
+    (
+        "Could not detect the Codex installation method. Please update manually: https://developers.openai.com/codex/cli/",
+        "无法识别Codex的安装方式。请手动更新：https://developers.openai.com/codex/cli/",
+    ),
+    ("Unknown feature flag: {0}", "未知的特性开关：{0}"),
+    (
+        "invalid remote exec-server registration URL: {0}",
+        "无效的远程exec-server注册URL：{0}",
+    ),
+    (
+        "Enabled feature `{0}` in config.toml.",
+        "已在config.toml中启用特性`{0}`。",
+    ),
+    (
+        "Disabled feature `{0}` in config.toml.",
+        "已在config.toml中禁用特性`{0}`。",
+    ),
+    ("Cleared memory state from {0}.", "已清除{0}的记忆状态。"),
+    ("No memories db found at {0}.", "在{0}未找到记忆数据库。"),
+    (
+        "`--strict-config` is not supported for `codex {0}`",
+        "`codex {0}`不支持`--strict-config`",
+    ),
+    (
+        "warning: failed to load updater network configuration: {0}",
+        "警告：加载更新器网络配置失败：{0}",
+    ),
+    (
+        "environment variable `{0}` is not set",
+        "环境变量`{0}`未设置",
+    ),
+    ("environment variable `{0}` is empty", "环境变量`{0}`为空"),
+    (
+        "\n🎉 Update ran successfully! Please restart Codex.",
+        "\n🎉 更新成功！请重启Codex。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

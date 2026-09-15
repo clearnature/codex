@@ -19,6 +19,9 @@
 //! fallbacks retain the original text. Image paste lives in `clipboard_paste`.
 
 use base64::Engine;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io::Write;
 
 /// Maximum raw bytes we will base64-encode into an OSC 52 sequence.
@@ -123,10 +126,21 @@ fn copy_to_clipboard_with(
         .map(|()| None)
         .map_err(|terminal_err| {
             tracing::warn!("terminal clipboard copy failed over SSH: {terminal_err}");
+            let message = terminal_err.to_string();
             if environment.tmux_session {
-                format!("terminal clipboard copy failed over SSH: {terminal_err}")
+                tr_with(
+                    current(),
+                    "terminal clipboard copy failed over SSH: {0}",
+                    &[message.as_str()],
+                )
+                .to_string()
             } else {
-                format!("OSC 52 clipboard copy failed over SSH: {terminal_err}")
+                tr_with(
+                    current(),
+                    "OSC 52 clipboard copy failed over SSH: {0}",
+                    &[message.as_str()],
+                )
+                .to_string()
             }
         });
     }
@@ -156,14 +170,31 @@ fn copy_to_clipboard_with(
                         )
                         .map(|()| None)
                         .map_err(|terminal_err| {
+                            let native_message = native_err.to_string();
+                            let wsl_message = wsl_err.to_string();
+                            let terminal_message = terminal_err.to_string();
                             if environment.tmux_session {
-                                format!(
-                                    "native clipboard: {native_err}; WSL fallback: {wsl_err}; terminal fallback: {terminal_err}"
+                                tr_with(
+                                    current(),
+                                    "native clipboard: {0}; WSL fallback: {1}; terminal fallback: {2}",
+                                    &[
+                                        native_message.as_str(),
+                                        wsl_message.as_str(),
+                                        terminal_message.as_str(),
+                                    ],
                                 )
+                                .to_string()
                             } else {
-                                format!(
-                                    "native clipboard: {native_err}; WSL fallback: {wsl_err}; OSC 52 fallback: {terminal_err}"
+                                tr_with(
+                                    current(),
+                                    "native clipboard: {0}; WSL fallback: {1}; OSC 52 fallback: {2}",
+                                    &[
+                                        native_message.as_str(),
+                                        wsl_message.as_str(),
+                                        terminal_message.as_str(),
+                                    ],
                                 )
+                                .to_string()
                             }
                         });
                     }
@@ -181,9 +212,19 @@ fn copy_to_clipboard_with(
             .map(|()| None)
             .map_err(|terminal_err| {
                 if environment.tmux_session {
-                    format!("native clipboard: {native_err}; terminal fallback: {terminal_err}")
+                    tr_with(
+                        current(),
+                        "native clipboard: {0}; terminal fallback: {1}",
+                        &[&native_err, &terminal_err],
+                    )
+                    .to_string()
                 } else {
-                    format!("native clipboard: {native_err}; OSC 52 fallback: {terminal_err}")
+                    tr_with(
+                        current(),
+                        "native clipboard: {0}; OSC 52 fallback: {1}",
+                        &[&native_err, &terminal_err],
+                    )
+                    .to_string()
                 }
             })
         }
@@ -203,7 +244,12 @@ fn terminal_clipboard_copy_with(
             Err(tmux_err) => {
                 tracing::warn!("tmux clipboard copy failed: {tmux_err}, falling back to OSC 52");
                 return osc52_copy_fn(text).map_err(|osc_err| {
-                    format!("tmux clipboard: {tmux_err}; OSC 52 fallback: {osc_err}")
+                    tr_with(
+                        current(),
+                        "tmux clipboard: {0}; OSC 52 fallback: {1}",
+                        &[&tmux_err, &osc_err],
+                    )
+                    .to_string()
                 });
             }
         }
@@ -244,17 +290,25 @@ fn arboard_copy(text: &str, html: Option<&str>) -> Result<Option<ClipboardLease>
     let _stderr_lock = STDERR_SUPPRESSION_MUTEX
         .get_or_init(|| std::sync::Mutex::new(()))
         .lock()
-        .map_err(|_| "stderr suppression lock poisoned".to_string())?;
+        .map_err(|_| tr(current(), "stderr suppression lock poisoned").to_string())?;
     let _guard = SuppressStderr::new();
-    let mut clipboard =
-        arboard::Clipboard::new().map_err(|e| format!("clipboard unavailable: {e}"))?;
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| {
+        tr_with(current(), "clipboard unavailable: {0}", &[&e.to_string()]).to_string()
+    })?;
     match html {
         Some(html) => clipboard
             .set_html(html, Some(text))
             .or_else(|_| clipboard.set_text(text)),
         None => clipboard.set_text(text),
     }
-    .map_err(|e| format!("failed to set clipboard text: {e}"))?;
+    .map_err(|e| {
+        tr_with(
+            current(),
+            "failed to set clipboard text: {0}",
+            &[&e.to_string()],
+        )
+        .to_string()
+    })?;
     // Linux clipboard owners must stay alive until the user pastes.
     #[cfg(target_os = "linux")]
     {
@@ -268,7 +322,7 @@ fn arboard_copy(text: &str, html: Option<&str>) -> Result<Option<ClipboardLease>
 
 #[cfg(target_os = "android")]
 fn arboard_copy(_text: &str, _html: Option<&str>) -> Result<Option<ClipboardLease>, String> {
-    Err("native clipboard unavailable on Android".to_string())
+    Err(tr(current(), "native clipboard unavailable on Android").to_string())
 }
 
 /// Copy text into the Windows clipboard from a WSL process.
@@ -284,25 +338,38 @@ fn wsl_clipboard_copy(text: &str) -> Result<(), String> {
             "[Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text",
         ])
         .spawn()
-        .map_err(|e| format!("failed to spawn powershell.exe: {e}"))?;
+        .map_err(|e| {
+            tr_with(current(), "failed to spawn powershell.exe: {0}", &[&e.to_string()])
+                .to_string()
+        })?;
 
     let Some(mut stdin) = child.stdin.take() else {
         let _ = child.kill();
         let _ = child.wait();
-        return Err("failed to open powershell.exe stdin".to_string());
+        return Err(tr(current(), "failed to open powershell.exe stdin").to_string());
     };
 
     if let Err(err) = stdin.write_all(text.as_bytes()) {
         let _ = child.kill();
         let _ = child.wait();
-        return Err(format!("failed to write to powershell.exe: {err}"));
+        return Err(tr_with(
+            current(),
+            "failed to write to powershell.exe: {0}",
+            &[&err.to_string()],
+        )
+        .to_string());
     }
 
     drop(stdin);
 
-    let output = child
-        .wait_with_output()
-        .map_err(|e| format!("failed to wait for powershell.exe: {e}"))?;
+    let output = child.wait_with_output().map_err(|e| {
+        tr_with(
+            current(),
+            "failed to wait for powershell.exe: {0}",
+            &[&e.to_string()],
+        )
+        .to_string()
+    })?;
 
     if output.status.success() {
         Ok(())
@@ -310,16 +377,25 @@ fn wsl_clipboard_copy(text: &str) -> Result<(), String> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("powershell.exe exited with status {status}"))
+            Err(tr_with(
+                current(),
+                "powershell.exe exited with status {0}",
+                &[&status.to_string()],
+            )
+            .to_string())
         } else {
-            Err(format!("powershell.exe failed: {stderr}"))
+            Err(tr_with(current(), "powershell.exe failed: {0}", &[&stderr]).to_string())
         }
     }
 }
 
 #[cfg(not(target_os = "linux"))]
 fn wsl_clipboard_copy(_text: &str) -> Result<(), String> {
-    Err("WSL clipboard fallback unavailable on this platform".to_string())
+    Err(tr(
+        current(),
+        "WSL clipboard fallback unavailable on this platform",
+    )
+    .to_string())
 }
 
 /// Copy text through tmux's native clipboard integration.
@@ -339,25 +415,32 @@ fn tmux_clipboard_copy(text: &str) -> Result<(), String> {
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| format!("failed to spawn tmux: {e}"))?;
+        .map_err(|e| {
+            tr_with(current(), "failed to spawn tmux: {0}", &[&e.to_string()]).to_string()
+        })?;
 
     let Some(mut stdin) = child.stdin.take() else {
         let _ = child.kill();
         let _ = child.wait();
-        return Err("failed to open tmux stdin".to_string());
+        return Err(tr(current(), "failed to open tmux stdin").to_string());
     };
 
     if let Err(err) = stdin.write_all(text.as_bytes()) {
         let _ = child.kill();
         let _ = child.wait();
-        return Err(format!("failed to write to tmux: {err}"));
+        return Err(tr_with(
+            current(),
+            "failed to write to tmux: {0}",
+            &[&err.to_string()],
+        )
+        .to_string());
     }
 
     drop(stdin);
 
-    let output = child
-        .wait_with_output()
-        .map_err(|e| format!("failed to wait for tmux: {e}"))?;
+    let output = child.wait_with_output().map_err(|e| {
+        tr_with(current(), "failed to wait for tmux: {0}", &[&e.to_string()]).to_string()
+    })?;
 
     if output.status.success() {
         Ok(())
@@ -365,9 +448,14 @@ fn tmux_clipboard_copy(text: &str) -> Result<(), String> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("tmux exited with status {status}"))
+            Err(tr_with(
+                current(),
+                "tmux exited with status {0}",
+                &[&status.to_string()],
+            )
+            .to_string())
         } else {
-            Err(format!("tmux failed: {stderr}"))
+            Err(tr_with(current(), "tmux failed: {0}", &[&stderr]).to_string())
         }
     }
 }
@@ -379,12 +467,16 @@ fn tmux_clipboard_copy_ready(
 ) -> Result<(), String> {
     let set_clipboard = set_clipboard_fn()?;
     if set_clipboard.trim() == "off" {
-        return Err("tmux clipboard forwarding is disabled".to_string());
+        return Err(tr(current(), "tmux clipboard forwarding is disabled").to_string());
     }
 
     let tmux_info = tmux_info_fn()?;
     if tmux_info.lines().any(|line| line.contains("Ms: [missing]")) {
-        return Err("tmux clipboard forwarding is unavailable: missing Ms capability".to_string());
+        return Err(tr(
+            current(),
+            "tmux clipboard forwarding is unavailable: missing Ms capability",
+        )
+        .to_string());
     }
 
     Ok(())
@@ -394,17 +486,31 @@ fn tmux_command_output<const N: usize>(args: [&str; N]) -> Result<String, String
     let output = std::process::Command::new("tmux")
         .args(args)
         .output()
-        .map_err(|e| format!("failed to spawn tmux: {e}"))?;
+        .map_err(|e| {
+            tr_with(current(), "failed to spawn tmux: {0}", &[&e.to_string()]).to_string()
+        })?;
 
     if output.status.success() {
-        String::from_utf8(output.stdout).map_err(|e| format!("tmux output was not UTF-8: {e}"))
+        String::from_utf8(output.stdout).map_err(|e| {
+            tr_with(
+                current(),
+                "tmux output was not UTF-8: {0}",
+                &[&e.to_string()],
+            )
+            .to_string()
+        })
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("tmux exited with status {status}"))
+            Err(tr_with(
+                current(),
+                "tmux exited with status {0}",
+                &[&status.to_string()],
+            )
+            .to_string())
         } else {
-            Err(format!("tmux failed: {stderr}"))
+            Err(tr_with(current(), "tmux failed: {0}", &[&stderr]).to_string())
         }
     }
 }
@@ -488,20 +594,23 @@ fn osc52_copy(text: &str) -> Result<(), String> {
 }
 
 fn write_osc52_to_writer(mut writer: impl Write, sequence: &str) -> Result<(), String> {
-    writer
-        .write_all(sequence.as_bytes())
-        .map_err(|e| format!("failed to write OSC 52: {e}"))?;
-    writer
-        .flush()
-        .map_err(|e| format!("failed to flush OSC 52: {e}"))
+    writer.write_all(sequence.as_bytes()).map_err(|e| {
+        tr_with(current(), "failed to write OSC 52: {0}", &[&e.to_string()]).to_string()
+    })?;
+    writer.flush().map_err(|e| {
+        tr_with(current(), "failed to flush OSC 52: {0}", &[&e.to_string()]).to_string()
+    })
 }
 
 fn osc52_sequence(text: &str, tmux: bool) -> Result<String, String> {
     let raw_bytes = text.len();
     if raw_bytes > OSC52_MAX_RAW_BYTES {
-        return Err(format!(
-            "OSC 52 payload too large ({raw_bytes} bytes; max {OSC52_MAX_RAW_BYTES})"
-        ));
+        return Err(tr_with(
+            current(),
+            "OSC 52 payload too large ({0} bytes; max {1})",
+            &[&raw_bytes.to_string(), &OSC52_MAX_RAW_BYTES.to_string()],
+        )
+        .to_string());
     }
 
     let encoded = base64::engine::general_purpose::STANDARD.encode(text.as_bytes());

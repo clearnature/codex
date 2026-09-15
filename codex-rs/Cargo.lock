@@ -3189,6 +3189,7 @@ dependencies = [
  "codex-feedback",
  "codex-git-utils",
  "codex-history",
+ "codex-i18n",
  "codex-login",
  "codex-model-provider-info",
  "codex-otel",
@@ -3680,6 +3681,22 @@ dependencies = [
  "tracing-subscriber",
  "windows-sys 0.52.0",
  "zstd",
+]
+
+[[package]]
+name = "codex-i18n"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "sys-locale",
+]
+
+[[package]]
+name = "codex-i18n-check"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "tempfile",
 ]
 
 [[package]]
@@ -4668,6 +4685,7 @@ dependencies = [
  "codex-git-utils",
  "codex-history",
  "codex-http-client",
+ "codex-i18n",
  "codex-install-context",
  "codex-login",
  "codex-mcp",

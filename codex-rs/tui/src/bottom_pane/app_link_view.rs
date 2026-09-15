@@ -2,6 +2,9 @@
 use crate::app_command::AppCommand as Op;
 use codex_app_server_protocol::McpServerElicitationAction;
 use codex_app_server_protocol::RequestId as AppServerRequestId;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -161,7 +164,11 @@ impl AppLinkViewParams {
             app_id,
             title,
             description: None,
-            instructions: "Sign in to this app in your browser, then return here.".to_string(),
+            instructions: tr(
+                current(),
+                "Sign in to this app in your browser, then return here.",
+            )
+            .to_string(),
             url: url.to_string(),
             is_installed: true,
             is_enabled: true,
@@ -185,10 +192,13 @@ impl AppLinkViewParams {
     ) -> Self {
         Self {
             app_id: elicitation_id.to_string(),
-            title: "Action required".to_string(),
-            description: Some(format!("Server: {server_name}")),
-            instructions: "Complete the requested action in your browser, then return here."
-                .to_string(),
+            title: tr(current(), "Action required").to_string(),
+            description: Some(tr_with(current(), "Server: {0}", &[&server_name])),
+            instructions: tr(
+                current(),
+                "Complete the requested action in your browser, then return here.",
+            )
+            .to_string(),
             url: url.to_string(),
             is_installed: true,
             is_enabled: true,
@@ -292,14 +302,16 @@ impl AppLinkView {
     fn action_labels(&self) -> Vec<&'static str> {
         if self.is_auth_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec!["Open sign-in URL", "Back"],
-                AppLinkScreen::InstallConfirmation => vec!["I already signed in", "Back"],
+                AppLinkScreen::Link => vec![tr(current(), "Open sign-in URL"), "Back"],
+                AppLinkScreen::InstallConfirmation => {
+                    vec![tr(current(), "I already signed in"), "Back"]
+                }
             };
         }
         if self.is_external_action_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec!["Open link", "Back"],
-                AppLinkScreen::InstallConfirmation => vec!["I finished", "Back"],
+                AppLinkScreen::Link => vec![tr(current(), "Open link"), "Back"],
+                AppLinkScreen::InstallConfirmation => vec![tr(current(), "I finished"), "Back"],
             };
         }
 
@@ -307,19 +319,21 @@ impl AppLinkView {
             AppLinkScreen::Link => {
                 if self.is_installed {
                     vec![
-                        "Manage on ChatGPT",
+                        tr(current(), "Manage on ChatGPT"),
                         if self.is_enabled {
-                            "Disable app"
+                            tr(current(), "Disable app")
                         } else {
-                            "Enable app"
+                            tr(current(), "Enable app")
                         },
                         "Back",
                     ]
                 } else {
-                    vec!["Install on ChatGPT", "Back"]
+                    vec![tr(current(), "Install on ChatGPT"), "Back"]
                 }
             }
-            AppLinkScreen::InstallConfirmation => vec!["I already Installed it", "Back"],
+            AppLinkScreen::InstallConfirmation => {
+                vec![tr(current(), "I already Installed it"), "Back"]
+            }
         }
     }
 
@@ -508,7 +522,10 @@ impl AppLinkView {
         }
         let is_browser_action_suggestion = self.is_browser_action_suggestion();
         if self.is_installed && !is_browser_action_suggestion {
-            for line in wrap("Use $ to insert this app into the prompt.", usable_width) {
+            for line in wrap(
+                tr(current(), "Use $ to insert this app into the prompt."),
+                usable_width,
+            ) {
                 lines.push(Line::from(line.into_owned()));
             }
             lines.push(Line::from(""));
@@ -529,14 +546,20 @@ impl AppLinkView {
             }
             if !is_browser_action_suggestion {
                 for line in wrap(
-                    "Newly installed apps can take a few minutes to appear in /apps.",
+                    tr(
+                        current(),
+                        "Newly installed apps can take a few minutes to appear in /apps.",
+                    ),
                     usable_width,
                 ) {
                     lines.push(Line::from(line.into_owned()));
                 }
                 if !self.is_installed {
                     for line in wrap(
-                        "After installed, use $ to insert this app into the prompt.",
+                        tr(
+                            current(),
+                            "After installed, use $ to insert this app into the prompt.",
+                        ),
                         usable_width,
                     ) {
                         lines.push(Line::from(line.into_owned()));
@@ -563,14 +586,14 @@ impl AppLinkView {
         lines.push(Line::from(
             if is_auth_suggestion {
                 if is_codex_apps_auth {
-                    "Finish App Sign In"
+                    tr(current(), "Finish App Sign In")
                 } else {
-                    "Finish Authentication"
+                    tr(current(), "Finish Authentication")
                 }
             } else if is_external_action_suggestion {
-                "Finish in Browser"
+                tr(current(), "Finish in Browser")
             } else {
-                "Finish App Setup"
+                tr(current(), "Finish App Setup")
             }
             .bold(),
         ));
@@ -579,39 +602,60 @@ impl AppLinkView {
         if is_auth_suggestion {
             for line in wrap(
                 if is_codex_apps_auth {
-                    "Sign in to the app on ChatGPT in the browser window that just opened."
+                    tr(
+                        current(),
+                        "Sign in to the app on ChatGPT in the browser window that just opened.",
+                    )
                 } else {
-                    "Complete authentication in the browser window that just opened."
+                    tr(
+                        current(),
+                        "Complete authentication in the browser window that just opened.",
+                    )
                 },
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
             for line in wrap(
-                "Then return here and select \"I already signed in\".",
+                tr(
+                    current(),
+                    "Then return here and select \"I already signed in\".",
+                ),
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
         } else if is_external_action_suggestion {
             for line in wrap(
-                "Complete the requested action in the browser window that just opened.",
+                tr(
+                    current(),
+                    "Complete the requested action in the browser window that just opened.",
+                ),
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
-            for line in wrap("Then return here and select \"I finished\".", usable_width) {
+            for line in wrap(
+                tr(current(), "Then return here and select \"I finished\"."),
+                usable_width,
+            ) {
                 lines.push(Line::from(line.into_owned()));
             }
         } else {
             for line in wrap(
-                "Complete app setup on ChatGPT in the browser window that just opened.",
+                tr(
+                    current(),
+                    "Complete app setup on ChatGPT in the browser window that just opened.",
+                ),
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
             for line in wrap(
-                "Sign in there if needed, then return here and select \"I already Installed it\".",
+                tr(
+                    current(),
+                    "Sign in there if needed, then return here and select \"I already Installed it\".",
+                ),
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
@@ -621,11 +665,11 @@ impl AppLinkView {
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
             if is_auth_suggestion {
-                "Sign-in URL:"
+                tr(current(), "Sign-in URL:")
             } else if is_external_action_suggestion {
                 "Link:"
             } else {
-                "Setup URL:"
+                tr(current(), "Setup URL:")
             }
             .dim(),
         ]));
@@ -676,12 +720,20 @@ impl AppLinkView {
         if let Some(move_down) = self.list_keymap.primary_hint(ListAction::MoveDown) {
             spans.extend([" ".into(), move_down.into()]);
         }
-        spans.push(" to move".into());
+        spans.push(tr(current(), " to move").into());
         if let Some(accept) = self.list_keymap.primary_hint(ListAction::Accept) {
-            spans.extend([", ".into(), accept.into(), " to select".into()]);
+            spans.extend([
+                ", ".into(),
+                accept.into(),
+                tr(current(), " to select").into(),
+            ]);
         }
         if let Some(cancel) = self.list_keymap.primary_hint(ListAction::Cancel) {
-            spans.extend([", ".into(), cancel.into(), " to close".into()]);
+            spans.extend([
+                ", ".into(),
+                cancel.into(),
+                tr(current(), " to close").into(),
+            ]);
         }
         Line::from(spans)
     }
@@ -855,7 +907,7 @@ impl crate::render::renderable::Renderable for AppLinkView {
                 &action_rows,
                 &action_state,
                 action_rows.len().max(1),
-                "No actions",
+                tr(current(), "No actions"),
             );
         }
 
@@ -962,10 +1014,13 @@ mod tests {
             params,
             AppLinkViewParams {
                 app_id: "payment-123".to_string(),
-                title: "Action required".to_string(),
+                title: tr(current(), "Action required").to_string(),
                 description: Some("Server: payments".to_string()),
-                instructions: "Complete the requested action in your browser, then return here."
-                    .to_string(),
+                instructions: tr(
+                    current(),
+                    "Complete the requested action in your browser, then return here."
+                )
+                .to_string(),
                 url: "https://payments.example/checkout/123".to_string(),
                 is_installed: true,
                 is_enabled: true,
@@ -1066,7 +1121,11 @@ mod tests {
 
         assert_eq!(
             view.action_labels(),
-            vec!["Manage on ChatGPT", "Disable app", "Back"]
+            vec![
+                tr(current(), "Manage on ChatGPT"),
+                tr(current(), "Disable app"),
+                "Back"
+            ]
         );
     }
 
@@ -1217,7 +1276,11 @@ mod tests {
 
         assert_eq!(
             view.action_labels(),
-            vec!["Manage on ChatGPT", "Enable app", "Back"]
+            vec![
+                tr(current(), "Manage on ChatGPT"),
+                tr(current(), "Enable app"),
+                "Back"
+            ]
         );
     }
 
@@ -1645,7 +1708,11 @@ mod tests {
                 app_id: "connector_google_calendar".to_string(),
                 title: "Google Calendar".to_string(),
                 description: None,
-                instructions: "Sign in to this app in your browser, then return here.".to_string(),
+                instructions: tr(
+                    current(),
+                    "Sign in to this app in your browser, then return here.",
+                )
+                .to_string(),
                 url: "https://chatgpt.com/apps/google-calendar/connector_google_calendar"
                     .to_string(),
                 is_installed: true,

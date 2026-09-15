@@ -624,6 +624,14 @@ pub struct Config {
     /// Model used specifically for review sessions.
     pub review_model: Option<String>,
 
+    /// Language for user-facing text (`zh-CN`, `en`, ...), from `config.toml`.
+    ///
+    /// Second link of the locale chain implemented by `codex-i18n`: `--lang`
+    /// outranks this, and this outranks `LC_ALL` / `LANG` and the operating
+    /// system's locale. `None` means "no preference expressed here", not
+    /// "English".
+    pub locale: Option<String>,
+
     /// Size of the context window for the model, in tokens.
     pub model_context_window: Option<i64>,
 
@@ -3965,6 +3973,11 @@ impl Config {
 
         let review_model = override_review_model.or(cfg.review_model);
 
+        // Language for user-facing text. `--lang` is not folded in here: it
+        // outranks this value, and the front ends apply the whole chain
+        // (`--lang` > this > environment > system) when they publish it.
+        let locale = cfg.locale.clone();
+
         let check_for_update_on_startup = cfg.check_for_update_on_startup.unwrap_or(true);
         let model_catalog = load_model_catalog(cfg.model_catalog_json.clone())?;
 
@@ -4153,6 +4166,7 @@ impl Config {
             model,
             service_tier,
             review_model,
+            locale,
             model_context_window: cfg.model_context_window,
             model_auto_compact_token_limit: cfg.model_auto_compact_token_limit,
             model_auto_compact_token_limit_scope: cfg

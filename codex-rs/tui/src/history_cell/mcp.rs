@@ -1,6 +1,9 @@
 //! MCP tool-call, inventory, and output history cells.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 use codex_protocol::mcp::is_node_repl_backed_server;
 
@@ -23,19 +26,19 @@ struct McpImageOutputCell;
 
 impl HistoryCell for McpImageOutputCell {
     fn display_lines(&self, _width: u16) -> Vec<Line<'static>> {
-        vec!["tool result (image output)".into()]
+        vec![tr(current(), "tool result (image output)").into()]
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from("tool result (image output)")]
+        vec![Line::from(tr(current(), "tool result (image output)"))]
     }
 }
 fn mcp_auth_status_label(status: McpAuthStatus) -> &'static str {
     match status {
-        McpAuthStatus::Unknown => "Unknown",
-        McpAuthStatus::Unsupported => "Unsupported",
-        McpAuthStatus::NotLoggedIn => "Not logged in",
-        McpAuthStatus::BearerToken => "Bearer token",
+        McpAuthStatus::Unknown => tr(current(), "Unknown"),
+        McpAuthStatus::Unsupported => tr(current(), "Unsupported"),
+        McpAuthStatus::NotLoggedIn => tr(current(), "Not logged in"),
+        McpAuthStatus::BearerToken => tr(current(), "Bearer token"),
         McpAuthStatus::OAuth => "OAuth",
     }
 }
@@ -242,7 +245,7 @@ impl McpToolCallCell {
                     }
                 }
                 Err(err) => {
-                    let err_text = format!("Error: {err}");
+                    let err_text = tr_with(current(), "Error: {0}", &[&err.to_string()]);
                     let err_text = if node_repl && mode == McpToolCallRenderMode::Transcript {
                         err_text
                     } else {
@@ -305,7 +308,11 @@ impl HistoryCell for McpToolCallCell {
                         lines.extend(raw_lines_from_source(&text));
                     }
                 }
-                Err(err) => lines.push(Line::from(format!("Error: {err}"))),
+                Err(err) => lines.push(Line::from(tr_with(
+                    current(),
+                    "Error: {0}",
+                    &[&err.to_string()],
+                ))),
             }
         }
 
@@ -331,7 +338,7 @@ pub(crate) fn new_active_mcp_tool_call(
 pub(crate) fn empty_mcp_output() -> WebHyperlinkHistoryCell {
     let mut docs_line = HyperlinkLine::new(Line::from("    See the "));
     docs_line.push_span(
-        "MCP docs".underlined(),
+        tr(current(), "MCP docs").underlined(),
         Some("https://developers.openai.com/codex/mcp"),
     );
     docs_line.push_span(" to configure them.".into(), /*destination*/ None);

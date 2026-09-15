@@ -5,6 +5,9 @@ use crate::app_event::ManagedWorktreeMode;
 use crate::worktree_browser::Action;
 use crate::worktree_browser::Entry;
 use crate::worktree_browser::Request;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const BROWSER_VIEW_ID: &str = "managed-worktrees";
 
@@ -34,8 +37,8 @@ impl ChatWidget {
         }
 
         let title = match mode {
-            ManagedWorktreeMode::New => "Where should the new conversation run?",
-            ManagedWorktreeMode::Fork => "Where should the forked conversation run?",
+            ManagedWorktreeMode::New => tr(current(), "Where should the new conversation run?"),
+            ManagedWorktreeMode::Fork => tr(current(), "Where should the forked conversation run?"),
         };
         let current_name = name.clone();
         self.bottom_pane.show_selection_view(SelectionViewParams {
@@ -43,8 +46,10 @@ impl ChatWidget {
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Current checkout".to_string(),
-                    description: Some("Keep using the current working directory".to_string()),
+                    name: tr(current(), "Current checkout").to_string(),
+                    description: Some(
+                        tr(current(), "Keep using the current working directory").to_string(),
+                    ),
                     actions: vec![Box::new(move |tx| match mode {
                         ManagedWorktreeMode::New => {
                             tx.send(AppEvent::NewSession {
@@ -61,8 +66,10 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "New worktree".to_string(),
-                    description: Some("Create an isolated managed checkout".to_string()),
+                    name: tr(current(), "New worktree").to_string(),
+                    description: Some(
+                        tr(current(), "Create an isolated managed checkout").to_string(),
+                    ),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::StartManagedWorktree {
                             mode,
@@ -81,22 +88,34 @@ impl ChatWidget {
     pub(super) fn show_managed_worktree_picker(&mut self) {
         if !self.config.features.enabled(Feature::Worktrees) {
             self.add_error_message(
-                "Enable worktrees in /experimental to create a worktree.".to_string(),
+                tr(
+                    current(),
+                    "Enable worktrees in /experimental to create a worktree.",
+                )
+                .to_string(),
             );
             return;
         }
         if !self.managed_worktree_available() {
-            self.add_error_message("Managed worktrees require a local Git repository.".to_string());
+            self.add_error_message(
+                tr(
+                    current(),
+                    "Managed worktrees require a local Git repository.",
+                )
+                .to_string(),
+            );
             return;
         }
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Worktrees".to_string()),
+            title: Some(tr(current(), "Worktrees").to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Continue current conversation".to_string(),
-                    description: Some("Preserve this conversation in the new checkout".to_string()),
+                    name: tr(current(), "Continue current conversation").to_string(),
+                    description: Some(
+                        tr(current(), "Preserve this conversation in the new checkout").to_string(),
+                    ),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::StartManagedWorktree {
                             mode: ManagedWorktreeMode::Fork,
@@ -107,8 +126,10 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Start new conversation".to_string(),
-                    description: Some("Open a fresh conversation in the new checkout".to_string()),
+                    name: tr(current(), "Start new conversation").to_string(),
+                    description: Some(
+                        tr(current(), "Open a fresh conversation in the new checkout").to_string(),
+                    ),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::StartManagedWorktree {
                             mode: ManagedWorktreeMode::New,
@@ -119,9 +140,13 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Browse worktrees".to_string(),
+                    name: tr(current(), "Browse worktrees").to_string(),
                     description: Some(
-                        "Resume an owner thread or copy a working directory".to_string(),
+                        tr(
+                            current(),
+                            "Resume an owner thread or copy a working directory",
+                        )
+                        .to_string(),
                     ),
                     actions: vec![Box::new(|tx| tx.send(AppEvent::BrowseManagedWorktrees))],
                     dismiss_on_select: true,
@@ -146,9 +171,9 @@ impl ChatWidget {
         self.worktree_popup_request_id = Some(request.id);
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(BROWSER_VIEW_ID),
-            title: Some("Managed worktrees".to_string()),
+            title: Some(tr(current(), "Managed worktrees").to_string()),
             items: vec![SelectionItem {
-                name: "Loading worktrees…".to_string(),
+                name: tr(current(), "Loading worktrees…").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -184,17 +209,27 @@ impl ChatWidget {
             Ok(entries) => entries,
             Err(error) => {
                 self.worktree_popup_request_id = None;
-                self.add_error_message(format!("Cannot list managed worktrees: {error}"));
+                self.add_error_message(tr_with(
+                    current(),
+                    "Cannot list managed worktrees: {0}",
+                    &[&error.to_string()],
+                ));
                 return;
             }
         };
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Managed worktrees".to_string()),
+            title: Some(tr(current(), "Managed worktrees").to_string()),
             subtitle: Some(
                 if entries.is_empty() {
-                    "No worktrees in this repository's configured pool"
+                    tr(
+                        current(),
+                        "No worktrees in this repository's configured pool",
+                    )
                 } else {
-                    "Select a worktree to resume its owner or copy its working directory"
+                    tr(
+                        current(),
+                        "Select a worktree to resume its owner or copy its working directory",
+                    )
                 }
                 .to_string(),
             ),
@@ -207,8 +242,8 @@ impl ChatWidget {
                         name: entry.cwd.display().to_string(),
                         search_value: Some(entry.cwd.display().to_string()),
                         description: Some(entry.owner.map_or_else(
-                            || "No owner metadata".to_string(),
-                            |owner| format!("Owner: {owner}"),
+                            || tr(current(), "No owner metadata").to_string(),
+                            |owner| tr_with(current(), "Owner: {0}", &[&owner.to_string()]),
                         )),
                         actions: vec![Box::new(move |tx| {
                             tx.send(AppEvent::ShowManagedWorktreeActions {
@@ -238,7 +273,7 @@ impl ChatWidget {
             Action::Resume(owner) => AppEvent::ResumeSessionByIdOrName(owner.to_string()),
             Action::Copy(cwd) => AppEvent::CopySelection {
                 text: cwd.to_str()?.into(),
-                label: "Worktree working directory".to_string(),
+                label: tr(current(), "Worktree working directory").to_string(),
                 format: crate::clipboard_copy::CopyFormat::PlainText,
             },
         })
@@ -252,7 +287,7 @@ impl ChatWidget {
         if let Some(owner) = entry.owner {
             let request = request.clone();
             items.push(SelectionItem {
-                name: "Resume owner thread".to_string(),
+                name: tr(current(), "Resume owner thread").to_string(),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::ManagedWorktreeAction {
                         request: request.clone(),
@@ -265,13 +300,13 @@ impl ChatWidget {
         }
         let cwd = entry.cwd.clone();
         items.push(SelectionItem {
-            name: "Copy working directory".to_string(),
+            name: tr(current(), "Copy working directory").to_string(),
             is_disabled: entry.cwd.to_str().is_none(),
             disabled_reason: entry
                 .cwd
                 .to_str()
                 .is_none()
-                .then(|| "Path is not valid UTF-8".to_string()),
+                .then(|| tr(current(), "Path is not valid UTF-8").to_string()),
             actions: vec![Box::new(move |tx| {
                 tx.send(AppEvent::ManagedWorktreeAction {
                     request: request.clone(),
@@ -282,7 +317,7 @@ impl ChatWidget {
             ..Default::default()
         });
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Worktree".to_string()),
+            title: Some(tr(current(), "Worktree").to_string()),
             subtitle: Some(entry.cwd.display().to_string()),
             items,
             footer_hint: Some(standard_popup_hint_line()),

@@ -1,0 +1,58 @@
+# i18n 术语与译文规范（zh-Hans）
+
+> 状态：**生效中**。本文件是 `codex-rs/i18n/src/dict_zh.rs` 的配套规范：写新条目、或复核已有条目时看它。
+> 上游：[`i18n-design.md`](./i18n-design.md)（§3.6 特例与甄别规则）、[`i18n-verification.md`](./i18n-verification.md)（H1–H4 执行结果）。
+
+## 一、参考译文源：`qwen-code`（**风格参考，非翻译记忆**）
+
+参考物：`/data/training/cli/qwen-code/packages/cli/src/i18n/locales/{zh,en}.js`（各 1632 条，英文原文即 key，占位符用 `{{name}}`）。
+
+**实测结论（2026-09-17，`scripts/i18n_ref.py --stats`）**：本库 381 条 key 与 qwen 的 1632 条 key **只有 4 条重合**（1 条译文相同、3 条不同）。原因是两个产品的文案本来就不同。
+
+因此 qwen 的用法是：
+
+| 用途 | 说明 |
+| --- | --- |
+| **术语与语气参考** | 拿不准某个词怎么译时，先看 qwen 用哪个词（本文件的术语表就是这么做出来的） |
+| **规范参考** | `mustTranslateKeys.ts`（高可见度 key 强制清单）、`check-i18n.ts`（缺失/失效/覆盖率/一致性检查）、`strictParity`（渐进式对齐）——对应我们已经实现的 `codex-i18n-check` 与后续可加的强制清单 |
+| **不是** | ❌ 翻译记忆：不能指望从 qwen 直接抄到 codex 的译文（重合率 1%） |
+
+⚠ 我们与 qwen 的**占位符约定不同**：我们用位置占位 `{0}`/`{1}`（`tr_with`），qwen 用 `{{name}}`。抄词可以，抄整句必须换占位符。
+
+## 二、术语表（agent 写新条目时以此为准）
+
+| 英文 | 本库采用 | qwen 用法 | 说明 |
+| --- | --- | --- | --- |
+| marketplace | **市场源** | 市场源 | 2026-09-17 对齐：一个插件来源（git 仓库 / 本地路径），译「市场源」比「市场」更准确 |
+| worktree | 工作树 | — | Git 术语；`managed worktree` 统一作「受管工作树」 |
+| thread | 线程 | 会话/线程 | 与 `session`（会话）区分：thread＝线程，session＝会话 |
+| agent / subagent | 代理 / 子代理 | — | |
+| turn | 回合 | — | |
+| tool call | 工具调用 | — | |
+| permission profile | 权限配置 | — | 「profile」在此语境不是「配置文件」；`profile`（配置档）另见 `--profile` |
+| sandbox mode | 沙箱模式 | — | `Full Access mode`/`Agent mode`/`Read-Only mode` 作「完全访问模式 / 代理模式 / 只读模式」 |
+| Plan mode | 计划模式 | — | 模式名，统一 |
+| reasoning effort | 推理强度 | — | |
+| context window | 上下文窗口 | — | |
+| MCP / IDE / Git / token / URL | **不译** | 同 | 产品名与协议名保持原文 |
+
+**不译清单**：产品名（Codex、OpenAI、Fast、Plan…除模式名外）、命令与键位（`/goal`、`/keymap`、`ctrl + c`、`Enter`）、配置键（`config.toml`、`features.multi_agent_v2.…`）、内部 id、以及**喂给模型的提示词资产**（设计 §4 决策 3）。
+
+## 三、排版与占位符约定
+
+1. **省略号用 `…`**（单个字符），不用 `...`——qwen 用三个点，我们统一用 `…`（已在 4 处出现差异中确认是我们的选择）。
+2. **中文标点**用全角（，。：？！），**括号**用全角（）；引号内的英文/代码保持半角。
+3. **首尾空格是 key 的一部分**：形如 `" for agents"`（跟在键位后面渲染）的 key 必须带前导空格；译文一般**不加**前导空格（中文无需分隔）。
+4. **占位符必须与英文一一对应**（`{0}`/`{1}`），由 `interpolate_tests::interpolated_translations_keep_their_placeholders` 遍历字典强制。
+5. **句末标点跟随原文**：原文有句号就加。，没有就不加（例如提示片段 `" to interrupt"` 译「 中断」）。
+6. **中英混排不加空格**：如「启用{0}并记住此选择」，不写成「启用 {0} 并记住此选择」——与 qwen 一致。
+   **已由工具强制**：`codex-rs/i18n-check` 的 `[spacing]` 检查会列出所有在 **CJK↔拉丁/数字内部边界**带空格的译文，并计入退出码（因此 `just i18n-check` 会直接失败）。**首尾空格不算违例**——它是布局的一部分（`" to move"` 追加在键位之后，译「 移动」保留前导空格）。2026-09-17 清洗：1027 条中 142 条违例已全部修正，当前为 0。
+
+## 四、复核清单（新增/修改条目时）
+
+- [ ] key 与源码字面量**逐字符一致**（含前导空格、标点）——否则永远查不到
+- [ ] 术语落在第二节表内；表里没有的，先加表再写译文
+- [ ] 占位符集合与英文相同（`cargo test -p codex-i18n` 会卡）
+- [ ] 中英混排**无内部空格**（`[spacing]` 会卡；首尾空格按布局需要保留）
+- [ ] 不在「不译清单」里
+- [ ] `just i18n-check` 仍然 `EXIT=0`

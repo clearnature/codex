@@ -3,6 +3,9 @@
 use super::*;
 use crate::bottom_pane::BottomPaneView;
 use crate::clipboard_copy::CopyFormat;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     pub(crate) fn set_agents_navigation_enabled(&mut self, enabled: bool) {
@@ -131,8 +134,6 @@ impl ChatWidget {
             return;
         }
 
-        const REVIEW_STEER_UNAVAILABLE_MESSAGE: &str = "Steer messages aren't supported during /review. Press Ctrl+C now to cancel the review.";
-
         if self.chat_keymap.interrupt_turn.is_pressed(key_event)
             && self.review.is_review_mode
             && (!self.input_queue.pending_steers.is_empty()
@@ -141,7 +142,10 @@ impl ChatWidget {
             && self.bottom_pane.no_modal_or_popup_active()
             && !self.should_handle_vim_insert_escape(key_event)
         {
-            self.add_warning_message(REVIEW_STEER_UNAVAILABLE_MESSAGE.to_string());
+            self.add_warning_message(
+                tr(current(), "Steer messages aren't supported during /review. Press Ctrl+C now to cancel the review.")
+                    .to_string(),
+            );
             return;
         }
 
@@ -281,7 +285,7 @@ impl ChatWidget {
             return true;
         }
 
-        let message = "Ctrl+L is disabled while a task is in progress.".to_string();
+        let message = tr(current(), "Ctrl+L is disabled while a task is in progress.").to_string();
         self.add_to_history(history_cell::new_error_event(message));
         self.request_redraw();
         false
@@ -304,16 +308,18 @@ impl ChatWidget {
                 Ok(lease) => {
                     self.clipboard_lease = lease;
                     self.add_to_history(history_cell::new_info_event(
-                        "Copied last message to clipboard".into(),
+                        tr(current(), "Copied last message to clipboard").into(),
                         /*hint*/ None,
                     ));
                 }
-                Err(error) => self.add_to_history(history_cell::new_error_event(format!(
-                    "Copy failed: {error}"
+                Err(error) => self.add_to_history(history_cell::new_error_event(tr_with(
+                    current(),
+                    "Copy failed: {0}",
+                    &[&error.to_string()],
                 ))),
             },
             _ => self.add_to_history(history_cell::new_error_event(
-                "No agent response to copy".into(),
+                tr(current(), "No agent response to copy").into(),
             )),
         }
         self.request_redraw();
@@ -323,7 +329,7 @@ impl ChatWidget {
         let mut choices = Vec::new();
         if let Some(status_targets) = &self.transcript.last_status_copy_targets {
             choices.push((
-                "Whole status".to_string(),
+                tr(current(), "Whole status").to_string(),
                 Arc::<str>::from(status_targets.handle.copy_text()),
                 CopyFormat::PlainText,
             ));
@@ -341,7 +347,7 @@ impl ChatWidget {
             .filter(|markdown| !markdown.is_empty())
         {
             choices.push((
-                "Whole response".to_string(),
+                tr(current(), "Whole response").to_string(),
                 Arc::<str>::from(markdown),
                 CopyFormat::Markdown,
             ));
@@ -356,7 +362,7 @@ impl ChatWidget {
                     .filter_map(|target| match target {
                         crate::markdown::CopyTarget::Code { language, content } => Some((
                             language.map_or_else(
-                                || "Code block".to_string(),
+                                || tr(current(), "Code block").to_string(),
                                 |language| format!("{language} code"),
                             ),
                             content,
@@ -371,7 +377,7 @@ impl ChatWidget {
                                 .collect();
                             (!content.trim().is_empty()).then(|| {
                                 (
-                                    "Blockquote".to_string(),
+                                    tr(current(), "Blockquote").to_string(),
                                     Arc::from(content),
                                     CopyFormat::PlainText,
                                 )
@@ -409,7 +415,7 @@ impl ChatWidget {
             .collect();
 
         self.show_selection_view(SelectionViewParams {
-            title: Some("Copy to clipboard".to_string()),
+            title: Some(tr(current(), "Copy to clipboard").to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items,
             ..Default::default()
@@ -432,9 +438,16 @@ impl ChatWidget {
         match copy_fn(text) {
             Ok(lease) => {
                 self.clipboard_lease = lease;
-                self.add_info_message(format!("Copied {label} to clipboard"), /*hint*/ None);
+                self.add_info_message(
+                    tr_with(current(), "Copied {0} to clipboard", &[&label]),
+                    /*hint*/ None,
+                );
             }
-            Err(error) => self.add_error_message(format!("Copy failed: {error}")),
+            Err(error) => self.add_error_message(tr_with(
+                current(),
+                "Copy failed: {0}",
+                &[&error.to_string()],
+            )),
         }
         self.request_redraw();
     }
@@ -460,13 +473,15 @@ impl ChatWidget {
             .map(|thread_id| (thread_id, uuid::Uuid::new_v4()));
         let mut view = CustomPromptView::new(
             title.to_string(),
-            "Type a name and press Enter".to_string(),
+            tr(current(), "Type a name and press Enter").to_string(),
             /*initial_text*/ existing_name.unwrap_or_default().to_string(),
             /*context_label*/ None,
             Box::new(move |name: String| {
                 let Some(name) = normalize_thread_name(&name) else {
                     tx.send(AppEvent::InsertHistoryCell(Box::new(
-                        history_cell::new_error_event("Thread name cannot be empty.".to_string()),
+                        history_cell::new_error_event(
+                            tr(current(), "Thread name cannot be empty.").to_string(),
+                        ),
                     )));
                     return;
                 };
@@ -476,8 +491,8 @@ impl ChatWidget {
         if let Some((_, request_id)) = suggestion_request {
             view = view.with_text_suggestion(
                 request_id,
-                "Generating a title suggestion…".to_string(),
-                "Suggested from this conversation".to_string(),
+                tr(current(), "Generating a title suggestion…").to_string(),
+                tr(current(), "Suggested from this conversation").to_string(),
             );
         }
         self.bottom_pane.show_text_prompt(view);

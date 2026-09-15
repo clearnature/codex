@@ -24,6 +24,9 @@ mod picker;
 
 pub(crate) use actions::KeymapActionFilter;
 use capture::KeymapCaptureView;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 pub(crate) use debug::build_keymap_debug_view;
 pub(crate) use picker::KEYMAP_PICKER_VIEW_ID;
 #[cfg(test)]
@@ -57,10 +60,10 @@ use crate::keymap::RuntimeKeymap;
 use crate::keymap::bindings_for_action;
 use crate::keymap::keymap_action_id;
 use crate::render::renderable::ColumnRenderable;
-use actions::KEYMAP_ACTIONS;
 use actions::action_label;
 use actions::binding_slot;
 use actions::format_action_binding_summary;
+use actions::keymap_actions;
 #[cfg(test)]
 use debug::KeymapDebugView;
 
@@ -91,7 +94,7 @@ fn key_binding_span(binding: &str) -> ratatui::text::Span<'static> {
 fn keymap_action_menu_hint_line() -> Line<'static> {
     Line::from(vec![
         "enter".cyan(),
-        " select · ".dim(),
+        tr(current(), " select · ").dim(),
         "esc".cyan(),
         " back".dim(),
     ])
@@ -156,7 +159,7 @@ pub(crate) fn build_keymap_action_menu_params(
     };
     let active_binding_count = current_bindings.len();
     let custom_binding = has_custom_binding(keymap_config, &context, &action).unwrap_or(false);
-    let descriptor = KEYMAP_ACTIONS
+    let descriptor = keymap_actions()
         .iter()
         .find(|descriptor| descriptor.context == context && descriptor.action == action);
     let context_label = descriptor
@@ -173,19 +176,19 @@ pub(crate) fn build_keymap_action_menu_params(
     let remove_action = action.clone();
     let config_path = format!("tui.keymap.{context}.{action}");
     let source = if custom_binding {
-        "Custom root override".cyan()
+        tr(current(), "Custom root override").cyan()
     } else {
-        "Default keymap".dim()
+        tr(current(), "Default keymap").dim()
     };
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Edit Shortcut".bold()));
+    header.push(Line::from(tr(current(), "Edit Shortcut").bold()));
     header.push(Line::from(vec![
         label.bold(),
         " · ".dim(),
         context_label.dim(),
     ]));
     header.push(Line::from(vec![
-        "Current ".dim(),
+        tr(current(), "Current ").dim(),
         key_binding_span(&current_binding),
         " · ".dim(),
         source,
@@ -201,7 +204,7 @@ pub(crate) fn build_keymap_action_menu_params(
         0 => {
             items.push(action_menu_item(
                 "Set key",
-                "Capture a key for this unbound action.".to_string(),
+                tr(current(), "Capture a key for this unbound action.").to_string(),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
@@ -210,16 +213,24 @@ pub(crate) fn build_keymap_action_menu_params(
         }
         1 => {
             items.push(action_menu_item(
-                "Replace binding",
-                format!("Capture a replacement key for `{current_binding}`."),
+                tr(current(), "Replace binding"),
+                tr_with(
+                    current(),
+                    "Capture a replacement key for `{0}`.",
+                    &[&current_binding],
+                ),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
                 KeymapCaptureMode::SingleKey,
             ));
             items.push(action_menu_item(
-                "Add alternate binding",
-                format!("Keep `{current_binding}` and add another key."),
+                tr(current(), "Add alternate binding"),
+                tr_with(
+                    current(),
+                    "Keep `{0}` and add another key.",
+                    &[&current_binding],
+                ),
                 &context,
                 &action,
                 KeymapEditIntent::AddAlternate,
@@ -230,8 +241,10 @@ pub(crate) fn build_keymap_action_menu_params(
             let replace_one_context = context.clone();
             let replace_one_action = action.clone();
             items.push(SelectionItem {
-                name: "Replace one binding...".to_string(),
-                description: Some("Choose which existing binding to replace.".to_string()),
+                name: tr(current(), "Replace one binding...").to_string(),
+                description: Some(
+                    tr(current(), "Choose which existing binding to replace.").to_string(),
+                ),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenKeymapReplaceBindingMenu {
                         context: replace_one_context.clone(),
@@ -241,16 +254,24 @@ pub(crate) fn build_keymap_action_menu_params(
                 ..Default::default()
             });
             items.push(action_menu_item(
-                "Replace all bindings",
-                format!("Replace `{current_binding}` with one key."),
+                tr(current(), "Replace all bindings"),
+                tr_with(
+                    current(),
+                    "Replace `{0}` with one key.",
+                    &[&current_binding],
+                ),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
                 KeymapCaptureMode::SingleKey,
             ));
             items.push(action_menu_item(
-                "Add alternate binding",
-                format!("Keep `{current_binding}` and add another key."),
+                tr(current(), "Add alternate binding"),
+                tr_with(
+                    current(),
+                    "Keep `{0}` and add another key.",
+                    &[&current_binding],
+                ),
                 &context,
                 &action,
                 KeymapEditIntent::AddAlternate,
@@ -260,7 +281,7 @@ pub(crate) fn build_keymap_action_menu_params(
     }
     if active_binding_count == 0 {
         items.push(action_menu_item(
-            "Set key chord",
+            tr(current(), "Set key chord"),
             "Capture two consecutive keys for this action.".to_string(),
             &context,
             &action,
@@ -269,16 +290,24 @@ pub(crate) fn build_keymap_action_menu_params(
         ));
     } else {
         items.push(action_menu_item(
-            "Replace with key chord",
-            format!("Replace `{current_binding}` with a two-stroke key chord."),
+            tr(current(), "Replace with key chord"),
+            tr_with(
+                current(),
+                "Replace `{0}` with a two-stroke key chord.",
+                &[&current_binding],
+            ),
             &context,
             &action,
             KeymapEditIntent::ReplaceAll,
             KeymapCaptureMode::Chord,
         ));
         items.push(action_menu_item(
-            "Add alternate key chord",
-            format!("Keep `{current_binding}` and add a two-stroke key chord."),
+            tr(current(), "Add alternate key chord"),
+            tr_with(
+                current(),
+                "Keep `{0}` and add a two-stroke key chord.",
+                &[&current_binding],
+            ),
             &context,
             &action,
             KeymapEditIntent::AddAlternate,
@@ -286,8 +315,9 @@ pub(crate) fn build_keymap_action_menu_params(
         ));
     }
     items.push(SelectionItem {
-        name: "Remove custom binding".to_string(),
-        description: custom_binding.then(|| "Restore the default keymap binding.".to_string()),
+        name: tr(current(), "Remove custom binding").to_string(),
+        description: custom_binding
+            .then(|| tr(current(), "Restore the default keymap binding.").to_string()),
         disabled_reason: remove_disabled_reason,
         disabled_gutter_marker: Some("–"),
         actions: vec![Box::new(move |tx| {
@@ -299,8 +329,8 @@ pub(crate) fn build_keymap_action_menu_params(
         ..Default::default()
     });
     items.push(SelectionItem {
-        name: "Back to shortcuts".to_string(),
-        description: Some("Return to the shortcut list.".to_string()),
+        name: tr(current(), "Back to shortcuts").to_string(),
+        description: Some(tr(current(), "Return to the shortcut list.").to_string()),
         dismiss_on_select: true,
         ..Default::default()
     });
@@ -311,7 +341,7 @@ pub(crate) fn build_keymap_action_menu_params(
         footer_note: Some(Line::from(vec![
             "Changes write the root ".dim(),
             "`tui.keymap.*`".cyan(),
-            " override.".dim(),
+            tr(current(), " override.").dim(),
         ])),
         footer_hint: Some(keymap_action_menu_hint_line()),
         items,
@@ -337,7 +367,9 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
         " · ".dim(),
         format!("{context}.{action}").dim(),
     ]));
-    header.push(Line::from("Choose the binding to replace.".dim()));
+    header.push(Line::from(
+        tr(current(), "Choose the binding to replace.").dim(),
+    ));
 
     let items = bindings
         .into_iter()
@@ -345,7 +377,11 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
             [
                 SelectionItem {
                     name: binding.clone(),
-                    description: Some(format!("Replace `{binding}` with another key.")),
+                    description: Some(tr_with(
+                        current(),
+                        "Replace `{0}` with another key.",
+                        &[&binding],
+                    )),
                     actions: vec![open_capture_action(
                         context.clone(),
                         action.clone(),
@@ -358,8 +394,12 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: format!("{binding} (key chord)"),
-                    description: Some(format!("Replace `{binding}` with a two-stroke key chord.")),
+                    name: tr_with(current(), "{0} (key chord)", &[&binding]),
+                    description: Some(tr_with(
+                        current(),
+                        "Replace `{0}` with a two-stroke key chord.",
+                        &[&binding],
+                    )),
                     actions: vec![open_capture_action(
                         context.clone(),
                         action.clone(),
@@ -396,21 +436,27 @@ pub(crate) fn build_keymap_conflict_params(
         KeymapCaptureMode::SingleKey
     };
     SelectionViewParams {
-        title: Some("Shortcut Conflict".to_string()),
-        subtitle: Some(format!("{context}.{action} cannot use `{key}`.")),
+        title: Some(tr(current(), "Shortcut Conflict").to_string()),
+        subtitle: Some(tr_with(
+            current(),
+            "{0}.{1} cannot use `{2}`.",
+            &[&context, &action, &key],
+        )),
         footer_note: Some(Line::from(error)),
         footer_hint: Some(standard_popup_hint_line()),
         items: vec![
             SelectionItem {
-                name: "Pick another key".to_string(),
-                description: Some("Return to key capture for this action.".to_string()),
+                name: tr(current(), "Pick another key").to_string(),
+                description: Some(
+                    tr(current(), "Return to key capture for this action.").to_string(),
+                ),
                 actions: vec![open_capture_action(context, action, intent, capture_mode)],
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
                 name: "Cancel".to_string(),
-                description: Some("Leave keymap unchanged.".to_string()),
+                description: Some(tr(current(), "Leave keymap unchanged.").to_string()),
                 dismiss_on_select: true,
                 ..Default::default()
             },
@@ -479,7 +525,11 @@ pub(crate) fn keymap_with_edit(
         KeymapEditIntent::AddAlternate => {
             if current_bindings.iter().any(|binding| binding == key) {
                 return Ok(KeymapEditOutcome::Unchanged {
-                    message: format!("No change: `{context}.{action}` already uses `{key}`."),
+                    message: tr_with(
+                        current(),
+                        "No change: `{0}.{1}` already uses `{2}`.",
+                        &[&context, &action, &key],
+                    ),
                 });
             }
             let mut bindings = current_bindings.clone();
@@ -488,8 +538,10 @@ pub(crate) fn keymap_with_edit(
         }
         KeymapEditIntent::ReplaceOne { old_key } => {
             if !current_bindings.iter().any(|binding| binding == old_key) {
-                return Err(format!(
-                    "`{context}.{action}` no longer uses `{old_key}`. Reopen /keymap and choose a binding again."
+                return Err(tr_with(
+                    current(),
+                    "`{0}.{1}` no longer uses `{2}`. Reopen /keymap and choose a binding again.",
+                    &[&context, &action, &old_key],
                 ));
             }
             let bindings = current_bindings
@@ -508,16 +560,30 @@ pub(crate) fn keymap_with_edit(
 
     if next_bindings == current_bindings {
         return Ok(KeymapEditOutcome::Unchanged {
-            message: format!("No change: `{context}.{action}` already uses `{key}`."),
+            message: tr_with(
+                current(),
+                "No change: `{0}.{1}` already uses `{2}`.",
+                &[&context, &action, &key],
+            ),
         });
     }
 
     let message = match intent {
-        KeymapEditIntent::ReplaceAll => format!("Remapped `{context}.{action}` to `{key}`."),
-        KeymapEditIntent::AddAlternate => format!("Added `{key}` to `{context}.{action}`."),
-        KeymapEditIntent::ReplaceOne { old_key } => {
-            format!("Replaced `{old_key}` with `{key}` for `{context}.{action}`.")
-        }
+        KeymapEditIntent::ReplaceAll => tr_with(
+            current(),
+            "Remapped `{0}.{1}` to `{2}`.",
+            &[&context, &action, &key],
+        ),
+        KeymapEditIntent::AddAlternate => tr_with(
+            current(),
+            "Added `{0}` to `{1}.{2}`.",
+            &[&key, &context, &action],
+        ),
+        KeymapEditIntent::ReplaceOne { old_key } => tr_with(
+            current(),
+            "Replaced `{0}` with `{1}` for `{2}.{3}`.",
+            &[&old_key, &key, &context, &action],
+        ),
     };
 
     Ok(KeymapEditOutcome::Updated {
@@ -540,7 +606,11 @@ fn keymap_with_bindings(
 ) -> Result<TuiKeymap, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        tr_with(
+            current(),
+            "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
+            &[&context, &action],
+        )
     })?;
     *slot = Some(match keys {
         [key] => KeybindingsSpec::One(KeybindingSpec(key.clone())),
@@ -572,7 +642,11 @@ pub(crate) fn active_binding_specs(
     }
 
     let bindings = bindings_for_action(runtime_keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        tr_with(
+            current(),
+            "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
+            &[&context, &action],
+        )
     })?;
     if let Some(action_id) = action_id
         && let Some(crate::key_hint::ShortcutHint::Chord { prefix, completion }) =
@@ -611,7 +685,11 @@ pub(crate) fn keymap_without_custom_binding(
 ) -> Result<TuiKeymap, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        tr_with(
+            current(),
+            "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
+            &[&context, &action],
+        )
     })?;
     *slot = None;
     Ok(keymap)
@@ -620,7 +698,11 @@ pub(crate) fn keymap_without_custom_binding(
 fn has_custom_binding(keymap: &TuiKeymap, context: &str, action: &str) -> Result<bool, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        tr_with(
+            current(),
+            "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
+            &[&context, &action],
+        )
     })?;
     Ok(slot.is_some())
 }
@@ -643,9 +725,11 @@ fn key_parts_to_config_key_spec(
 
     let supported_modifiers = KeyModifiers::CONTROL | KeyModifiers::ALT | KeyModifiers::SHIFT;
     if !modifiers.difference(supported_modifiers).is_empty() {
-        return Err(
-            "Only ctrl, alt, and shift modifiers can be stored in `tui.keymap`.".to_string(),
-        );
+        return Err(tr(
+            current(),
+            "Only ctrl, alt, and shift modifiers can be stored in `tui.keymap`.",
+        )
+        .to_string());
     }
 
     let key = match code {
@@ -664,8 +748,10 @@ fn key_parts_to_config_key_spec(
         KeyCode::PageDown => "page-down".to_string(),
         KeyCode::F(number) if (1..=MAX_FUNCTION_KEY).contains(&number) => format!("f{number}"),
         KeyCode::F(_) => {
-            return Err(format!(
-                "Only function keys F1 through F{MAX_FUNCTION_KEY} can be stored in `tui.keymap`."
+            return Err(tr_with(
+                current(),
+                "Only function keys F1 through F{0} can be stored in `tui.keymap`.",
+                &[&MAX_FUNCTION_KEY.to_string()],
             ));
         }
         KeyCode::Char(' ') => "space".to_string(),
@@ -674,7 +760,11 @@ fn key_parts_to_config_key_spec(
                 return Ok(format_key_spec(modifiers, "minus"));
             }
             if !ch.is_ascii() || ch.is_ascii_control() {
-                return Err("Only printable ASCII keys can be stored in `tui.keymap`.".to_string());
+                return Err(tr(
+                    current(),
+                    "Only printable ASCII keys can be stored in `tui.keymap`.",
+                )
+                .to_string());
             }
             if ch.is_ascii_uppercase() {
                 modifiers.insert(KeyModifiers::SHIFT);
@@ -683,7 +773,7 @@ fn key_parts_to_config_key_spec(
             ch.to_string()
         }
         _ => {
-            return Err("That key is not supported by `tui.keymap`.".to_string());
+            return Err(tr(current(), "That key is not supported by `tui.keymap`.").to_string());
         }
     };
 
@@ -845,12 +935,12 @@ mod tests {
         let all_tab = selection_tab(&params, KEYMAP_ALL_TAB_ID);
 
         assert!(params.items.is_empty());
-        assert_eq!(all_tab.items.len(), KEYMAP_ACTIONS.len());
+        assert_eq!(all_tab.items.len(), keymap_actions().len());
         assert!(
             all_tab.items.iter().all(|item| !item.dismiss_on_select),
             "keymap picker should stay open behind the action menu"
         );
-        assert!(KEYMAP_ACTIONS.iter().all(|descriptor| {
+        assert!(keymap_actions().iter().all(|descriptor| {
             binding_slot(
                 &mut TuiKeymap::default(),
                 descriptor.context,
@@ -858,7 +948,7 @@ mod tests {
             )
             .is_some()
         }));
-        assert!(KEYMAP_ACTIONS.iter().all(|descriptor| {
+        assert!(keymap_actions().iter().all(|descriptor| {
             bindings_for_action(&runtime, descriptor.context, descriptor.action).is_some()
         }));
     }
@@ -1399,10 +1489,10 @@ mod tests {
         );
 
         assert_eq!(params.view_id, Some(KEYMAP_ACTION_MENU_VIEW_ID));
-        let replace = selection_item(&params, "Replace binding");
-        let add_alternate = selection_item(&params, "Add alternate binding");
-        let remove = selection_item(&params, "Remove custom binding");
-        let back = selection_item(&params, "Back to shortcuts");
+        let replace = selection_item(&params, tr(current(), "Replace binding"));
+        let add_alternate = selection_item(&params, tr(current(), "Add alternate binding"));
+        let remove = selection_item(&params, tr(current(), "Remove custom binding"));
+        let back = selection_item(&params, tr(current(), "Back to shortcuts"));
         assert_eq!(
             remove.disabled_reason.as_deref(),
             Some("No custom root override to remove.")
@@ -1599,7 +1689,7 @@ mod tests {
         let remove_idx = action_menu
             .items
             .iter()
-            .position(|item| item.name == "Remove custom binding")
+            .position(|item| item.name == tr(current(), "Remove custom binding"))
             .expect("remove custom binding menu item");
         pane.show_selection_view(action_menu);
 

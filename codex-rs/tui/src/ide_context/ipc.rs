@@ -11,6 +11,10 @@ use serde_json::Value;
 use serde_json::json;
 use thiserror::Error;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
+
 use super::IdeContext;
 
 // The desktop IPC client gives requests 5 seconds to complete. Match that prompt-time budget here:
@@ -21,13 +25,23 @@ const IDE_CONTEXT_REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 const MAX_IPC_FRAME_BYTES: usize = 256 * 1024 * 1024;
 #[cfg(any(unix, windows))]
 const TUI_SOURCE_CLIENT_ID: &str = "codex-tui";
+// These are functions rather than `const`s, per §3.6 of `docs/plan/i18n-design.md`:
+// the text has to pass through `tr`, which a `const` cannot call.
 #[cfg(any(unix, windows))]
-const OPEN_IDE_HINT: &str =
-    "Open this project in VS Code or Cursor with the Codex extension active.";
+fn open_ide_hint() -> &'static str {
+    tr(
+        current(),
+        "Open this project in VS Code or Cursor with the Codex extension active.",
+    )
+}
 #[cfg(any(unix, windows))]
-const IDE_DID_NOT_PROVIDE_CONTEXT_HINT: &str = "The IDE extension did not provide context.";
+fn ide_did_not_provide_context_hint() -> &'static str {
+    tr(current(), "The IDE extension did not provide context.")
+}
 #[cfg(any(unix, windows))]
-const KEEP_TRYING_HINT: &str = "Codex will keep trying on future messages.";
+fn keep_trying_hint() -> &'static str {
+    tr(current(), "Codex will keep trying on future messages.")
+}
 
 #[derive(Debug, Error)]
 pub(crate) enum IdeContextError {
@@ -58,21 +72,28 @@ impl IdeContextError {
     #[cfg(any(unix, windows))]
     pub(crate) fn user_facing_hint(&self) -> String {
         match self {
-            IdeContextError::Connect(_) => OPEN_IDE_HINT.to_string(),
+            IdeContextError::Connect(_) => open_ide_hint().to_string(),
             IdeContextError::RequestFailed(error) if error == "no-client-found" => {
-                OPEN_IDE_HINT.to_string()
+                open_ide_hint().to_string()
             }
-            IdeContextError::RequestFailed(_) => {
-                format!("{IDE_DID_NOT_PROVIDE_CONTEXT_HINT} Try /ide again.")
-            }
+            IdeContextError::RequestFailed(_) => tr_with(
+                current(),
+                "{0} Try /ide again.",
+                &[ide_did_not_provide_context_hint()],
+            )
+            .to_string(),
             IdeContextError::ResponseTooLarge => {
-                "The selected IDE context is too large. Clear any large selection in your IDE and try /ide again.".to_string()
+                tr(
+                    current(),
+                    "The selected IDE context is too large. Clear any large selection in your IDE and try /ide again.",
+                )
+                .to_string()
             }
             IdeContextError::Send(_) => {
-                "Codex could not request IDE context. Try /ide again.".to_string()
+                tr(current(), "Codex could not request IDE context. Try /ide again.").to_string()
             }
             IdeContextError::Read(_) | IdeContextError::InvalidResponse(_) => {
-                "Codex could not read IDE context. Try /ide again.".to_string()
+                tr(current(), "Codex could not read IDE context. Try /ide again.").to_string()
             }
         }
     }
@@ -80,39 +101,53 @@ impl IdeContextError {
     #[cfg(any(unix, windows))]
     pub(crate) fn prompt_skip_hint(&self) -> String {
         match self {
-            IdeContextError::ResponseTooLarge => {
-                "The selected IDE context is too large. Clear any large selection in your IDE."
-                    .to_string()
-            }
-            IdeContextError::Connect(_) => OPEN_IDE_HINT.to_string(),
+            IdeContextError::ResponseTooLarge => tr(
+                current(),
+                "The selected IDE context is too large. Clear any large selection in your IDE.",
+            )
+            .to_string(),
+            IdeContextError::Connect(_) => open_ide_hint().to_string(),
             IdeContextError::RequestFailed(error) if error == "no-client-found" => {
-                OPEN_IDE_HINT.to_string()
+                open_ide_hint().to_string()
             }
-            IdeContextError::Read(error) if error.kind() == std::io::ErrorKind::TimedOut => {
-                "Codex timed out waiting for IDE context. It will keep trying on future messages."
-                    .to_string()
-            }
+            IdeContextError::Read(error) if error.kind() == std::io::ErrorKind::TimedOut => tr(
+                current(),
+                "Codex timed out waiting for IDE context. It will keep trying on future messages.",
+            )
+            .to_string(),
             IdeContextError::RequestFailed(error) if error == "client-disconnected" => {
-                hint_with_retry("The IDE connection changed while Codex was requesting context.")
+                hint_with_retry(tr(
+                    current(),
+                    "The IDE connection changed while Codex was requesting context.",
+                ))
             }
             IdeContextError::RequestFailed(error) if error == "request-timeout" => {
-                hint_with_retry("The IDE extension did not answer in time.")
+                hint_with_retry(tr(current(), "The IDE extension did not answer in time."))
             }
-            IdeContextError::RequestFailed(error) if error == "request-version-mismatch" => {
-                "The connected IDE extension is not compatible with this IDE context request."
-                    .to_string()
+            IdeContextError::RequestFailed(error) if error == "request-version-mismatch" => tr(
+                current(),
+                "The connected IDE extension is not compatible with this IDE context request.",
+            )
+            .to_string(),
+            IdeContextError::RequestFailed(error) if error == "no-handler-for-request" => tr(
+                current(),
+                "The connected IDE client does not support IDE context requests.",
+            )
+            .to_string(),
+            IdeContextError::Send(_) => hint_with_retry(tr(
+                current(),
+                "Codex lost the IDE connection while requesting context.",
+            )),
+            IdeContextError::InvalidResponse(_) => hint_with_retry(tr(
+                current(),
+                "Codex received an unexpected IDE context response.",
+            )),
+            IdeContextError::RequestFailed(_) => {
+                hint_with_retry(ide_did_not_provide_context_hint())
             }
-            IdeContextError::RequestFailed(error) if error == "no-handler-for-request" => {
-                "The connected IDE client does not support IDE context requests.".to_string()
+            IdeContextError::Read(_) => {
+                hint_with_retry(tr(current(), "Codex could not read IDE context."))
             }
-            IdeContextError::Send(_) => {
-                hint_with_retry("Codex lost the IDE connection while requesting context.")
-            }
-            IdeContextError::InvalidResponse(_) => {
-                hint_with_retry("Codex received an unexpected IDE context response.")
-            }
-            IdeContextError::RequestFailed(_) => hint_with_retry(IDE_DID_NOT_PROVIDE_CONTEXT_HINT),
-            IdeContextError::Read(_) => hint_with_retry("Codex could not read IDE context."),
         }
     }
 
@@ -129,7 +164,7 @@ impl IdeContextError {
 
 #[cfg(any(unix, windows))]
 fn hint_with_retry(message: &str) -> String {
-    format!("{message} {KEEP_TRYING_HINT}")
+    format!("{} {}", message, keep_trying_hint())
 }
 
 #[cfg(unix)]

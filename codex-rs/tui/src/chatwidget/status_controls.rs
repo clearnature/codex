@@ -24,8 +24,8 @@ impl ChatWidget {
             && self.status_state.retry_status_header.is_none()
         {
             (
-                compaction::COMPACTION_HEADER.to_string(),
-                Some(compaction::COMPACTION_DETAILS.to_string()),
+                compaction::compaction_header().to_string(),
+                Some(compaction::compaction_details().to_string()),
                 STATUS_DETAILS_DEFAULT_MAX_LINES,
             )
         } else {

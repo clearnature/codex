@@ -155,6 +155,19 @@ pub struct OrchestratorFeatureToml {
 pub struct ConfigToml {
     /// Optional override of model selection.
     pub model: Option<String>,
+
+    /// Language for user-facing text, for example `zh-CN` or `en`.
+    ///
+    /// Second-highest precedence in the locale chain implemented by
+    /// `codex-i18n`: it outranks `LC_ALL` / `LANG` and the operating system's
+    /// locale, and is outranked by `--lang`. A value that names no language
+    /// Codex has translations for resolves to English rather than failing.
+    ///
+    /// This is the canonical name, decided 2026-09-17. The closed-source Codex
+    /// desktop spells its own knob `localeOverride`; we do not mirror that,
+    /// because our desktop support is our own and will use this name too.
+    pub locale: Option<String>,
+
     /// Review model override used by the `/review` feature.
     pub review_model: Option<String>,
 
@@ -988,6 +1001,25 @@ mod tests {
 
     const WORKSPACE_ID_A: &str = "123e4567-e89b-42d3-a456-426614174000";
     const WORKSPACE_ID_B: &str = "123e4567-e89b-42d3-a456-426614174001";
+
+    #[test]
+    fn locale_is_read_from_config() {
+        let parsed =
+            toml::from_str::<ConfigToml>(r#"locale = "zh-CN""#).expect("locale must parse");
+        assert_eq!(parsed.locale.as_deref(), Some("zh-CN"));
+
+        // The desktop's `localeOverride` spelling is deliberately *not* an alias
+        // (see the field doc): it must not set the locale. `ConfigToml` tolerates
+        // unknown keys, so the observable contract is "the value is not read",
+        // not "parsing fails".
+        let alias = toml::from_str::<ConfigToml>(r#"localeOverride = "zh-CN""#)
+            .expect("unknown keys are tolerated");
+        assert_eq!(alias.locale, None, "localeOverride must not set locale");
+
+        // Absent means "no preference expressed here", not "English".
+        let absent = toml::from_str::<ConfigToml>("").expect("empty config must parse");
+        assert_eq!(absent.locale, None);
+    }
 
     #[test]
     fn thread_unload_delay_requires_nonnegative_seconds() {

@@ -1,6 +1,8 @@
 //! Approval, denial, and review-status transcript cells.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 fn truncate_exec_snippet(full_cmd: &str) -> String {
     let mut snippet = match full_cmd.split_once('\n') {
@@ -56,17 +58,17 @@ pub fn new_approval_decision_cell(
                 let summary = if let Some(snippet) = non_empty_exec_snippet(&command) {
                     vec![
                         actor.subject().into(),
-                        "approved".bold(),
-                        " codex to run ".into(),
+                        tr(current(), "approved").bold(),
+                        tr(current(), " codex to run ").into(),
                         Span::from(snippet).dim(),
-                        " this time".bold(),
+                        tr(current(), " this time").bold(),
                     ]
                 } else {
                     vec![
                         actor.subject().into(),
-                        "approved".bold(),
-                        " this request".into(),
-                        " this time".bold(),
+                        tr(current(), "approved").bold(),
+                        tr(current(), " this request").into(),
+                        tr(current(), " this time").bold(),
                     ]
                 };
                 ("✔ ".green(), summary)
@@ -75,10 +77,10 @@ pub fn new_approval_decision_cell(
                 "✔ ".green(),
                 vec![
                     actor.subject().into(),
-                    "approved".bold(),
-                    " codex network access to ".into(),
+                    tr(current(), "approved").bold(),
+                    tr(current(), " codex network access to ").into(),
                     Span::from(target).dim(),
-                    " this time".bold(),
+                    tr(current(), " this time").bold(),
                 ],
             ),
         },
@@ -90,7 +92,7 @@ pub fn new_approval_decision_cell(
                 "✔ ".green(),
                 vec![
                     actor.subject().into(),
-                    "approved".bold(),
+                    tr(current(), "approved").bold(),
                     " codex to always run commands that start with ".into(),
                     snippet,
                 ],
@@ -101,17 +103,17 @@ pub fn new_approval_decision_cell(
                 let summary = if let Some(snippet) = non_empty_exec_snippet(&command) {
                     vec![
                         actor.subject().into(),
-                        "approved".bold(),
-                        " codex to run ".into(),
+                        tr(current(), "approved").bold(),
+                        tr(current(), " codex to run ").into(),
                         Span::from(snippet).dim(),
-                        " every time this session".bold(),
+                        tr(current(), " every time this session").bold(),
                     ]
                 } else {
                     vec![
                         actor.subject().into(),
-                        "approved".bold(),
-                        " this request".into(),
-                        " every time this session".bold(),
+                        tr(current(), "approved").bold(),
+                        tr(current(), " this request").into(),
+                        tr(current(), " every time this session").bold(),
                     ]
                 };
                 ("✔ ".green(), summary)
@@ -120,10 +122,10 @@ pub fn new_approval_decision_cell(
                 "✔ ".green(),
                 vec![
                     actor.subject().into(),
-                    "approved".bold(),
-                    " codex network access to ".into(),
+                    tr(current(), "approved").bold(),
+                    tr(current(), " codex network access to ").into(),
                     Span::from(target).dim(),
-                    " every time this session".bold(),
+                    tr(current(), " every time this session").bold(),
                 ],
             ),
         },
@@ -139,8 +141,8 @@ pub fn new_approval_decision_cell(
                     "✔ ".green(),
                     vec![
                         actor.subject().into(),
-                        "persisted".bold(),
-                        " Codex network access to ".into(),
+                        tr(current(), "persisted").bold(),
+                        tr(current(), " Codex network access to ").into(),
                         Span::from(target).dim(),
                     ],
                 ),
@@ -148,10 +150,10 @@ pub fn new_approval_decision_cell(
                     "✗ ".red(),
                     vec![
                         actor.subject().into(),
-                        "denied".bold(),
-                        " codex network access to ".into(),
+                        tr(current(), "denied").bold(),
+                        tr(current(), " codex network access to ").into(),
                         Span::from(target).dim(),
-                        " and saved that rule".into(),
+                        tr(current(), " and saved that rule").into(),
                     ],
                 ),
             }
@@ -163,14 +165,14 @@ pub fn new_approval_decision_cell(
                     match actor {
                         ApprovalDecisionActor::User => vec![
                             actor.subject().into(),
-                            "did not approve".bold(),
-                            " codex to run ".into(),
+                            tr(current(), "did not approve").bold(),
+                            tr(current(), " codex to run ").into(),
                             snippet,
                         ],
                         ApprovalDecisionActor::Guardian => vec![
-                            "Request ".into(),
-                            "denied".bold(),
-                            " for codex to run ".into(),
+                            tr(current(), "Request ").into(),
+                            tr(current(), "denied").bold(),
+                            tr(current(), " for codex to run ").into(),
                             snippet,
                         ],
                     }
@@ -178,11 +180,14 @@ pub fn new_approval_decision_cell(
                     match actor {
                         ApprovalDecisionActor::User => vec![
                             actor.subject().into(),
-                            "did not approve".bold(),
-                            " this request".into(),
+                            tr(current(), "did not approve").bold(),
+                            tr(current(), " this request").into(),
                         ],
                         ApprovalDecisionActor::Guardian => {
-                            vec!["Request ".into(), "denied".bold()]
+                            vec![
+                                tr(current(), "Request ").into(),
+                                tr(current(), "denied").bold(),
+                            ]
                         }
                     }
                 };
@@ -192,8 +197,8 @@ pub fn new_approval_decision_cell(
                 "✗ ".red(),
                 vec![
                     actor.subject().into(),
-                    "did not approve".bold(),
-                    " codex network access to ".into(),
+                    tr(current(), "did not approve").bold(),
+                    tr(current(), " codex network access to ").into(),
                     Span::from(target).dim(),
                 ],
             ),
@@ -202,14 +207,14 @@ pub fn new_approval_decision_cell(
             ApprovalDecisionSubject::Command(command) => {
                 let summary = if let Some(snippet) = non_empty_exec_snippet(&command) {
                     vec![
-                        "Review ".into(),
+                        tr(current(), "Review ").into(),
                         "timed out".bold(),
                         " before codex could run ".into(),
                         Span::from(snippet).dim(),
                     ]
                 } else {
                     vec![
-                        "Review ".into(),
+                        tr(current(), "Review ").into(),
                         "timed out".bold(),
                         " before this request could be approved".into(),
                     ]
@@ -219,7 +224,7 @@ pub fn new_approval_decision_cell(
             ApprovalDecisionSubject::NetworkAccess { target } => (
                 "✗ ".red(),
                 vec![
-                    "Review ".into(),
+                    tr(current(), "Review ").into(),
                     "timed out".bold(),
                     " before codex could access ".into(),
                     Span::from(target).dim(),
@@ -239,7 +244,7 @@ pub fn new_approval_decision_cell(
                     vec![
                         actor.subject().into(),
                         "canceled".bold(),
-                        " this request".into(),
+                        tr(current(), " this request").into(),
                     ]
                 };
                 ("✗ ".red(), summary)
@@ -280,8 +285,8 @@ impl ApprovalDecisionActor {
 
 pub fn new_guardian_denied_patch_request(files: Vec<String>) -> Box<dyn HistoryCell> {
     let mut summary = vec![
-        "Request ".into(),
-        "denied".bold(),
+        tr(current(), "Request ").into(),
+        tr(current(), "denied").bold(),
         " for codex to apply ".into(),
     ];
     if files.len() == 1 {
@@ -302,8 +307,8 @@ pub fn new_guardian_denied_patch_request(files: Vec<String>) -> Box<dyn HistoryC
 
 pub fn new_guardian_denied_action_request(summary: String) -> Box<dyn HistoryCell> {
     let line = Line::from(vec![
-        "Request ".into(),
-        "denied".bold(),
+        tr(current(), "Request ").into(),
+        tr(current(), "denied").bold(),
         " for ".into(),
         Span::from(summary).dim(),
     ]);
@@ -312,7 +317,7 @@ pub fn new_guardian_denied_action_request(summary: String) -> Box<dyn HistoryCel
 
 pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn HistoryCell> {
     let mut summary = vec![
-        "Review ".into(),
+        tr(current(), "Review ").into(),
         "timed out".bold(),
         " before codex could apply ".into(),
     ];
@@ -334,7 +339,7 @@ pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn Histo
 
 pub fn new_guardian_timed_out_action_request(summary: String) -> Box<dyn HistoryCell> {
     let line = Line::from(vec![
-        "Review ".into(),
+        tr(current(), "Review ").into(),
         "timed out".bold(),
         " before ".into(),
         Span::from(summary).dim(),

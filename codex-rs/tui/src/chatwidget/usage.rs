@@ -1,6 +1,9 @@
 use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
 use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
 use codex_app_server_protocol::RateLimitResetCreditsSummary;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -35,25 +38,31 @@ impl ChatWidget {
             match (reset_eligible, self.available_rate_limit_reset_credits) {
                 (true, Some(available_count)) if available_count > 0 => (
                     true,
-                    format!(
-                        "You have {available_count} {} available.",
-                        reset_label(available_count)
+                    tr_with(
+                        current(),
+                        "You have {0} {1} available.",
+                        &[&available_count.to_string(), reset_label(available_count)],
                     ),
                 ),
-                (true, None) => (true, "Check reset availability.".to_string()),
-                (true, Some(_)) | (false, _) => {
-                    (false, "No usage limit resets available.".to_string())
-                }
+                (true, None) => (true, tr(current(), "Check reset availability.").to_string()),
+                (true, Some(_)) | (false, _) => (
+                    false,
+                    tr(current(), "No usage limit resets available.").to_string(),
+                ),
             };
         SelectionViewParams {
             view_id: Some(USAGE_MENU_VIEW_ID),
-            title: Some("Usage".to_string()),
-            subtitle: Some("View account usage or redeem an earned reset.".to_string()),
+            title: Some(tr(current(), "Usage").to_string()),
+            subtitle: Some(
+                tr(current(), "View account usage or redeem an earned reset.").to_string(),
+            ),
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Show usage".to_string(),
-                    description: Some("View recent account token usage.".to_string()),
+                    name: tr(current(), "Show usage").to_string(),
+                    description: Some(
+                        tr(current(), "View recent account token usage.").to_string(),
+                    ),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::OpenTokenActivity);
                     })],
@@ -61,7 +70,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Redeem usage limit reset".to_string(),
+                    name: tr(current(), "Redeem usage limit reset").to_string(),
                     description: Some(reset_description),
                     is_disabled: !reset_action_enabled,
                     actions: vec![Box::new(|tx| {
@@ -108,10 +117,10 @@ impl ChatWidget {
         self.pending_rate_limit_reset_request_id = Some(request_id);
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
-            subtitle: Some("Checking your available resets...".to_string()),
+            title: Some(tr(current(), "Usage limit resets").to_string()),
+            subtitle: Some(tr(current(), "Checking your available resets...").to_string()),
             items: vec![SelectionItem {
-                name: "Loading...".to_string(),
+                name: tr(current(), "Loading...").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -143,16 +152,18 @@ impl ChatWidget {
                     shows_picker = true;
                     self.rate_limit_reset_picker_params(request_id, &response)
                 } else {
-                    Self::rate_limit_reset_message_params(
+                    Self::rate_limit_reset_message_params(tr(
+                        current(),
                         "You don't have any usage limit resets available.",
-                    )
+                    ))
                 };
                 self.available_rate_limit_reset_credits = Some(available_count);
                 params
             }
-            Err(_) => {
-                Self::reset_refresh_params("Couldn't load usage limit resets. Please try again.")
-            }
+            Err(_) => Self::reset_refresh_params(tr(
+                current(),
+                "Couldn't load usage limit resets. Please try again.",
+            )),
         };
         let replaced = self
             .bottom_pane
@@ -201,17 +212,20 @@ impl ChatWidget {
             })
             .collect::<Vec<_>>();
         items.push(SelectionItem {
-            name: "Cancel".to_string(),
+            name: tr(current(), "Cancel").to_string(),
             dismiss_on_select: true,
             ..Default::default()
         });
         SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
-            subtitle: Some(format!(
-                "{} {} available.",
-                reset_credits.available_count,
-                reset_label(reset_credits.available_count)
+            title: Some(tr(current(), "Usage limit resets").to_string()),
+            subtitle: Some(tr_with(
+                current(),
+                "{0} {1} available.",
+                &[
+                    &reset_credits.available_count.to_string(),
+                    reset_label(reset_credits.available_count),
+                ],
             )),
             footer_hint: Some(standard_popup_hint_line()),
             items,
@@ -247,12 +261,12 @@ impl ChatWidget {
         );
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_CONFIRMATION_VIEW_ID),
-            title: Some("Use this reset?".to_string()),
+            title: Some(tr(current(), "Use this reset?").to_string()),
             subtitle: Some(subtitle),
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Yes, use reset".to_string(),
+                    name: tr(current(), "Yes, use reset").to_string(),
                     description: Some(reset_description),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::ConsumeRateLimitResetCredit {
@@ -264,8 +278,8 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "No, go back".to_string(),
-                    description: Some("Choose a different reset.".to_string()),
+                    name: tr(current(), "No, go back").to_string(),
+                    description: Some(tr(current(), "Choose a different reset.").to_string()),
                     actions: vec![Box::new(move |_| {
                         no_confirmation_gate.store(true, Ordering::Release);
                     })],
@@ -295,7 +309,7 @@ impl ChatWidget {
     fn rate_limit_reset_message_params(message: &str) -> SelectionViewParams {
         SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
+            title: Some(tr(current(), "Usage limit resets").to_string()),
             subtitle: Some(message.to_string()),
             items: vec![SelectionItem {
                 name: "Close".to_string(),
@@ -309,7 +323,7 @@ impl ChatWidget {
     fn reset_refresh_params(message: &str) -> SelectionViewParams {
         SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
+            title: Some(tr(current(), "Usage limit resets").to_string()),
             subtitle: Some(message.to_string()),
             items: vec![
                 SelectionItem {
@@ -342,7 +356,7 @@ impl ChatWidget {
             .dismiss_view_by_id(RATE_LIMIT_RESET_VIEW_ID);
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
+            title: Some(tr(current(), "Usage limit resets").to_string()),
             subtitle: Some("Resetting your usage...".to_string()),
             items: vec![SelectionItem {
                 name: "Using a reset...".to_string(),
@@ -407,7 +421,7 @@ impl ChatWidget {
                 self.pending_rate_limit_reset_idempotency_key = Some(idempotency_key.clone());
                 self.replace_rate_limit_reset_popup(SelectionViewParams {
                     view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-                    title: Some("Usage limit resets".to_string()),
+                    title: Some(tr(current(), "Usage limit resets").to_string()),
                     subtitle: Some("Couldn't reset usage. Please try again.".to_string()),
                     items: vec![
                         SelectionItem {
@@ -466,7 +480,7 @@ impl ChatWidget {
     fn rate_limit_reset_success_loading_params() -> SelectionViewParams {
         SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
-            title: Some("Usage limit resets".to_string()),
+            title: Some(tr(current(), "Usage limit resets").to_string()),
             subtitle: Some("Usage reset. Checking your remaining resets...".to_string()),
             items: vec![SelectionItem {
                 name: "Refreshing...".to_string(),

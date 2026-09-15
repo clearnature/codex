@@ -9,6 +9,9 @@ use crate::history_cell::McpInventoryLoadingCell as LoadingCell;
 use crate::terminal_visualization_instructions::with_terminal_visualization_instructions;
 use codex_app_server_protocol::ThreadBackgroundTerminalsListParams;
 use codex_app_server_protocol::ThreadBackgroundTerminalsListResponse as ListResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 enum DestinationConfig {
     Load,
@@ -45,16 +48,17 @@ impl App {
                 .chat_widget
                 .can_change_working_directory(pending.source_thread_id)
         {
-            return self.working_directory_error(
+            return self.working_directory_error(tr(
+                current(),
                 "Changing directories requires an idle primary session without queued input.",
-            );
+            ));
         }
         if crate::uses_remote_workspace_or_environment(
             &self.app_server_target,
             self.environment_manager.as_ref(),
         ) {
             return self.working_directory_error(
-                "Changing directories is not supported for remote workspaces or remote execution environments.",
+                tr(current(), "Changing directories is not supported for remote workspaces or remote execution environments."),
             );
         }
         self.change_working_directory(tui, app_server, pending.destination)
@@ -79,9 +83,10 @@ impl App {
             || (mode == crate::app_event::ManagedWorktreeMode::Fork
                 && self.chat_widget.has_misalignment_policy_violation())
         {
-            self.chat_widget.add_error_message(format!(
-                "Cannot continue into the new worktree while the session is offline or blocked by a policy warning. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                checkout.root.display()
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Cannot continue into the new worktree while the session is offline or blocked by a policy warning. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                &[&checkout.root.display().to_string()],
             ));
             return Ok(());
         }
@@ -91,9 +96,10 @@ impl App {
                 .chat_widget
                 .can_change_working_directory(source_thread_id)
         {
-            self.chat_widget.add_error_message(format!(
-                "The source conversation changed while creating the worktree. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                checkout.root.display()
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "The source conversation changed while creating the worktree. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                &[&checkout.root.display().to_string()],
             ));
             return Ok(());
         }
@@ -117,10 +123,11 @@ impl App {
         )
         .await;
         if self.pending_managed_worktree_attach.is_none() {
-            return Err(color_eyre::eyre::eyre!(
-                "Could not start a session in the managed worktree. A checkout was retained at {}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
-                checkout_root.display()
-            ));
+            return Err(color_eyre::eyre::eyre!(tr_with(
+                current(),
+                "Could not start a session in the managed worktree. A checkout was retained at {0}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
+                &[&checkout_root.display().to_string()],
+            )));
         }
         Ok(())
     }
@@ -155,15 +162,17 @@ impl App {
         destination_config: DestinationConfig,
     ) {
         if self.config.ephemeral || !cwd.as_path().is_dir() {
-            return self.working_directory_error("This task cannot be safely replaced.");
+            return self
+                .working_directory_error(tr(current(), "This task cannot be safely replaced."));
         }
         let Some(thread_id) = self.chat_widget.thread_id() else {
             return;
         };
         if self.pending_server_profiles.contains_key(&thread_id) {
-            return self.working_directory_error(
+            return self.working_directory_error(tr(
+                current(),
                 "Wait for permissions to update before changing directories.",
-            );
+            ));
         }
         if self.app_server_target.thread_params_mode()
             == crate::app_server_session::ThreadParamsMode::Remote
@@ -174,13 +183,14 @@ impl App {
                 .active_permission_profile()
                 .is_some_and(|profile| !profile.id.starts_with(':'))
         {
-            return self.working_directory_error(
+            return self.working_directory_error(tr(
+                current(),
                 "Changing directories with a named profile is not supported.",
-            );
+            ));
         }
         let cells = &self.transcript_cells;
         if cells.iter().any(|cell| cell.as_any().is::<LoadingCell>()) {
-            return self.working_directory_error("MCP inventory is still loading.");
+            return self.working_directory_error(tr(current(), "MCP inventory is still loading."));
         }
         let agents = self.agent_navigation.ordered_threads();
         let closed_agents: HashSet<_> = agents
@@ -196,7 +206,10 @@ impl App {
                     .is_ok_and(|store| store.active_turn_id().is_none())
         });
         if active || agents.iter().any(|(t, a)| *t != thread_id && a.is_running) {
-            return self.working_directory_error("Cannot change: another agent is running.");
+            return self.working_directory_error(tr(
+                current(),
+                "Cannot change: another agent is running.",
+            ));
         }
         let open_agents: Vec<_> = agents
             .iter()

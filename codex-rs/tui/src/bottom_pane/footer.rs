@@ -47,6 +47,10 @@ use crate::key_hint::ShortcutHint;
 use crate::render::line_utils::prefix_lines;
 use crate::status::format_tokens_compact;
 use crate::ui_consts::FOOTER_INDENT_COLS;
+use codex_i18n::Lang;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -311,32 +315,49 @@ fn left_side_line(
     state: LeftSideState,
     key_hints: FooterKeyHints,
 ) -> Line<'static> {
+    // The language is resolved once per invocation from `--lang`, `config.toml`
+    // and the environment, then published with `codex_i18n::set_current`; see
+    // H4 in `docs/plan/i18n-verification.md`. Reading it back here is the whole
+    // of this function's coupling to that global -- the rendering itself lives
+    // in `left_side_line_in`, which takes the language as an argument so it can
+    // be tested without publishing a process-wide value (which would race the
+    // snapshot tests sharing this binary).
+    left_side_line_in(current(), collaboration_mode_indicator, state, key_hints)
+}
+
+/// Renders the left-hand hint line in the given language.
+fn left_side_line_in(
+    lang: Lang,
+    collaboration_mode_indicator: Option<CollaborationModeIndicator>,
+    state: LeftSideState,
+    key_hints: FooterKeyHints,
+) -> Line<'static> {
     let mut line = Line::from("");
     match state.hint {
         SummaryHintKind::None => {}
         SummaryHintKind::Shortcuts => {
             if let Some(key) = key_hints.agents {
                 line.push_span(key);
-                line.push_span(" for agents".dim());
+                line.push_span(tr(lang, " for agents").dim());
                 if key_hints.toggle_shortcuts.is_some() {
                     line.push_span(" · ".dim());
                 }
             }
             if let Some(key) = key_hints.toggle_shortcuts {
                 line.push_span(key);
-                line.push_span(" for shortcuts".dim());
+                line.push_span(tr(lang, " for shortcuts").dim());
             }
         }
         SummaryHintKind::QueueMessage => {
             if let Some(key) = key_hints.queue {
                 line.push_span(key);
-                line.push_span(" to queue message".dim());
+                line.push_span(tr(lang, " to queue message").dim());
             }
         }
         SummaryHintKind::QueueShort => {
             if let Some(key) = key_hints.queue {
                 line.push_span(key);
-                line.push_span(" to queue".dim());
+                line.push_span(tr(lang, " to queue").dim());
             }
         }
     };
@@ -592,7 +613,8 @@ pub(crate) fn status_line_right_indicator_line(
 ) -> Option<Line<'static>> {
     let primary_indicator = mode_indicator_line(collaboration_mode_indicator, show_cycle_hint)
         .or_else(|| goal_status_indicator_line(goal_status_indicator));
-    let ide_context_indicator = ide_context_active.then(|| Line::from(vec!["IDE context".cyan()]));
+    let ide_context_indicator =
+        ide_context_active.then(|| Line::from(vec![tr(current(), "IDE context").cyan()]));
     let mut line: Option<Line<'static>> = None;
 
     for indicator in [primary_indicator, ide_context_indicator]
@@ -814,7 +836,11 @@ pub(crate) fn passive_footer_status_line(props: &FooterProps) -> Option<Line<'st
         && let Some(key) = props.key_hints.agents
         && let Some(line) = line.as_mut()
     {
-        line.extend(vec![" · ".dim(), key.into(), " for agents".dim()]);
+        line.extend(vec![
+            " · ".dim(),
+            key.into(),
+            tr(current(), " for agents").dim(),
+        ]);
     }
 
     line
@@ -895,19 +921,23 @@ struct ShortcutsState {
 }
 
 fn quit_shortcut_reminder_line(key: KeyBinding) -> Line<'static> {
-    Line::from(vec![key.into(), " again to quit".into()]).dim()
+    Line::from(vec![key.into(), tr(current(), " again to quit").into()]).dim()
 }
 
 fn esc_hint_line(esc_backtrack_hint: bool) -> Line<'static> {
     let esc = key_hint::plain(KeyCode::Esc);
     if esc_backtrack_hint {
-        Line::from(vec![esc.into(), " again to edit previous message".into()]).dim()
+        Line::from(vec![
+            esc.into(),
+            tr(current(), " again to edit previous message").into(),
+        ])
+        .dim()
     } else {
         Line::from(vec![
             esc.into(),
             " ".into(),
             esc.into(),
-            " to edit previous message".into(),
+            tr(current(), " to edit previous message").into(),
         ])
         .dim()
     }
@@ -972,12 +1002,12 @@ fn shortcut_overlay_lines(state: ShortcutsState) -> Vec<Line<'static>> {
     if let Some(key) = state.key_hints.agents {
         lines.push(Line::from(vec![
             key.into(),
-            " for agents (empty prompt)".into(),
+            tr(current(), " for agents (empty prompt)").into(),
         ]));
     }
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
-        "customize shortcuts with ".into(),
+        tr(current(), "customize shortcuts with ").into(),
         "/keymap".cyan(),
     ]));
     lines
@@ -1032,16 +1062,23 @@ fn build_columns(entries: Vec<Line<'static>>) -> Vec<Line<'static>> {
 
 pub(crate) fn context_window_line(percent: Option<i64>, used_tokens: Option<i64>) -> Line<'static> {
     if let Some(percent) = percent {
-        let percent = percent.clamp(0, 100);
-        return Line::from(vec![Span::from(format!("{percent}% context left")).dim()]);
+        let percent = percent.clamp(0, 100).to_string();
+        // A template rather than a fixed string: the value is substituted
+        // *after* the lookup, so a translation may put it wherever its grammar
+        // wants it as long as it keeps `{0}`.
+        return Line::from(vec![
+            Span::from(tr_with(current(), "{0}% context left", &[percent.as_str()])).dim(),
+        ]);
     }
 
     if let Some(tokens) = used_tokens {
         let used_fmt = format_tokens_compact(tokens);
-        return Line::from(vec![Span::from(format!("{used_fmt} used")).dim()]);
+        return Line::from(vec![
+            Span::from(tr_with(current(), "{0} used", &[used_fmt.as_str()])).dim(),
+        ]);
     }
 
-    Line::from(vec![Span::from("100% context left").dim()])
+    Line::from(vec![Span::from(tr(current(), "100% context left").dim())])
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1130,30 +1167,34 @@ impl ShortcutDescriptor {
         match self.id {
             ShortcutId::QueueMessageTab => {
                 if state.is_task_running || state.queue_submissions {
-                    line.push_span(" to queue message");
+                    line.push_span(tr(current(), " to queue message"));
                 } else {
-                    line.push_span(" to submit message");
+                    line.push_span(tr(current(), " to submit message"));
                 }
             }
             ShortcutId::EditPrevious => {
                 if state.esc_backtrack_hint {
-                    line.push_span(" again to edit previous message");
+                    line.push_span(tr(current(), " again to edit previous message"));
                 } else {
                     line.extend(vec![
                         " ".into(),
                         key.into(),
-                        " to edit previous message".into(),
+                        tr(current(), " to edit previous message").into(),
                     ]);
                 }
             }
             ShortcutId::Quit => {
                 if state.is_task_running {
-                    line.push_span(" to interrupt");
+                    line.push_span(tr(current(), " to interrupt"));
                 } else {
-                    line.push_span(" to exit");
+                    line.push_span(tr(current(), " to exit"));
                 }
             }
-            _ => line.push_span(self.label),
+            // Every descriptor without a special case above renders its label
+            // through `tr`, so adding a translation for a label is a dictionary
+            // change and nothing else. The label itself stays the English
+            // original, which is what makes it a usable key.
+            _ => line.push_span(tr(current(), self.label)),
         };
         Some(line)
     }
@@ -1317,6 +1358,64 @@ mod tests {
         snapshot_footer_with_mode_indicator(
             name, /*width*/ 80, &props, /*collaboration_mode_indicator*/ None,
         );
+    }
+
+    /// The render path in the language it is given, which is the point where
+    /// "the resolved language reaches rendered output" stops being an inference
+    /// from the wiring. The language is passed in rather than published, so this
+    /// cannot race the snapshot tests that share the binary.
+    #[test]
+    fn the_rendered_hints_follow_the_language_they_are_given() {
+        let queue_message = || {
+            left_side_line_in(
+                Lang::Zh,
+                /*collaboration_mode_indicator*/ None,
+                LeftSideState {
+                    hint: SummaryHintKind::QueueMessage,
+                    show_cycle_hint: false,
+                },
+                FooterKeyHints::default_bindings(),
+            )
+            .to_string()
+        };
+        let chinese = queue_message();
+        assert!(
+            chinese.contains("排队发送消息"),
+            "expected the translated hint, got {chinese:?}"
+        );
+
+        let english = left_side_line_in(
+            Lang::En,
+            /*collaboration_mode_indicator*/ None,
+            LeftSideState {
+                hint: SummaryHintKind::QueueMessage,
+                show_cycle_hint: false,
+            },
+            FooterKeyHints::default_bindings(),
+        )
+        .to_string();
+        assert!(
+            english.contains(" to queue message"),
+            "expected the English original, got {english:?}"
+        );
+        assert!(
+            !english.contains('排'),
+            "English must not render translated text: {english:?}"
+        );
+
+        // A translated key is still rendered from its English original under
+        // `En`, which is the property the 877 snapshots rest on.
+        let shortcuts = left_side_line_in(
+            Lang::En,
+            /*collaboration_mode_indicator*/ None,
+            LeftSideState {
+                hint: SummaryHintKind::Shortcuts,
+                show_cycle_hint: false,
+            },
+            FooterKeyHints::default_bindings(),
+        )
+        .to_string();
+        assert!(shortcuts.contains(" for shortcuts"), "got {shortcuts:?}");
     }
 
     fn snapshot_footer_with_context(

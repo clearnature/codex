@@ -20,6 +20,8 @@
 //! - Session info (thread title, thread ID, tokens used)
 //! - Application version
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use std::collections::HashSet;
@@ -161,60 +163,94 @@ impl StatusLineItem {
     /// User-visible description shown in the popup.
     pub(crate) fn description(self) -> &'static str {
         match self {
-            StatusLineItem::ModelName => "Current model name",
-            StatusLineItem::ModelWithReasoning => "Current model name with reasoning level",
-            StatusLineItem::Reasoning => "Current reasoning level",
-            StatusLineItem::CurrentDir => "Current working directory",
-            StatusLineItem::ProjectRoot => "Project name (omitted when unavailable)",
-            StatusLineItem::Hostname => "Current machine hostname (omitted when unavailable)",
-            StatusLineItem::GitBranch => "Current Git branch (omitted when unavailable)",
-            StatusLineItem::PullRequestNumber => {
-                "Open pull request number for the current branch (omitted when unavailable)"
+            StatusLineItem::ModelName => tr(current(), "Current model name"),
+            StatusLineItem::ModelWithReasoning => {
+                tr(current(), "Current model name with reasoning level")
             }
-            StatusLineItem::BranchChanges => {
-                "Committed branch changes against the default branch (omitted when unavailable)"
+            StatusLineItem::Reasoning => tr(current(), "Current reasoning level"),
+            StatusLineItem::CurrentDir => tr(current(), "Current working directory"),
+            StatusLineItem::ProjectRoot => tr(current(), "Project name (omitted when unavailable)"),
+            StatusLineItem::Hostname => tr(
+                current(),
+                "Current machine hostname (omitted when unavailable)",
+            ),
+            StatusLineItem::GitBranch => {
+                tr(current(), "Current Git branch (omitted when unavailable)")
             }
-            StatusLineItem::Status => "Compact session run-state text (Ready, Working, Thinking)",
-            StatusLineItem::Permissions => "Active permission profile or sandbox mode",
-            StatusLineItem::ApprovalMode => "Active command approval mode",
-            StatusLineItem::ContextRemaining => {
-                "Percentage of context window remaining (omitted when unknown)"
+            StatusLineItem::PullRequestNumber => tr(
+                current(),
+                "Open pull request number for the current branch (omitted when unavailable)",
+            ),
+            StatusLineItem::BranchChanges => tr(
+                current(),
+                "Committed branch changes against the default branch (omitted when unavailable)",
+            ),
+            StatusLineItem::Status => tr(
+                current(),
+                "Compact session run-state text (Ready, Working, Thinking)",
+            ),
+            StatusLineItem::Permissions => {
+                tr(current(), "Active permission profile or sandbox mode")
             }
-            StatusLineItem::ContextUsed => {
-                "Percentage of context window used (omitted when unknown)"
+            StatusLineItem::ApprovalMode => tr(current(), "Active command approval mode"),
+            StatusLineItem::ContextRemaining => tr(
+                current(),
+                "Percentage of context window remaining (omitted when unknown)",
+            ),
+            StatusLineItem::ContextUsed => tr(
+                current(),
+                "Percentage of context window used (omitted when unknown)",
+            ),
+            StatusLineItem::FiveHourLimit => tr(
+                current(),
+                "Remaining usage on the primary usage limit (omitted when unavailable)",
+            ),
+            StatusLineItem::WeeklyLimit => tr(
+                current(),
+                "Remaining usage on the secondary usage limit (omitted when unavailable)",
+            ),
+            StatusLineItem::CodexVersion => tr(current(), "Codex application version"),
+            StatusLineItem::ContextWindowSize => tr(
+                current(),
+                "Total context window size in tokens (omitted when unknown)",
+            ),
+            StatusLineItem::UsedTokens => tr(
+                current(),
+                "Total tokens used in session (omitted when zero)",
+            ),
+            StatusLineItem::TotalInputTokens => tr(current(), "Total input tokens used in session"),
+            StatusLineItem::TotalOutputTokens => {
+                tr(current(), "Total output tokens used in session")
             }
-            StatusLineItem::FiveHourLimit => {
-                "Remaining usage on the primary usage limit (omitted when unavailable)"
+            StatusLineItem::ThreadCredits => tr(
+                current(),
+                "Estimated current-thread credits (Enterprise workspaces only; omitted when unavailable)",
+            ),
+            StatusLineItem::EstimatedThreadCost => tr(
+                current(),
+                "Estimated current-thread cost in USD (Enterprise workspaces only; omitted when unavailable)",
+            ),
+            StatusLineItem::SessionId => tr(
+                current(),
+                "Current thread identifier (omitted until thread starts)",
+            ),
+            StatusLineItem::FastMode => tr(current(), "Whether Fast mode is currently active"),
+            StatusLineItem::RawOutput => tr(current(), "Whether raw scrollback mode is active"),
+            StatusLineItem::ThreadName => {
+                tr(current(), "Current thread name (omitted when unnamed)")
             }
-            StatusLineItem::WeeklyLimit => {
-                "Remaining usage on the secondary usage limit (omitted when unavailable)"
-            }
-            StatusLineItem::CodexVersion => "Codex application version",
-            StatusLineItem::ContextWindowSize => {
-                "Total context window size in tokens (omitted when unknown)"
-            }
-            StatusLineItem::UsedTokens => "Total tokens used in session (omitted when zero)",
-            StatusLineItem::TotalInputTokens => "Total input tokens used in session",
-            StatusLineItem::TotalOutputTokens => "Total output tokens used in session",
-            StatusLineItem::ThreadCredits => {
-                "Estimated current-thread credits (Enterprise workspaces only; omitted when unavailable)"
-            }
-            StatusLineItem::EstimatedThreadCost => {
-                "Estimated current-thread cost in USD (Enterprise workspaces only; omitted when unavailable)"
-            }
-            StatusLineItem::SessionId => "Current thread identifier (omitted until thread starts)",
-            StatusLineItem::FastMode => "Whether Fast mode is currently active",
-            StatusLineItem::RawOutput => "Whether raw scrollback mode is active",
-            StatusLineItem::ThreadName => "Current thread name (omitted when unnamed)",
-            StatusLineItem::ThreadTitle => {
-                "Current thread title, or thread identifier when unnamed"
-            }
-            StatusLineItem::WorkspaceHeadline => {
-                "Workspace notification headline (Enterprise workspaces only; omitted when unavailable)"
-            }
-            StatusLineItem::TaskProgress => {
-                "Latest task progress from update_plan (omitted until available)"
-            }
+            StatusLineItem::ThreadTitle => tr(
+                current(),
+                "Current thread title, or thread identifier when unnamed",
+            ),
+            StatusLineItem::WorkspaceHeadline => tr(
+                current(),
+                "Workspace notification headline (Enterprise workspaces only; omitted when unavailable)",
+            ),
+            StatusLineItem::TaskProgress => tr(
+                current(),
+                "Latest task progress from update_plan (omitted until available)",
+            ),
         }
     }
 
@@ -289,8 +325,8 @@ impl StatusLineSetupView {
         let mut used_ids = HashSet::new();
         let mut items = vec![MultiSelectItem {
             id: STATUS_LINE_USE_THEME_COLORS_ITEM_ID.to_string(),
-            name: "Use theme colors".to_string(),
-            description: Some("Apply colors from the active /theme".to_string()),
+            name: tr(current(), "Use theme colors").to_string(),
+            description: Some(tr(current(), "Apply colors from the active /theme").to_string()),
             enabled: use_theme_colors,
             orderable: false,
             section_break_after: true,
@@ -327,8 +363,14 @@ impl StatusLineSetupView {
 
         Self {
             picker: MultiSelectPicker::builder(
-                "Configure Status Line".to_string(),
-                Some("Select which items to display in the status line.".to_string()),
+                tr(current(), "Configure Status Line").to_string(),
+                Some(
+                    tr(
+                        current(),
+                        "Select which items to display in the status line.",
+                    )
+                    .to_string(),
+                ),
                 app_event_tx,
             )
             .list_keymap(list_keymap)

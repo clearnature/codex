@@ -15,6 +15,9 @@ use crate::bottom_pane::slash_commands::SlashCommandItem;
 use crate::bottom_pane::slash_commands::find_slash_command;
 use crate::goal_display::GOAL_USAGE;
 use crate::goal_files::GoalDraft;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SlashCommandDispatchSource {
@@ -32,12 +35,28 @@ struct PreparedSlashCommandArgs {
     source: SlashCommandDispatchSource,
 }
 
-const SIDE_STARTING_CONTEXT_LABEL: &str = "Side starting...";
-const SIDE_SLASH_COMMAND_UNAVAILABLE_HINT: &str =
-    "Press Ctrl+C to return to the main thread first.";
-const GOAL_USAGE_HINT: &str = "Example: /goal improve benchmark coverage";
-const RAW_USAGE: &str = "Usage: /raw [on|off]";
-const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
+fn side_starting_context_label() -> &'static str {
+    tr(current(), "Side starting...")
+}
+
+fn side_slash_command_unavailable_hint() -> &'static str {
+    tr(
+        current(),
+        "Press Ctrl+C to return to the main thread first.",
+    )
+}
+
+fn goal_usage_hint() -> &'static str {
+    tr(current(), "Example: /goal improve benchmark coverage")
+}
+
+fn raw_usage() -> &'static str {
+    tr(current(), "Usage: /raw [on|off]")
+}
+
+fn usage_chatgpt_login_required() -> &'static str {
+    tr(current(), "Sign in with ChatGPT to use /usage.")
+}
 
 impl ChatWidget {
     /// Dispatch a bare slash command and record its staged local-history entry.
@@ -56,10 +75,14 @@ impl ChatWidget {
     pub(super) fn handle_service_tier_command_dispatch(&mut self, command: ServiceTierCommand) {
         self.transcript.last_status_copy_targets = None;
         if self.active_side_conversation {
-            self.add_error_message(format!(
-                "'/{}' is unavailable in side conversations. {SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
-                command.name
-            ));
+            self.add_error_message(
+                tr_with(
+                    current(),
+                    "'/{0}' is unavailable in side conversations. {1}",
+                    &[&command.name, side_slash_command_unavailable_hint()],
+                )
+                .to_string(),
+            );
             self.bottom_pane.drain_pending_submission_state();
             self.bottom_pane.record_pending_slash_command_history();
             return;
@@ -86,8 +109,8 @@ impl ChatWidget {
     fn apply_plan_slash_command(&mut self) -> bool {
         if !self.collaboration_modes_enabled() {
             self.add_info_message(
-                "Collaboration modes are disabled.".to_string(),
-                Some("Enable collaboration modes to use /plan.".to_string()),
+                tr(current(), "Collaboration modes are disabled.").to_string(),
+                Some(tr(current(), "Enable collaboration modes to use /plan.").to_string()),
             );
             return false;
         }
@@ -96,7 +119,7 @@ impl ChatWidget {
             true
         } else {
             self.add_info_message(
-                "Plan mode unavailable right now.".to_string(),
+                tr(current(), "Plan mode unavailable right now.").to_string(),
                 /*hint*/ None,
             );
             false
@@ -108,7 +131,7 @@ impl ChatWidget {
         parent_thread_id: ThreadId,
         user_message: Option<UserMessage>,
     ) {
-        self.set_side_conversation_context_label(Some(SIDE_STARTING_CONTEXT_LABEL.to_string()));
+        self.set_side_conversation_context_label(Some(side_starting_context_label().to_string()));
         self.request_redraw();
         self.app_event_tx.send(AppEvent::StartSide {
             parent_thread_id,
@@ -119,9 +142,14 @@ impl ChatWidget {
     fn request_empty_side_conversation(&mut self, cmd: SlashCommand) {
         let Some(parent_thread_id) = self.thread_id else {
             let command = cmd.command();
-            self.add_error_message(format!(
-                "'/{command}' is unavailable before the session starts."
-            ));
+            self.add_error_message(
+                tr_with(
+                    current(),
+                    "'/{0}' is unavailable before the session starts.",
+                    &[command],
+                )
+                .to_string(),
+            );
             return;
         };
 
@@ -157,10 +185,12 @@ impl ChatWidget {
             return;
         }
         if self.slash_command_blocked_by_active_task(cmd) {
-            let message = format!(
-                "'/{}' is disabled while a task is in progress.",
-                cmd.command()
-            );
+            let message = tr_with(
+                current(),
+                "'/{0}' is disabled while a task is in progress.",
+                &[cmd.command()],
+            )
+            .to_string();
             self.add_to_history(history_cell::new_error_event(message));
             self.bottom_pane.drain_pending_submission_state();
             self.request_redraw();
@@ -186,22 +216,29 @@ impl ChatWidget {
             }
             SlashCommand::Archive => {
                 self.bottom_pane.show_selection_view(SelectionViewParams {
-                    title: Some("Archive this session?".to_string()),
+                    title: Some(tr(current(), "Archive this session?").to_string()),
                     subtitle: Some(
-                        "Are you sure? This will archive the current session and exit Codex"
-                            .to_string(),
+                        tr(
+                            current(),
+                            "Are you sure? This will archive the current session and exit Codex",
+                        )
+                        .to_string(),
                     ),
                     footer_hint: Some(standard_popup_hint_line()),
                     items: vec![
                         SelectionItem {
-                            name: "No, don't archive".to_string(),
-                            description: Some("Return to the current session".to_string()),
+                            name: tr(current(), "No, don't archive").to_string(),
+                            description: Some(
+                                tr(current(), "Return to the current session").to_string(),
+                            ),
                             dismiss_on_select: true,
                             ..Default::default()
                         },
                         SelectionItem {
-                            name: "Yes, archive and exit".to_string(),
-                            description: Some("Archive this session now".to_string()),
+                            name: tr(current(), "Yes, archive and exit").to_string(),
+                            description: Some(
+                                tr(current(), "Archive this session now").to_string(),
+                            ),
                             actions: vec![Box::new(|tx| {
                                 tx.send(AppEvent::ArchiveCurrentThread);
                             })],
@@ -215,21 +252,29 @@ impl ChatWidget {
             }
             SlashCommand::Delete => {
                 self.bottom_pane.show_selection_view(SelectionViewParams {
-                    title: Some("Delete this session?".to_string()),
+                    title: Some(tr(current(), "Delete this session?").to_string()),
                     subtitle: Some(
-                        "Cannot be undone. Subagent threads will also be deleted.".to_string(),
+                        tr(
+                            current(),
+                            "Cannot be undone. Subagent threads will also be deleted.",
+                        )
+                        .to_string(),
                     ),
                     footer_hint: Some(standard_popup_hint_line()),
                     items: vec![
                         SelectionItem {
-                            name: "No, keep this session".to_string(),
-                            description: Some("Return to the current session".to_string()),
+                            name: tr(current(), "No, keep this session").to_string(),
+                            description: Some(
+                                tr(current(), "Return to the current session").to_string(),
+                            ),
                             dismiss_on_select: true,
                             ..Default::default()
                         },
                         SelectionItem {
-                            name: "Yes, delete and exit".to_string(),
-                            description: Some("Permanently delete this session now".to_string()),
+                            name: tr(current(), "Yes, delete and exit").to_string(),
+                            description: Some(
+                                tr(current(), "Permanently delete this session now").to_string(),
+                            ),
                             actions: vec![Box::new(|tx| {
                                 tx.send(AppEvent::DeleteCurrentThread);
                             })],
@@ -256,7 +301,11 @@ impl ChatWidget {
             SlashCommand::App => {
                 let Some(thread_id) = self.thread_id else {
                     self.add_error_message(
-                        "Session is still starting; try /app again in a moment.".to_string(),
+                        tr(
+                            current(),
+                            "Session is still starting; try /app again in a moment.",
+                        )
+                        .to_string(),
                     );
                     return;
                 };
@@ -278,8 +327,8 @@ impl ChatWidget {
                 }
                 self.bottom_pane.ensure_status_indicator();
                 self.set_status(
-                    compaction::COMPACTION_HEADER.to_string(),
-                    Some(compaction::COMPACTION_DETAILS.to_string()),
+                    compaction::compaction_header().to_string(),
+                    Some(compaction::compaction_details().to_string()),
                     StatusDetailsCapitalization::Preserve,
                     STATUS_DETAILS_DEFAULT_MAX_LINES,
                 );
@@ -289,7 +338,11 @@ impl ChatWidget {
             SlashCommand::Recap => {
                 let Some(thread_id) = self.thread_id else {
                     self.add_error_message(
-                        "Session is still starting; try /recap again in a moment.".to_string(),
+                        tr(
+                            current(),
+                            "Session is still starting; try /recap again in a moment.",
+                        )
+                        .to_string(),
                     );
                     return;
                 };
@@ -329,7 +382,7 @@ impl ChatWidget {
                 } else {
                     self.add_info_message(
                         GOAL_USAGE.to_string(),
-                        Some(GOAL_USAGE_HINT.to_string()),
+                        Some(goal_usage_hint().to_string()),
                     );
                 }
             }
@@ -376,7 +429,11 @@ impl ChatWidget {
                         // Avoid panicking in interactive UI; treat this as a recoverable
                         // internal error.
                         self.add_error_message(
-                            "Internal error: missing the 'auto' approval preset.".to_string(),
+                            tr(
+                                current(),
+                                "Internal error: missing the 'auto' approval preset.",
+                            )
+                            .to_string(),
                         );
                         return;
                     };
@@ -410,7 +467,11 @@ impl ChatWidget {
             }
             SlashCommand::SandboxReadRoot => {
                 self.add_error_message(
-                    "Usage: /sandbox-add-read-dir <absolute-directory-path>".to_string(),
+                    tr(
+                        current(),
+                        "Usage: /sandbox-add-read-dir <absolute-directory-path>",
+                    )
+                    .to_string(),
                 );
             }
             SlashCommand::Experimental => {
@@ -453,13 +514,20 @@ impl ChatWidget {
                                 if is_git_repo {
                                     diff_text
                                 } else {
-                                    "`/diff` — _not inside a git repository_".to_string()
+                                    tr(current(), "`/diff` — _not inside a git repository_")
+                                        .to_string()
                                 }
                             }
-                            Err(e) => format!("Failed to compute diff: {e}"),
+                            Err(e) => {
+                                tr_with(current(), "Failed to compute diff: {0}", &[&e.to_string()])
+                                    .to_string()
+                            }
                         },
-                        None => "Failed to compute diff: workspace command runner unavailable"
-                            .to_string(),
+                        None => tr(
+                            current(),
+                            "Failed to compute diff: workspace command runner unavailable",
+                        )
+                        .to_string(),
                     };
                     tx.send(AppEvent::DiffResult(cwd, text));
                 });
@@ -497,7 +565,12 @@ impl ChatWidget {
             }
             SlashCommand::Pwd => {
                 self.add_info_message(
-                    format!("Current working directory: {}", self.config.cwd.display()),
+                    tr_with(
+                        current(),
+                        "Current working directory: {0}",
+                        &[&self.config.cwd.display().to_string()],
+                    )
+                    .to_string(),
                     /*hint*/ None,
                 );
             }
@@ -531,10 +604,10 @@ impl ChatWidget {
                 self.clean_background_terminals();
             }
             SlashCommand::MemoryDrop => {
-                self.add_app_server_stub_message("Memory maintenance");
+                self.add_app_server_stub_message(tr(current(), "Memory maintenance"));
             }
             SlashCommand::MemoryUpdate => {
-                self.add_app_server_stub_message("Memory maintenance");
+                self.add_app_server_stub_message(tr(current(), "Memory maintenance"));
             }
             SlashCommand::Mcp => {
                 self.add_mcp_output(McpServerStatusDetail::ToolsAndAuthOnly);
@@ -548,12 +621,17 @@ impl ChatWidget {
             SlashCommand::Rollout => {
                 if let Some(path) = self.rollout_path() {
                     self.add_info_message(
-                        format!("Current rollout path: {}", path.display()),
+                        tr_with(
+                            current(),
+                            "Current rollout path: {0}",
+                            &[&path.display().to_string()],
+                        )
+                        .to_string(),
                         /*hint*/ None,
                     );
                 } else {
                     self.add_info_message(
-                        "Rollout path is not available yet.".to_string(),
+                        tr(current(), "Rollout path is not available yet.").to_string(),
                         /*hint*/ None,
                     );
                 }
@@ -617,10 +695,12 @@ impl ChatWidget {
             return;
         }
         if self.slash_command_blocked_by_active_task(cmd) {
-            let message = format!(
-                "'/{}' is disabled while a task is in progress.",
-                cmd.command()
-            );
+            let message = tr_with(
+                current(),
+                "'/{0}' is disabled while a task is in progress.",
+                &[cmd.command()],
+            )
+            .to_string();
             self.add_to_history(history_cell::new_error_event(message));
             self.request_redraw();
             return;
@@ -745,14 +825,14 @@ impl ChatWidget {
             }
             SlashCommand::Cd => self.request_working_directory_change(trimmed),
             SlashCommand::Pwd => {
-                self.add_error_message("Usage: /pwd".to_string());
+                self.add_error_message(tr(current(), "Usage: /pwd").to_string());
             }
             SlashCommand::Usage => {
                 if self.ensure_usage_command_available() {
                     match tokens::TokenActivityView::parse(trimmed) {
                         Some(view) => self.add_token_activity_output(view),
                         None => self.add_error_message(
-                            "Usage: /usage [daily|weekly|cumulative]".to_string(),
+                            tr(current(), "Usage: /usage [daily|weekly|cumulative]").to_string(),
                         ),
                     }
                 }
@@ -762,7 +842,7 @@ impl ChatWidget {
             }
             SlashCommand::Mcp => match trimmed.to_ascii_lowercase().as_str() {
                 "verbose" => self.add_mcp_output(McpServerStatusDetail::Full),
-                _ => self.add_error_message("Usage: /mcp [verbose]".to_string()),
+                _ => self.add_error_message(tr(current(), "Usage: /mcp [verbose]").to_string()),
             },
             SlashCommand::Keymap => match trimmed.to_ascii_lowercase().as_str() {
                 "" => self.open_keymap_picker(),
@@ -771,13 +851,18 @@ impl ChatWidget {
                     {
                         Ok(runtime_keymap) => self.open_keymap_debug(&runtime_keymap),
                         Err(err) => {
-                            self.add_error_message(format!(
-                                "Invalid `tui.keymap` configuration: {err}"
-                            ));
+                            self.add_error_message(
+                                tr_with(
+                                    current(),
+                                    "Invalid `tui.keymap` configuration: {0}",
+                                    &[&err.to_string()],
+                                )
+                                .to_string(),
+                            );
                         }
                     }
                 }
-                _ => self.add_error_message("Usage: /keymap [debug]".to_string()),
+                _ => self.add_error_message(tr(current(), "Usage: /keymap [debug]").to_string()),
             },
             SlashCommand::Raw => match trimmed.to_ascii_lowercase().as_str() {
                 "on" => {
@@ -788,7 +873,7 @@ impl ChatWidget {
                     self.set_raw_output_mode_and_notify(/*enabled*/ false);
                     self.emit_raw_output_mode_changed(/*enabled*/ false);
                 }
-                _ => self.add_error_message(RAW_USAGE.to_string()),
+                _ => self.add_error_message(raw_usage().to_string()),
             },
             SlashCommand::Rename if !trimmed.is_empty() => {
                 if !self.ensure_thread_rename_allowed() {
@@ -797,7 +882,9 @@ impl ChatWidget {
                 self.session_telemetry
                     .counter("codex.thread.rename", /*inc*/ 1, &[]);
                 let Some(name) = normalize_thread_name(&args) else {
-                    self.add_error_message("Thread name cannot be empty.".to_string());
+                    self.add_error_message(
+                        tr(current(), "Thread name cannot be empty.").to_string(),
+                    );
                     return;
                 };
                 self.app_event_tx.set_thread_name(name);
@@ -851,7 +938,7 @@ impl ChatWidget {
                     self.reasoning_buffer.clear();
                     self.reasoning_header = None;
                     self.reasoning_summary_parts.clear();
-                    self.set_status_header(String::from("Working"));
+                    self.set_status_header(tr(current(), "Working").to_string());
                     self.submit_user_message_with_shell_escape_policy(
                         user_message,
                         ShellEscapePolicy::Disallow,
@@ -895,7 +982,11 @@ impl ChatWidget {
                         self.add_info_message(
                             GOAL_USAGE.to_string(),
                             Some(
-                                "The session must start before you can change a goal.".to_string(),
+                                tr(
+                                    current(),
+                                    "The session must start before you can change a goal.",
+                                )
+                                .to_string(),
                             ),
                         );
                         if source == SlashCommandDispatchSource::Live {
@@ -954,7 +1045,13 @@ impl ChatWidget {
                     } else {
                         self.add_info_message(
                             GOAL_USAGE.to_string(),
-                            Some("The session must start before you can set a goal.".to_string()),
+                            Some(
+                                tr(
+                                    current(),
+                                    "The session must start before you can set a goal.",
+                                )
+                                .to_string(),
+                            ),
                         );
                     }
                     return;
@@ -973,9 +1070,14 @@ impl ChatWidget {
             SlashCommand::Side | SlashCommand::Btw if !trimmed.is_empty() => {
                 let Some(parent_thread_id) = self.thread_id else {
                     let command = cmd.command();
-                    self.add_error_message(format!(
-                        "'/{command}' is unavailable before the session starts."
-                    ));
+                    self.add_error_message(
+                        tr_with(
+                            current(),
+                            "'/{0}' is unavailable before the session starts.",
+                            &[command],
+                        )
+                        .to_string(),
+                    );
                     return;
                 };
                 let user_message = self.prepared_inline_user_message(
@@ -1062,9 +1164,12 @@ impl ChatWidget {
             find_slash_command(name, self.builtin_command_flags(), &service_tier_commands)
         else {
             self.add_info_message(
-                format!(
-                    r#"Unrecognized command '/{name}'. Type "/" for a list of supported commands."#
-                ),
+                tr_with(
+                    current(),
+                    r#"Unrecognized command '/{0}'. Type "/" for a list of supported commands."#,
+                    &[name],
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return QueueDrain::Continue;
@@ -1155,7 +1260,7 @@ impl ChatWidget {
         if self.has_codex_backend_auth {
             return true;
         }
-        self.add_error_message(USAGE_CHATGPT_LOGIN_REQUIRED.to_string());
+        self.add_error_message(usage_chatgpt_login_required().to_string());
         false
     }
 
@@ -1265,10 +1370,14 @@ impl ChatWidget {
         if !self.active_side_conversation || cmd.available_in_side_conversation() {
             return true;
         }
-        self.add_error_message(format!(
-            "'/{}' is unavailable in side conversations. {SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
-            cmd.command()
-        ));
+        self.add_error_message(
+            tr_with(
+                current(),
+                "'/{0}' is unavailable in side conversations. {1}",
+                &[cmd.command(), side_slash_command_unavailable_hint()],
+            )
+            .to_string(),
+        );
         self.bottom_pane.drain_pending_submission_state();
         false
     }
@@ -1279,9 +1388,14 @@ impl ChatWidget {
         }
 
         let command = cmd.command();
-        self.add_error_message(format!(
-            "'/{command}' is unavailable while code review is running."
-        ));
+        self.add_error_message(
+            tr_with(
+                current(),
+                "'/{0}' is unavailable while code review is running.",
+                &[command],
+            )
+            .to_string(),
+        );
         self.bottom_pane.drain_pending_submission_state();
         false
     }

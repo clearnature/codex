@@ -1,0 +1,684 @@
+//! Drift detection for the `codex-i18n` dictionary.
+//!
+//! H3 of `docs/plan/i18n-verification.md` asks whether drift -- a string being
+//! rendered without a translation, or an entry whose string no longer exists --
+//! can be found automatically. Its refutation condition is "the equivalent of
+//! `extractUsedKeys` cannot be built", so this binary is the prototype, and it
+//! covers the three checks the plan names: missing, unused and coverage.
+//!
+//! It reads two sources:
+//!   * every `tr(..)` / `tr_with(..)` call in the workspace, taking the first
+//!     literal argument as the key the code actually renders. The scan is
+//!     lexical but not naive: it walks comments, string literals and char
+//!     literals, so the `tr(` inside `as_ptr(` is not mistaken for a call, and
+//!     multi-line calls still work.
+//!   * the `ENTRIES` array in `codex-rs/i18n/src/dict_zh.rs`.
+//!
+//! Keys that never appear as a literal at a call site are counted too, but
+//! reported separately as *bound* keys: a shortcut descriptor keeps its English
+//! text in a `label` field and renders it as `tr(current(), self.label)`, so the
+//! literal lives in a table rather than in the call. Treating those as unused
+//! would be the wrong error in the dangerous direction -- the report's "unused"
+//! list is what invites deleting a translation that is on screen constantly --
+//! so the rule is deliberately generous and transparent instead.
+//!
+//! Usage:
+//!   cargo run -p codex-i18n-check
+//!   cargo run -p codex-i18n-check -- --root /path/to/repo
+//!
+//! Exits non-zero when anything drifted, so it can gate CI.
+
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
+use std::process::ExitCode;
+
+const HELP: &str = "\
+codex-i18n-check -- detect drift between rendered strings and the zh dictionary
+
+Usage:
+  codex-i18n-check [--root <repo root>]
+
+Checks reported:
+  missing   keys rendered in code but absent from the dictionary
+  unused    dictionary entries no longer rendered anywhere
+  coverage  share of rendered keys that have a translation
+";
+
+/// One rendered key, with the place it was rendered.
+#[derive(Debug, PartialEq, Eq)]
+struct TrCall {
+    line: usize,
+    key: String,
+}
+
+fn main() -> ExitCode {
+    let mut root = default_root();
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--root" => match args.next() {
+                Some(value) => root = PathBuf::from(value),
+                None => {
+                    eprintln!("error: --root needs a path");
+                    return ExitCode::from(2);
+                }
+            },
+            "-h" | "--help" => {
+                print!("{HELP}");
+                return ExitCode::SUCCESS;
+            }
+            other => {
+                eprintln!("error: unknown argument {other}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    match run(&root) {
+        Ok(drifted) => {
+            if drifted {
+                ExitCode::FAILURE
+            } else {
+                ExitCode::SUCCESS
+            }
+        }
+        Err(error) => {
+            eprintln!("error: {error}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+/// The crate lives at `<repo>/codex-rs/i18n-check`, so the repository root is
+/// two levels up from the manifest directory.
+fn default_root() -> PathBuf {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    manifest
+        .parent()
+        .and_then(Path::parent)
+        .map_or_else(|| PathBuf::from("."), Path::to_path_buf)
+}
+
+fn run(root: &Path) -> Result<bool, String> {
+    let dict_path = root.join("codex-rs/i18n/src/dict_zh.rs");
+    let pairs = read_dictionary_pairs(&dict_path)?;
+    let dictionary: BTreeSet<String> = pairs.iter().map(|(key, _)| key.clone()).collect();
+
+    let source_root = root.join("codex-rs");
+    let mut files = Vec::new();
+    collect_rust_files(&source_root, &mut files)?;
+    files.sort();
+
+    let mut used: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    // Keys that reach `tr` through a variable rather than as a literal at the
+    // call site. They count as used, but they are reported separately so that
+    // the distinction is visible instead of silently folded into `used`.
+    let mut bound: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut referencing_files = 0usize;
+    for file in &files {
+        let text = fs::read_to_string(file).map_err(|e| format!("{}: {e}", file.display()))?;
+        // A file that never mentions the crate cannot be calling its `tr`.
+        if !text.contains("codex_i18n") {
+            continue;
+        }
+        referencing_files += 1;
+        let location_base = file
+            .strip_prefix(root)
+            .map_or_else(|_| file.clone(), Path::to_path_buf);
+        for call in extract_tr_calls(&text) {
+            used.entry(call.key).or_default().push(format!(
+                "{}:{}",
+                location_base.display(),
+                call.line
+            ));
+        }
+        for call in extract_label_literals(&text) {
+            bound.entry(call.key).or_default().push(format!(
+                "{}:{}",
+                location_base.display(),
+                call.line
+            ));
+        }
+    }
+    let bound_keys = bound.len();
+    for (key, sites) in bound {
+        used.entry(key).or_default().extend(sites);
+    }
+
+    let missing: Vec<(&String, &Vec<String>)> = used
+        .iter()
+        .filter(|(key, _)| !dictionary.contains(*key))
+        .collect();
+    let unused: Vec<&String> = dictionary
+        .iter()
+        .filter(|key| !used.contains_key(*key))
+        .collect();
+    let translated = used.keys().filter(|key| dictionary.contains(*key)).count();
+
+    println!("i18n drift check");
+    println!("  repository        : {}", root.display());
+    println!(
+        "  dictionary        : {} ({} entries)",
+        dict_path.display(),
+        dictionary.len()
+    );
+    println!(
+        "  scanned           : {} rust files, {} referencing codex_i18n",
+        files.len(),
+        referencing_files
+    );
+    println!("  rendered keys     : {}", used.len());
+    println!(
+        "  bound keys        : {bound_keys} (rendered through a variable, e.g. `tr(current(), self.label)`)"
+    );
+    println!();
+
+    println!(
+        "[missing] rendered but not in the dictionary: {}",
+        missing.len()
+    );
+    for (key, sites) in &missing {
+        println!("  {key:?}");
+        for site in sites.iter().take(3) {
+            println!("      {site}");
+        }
+        if sites.len() > 3 {
+            println!("      ... {} more", sites.len() - 3);
+        }
+    }
+    println!();
+
+    println!(
+        "[unused] in the dictionary but rendered nowhere: {}",
+        unused.len()
+    );
+    for key in &unused {
+        println!("  {key:?}");
+    }
+    println!();
+
+    let coverage = if used.is_empty() {
+        100.0
+    } else {
+        translated as f64 * 100.0 / used.len() as f64
+    };
+    println!(
+        "[coverage] translated {translated}/{} rendered keys ({coverage:.1}%)",
+        used.len()
+    );
+    println!();
+
+    // The spacing rule is a *style* rule, not a drift rule, but it is the same
+    // kind of invariant: a convention that is only written down decays. Making
+    // it fail here means the next batch either follows it or the build says why.
+    let spacing = spacing_violations(&pairs);
+    println!(
+        "[spacing] CJK/Latin boundary spaces (i18n-glossary checklist 6): {}",
+        spacing.len()
+    );
+    for (key, value) in &spacing {
+        println!("  {value:?}");
+        println!("      key {key:?}");
+    }
+
+    Ok(!missing.is_empty() || !unused.is_empty() || !spacing.is_empty())
+}
+
+fn collect_rust_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    let entries = fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("{}: {e}", dir.display()))?;
+        let path = entry.path();
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if path.is_dir() {
+            if matches!(name.as_ref(), "target" | "vendor" | "node_modules") {
+                continue;
+            }
+            collect_rust_files(&path, out)?;
+        } else if name.ends_with(".rs") {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+/// Index of the `;` that closes a declaration starting at `from`.
+///
+/// The terminator has to be found by walking the source rather than by
+/// searching for the first `;`: several English originals contain one (for
+/// example `"Estimated current-thread credits (Enterprise workspaces only;
+/// omitted when unavailable)"`), and treating that as the end of the array
+/// silently drops every entry after it -- which is exactly the class of drift
+/// this tool exists to catch, so it must not be introduced by the tool itself.
+fn declaration_end(text: &str, from: usize) -> usize {
+    // The array closes with `];` on a line of its own, so the body can be cut
+    // there without a lexer. A `;` inside a key must never be the terminator:
+    // several English originals contain one (e.g. "…workspaces only; omitted
+    // when…"), and stopping there silently drops every entry after it -- the
+    // very class of drift this tool exists to catch. The plain `;` search is
+    // kept only as a fallback for one-line declarations such as the fixtures in
+    // `main_tests.rs`.
+    if let Some(offset) = text[from..].find("\n];") {
+        return from + offset;
+    }
+    text[from..]
+        .find(';')
+        .map_or(text.len(), |offset| from + offset)
+}
+
+/// Whether `value` separates a CJK run from a Latin/digit run with a space.
+///
+/// `docs/plan/i18n-glossary.md` (checklist 6) requires mixed CJK/Latin text to
+/// omit that space -- `启用{0}并记住此选择`, not `启用 {0} 并记住此选择` -- matching
+/// qwen-code. Only *internal* boundaries count: a leading or trailing space is
+/// layout, not mixed text. Several keys are positional (`" to move"` is appended
+/// after a keybinding), so stripping those would change rendered output.
+fn has_mixed_boundary_space(value: &str) -> bool {
+    let chars: Vec<char> = value.chars().collect();
+    if chars.len() < 3 {
+        return false;
+    }
+    (1..chars.len() - 1).any(|i| {
+        chars[i] == ' '
+            && ((is_cjk(chars[i - 1]) && chars[i + 1].is_ascii_alphanumeric())
+                || (chars[i - 1].is_ascii_alphanumeric() && is_cjk(chars[i + 1])))
+    })
+}
+
+/// Whether `c` is a CJK ideograph (the ranges that carry Chinese text here).
+fn is_cjk(c: char) -> bool {
+    matches!(c, '\u{3400}'..='\u{4dbf}' | '\u{4e00}'..='\u{9fff}')
+}
+
+/// Dictionary entries whose translation breaks the no-space convention.
+fn spacing_violations(pairs: &[(String, String)]) -> Vec<(&str, &str)> {
+    pairs
+        .iter()
+        .filter(|(_, value)| has_mixed_boundary_space(value))
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect()
+}
+
+/// Reads the `(english, translation)` pairs of `static ENTRIES`.
+fn read_dictionary_pairs(path: &Path) -> Result<Vec<(String, String)>, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let declaration = text
+        .find("static ENTRIES")
+        .ok_or_else(|| format!("{}: no `static ENTRIES` declaration", path.display()))?;
+    let end = declaration_end(&text, declaration);
+    let body = &text[declaration..end];
+
+    let mut pairs = Vec::new();
+    let mut i = 0usize;
+    while i < body.len() {
+        // Comments inside the array can contain quoted text ("…", "…"), and a
+        // `read_string` scan would happily read those as entries -- which shows
+        // up as a phantom "unused" key. Skip *comments only* here: skipping
+        // "ignorable" text would skip the string literals themselves, which is
+        // how the first attempt at this fix parsed zero entries.
+        if let Some(next) = skip_comment(body, i) {
+            i = next;
+            continue;
+        }
+        let Some((key, after_key)) = read_string(body, i) else {
+            i += 1;
+            continue;
+        };
+        let comma = skip_trivia(body, after_key);
+        if body.as_bytes().get(comma) != Some(&b',') {
+            i = after_key;
+            continue;
+        }
+        let value_start = skip_trivia(body, comma + 1);
+        match read_string(body, value_start) {
+            Some((value, after_value)) => {
+                pairs.push((key, value));
+                i = after_value;
+            }
+            None => i = after_key,
+        }
+    }
+    Ok(pairs)
+}
+
+/// Every `tr(<key>)` call whose first argument is a string literal.
+fn extract_tr_calls(text: &str) -> Vec<TrCall> {
+    let bytes = text.as_bytes();
+    let mut calls = Vec::new();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if let Some(next) = skip_ignorable(text, i) {
+            i = next;
+            continue;
+        }
+        if is_identifier_start(bytes[i]) {
+            let start = i;
+            while i < bytes.len() && is_identifier_continue(bytes[i]) {
+                i += 1;
+            }
+            let ident = &text[start..i];
+            // `tr_with` is the interpolation form. It has the same
+            // `(lang, key, args)` shape, so the same "first literal argument"
+            // rule applies -- and it has to be seen, because a template that is
+            // rendered on every keystroke is not an unused key.
+            if ident == "tr" || ident == "tr_with" {
+                if let Some(key) = parse_tr_call(text, i) {
+                    calls.push(TrCall {
+                        line: line_number(text, start),
+                        key,
+                    });
+                }
+            }
+            continue;
+        }
+        i += 1;
+    }
+    calls
+}
+
+/// Parses the key argument of the call whose `(` follows `after_ident`.
+///
+/// The signature is `tr(lang, key)`, so the key is the second positional
+/// argument; taking the first *string literal* argument rather than a fixed
+/// position keeps working for `tr(Lang::En, "…")` too.
+fn parse_tr_call(text: &str, after_ident: usize) -> Option<String> {
+    let open = skip_trivia(text, after_ident);
+    if text.as_bytes().get(open) != Some(&b'(') {
+        return None;
+    }
+    let mut start = open + 1;
+    loop {
+        let end = argument_end(text, start)?;
+        let mut argument = text[start..end].trim();
+        if let Some(rest) = argument.strip_prefix('&') {
+            argument = rest.trim_start();
+        }
+        if let Some((value, _)) = read_string(argument, 0) {
+            return Some(value);
+        }
+        if text.as_bytes().get(end) != Some(&b',') {
+            return None;
+        }
+        start = end + 1;
+    }
+}
+
+/// Field names whose string literals are rendered through a variable.
+///
+/// A table cannot always call `tr` where the text is written -- a `const` cannot
+/// call a non-`const` function -- so some tables keep their English text in a
+/// field and render it at the use site as `tr(current(), self.label)`. The
+/// literal then never appears at a call site, and every such key would be
+/// reported as unused, which is the report that invites deleting a translation
+/// that is on screen constantly.
+///
+/// The list is deliberately just `label`: it is the one field name the codebase
+/// actually renders that way. Widening it to the obvious candidates (`name`,
+/// `description`, `*_name`, `*_description`) was measured and rejected -- it
+/// immediately turned 33 not-yet-wired strings into "missing", i.e. it made the
+/// report noisy about work that is simply not done yet. The structural fix for
+/// such a table is to turn it into a function instead (see
+/// `plugin_catalog::remote_marketplace_sections`), which puts the keys back at
+/// real call sites and keeps this rule narrow.
+fn is_bound_key_field(name: &str) -> bool {
+    name == "label"
+}
+
+/// Every `label: "<literal>"` (and the other bound-key fields) in the source.
+///
+/// Shortcut descriptors and `const` tables keep their English text in a field
+/// and render it through `tr(current(), self.field)` where it is used, so the
+/// key never shows up as a literal inside a `tr(..)` call. Without this pass
+/// those keys look unused. Only string literals count, so `label: field` and
+/// `name: some_expr` are ignored.
+fn extract_label_literals(text: &str) -> Vec<TrCall> {
+    let bytes = text.as_bytes();
+    let mut calls = Vec::new();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if let Some(next) = skip_ignorable(text, i) {
+            i = next;
+            continue;
+        }
+        if is_identifier_start(bytes[i]) {
+            let start = i;
+            while i < bytes.len() && is_identifier_continue(bytes[i]) {
+                i += 1;
+            }
+            let ident = &text[start..i];
+            if is_bound_key_field(ident) {
+                if let Some(key) = parse_label_literal(text, i) {
+                    // An empty label is a layout placeholder, not text, so it is
+                    // not a key anybody could translate -- reporting it as
+                    // "rendered without a translation" would be noise that
+                    // trains the reader to ignore the report.
+                    if !key.is_empty() {
+                        calls.push(TrCall {
+                            line: line_number(text, start),
+                            key,
+                        });
+                    }
+                }
+            }
+            continue;
+        }
+        i += 1;
+    }
+    calls
+}
+
+/// Parses the literal in `label: "<literal>"`, where `label` ends at
+/// `after_ident`.
+fn parse_label_literal(text: &str, after_ident: usize) -> Option<String> {
+    let colon = skip_trivia(text, after_ident);
+    if text.as_bytes().get(colon) != Some(&b':') {
+        return None;
+    }
+    let value = skip_trivia(text, colon + 1);
+    read_string(text, value).map(|(value, _)| value)
+}
+
+/// Index of the top-level `,` or closing `)` that ends the argument at `start`.
+fn argument_end(text: &str, start: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut depth = 0usize;
+    let mut i = start;
+    while i < bytes.len() {
+        if let Some(next) = skip_ignorable(text, i) {
+            i = next;
+            continue;
+        }
+        match bytes[i] {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => {
+                if depth == 0 {
+                    return Some(i);
+                }
+                depth -= 1;
+            }
+            b',' if depth == 0 => return Some(i),
+            _ => {}
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Skips comments, string literals and char literals starting at `i`.
+fn skip_ignorable(text: &str, i: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    if let Some(next) = skip_comment(text, i) {
+        return Some(next);
+    }
+    if let Some((_, after)) = read_string(text, i) {
+        return Some(after);
+    }
+    // Char literal (`'x'`, `'\n'`, `'\u{1F600}'`), but not a lifetime.
+    if bytes.get(i) == Some(&b'\'') {
+        if let Some(after) = read_char_literal(text, i) {
+            return Some(after);
+        }
+    }
+    None
+}
+
+/// Skips a `//` or (nested) `/* */` comment starting at `i`.
+fn skip_comment(text: &str, i: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    if bytes.get(i) == Some(&b'/') && bytes.get(i + 1) == Some(&b'/') {
+        return Some(text[i..].find('\n').map_or(text.len(), |offset| i + offset));
+    }
+    if bytes.get(i) == Some(&b'/') && bytes.get(i + 1) == Some(&b'*') {
+        let mut depth = 1usize;
+        let mut j = i + 2;
+        while j < bytes.len() && depth > 0 {
+            if bytes[j..].starts_with(b"/*") {
+                depth += 1;
+                j += 2;
+            } else if bytes[j..].starts_with(b"*/") {
+                depth -= 1;
+                j += 2;
+            } else {
+                j += 1;
+            }
+        }
+        return Some(j);
+    }
+    None
+}
+
+fn read_char_literal(text: &str, i: usize) -> Option<usize> {
+    let rest = text.get(i + 1..)?;
+    let mut chars = rest.char_indices();
+    let (_, first) = chars.next()?;
+    if first == '\\' {
+        // Skip the escape: `\n`, `\x41`, `\u{1F600}`.
+        let escape_rest = &rest[1..];
+        let next = escape_rest.chars().next()?;
+        let consumed = if next == 'u' || next == 'x' {
+            let close = escape_rest
+                .find('}')
+                .or_else(|| escape_rest.char_indices().nth(2).map(|(i, _)| i))?;
+            (1 + close + 1).min(escape_rest.len())
+        } else {
+            next.len_utf8()
+        };
+        let after_escape = i + 1 + 1 + consumed;
+        return (text.as_bytes().get(after_escape) == Some(&b'\'')).then_some(after_escape + 1);
+    }
+    let after_char = i + 1 + first.len_utf8();
+    (text.as_bytes().get(after_char) == Some(&b'\'')).then_some(after_char + 1)
+}
+
+fn skip_trivia(text: &str, i: usize) -> usize {
+    let bytes = text.as_bytes();
+    let mut j = i;
+    loop {
+        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        // Only whitespace and comments: skipping string literals here would
+        // step over the very argument being read.
+        match skip_comment(text, j) {
+            Some(next) if next > j => j = next,
+            _ => return j,
+        }
+    }
+}
+
+/// Decodes a Rust string literal starting at `i`, returning its value and the
+/// index just past the literal.
+fn read_string(text: &str, i: usize) -> Option<(String, usize)> {
+    let bytes = text.as_bytes();
+    let mut cursor = i;
+    if matches!(bytes.get(cursor), Some(b'b' | b'c')) {
+        cursor += 1;
+    }
+    if bytes.get(cursor) == Some(&b'r') {
+        let mut hashes = 0usize;
+        let mut j = cursor + 1;
+        while bytes.get(j) == Some(&b'#') {
+            hashes += 1;
+            j += 1;
+        }
+        if bytes.get(j) != Some(&b'"') {
+            return None;
+        }
+        let body_start = j + 1;
+        let closer = format!("\"{}", "#".repeat(hashes));
+        let end = text.get(body_start..)?.find(&closer)? + body_start;
+        return Some((text[body_start..end].to_string(), end + closer.len()));
+    }
+    if bytes.get(cursor) != Some(&b'"') {
+        return None;
+    }
+    let mut value = String::new();
+    let mut j = cursor + 1;
+    while j < bytes.len() {
+        match bytes[j] {
+            b'"' => return Some((value, j + 1)),
+            b'\\' => {
+                let (decoded, after) = read_escape(text, j)?;
+                value.push(decoded);
+                j = after;
+            }
+            _ => {
+                let ch = text[j..].chars().next()?;
+                value.push(ch);
+                j += ch.len_utf8();
+            }
+        }
+    }
+    None
+}
+
+fn read_escape(text: &str, backslash: usize) -> Option<(char, usize)> {
+    let rest = text.get(backslash + 1..)?;
+    let escaped = rest.chars().next()?;
+    let simple = match escaped {
+        'n' => '\n',
+        'r' => '\r',
+        't' => '\t',
+        '0' => '\0',
+        '\\' => '\\',
+        '\'' => '\'',
+        '"' => '"',
+        'x' => {
+            let digits = rest.get(1..3)?;
+            let code = u8::from_str_radix(digits, 16).ok()?;
+            return Some((char::from(code), backslash + 1 + 3));
+        }
+        'u' => {
+            let open = rest.find('{')?;
+            let close = rest.find('}')?;
+            let digits = rest.get(open + 1..close)?;
+            let code = u32::from_str_radix(&digits.replace('_', ""), 16).ok()?;
+            return Some((char::from_u32(code)?, backslash + 1 + close + 1));
+        }
+        other => other,
+    };
+    Some((simple, backslash + 1 + escaped.len_utf8()))
+}
+
+fn line_number(text: &str, index: usize) -> usize {
+    text.as_bytes()[..index.min(text.len())]
+        .iter()
+        .filter(|byte| **byte == b'\n')
+        .count()
+        + 1
+}
+
+fn is_identifier_start(byte: u8) -> bool {
+    byte.is_ascii_alphabetic() || byte == b'_'
+}
+
+fn is_identifier_continue(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || byte == b'_'
+}
+
+#[cfg(test)]
+#[path = "main_tests.rs"]
+mod tests;

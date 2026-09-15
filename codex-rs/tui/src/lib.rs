@@ -1011,6 +1011,13 @@ pub async fn run_main(
     loader_overrides: LoaderOverrides,
     explicit_remote_endpoint: Option<RemoteAppServerEndpoint>,
 ) -> std::io::Result<AppExitInfo> {
+    // Publish the UI language before anything can render. `config.toml` has not
+    // been loaded yet at this point, so this resolves `--lang`, then the
+    // environment (`LC_ALL`, `LANG`), then the operating system's locale; once
+    // the configuration is available the answer is recomputed with it and
+    // republished, which preserves the documented precedence
+    // (`--lang` > `config.toml` > environment > system) either way.
+    codex_i18n::set_current(codex_i18n::resolve_from_process(cli.lang.as_deref(), None));
     match startup_orchestration::run_main_inner(
         cli,
         arg0_paths,
@@ -1054,6 +1061,16 @@ async fn run_ratatui_app(
     let uses_remote_workspace = app_server_target.uses_remote_workspace();
     let workload_identity_selected = is_workload_identity_selected();
     color_eyre::install()?;
+
+    // Configuration is available now, so re-publish the language with the middle
+    // link of the chain applied: `--lang` > `config.toml` > environment >
+    // system. The earlier publish in `run_main` covered the last three, so this
+    // only changes the answer when `config.toml` sets `locale` and `--lang` does
+    // not; an explicit `--lang` keeps winning either way.
+    codex_i18n::set_current(codex_i18n::resolve_from_process(
+        cli.lang.as_deref(),
+        initial_config.locale.as_deref(),
+    ));
 
     tooltips::announcement::prewarm(initial_config.http_client_factory());
 

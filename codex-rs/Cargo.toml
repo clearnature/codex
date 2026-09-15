@@ -145,11 +145,13 @@ members = [
     "codex-experimental-api-macros",
     "plugin",
     "model-provider",
+    "i18n",
+    "i18n-check",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.154.0"
+version = "0.0.0"
 # Track the edition for all workspace crates in one place. Individual
 # crates can still override this value, but keeping it here means new
 # crates created with `cargo new -w ...` automatically inherit the 2024
@@ -192,6 +194,7 @@ codex-code-mode-protocol = { path = "code-mode-protocol" }
 codex-code-mode-runtime = { path = "code-mode-runtime" }
 codex-home = { path = "codex-home" }
 codex-http-client = { path = "http-client" }
+codex-i18n = { path = "i18n" }
 codex-websocket-client = { path = "websocket-client" }
 codex-config = { path = "config" }
 codex-connectors = { path = "connectors" }

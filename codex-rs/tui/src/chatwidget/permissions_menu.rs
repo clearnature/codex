@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::permission_discovery::PermissionDiscovery;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
 
 pub(crate) fn auto_review_available(config: &Config) -> bool {
@@ -57,7 +59,7 @@ impl ChatWidget {
                     &preset.active_permission_profile.id,
                     &preset.permission_profile,
                 ))
-                .then(|| "Disabled by requirements.".to_string())
+                .then(|| tr(current(), "Disabled by requirements.").to_string())
             })
     }
 
@@ -70,19 +72,31 @@ impl ChatWidget {
         let presets = builtin_approval_presets();
         let Some(read_only) = presets.iter().find(|preset| preset.id == "read-only") else {
             self.add_error_message(
-                "Internal error: missing the 'read-only' approval preset.".to_string(),
+                tr(
+                    current(),
+                    "Internal error: missing the 'read-only' approval preset.",
+                )
+                .to_string(),
             );
             return;
         };
         let Some(default) = presets.iter().find(|preset| preset.id == "auto") else {
             self.add_error_message(
-                "Internal error: missing the 'auto' approval preset.".to_string(),
+                tr(
+                    current(),
+                    "Internal error: missing the 'auto' approval preset.",
+                )
+                .to_string(),
             );
             return;
         };
         let Some(full_access) = presets.iter().find(|preset| preset.id == "full-access") else {
             self.add_error_message(
-                "Internal error: missing the 'full-access' approval preset.".to_string(),
+                tr(
+                    current(),
+                    "Internal error: missing the 'full-access' approval preset.",
+                )
+                .to_string(),
             );
             return;
         };
@@ -136,7 +150,7 @@ impl ChatWidget {
                         profile
                             .description
                             .as_deref()
-                            .unwrap_or("Configured permission profile."),
+                            .unwrap_or(tr(current(), "Configured permission profile.")),
                         active_profile_id.as_deref(),
                         discovery.disabled_reason(
                             &profile.id,
@@ -157,18 +171,17 @@ impl ChatWidget {
             items.push(Self::permission_profile_selection_item(
                 id,
                 id,
-                "Current permission profile.",
+                tr(current(), "Current permission profile."),
                 Some(id),
-                Some("Not available on this server.".to_string()),
+                Some(tr(current(), "Not available on this server.").to_string()),
             ));
         }
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(super::permission_discovery::VIEW_ID),
-            subtitle: discovery
-                .profiles
-                .is_empty()
-                .then(|| "No permission profiles returned by the server.".to_string()),
-            title: Some("Update Model Permissions".to_string()),
+            subtitle: discovery.profiles.is_empty().then(|| {
+                tr(current(), "No permission profiles returned by the server.").to_string()
+            }),
+            title: Some(tr(current(), "Update Model Permissions").to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items,
             header: Box::new(()),

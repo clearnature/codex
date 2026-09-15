@@ -74,6 +74,15 @@ pub struct SharedCliOptions {
     /// Additional directories that should be writable alongside the primary workspace.
     #[arg(long = "add-dir", value_name = "DIR", value_hint = clap::ValueHint::DirPath)]
     pub add_dir: Vec<PathBuf>,
+
+    /// Language for user-facing text, for example `zh-CN` or `en`.
+    ///
+    /// This is the highest-precedence source of the locale chain implemented by
+    /// `codex-i18n`: it outranks `locale` in `config.toml`, which outranks
+    /// `LC_ALL` / `LANG`, which outranks the operating system's locale. An
+    /// unrecognised value resolves to English rather than failing.
+    #[arg(long = "lang", value_name = "LOCALE")]
+    pub lang: Option<String>,
 }
 
 impl SharedCliOptions {
@@ -109,6 +118,7 @@ impl SharedCliOptions {
             cwd,
             worktree,
             add_dir,
+            lang,
         } = self;
         let Self {
             images: root_images,
@@ -123,8 +133,12 @@ impl SharedCliOptions {
             cwd: root_cwd,
             worktree: root_worktree,
             add_dir: root_add_dir,
+            lang: root_lang,
         } = root;
 
+        if lang.is_none() {
+            lang.clone_from(root_lang);
+        }
         if model.is_none() {
             model.clone_from(root_model);
         }
@@ -179,6 +193,7 @@ impl SharedCliOptions {
             cwd,
             worktree,
             add_dir,
+            lang,
         } = subcommand;
 
         if let Some(model) = model {
@@ -204,6 +219,9 @@ impl SharedCliOptions {
         }
         if let Some(cwd) = cwd {
             self.cwd = Some(cwd);
+        }
+        if let Some(lang) = lang {
+            self.lang = Some(lang);
         }
         self.worktree |= worktree;
         if !images.is_empty() {

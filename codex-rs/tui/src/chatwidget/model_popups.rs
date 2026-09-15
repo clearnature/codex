@@ -5,6 +5,9 @@
 
 use super::*;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const ULTRA_REASONING_CONCURRENCY_WARNING_THRESHOLD: usize = 8;
 pub(super) const MODEL_SELECTION_VIEW_ID: &str = "model-selection";
@@ -16,7 +19,11 @@ impl ChatWidget {
     pub(crate) fn open_model_popup(&mut self) {
         if !self.is_session_configured() {
             self.add_info_message(
-                "Model selection is disabled until startup completes.".to_string(),
+                tr(
+                    current(),
+                    "Model selection is disabled until startup completes.",
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return;
@@ -26,7 +33,11 @@ impl ChatWidget {
             Ok(models) => models,
             Err(_) => {
                 self.add_info_message(
-                    "Models are being updated; please try /model again in a moment.".to_string(),
+                    tr(
+                        current(),
+                        "Models are being updated; please try /model again in a moment.",
+                    )
+                    .to_string(),
                     /*hint*/ None,
                 );
                 return;
@@ -53,8 +64,10 @@ impl ChatWidget {
 
     fn model_menu_warning_line(&self) -> Option<Line<'static>> {
         let base_url = self.custom_openai_base_url()?;
-        let warning = format!(
-            "Warning: OpenAI base URL is overridden to {base_url}. Selecting models may not be supported or work properly."
+        let warning = tr_with(
+            current(),
+            "Warning: OpenAI base URL is overridden to {0}. Selecting models may not be supported or work properly.",
+            &[&base_url],
         );
         Some(Line::from(warning.red()))
     }
@@ -155,12 +168,14 @@ impl ChatWidget {
             })];
 
             let is_current = !items.iter().any(|item| item.is_current);
-            let description = Some(format!(
-                "Choose a specific model and reasoning level (current: {current_label})"
+            let description = Some(tr_with(
+                current(),
+                "Choose a specific model and reasoning level (current: {0})",
+                &[&current_label],
             ));
 
             items.push(SelectionItem {
-                name: "All models".to_string(),
+                name: tr(current(), "All models").to_string(),
                 description,
                 is_current,
                 actions,
@@ -170,8 +185,8 @@ impl ChatWidget {
         }
 
         let header = self.model_menu_header(
-            "Select Model",
-            "Pick a quick auto mode or browse all models.",
+            tr(current(), "Select Model"),
+            tr(current(), "Pick a quick auto mode or browse all models."),
         );
         self.show_model_selection_view(SelectionViewParams {
             view_id: Some(MODEL_SELECTION_VIEW_ID),
@@ -221,7 +236,7 @@ impl ChatWidget {
         if presets.is_empty() {
             self.bottom_pane.dismiss_view_by_id(view_id);
             self.add_info_message(
-                "No additional models are available right now.".to_string(),
+                tr(current(), "No additional models are available right now.").to_string(),
                 /*hint*/ None,
             );
             return;
@@ -253,8 +268,11 @@ impl ChatWidget {
         }
 
         let header = self.model_menu_header(
-            "Select Model and Effort",
-            "Access legacy models by running codex -m <model_name> or in your config.toml",
+            tr(current(), "Select Model and Effort"),
+            tr(
+                current(),
+                "Access legacy models by running codex -m <model_name> or in your config.toml",
+            ),
         );
         self.show_model_selection_view(SelectionViewParams {
             view_id: Some(view_id),
@@ -337,22 +355,26 @@ impl ChatWidget {
         effort: Option<ReasoningEffortConfig>,
     ) {
         let reasoning_phrase = match effort.as_ref() {
-            Some(ReasoningEffortConfig::None) => "no reasoning".to_string(),
-            Some(selected_effort) => {
-                format!(
-                    "{} reasoning",
-                    Self::reasoning_effort_sentence_label(selected_effort)
-                )
-            }
-            None => "the selected reasoning".to_string(),
+            Some(ReasoningEffortConfig::None) => tr(current(), "no reasoning").to_string(),
+            Some(selected_effort) => tr_with(
+                current(),
+                "{0} reasoning",
+                &[&Self::reasoning_effort_sentence_label(selected_effort)],
+            ),
+            None => tr(current(), "the selected reasoning").to_string(),
         };
-        let plan_only_description = format!("Always use {reasoning_phrase} in Plan mode.");
+        let plan_only_description = tr_with(
+            current(),
+            "Always use {0} in Plan mode.",
+            &[&reasoning_phrase],
+        );
         let plan_reasoning_source = if let Some(plan_override) =
             self.config.plan_mode_reasoning_effort.as_ref()
         {
-            format!(
-                "user-chosen Plan override ({})",
-                Self::reasoning_effort_sentence_label(plan_override)
+            tr_with(
+                current(),
+                "user-chosen Plan override ({0})",
+                &[&Self::reasoning_effort_sentence_label(plan_override)],
             )
         } else if let Some(plan_mask) = collaboration_modes::plan_mask(self.model_catalog.as_ref())
         {
@@ -361,19 +383,26 @@ impl ChatWidget {
                 .as_ref()
                 .and_then(|effort| effort.as_ref())
             {
-                Some(plan_effort) => format!(
-                    "built-in Plan default ({})",
-                    Self::reasoning_effort_sentence_label(plan_effort)
+                Some(plan_effort) => tr_with(
+                    current(),
+                    "built-in Plan default ({0})",
+                    &[&Self::reasoning_effort_sentence_label(plan_effort)],
                 ),
-                None => "built-in Plan default (no reasoning)".to_string(),
+                None => tr(current(), "built-in Plan default (no reasoning)").to_string(),
             }
         } else {
-            "built-in Plan default".to_string()
+            tr(current(), "built-in Plan default").to_string()
         };
-        let all_modes_description = format!(
-            "Set the global default reasoning level and the Plan mode override. This replaces the current {plan_reasoning_source}."
+        let all_modes_description = tr_with(
+            current(),
+            "Set the global default reasoning level and the Plan mode override. This replaces the current {0}.",
+            &[&plan_reasoning_source],
         );
-        let subtitle = format!("Choose where to apply {reasoning_phrase}.");
+        let subtitle = tr_with(
+            current(),
+            "Choose where to apply {0}.",
+            &[&reasoning_phrase],
+        );
         let warning = effort
             .as_ref()
             .and_then(|effort| self.ultra_reasoning_concurrency_warning(effort));
@@ -461,7 +490,11 @@ impl ChatWidget {
         };
         let warning_text = warn_effort.as_ref().map(|effort| {
             let effort_label = Self::reasoning_effort_label(effort);
-            format!("⚠ {effort_label} reasoning effort can quickly consume Plus plan rate limits.")
+            tr_with(
+                current(),
+                "⚠ {0} reasoning effort can quickly consume Plus plan rate limits.",
+                &[&effort_label],
+            )
         });
         let warn_for_model = preset.model.starts_with("gpt-5.1-codex")
             || preset.model.starts_with("gpt-5.1-codex-max")
@@ -588,7 +621,7 @@ impl ChatWidget {
                 });
             })];
             items.push(SelectionItem {
-                name: "More reasoning…".to_string(),
+                name: tr(current(), "More reasoning…").to_string(),
                 description: Some(format!("{advanced_label} {verb} usage limits faster")),
                 is_current: is_current_model
                     && highlight_choice
@@ -602,7 +635,7 @@ impl ChatWidget {
 
         let mut header = ColumnRenderable::new();
         header.push(Line::from(
-            format!("Select Reasoning Level for {model_label}").bold(),
+            tr_with(current(), "Select Reasoning Level for {0}", &[&model_label]).bold(),
         ));
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
@@ -723,11 +756,10 @@ impl ChatWidget {
         }
 
         let max_subagents = max_threads.saturating_sub(1);
-        Some(format!(
-            "Ultra reasoning may proactively use multiple agents. This session is configured for \
-             {max_threads} concurrent threads with up to {max_subagents} subagents which can \
-             increase usage quickly. Consider setting \
-             features.multi_agent_v2.max_concurrent_threads_per_session below 8."
+        Some(tr_with(
+            current(),
+            "Ultra reasoning may proactively use multiple agents. This session is configured for {0} concurrent threads with up to {1} subagents which can increase usage quickly. Consider setting features.multi_agent_v2.max_concurrent_threads_per_session below 8.",
+            &[&max_threads.to_string(), &max_subagents.to_string()],
         ))
     }
 

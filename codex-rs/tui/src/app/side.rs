@@ -13,18 +13,45 @@ use codex_app_server_protocol::ThreadUnsubscribeParams;
 use codex_app_server_protocol::ThreadUnsubscribeResponse;
 use codex_app_server_protocol::TurnInterruptParams;
 use codex_app_server_protocol::TurnInterruptResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::ResponseItem;
 
-const SIDE_RENAME_BLOCK_MESSAGE: &str = "Side conversations are ephemeral and cannot be renamed.";
-const SIDE_MAIN_THREAD_UNAVAILABLE_MESSAGE: &str =
-    "'/side' is unavailable until the main thread is ready.";
-const SIDE_NO_STARTED_CONVERSATION_MESSAGE: &str = concat!(
-    "'/side' is unavailable until the current conversation has started. ",
-    "Send a message first, then try /side again."
-);
-const SIDE_ALREADY_OPEN_MESSAGE: &str =
-    "A side conversation is already open. Press ctrl + c to return before starting another.";
+/// Messages shown when a `/side` action is refused.
+///
+/// Functions rather than `const`s: the text has to pass through `tr`, and a
+/// `const` cannot call a non-`const` function (see `docs/plan/i18n-design.md`
+/// §3.6). `SIDE_BOUNDARY_PROMPT` below stays a `const` on purpose -- it is fed
+/// to the model rather than rendered to the user, so translating it would change
+/// what the model sees (design §4, decision 3).
+fn side_rename_block_message() -> &'static str {
+    tr(
+        current(),
+        "Side conversations are ephemeral and cannot be renamed.",
+    )
+}
+
+fn side_main_thread_unavailable_message() -> &'static str {
+    tr(
+        current(),
+        "'/side' is unavailable until the main thread is ready.",
+    )
+}
+
+fn side_no_started_conversation_message() -> &'static str {
+    tr(
+        current(),
+        "'/side' is unavailable until the current conversation has started. Send a message first, then try /side again.",
+    )
+}
+
+fn side_already_open_message() -> &'static str {
+    tr(
+        current(),
+        "A side conversation is already open. Press ctrl + c to return before starting another.",
+    )
+}
 const SIDE_BOUNDARY_PROMPT: &str = r#"Side conversation boundary.
 
 Everything before this boundary is inherited history from the parent thread. It is reference context only. It is not your current task.
@@ -68,18 +95,18 @@ pub(super) enum SideParentStatus {
 impl SideParentStatus {
     fn label(self, parent_is_main: bool) -> &'static str {
         match (self, parent_is_main) {
-            (SideParentStatus::NeedsInput, true) => "main needs input",
-            (SideParentStatus::NeedsInput, false) => "parent needs input",
-            (SideParentStatus::NeedsApproval, true) => "main needs approval",
-            (SideParentStatus::NeedsApproval, false) => "parent needs approval",
-            (SideParentStatus::Failed, true) => "main failed",
-            (SideParentStatus::Failed, false) => "parent failed",
-            (SideParentStatus::Interrupted, true) => "main interrupted",
-            (SideParentStatus::Interrupted, false) => "parent interrupted",
-            (SideParentStatus::Closed, true) => "main closed",
-            (SideParentStatus::Closed, false) => "parent closed",
-            (SideParentStatus::Finished, true) => "main finished",
-            (SideParentStatus::Finished, false) => "parent finished",
+            (SideParentStatus::NeedsInput, true) => tr(current(), "main needs input"),
+            (SideParentStatus::NeedsInput, false) => tr(current(), "parent needs input"),
+            (SideParentStatus::NeedsApproval, true) => tr(current(), "main needs approval"),
+            (SideParentStatus::NeedsApproval, false) => tr(current(), "parent needs approval"),
+            (SideParentStatus::Failed, true) => tr(current(), "main failed"),
+            (SideParentStatus::Failed, false) => tr(current(), "parent failed"),
+            (SideParentStatus::Interrupted, true) => tr(current(), "main interrupted"),
+            (SideParentStatus::Interrupted, false) => tr(current(), "parent interrupted"),
+            (SideParentStatus::Closed, true) => tr(current(), "main closed"),
+            (SideParentStatus::Closed, false) => tr(current(), "parent closed"),
+            (SideParentStatus::Finished, true) => tr(current(), "main finished"),
+            (SideParentStatus::Finished, false) => tr(current(), "parent finished"),
         }
     }
 
@@ -259,7 +286,7 @@ impl App {
         };
 
         self.chat_widget
-            .set_thread_rename_block_message(SIDE_RENAME_BLOCK_MESSAGE);
+            .set_thread_rename_block_message(side_rename_block_message());
         self.chat_widget
             .set_side_conversation_active(/*active*/ true);
         self.chat_widget
@@ -611,9 +638,9 @@ impl App {
 
     pub(super) fn side_start_block_message(&self) -> Option<&'static str> {
         if self.primary_thread_id.is_none() {
-            Some(SIDE_MAIN_THREAD_UNAVAILABLE_MESSAGE)
+            Some(side_main_thread_unavailable_message())
         } else if self.active_side_parent_thread_id().is_some() {
-            Some(SIDE_ALREADY_OPEN_MESSAGE)
+            Some(side_already_open_message())
         } else {
             None
         }
@@ -625,7 +652,7 @@ impl App {
             message.contains("no rollout found for thread id")
                 || message.contains("includeTurns is unavailable before first user message")
         }) {
-            SIDE_NO_STARTED_CONVERSATION_MESSAGE.to_string()
+            side_no_started_conversation_message().to_string()
         } else {
             format!("Failed to start side conversation: {err}")
         }

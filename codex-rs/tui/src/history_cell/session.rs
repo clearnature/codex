@@ -4,6 +4,9 @@ use super::*;
 use crate::line_truncation::line_width;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::width::display_width;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 pub(crate) const SESSION_HEADER_MAX_INNER_WIDTH: usize = 56; // Just an eyeballed value
 
@@ -97,7 +100,7 @@ impl HistoryCell for TooltipHistoryCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from(format!("Tip: {}", self.tip))]
+        vec![Line::from(tr_with(current(), "Tip: {0}", &[&self.tip]))]
     }
 }
 
@@ -195,9 +198,9 @@ pub(crate) fn new_session_info(
         }
         if requested_model != session.model.as_str() {
             let lines = vec![
-                "model changed:".magenta().bold().into(),
-                format!("requested: {requested_model}").into(),
-                format!("used: {}", session.model).into(),
+                tr(current(), "model changed:").magenta().bold().into(),
+                tr_with(current(), "requested: {0}", &[&requested_model]).into(),
+                tr_with(current(), "used: {0}", &[&session.model]).into(),
             ];
             parts.push(Box::new(PlainHistoryCell { lines }));
         }
@@ -325,7 +328,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
         // Title line rendered inside the box: ">_ OpenAI Codex (vX)"
         let title_spans: Vec<Span<'static>> = vec![
             Span::from(">_ ").dim(),
-            Span::from("OpenAI Codex").bold(),
+            Span::from(tr(current(), "OpenAI Codex")).bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{})", self.version)).dim(),
         ];
@@ -383,7 +386,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
             let permissions_label = format!("{PERMISSIONS_LABEL:<label_width$}");
             lines.push(make_row(vec![
                 Span::from(format!("{permissions_label} ")).dim(),
-                "YOLO mode".magenta().bold(),
+                tr(current(), "YOLO mode").magenta().bold(),
             ]));
         }
 
@@ -396,7 +399,11 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(format!("OpenAI Codex (v{})", self.version)),
+            Line::from(tr_with(
+                current(),
+                "OpenAI Codex (v{0})",
+                &[&self.version.to_string()],
+            )),
             Line::from(format!(
                 "model: {}{}",
                 self.model,
@@ -410,7 +417,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
             )),
         ];
         if self.yolo_mode {
-            lines.push(Line::from("permissions: YOLO mode"));
+            lines.push(Line::from(tr(current(), "permissions: YOLO mode")));
         }
         lines
     }

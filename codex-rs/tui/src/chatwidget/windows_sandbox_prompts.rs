@@ -1,6 +1,15 @@
 //! Windows sandbox prompts and warning surfaces for `ChatWidget`.
 
+// The rendering code that uses these is `#[cfg(any(target_os = "windows", test))]`,
+// so the imports carry the same gate (otherwise a plain non-Windows lib build
+// is left with three unused imports).
 use super::*;
+#[cfg(any(target_os = "windows", test))]
+use codex_i18n::current;
+#[cfg(any(target_os = "windows", test))]
+use codex_i18n::tr;
+#[cfg(any(target_os = "windows", test))]
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     #[cfg(any(target_os = "windows", test))]
@@ -88,14 +97,14 @@ impl ChatWidget {
         let mut header_children: Vec<Box<dyn Renderable>> = Vec::new();
         let describe_profile = |profile: &PermissionProfile| {
             if matches!(profile, PermissionProfile::Disabled) {
-                "Full Access mode"
+                tr(current(), "Full Access mode")
             } else if profile
                 .file_system_sandbox_policy()
                 .can_write_local_path_with_cwd(self.config.cwd.as_path(), self.config.cwd.as_path())
             {
-                "Agent mode"
+                tr(current(), "Agent mode")
             } else {
-                "Read-Only mode"
+                tr(current(), "Read-Only mode")
             }
         };
         let mode_label = preset
@@ -108,11 +117,16 @@ impl ChatWidget {
             Line::from(vec![
                 "We couldn't complete the world-writable scan, so protections cannot be verified. "
                     .into(),
-                format!("The Windows sandbox cannot guarantee protection in {mode_label}.").red(),
+                tr_with(
+                    current(),
+                    "The Windows sandbox cannot guarantee protection in {0}.",
+                    &[&mode_label],
+                )
+                .red(),
             ])
         } else {
             Line::from(vec![
-                "The Windows sandbox cannot protect writes to folders that are writable by Everyone.".into(),
+                tr(current(), "The Windows sandbox cannot protect writes to folders that are writable by Everyone.").into(),
                 " Consider removing write access for Everyone from the following folders:".into(),
             ])
         };
@@ -128,7 +142,11 @@ impl ChatWidget {
                 lines.push(Line::from(format!("  - {p}")));
             }
             if extra_count > 0 {
-                lines.push(Line::from(format!("and {extra_count} more")));
+                lines.push(Line::from(tr_with(
+                    current(),
+                    "and {0} more",
+                    &[&extra_count.to_string()],
+                )));
             }
             header_children.push(Box::new(Paragraph::new(lines).wrap(Wrap { trim: false })));
         }
@@ -183,16 +201,24 @@ impl ChatWidget {
 
         let items = vec![
             SelectionItem {
-                name: "Continue".to_string(),
-                description: Some(format!("Apply {mode_label} for this session")),
+                name: tr(current(), "Continue").to_string(),
+                description: Some(tr_with(
+                    current(),
+                    "Apply {0} for this session",
+                    &[&mode_label],
+                )),
                 actions: accept_actions,
                 dismiss_on_select: true,
                 require_explicit_confirmation: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Continue and don't warn again".to_string(),
-                description: Some(format!("Enable {mode_label} and remember this choice")),
+                name: tr(current(), "Continue and don't warn again").to_string(),
+                description: Some(tr_with(
+                    current(),
+                    "Enable {0} and remember this choice",
+                    &[&mode_label],
+                )),
                 actions: accept_and_remember_actions,
                 dismiss_on_select: true,
                 require_explicit_confirmation: true,
@@ -260,7 +286,11 @@ impl ChatWidget {
         let retry_preset = preset.clone();
         let retry_profile_selection = profile_selection.clone();
         let mut items = vec![SelectionItem {
-            name: "Set up default sandbox (requires Administrator permissions)".to_string(),
+            name: tr(
+                current(),
+                "Set up default sandbox (requires Administrator permissions)",
+            )
+            .to_string(),
             description: None,
             actions: vec![Box::new(move |tx| {
                 accept_otel.counter(

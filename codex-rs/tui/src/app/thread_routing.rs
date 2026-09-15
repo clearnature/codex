@@ -12,6 +12,9 @@ use codex_app_server_protocol::ThreadStartedNotification;
 use codex_app_server_protocol::TurnInterruptParams;
 use codex_app_server_protocol::TurnInterruptResponse;
 use codex_app_server_protocol::WarningNotification;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) async fn shutdown_current_thread(&mut self, app_server: &mut AppServerSession) {
@@ -141,11 +144,11 @@ impl App {
     pub(super) fn thread_label(&self, thread_id: ThreadId) -> String {
         let is_primary = self.primary_thread_id == Some(thread_id);
         let fallback_label = if is_primary {
-            "Main [default]".to_string()
+            tr(current(), "Main [default]").to_string()
         } else {
             let thread_id = thread_id.to_string();
             let short_id: String = thread_id.chars().take(8).collect();
-            format!("Agent ({short_id})")
+            tr_with(current(), "Agent ({0})", &[&short_id])
         };
         if let Some(entry) = self.agent_navigation.get(&thread_id) {
             let label = format_agent_picker_item_name(
@@ -189,7 +192,11 @@ impl App {
         };
 
         self.chat_widget.add_info_message(
-            format!("Already viewing {}.", target_session.display_label()),
+            tr_with(
+                current(),
+                "Already viewing {0}.",
+                &[&target_session.display_label()],
+            ),
             /*hint*/ None,
         );
         true
@@ -447,7 +454,7 @@ impl App {
     ) -> Result<()> {
         let Some(thread_id) = self.active_thread_id else {
             self.chat_widget
-                .add_error_message("No active thread is available.".to_string());
+                .add_error_message(tr(current(), "No active thread is available.").to_string());
             return Ok(());
         };
 
@@ -462,7 +469,11 @@ impl App {
     ) -> Result<()> {
         if self.thread_unavailable(thread_id) {
             self.chat_widget.add_error_message(
-                "This conversation is read-only or unavailable; no operation was sent.".into(),
+                tr(
+                    current(),
+                    "This conversation is read-only or unavailable; no operation was sent.",
+                )
+                .into(),
             );
             return Ok(());
         }
@@ -491,8 +502,11 @@ impl App {
             return Ok(());
         }
 
-        self.chat_widget
-            .add_error_message(format!("Not available in TUI yet for thread {thread_id}."));
+        self.chat_widget.add_error_message(tr_with(
+            current(),
+            "Not available in TUI yet for thread {0}.",
+            &[&thread_id.to_string()],
+        ));
         Ok(())
     }
 

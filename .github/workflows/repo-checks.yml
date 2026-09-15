@@ -60,6 +60,13 @@ jobs:
       - name: Check formatting (run `just fmt` to fix)
         run: just fmt-check
 
+      # The zh dictionary and the strings the workspace actually renders drift
+      # apart silently -- a translation for a deleted string, or a rendered
+      # string with no entry. `i18n-check` exits non-zero on either, so this is a
+      # merge gate rather than a report. See docs/plan/i18n-verification.md (H3).
+      - name: Check the zh dictionary against rendered strings
+        run: just i18n-check
+
       - name: Prettier (run `pnpm run format:fix` to fix)
         run: pnpm run format
 

@@ -17,6 +17,9 @@ use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::LoginAccountParams;
 use codex_app_server_protocol::LoginAccountResponse;
 use codex_app_server_protocol::RequestId;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -340,7 +343,10 @@ impl BedrockState {
             return;
         }
         let mut lines: Vec<Line> = vec![
-            Line::from(vec!["> ".into(), "Set up Amazon Bedrock".bold()]),
+            Line::from(vec![
+                "> ".into(),
+                tr(current(), "Set up Amazon Bedrock").bold(),
+            ]),
             "".into(),
         ];
         match &self.view {
@@ -407,9 +413,9 @@ impl BedrockState {
                 lines.push("  Enter your AWS access keys.".into());
                 lines.push("".into());
                 for (index, label) in [
-                    "AWS access key ID",
-                    "AWS secret access key",
-                    "AWS session token (optional)",
+                    tr(current(), "AWS access key ID"),
+                    tr(current(), "AWS secret access key"),
+                    tr(current(), "AWS session token (optional)"),
                 ]
                 .into_iter()
                 .enumerate()
@@ -518,12 +524,12 @@ impl BedrockState {
                 BedrockMethod::Profile(profile_index) => {
                     let profile = &self.profiles[profile_index];
                     let title = if self.profiles.len() == 1 {
-                        format!("Continue with {}", profile.name)
+                        tr_with(current(), "Continue with {0}", &[&profile.name])
                     } else {
                         profile.name.clone()
                     };
                     let description = if self.profiles.len() == 1 {
-                        "Use your existing AWS credentials".to_string()
+                        tr(current(), "Use your existing AWS credentials").to_string()
                     } else {
                         profile.region.clone().unwrap_or_default()
                     };
@@ -533,39 +539,42 @@ impl BedrockState {
                     let description = if self.environment_credentials.iter().any(|credential| {
                         credential.credential_type == AwsCredentialType::BedrockApiKey
                     }) {
-                        "Use your existing Amazon Bedrock API key"
+                        tr(current(), "Use your existing Amazon Bedrock API key")
                     } else {
                         "Use your existing AWS credentials"
                     };
                     (
-                        "Continue with detected credentials".to_string(),
+                        tr(current(), "Continue with detected credentials").to_string(),
                         description.to_string(),
                     )
                 }
                 BedrockMethod::OtherMethods => (
                     if matches!(self.view, BedrockView::EnvironmentInstructions) {
-                        "Choose another sign-in method"
+                        tr(current(), "Choose another sign-in method")
                     } else {
-                        "Other AWS sign-in methods"
+                        tr(current(), "Other AWS sign-in methods")
                     }
                     .to_string(),
                     if matches!(self.view, BedrockView::EnvironmentInstructions) {
                         ""
                     } else {
-                        "Use another profile, access keys, or environment variables"
+                        tr(
+                            current(),
+                            "Use another profile, access keys, or environment variables",
+                        )
                     }
                     .to_string(),
                 ),
                 BedrockMethod::ManualProfile => (
-                    "AWS profile".to_string(),
-                    "Use AWS SSO or a named profile".to_string(),
+                    tr(current(), "AWS profile").to_string(),
+                    tr(current(), "Use AWS SSO or a named profile").to_string(),
                 ),
                 BedrockMethod::AccessKeys => (
-                    "AWS access keys".to_string(),
-                    "Enter an access key ID and secret access key".to_string(),
+                    tr(current(), "AWS access keys").to_string(),
+                    tr(current(), "Enter an access key ID and secret access key").to_string(),
                 ),
                 BedrockMethod::EnvironmentInstructions => (
-                    "Environment variables".to_string(),
+                    tr(current(), "Environment variables").to_string(),
                     "Configure AWS credentials in your environment, then return here.".to_string(),
                 ),
                 BedrockMethod::ApiKey => (

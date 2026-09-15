@@ -24,6 +24,8 @@ use codex_app_server_protocol::MarketplaceRemoveResponse;
 use codex_app_server_protocol::MarketplaceUpgradeParams;
 use codex_app_server_protocol::MarketplaceUpgradeResponse;
 use codex_app_server_protocol::RequestId;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 use crate::hooks_rpc::fetch_hooks_list;
 use crate::hooks_rpc::write_hook_trust;
@@ -355,7 +357,13 @@ impl App {
             let source_for_event = source.clone();
             let result = fetch_marketplace_add(request_handle, cwd, source)
                 .await
-                .map_err(|err| format!("Failed to add marketplace: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to add marketplace: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::MarketplaceAddLoaded {
                 cwd: cwd_for_event,
                 source: source_for_event,
@@ -378,7 +386,13 @@ impl App {
             let marketplace_name_for_event = marketplace_name.clone();
             let result = fetch_marketplace_remove(request_handle, marketplace_name)
                 .await
-                .map_err(|err| format!("Failed to remove marketplace: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to remove marketplace: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::MarketplaceRemoveLoaded {
                 cwd: cwd_for_event,
                 marketplace_name: marketplace_name_for_event,
@@ -400,7 +414,13 @@ impl App {
             let cwd_for_event = cwd.clone();
             let result = fetch_marketplace_upgrade(request_handle, marketplace_name)
                 .await
-                .map_err(|err| format!("Failed to upgrade marketplace: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to upgrade marketplace: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::MarketplaceUpgradeLoaded {
                 cwd: cwd_for_event,
                 result,
@@ -424,7 +444,13 @@ impl App {
             let plugin_name_for_event = plugin_name.clone();
             let result = fetch_plugin_install(request_handle, location, plugin_name)
                 .await
-                .map_err(|err| format!("Failed to install plugin: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to install plugin: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::PluginInstallLoaded {
                 cwd: cwd_for_event,
                 location: location_for_event,
@@ -449,7 +475,13 @@ impl App {
             let plugin_id_for_event = plugin_id.clone();
             let result = fetch_plugin_uninstall(request_handle, plugin_id)
                 .await
-                .map_err(|err| format!("Failed to uninstall plugin: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to uninstall plugin: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::PluginUninstallLoaded {
                 cwd: cwd_for_event,
                 plugin_id: plugin_id_for_event,
@@ -491,7 +523,13 @@ impl App {
             let result = write_plugin_enabled(request_handle, plugin_id, enabled)
                 .await
                 .map(|_| ())
-                .map_err(|err| format!("Failed to update plugin config: {err}"));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to update plugin config: {0}",
+                        &[&err.to_string()],
+                    )
+                });
             app_event_tx.send(AppEvent::PluginEnabledSet {
                 cwd: cwd_for_event,
                 plugin_id: plugin_id_for_event,
@@ -530,9 +568,10 @@ impl App {
                 .await
                 .map(|_| ())
                 .map_err(|err| {
-                    format!(
-                        "Failed to update hook config: {}",
-                        format_config_error(&err)
+                    tr_with(
+                        current(),
+                        "Failed to update hook config: {0}",
+                        &[&format_config_error(&err)],
                     )
                 });
             app_event_tx.send(AppEvent::HookEnabledSet {
@@ -555,7 +594,13 @@ impl App {
             let result = write_hook_trust(request_handle, key, current_hash)
                 .await
                 .map(|_| ())
-                .map_err(|err| format!("Failed to trust hook: {}", format_config_error(&err)));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to trust hook: {0}",
+                        &[&format_config_error(&err)],
+                    )
+                });
             app_event_tx.send(AppEvent::HookTrusted { result });
         });
     }
@@ -571,7 +616,13 @@ impl App {
             let result = write_hook_trusts(request_handle, updates)
                 .await
                 .map(|_| ())
-                .map_err(|err| format!("Failed to trust hooks: {}", format_config_error(&err)));
+                .map_err(|err| {
+                    tr_with(
+                        current(),
+                        "Failed to trust hooks: {0}",
+                        &[&format_config_error(&err)],
+                    )
+                });
             app_event_tx.send(AppEvent::HookTrusted { result });
         });
     }
@@ -651,8 +702,10 @@ impl App {
             }
             Err(err) => self
                 .chat_widget
-                .add_to_history(history_cell::new_error_event(format!(
-                    "Failed to upload feedback: {err}"
+                .add_to_history(history_cell::new_error_event(tr_with(
+                    current(),
+                    "Failed to upload feedback: {0}",
+                    &[&err.to_string()],
                 ))),
         }
     }
@@ -731,8 +784,11 @@ impl App {
         let statuses = match result {
             Ok(statuses) => statuses,
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to load MCP inventory: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to load MCP inventory: {0}",
+                    &[&err.to_string()],
+                ));
                 return;
             }
         };

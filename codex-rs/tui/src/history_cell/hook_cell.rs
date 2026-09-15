@@ -16,6 +16,8 @@ use codex_app_server_protocol::HookOutputEntry;
 use codex_app_server_protocol::HookOutputEntryKind;
 use codex_app_server_protocol::HookRunStatus;
 use codex_app_server_protocol::HookRunSummary;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::prelude::*;
 use ratatui::style::Stylize;
 use std::time::Duration;
@@ -151,9 +153,9 @@ impl HookCell {
             {
                 message.to_string()
             } else if multiple {
-                "Running hooks".to_string()
+                tr(current(), "Running hooks").to_string()
             } else {
-                "Running hook".to_string()
+                tr(current(), "Running hook").to_string()
             },
         )
     }
@@ -284,14 +286,20 @@ impl HookCell {
             if *status == HookRunStatus::Completed
                 && let Some(first_line) = system_message_lines.as_mut().and_then(Iterator::next)
             {
-                lines.push(vec!["↳ Hook · ".dim(), first_line.to_string().into()].into());
+                lines.push(
+                    vec![
+                        tr(current(), "↳ Hook · ").dim(),
+                        first_line.to_string().into(),
+                    ]
+                    .into(),
+                );
             } else {
                 let header_text = match status {
-                    HookRunStatus::Completed => "Hook completed",
-                    HookRunStatus::Failed => "Hook failed",
-                    HookRunStatus::Blocked => "Blocked by hook",
-                    HookRunStatus::Stopped => "Hook stopped",
-                    HookRunStatus::Running => "Hook running",
+                    HookRunStatus::Completed => tr(current(), "Hook completed"),
+                    HookRunStatus::Failed => tr(current(), "Hook failed"),
+                    HookRunStatus::Blocked => tr(current(), "Blocked by hook"),
+                    HookRunStatus::Stopped => tr(current(), "Hook stopped"),
+                    HookRunStatus::Running => tr(current(), "Hook running"),
                 };
                 lines.push(
                     vec![

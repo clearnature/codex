@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
@@ -145,8 +148,8 @@ pub enum SessionPickerLaunchContext {
 impl SessionPickerAction {
     fn title(self) -> &'static str {
         match self {
-            SessionPickerAction::Resume => "Resume a previous session",
-            SessionPickerAction::Fork => "Fork a previous session",
+            SessionPickerAction::Resume => tr(current(), "Resume a previous session"),
+            SessionPickerAction::Fork => tr(current(), "Fork a previous session"),
         }
     }
 
@@ -1156,7 +1159,8 @@ impl PickerState {
             return;
         };
         let Some(thread_id) = row.thread_id else {
-            self.inline_error = Some("No transcript available for this session".to_string());
+            self.inline_error =
+                Some(tr(current(), "No transcript available for this session").to_string());
             self.request_frame();
             return;
         };
@@ -1296,10 +1300,10 @@ impl PickerState {
                     }
                     self.inline_error = Some(match path {
                         Some(path) => {
-                            format!("Failed to read session metadata from {}", path.display())
+                            tr_with(current(), "Failed to read session metadata from {0}", &[&path.display().to_string()])
                         }
                         None => {
-                            String::from("Failed to read session metadata from selected session")
+                            String::from(tr(current(), "Failed to read session metadata from selected session"))
                         }
                     });
                     self.request_frame();
@@ -1538,7 +1542,8 @@ impl PickerState {
                         self.pending_transcript_cancellation = None;
                         self.pending_transcript_open = None;
                         self.transcript_loading_frame_shown = false;
-                        self.inline_error = Some("Could not load transcript preview".to_string());
+                        self.inline_error =
+                            Some(tr(current(), "Could not load transcript preview").to_string());
                     }
                     self.request_frame();
                 }
@@ -2024,7 +2029,7 @@ fn row_from_app_server_thread(thread: Thread) -> Option<Row> {
     Some(Row {
         path: thread.path,
         preview: if preview.is_empty() {
-            String::from("(no message yet)")
+            String::from(tr(current(), "(no message yet)"))
         } else {
             preview.to_string()
         },
@@ -2160,9 +2165,9 @@ fn search_line(state: &PickerState, width: u16) -> Line<'_> {
         return Line::from(error.red());
     }
     let search = if state.query.is_empty() {
-        "Type to search".dim()
+        tr(current(), "Type to search").dim()
     } else {
-        format!("Search: {}", state.query).into()
+        tr_with(current(), "Search: {0}", &[&state.query]).into()
     };
     let search_width = UnicodeWidthStr::width(search.content.as_ref());
     let mut toolbar = toolbar_line(state, /*compact*/ false);
@@ -2214,7 +2219,7 @@ fn toolbar_line(state: &PickerState, compact: bool) -> Line<'static> {
                 status_focused,
             ));
         } else {
-            spans.push("Status: ".dim());
+            spans.push(tr(current(), "Status: ").dim());
             spans.push(toolbar_value(
                 "Active",
                 state.status == SessionStatus::Active,
@@ -2272,7 +2277,7 @@ fn filter_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>
         ];
     }
     vec![
-        "Filter: ".dim(),
+        tr(current(), "Filter: ").dim(),
         toolbar_value(
             filter_mode_label(SessionFilterMode::Cwd),
             state.filter_mode == SessionFilterMode::Cwd,
@@ -2457,19 +2462,19 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
     };
     let (esc_label, esc_compact_label) = if state.query.is_empty() {
         match state.launch_context {
-            SessionPickerLaunchContext::Startup => ("start new", "new"),
+            SessionPickerLaunchContext::Startup => (tr(current(), "start new"), "new"),
             SessionPickerLaunchContext::ExistingSession { .. } => ("exit", "exit"),
         }
     } else {
-        ("clear search", "clear")
+        (tr(current(), "clear search"), "clear")
     };
     let ctrl_c_label = match state.launch_context {
         SessionPickerLaunchContext::Startup => "quit",
         SessionPickerLaunchContext::ExistingSession { .. } => "exit",
     };
     let density_label = match state.density {
-        SessionListDensity::Comfortable => "dense view",
-        SessionListDensity::Dense => "comfortable view",
+        SessionListDensity::Comfortable => tr(current(), "dense view"),
+        SessionListDensity::Dense => tr(current(), "comfortable view"),
     };
     let density_compact_label = match state.density {
         SessionListDensity::Comfortable => "dense",
@@ -2509,7 +2514,7 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
         },
         PickerFooterHint {
             key: "tab".to_string(),
-            wide_label: String::from("focus sort/filter"),
+            wide_label: String::from(tr(current(), "focus sort/filter")),
             compact_label: String::from("focus"),
             priority: 7,
         },
@@ -2523,7 +2528,7 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
     if !option_keys.is_empty() {
         first_row_hints.push(PickerFooterHint {
             key: option_keys,
-            wide_label: String::from("change option"),
+            wide_label: String::from(tr(current(), "change option")),
             compact_label: String::from("option"),
             priority: 8,
         });
@@ -2603,7 +2608,7 @@ fn render_transcript_loading_overlay(frame: &mut crate::custom_terminal::Frame, 
         return;
     }
 
-    let message = "Loading transcript…";
+    let message = tr(current(), "Loading transcript…");
     let message_width = UnicodeWidthStr::width(message) as u16;
     let overlay_width = if area.width >= message_width.saturating_add(10) {
         message_width + 10
@@ -2782,13 +2787,17 @@ fn render_list(frame: &mut crate::custom_terminal::Frame, area: Rect, state: &Pi
     }
 
     if state.pagination.is_loading() && y < content_area.y.saturating_add(content_area.height) {
-        let loading_line: Line = vec!["  ".into(), "Loading older sessions…".italic().dim()].into();
+        let loading_line: Line = vec![
+            "  ".into(),
+            tr(current(), "Loading older sessions…").italic().dim(),
+        ]
+        .into();
         let rect = Rect::new(area.x, y, area.width, 1);
         frame.render_widget_ref(&loading_line, rect);
     }
     if show_more_below {
         let label = if state.pagination.is_loading() {
-            "↓ loading more"
+            tr(current(), "↓ loading more")
         } else {
             "↓ more"
         };
@@ -3081,7 +3090,7 @@ impl FooterPart {
         match self {
             FooterPart::Date(text) => text,
             FooterPart::Branch(Some(text)) | FooterPart::Cwd(Some(text)) => text,
-            FooterPart::Branch(None) => "no branch",
+            FooterPart::Branch(None) => tr(current(), "no branch"),
             FooterPart::Cwd(None) => "no cwd",
         }
     }
@@ -3238,12 +3247,20 @@ fn render_transcript_preview_lines(
     };
     let preview_lines = match state.transcript_previews.get(&thread_id) {
         Some(TranscriptPreviewState::Loading) => {
-            vec![vec!["  │ ".dim(), "Loading recent transcript...".italic().dim()].into()]
+            vec![
+                vec![
+                    "  │ ".dim(),
+                    tr(current(), "Loading recent transcript...").italic().dim(),
+                ]
+                .into(),
+            ]
         }
         Some(TranscriptPreviewState::Failed) => vec![
             vec![
                 "  │ ".dim(),
-                "Could not load transcript preview".italic().red(),
+                tr(current(), "Could not load transcript preview")
+                    .italic()
+                    .red(),
             ]
             .into(),
         ],
@@ -3304,7 +3321,9 @@ fn render_conversation_preview_lines(
         return vec![
             vec![
                 "  └ ".dim(),
-                "No transcript preview available".italic().dim(),
+                tr(current(), "No transcript preview available")
+                    .italic()
+                    .dim(),
             ]
             .into(),
         ];
@@ -3495,7 +3514,7 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
         if state.search_state.is_active()
             || (state.pagination.is_loading() && state.pagination.next_cursor.is_some())
         {
-            return vec!["Searching…".italic().dim()].into();
+            return vec![tr(current(), "Searching…").italic().dim()].into();
         }
         if state.pagination.reached_scan_cap {
             let msg = format!(
@@ -3504,17 +3523,17 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
             );
             return vec![Span::from(msg).italic().dim()].into();
         }
-        return vec!["No results for your search".italic().dim()].into();
+        return vec![tr(current(), "No results for your search").italic().dim()].into();
     }
 
     if state.pagination.is_loading() {
         if state.all_rows.is_empty() && state.pagination.num_scanned_files == 0 {
-            return vec!["Loading sessions…".italic().dim()].into();
+            return vec![tr(current(), "Loading sessions…").italic().dim()].into();
         }
-        return vec!["Loading older sessions…".italic().dim()].into();
+        return vec![tr(current(), "Loading older sessions…").italic().dim()].into();
     }
 
-    vec!["No sessions yet".italic().dim()].into()
+    vec![tr(current(), "No sessions yet").italic().dim()].into()
 }
 
 #[cfg(test)]
@@ -4529,7 +4548,7 @@ mod tests {
         );
         state.list_keymap.move_left.clear();
         state.list_keymap.move_right.clear();
-        assert!(!footer_lines_text(&state, /*width*/ 220).contains("change option"));
+        assert!(!footer_lines_text(&state, /*width*/ 220).contains(tr(current(), "change option")));
 
         state.density = SessionListDensity::Dense;
 
@@ -4556,7 +4575,7 @@ mod tests {
         assert!(rendered.contains("ctrl+o dense"));
         assert!(rendered.contains("ctrl+t preview"));
         assert!(rendered.contains("ctrl+e exp"));
-        assert!(!rendered.contains("focus sort/filter"));
+        assert!(!rendered.contains(tr(current(), "focus sort/filter")));
     }
 
     #[test]
@@ -5114,7 +5133,7 @@ mod tests {
 
         assert_eq!(
             state.inline_error.as_deref(),
-            Some("No transcript available for this session")
+            Some(tr(current(), "No transcript available for this session"))
         );
     }
 

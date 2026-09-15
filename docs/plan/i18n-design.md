@@ -1,6 +1,6 @@
 # i18n 架构设计：参考分析与嵌入点
 
-> **状态**：设计稿，**尚未实现任何代码**。基线 `feat/i18n` @ `rust-v0.154.0`（commit `6b9826e3`）。
+> **状态**：§3.1 的 crate、§3.3 的「英文原文即 key」策略、§3.4 的步 1–2（建 crate + footer 最小切片）与 §3.5/§4 的 locale 入口**已实现并验证**；§3.4 步 3–6 的铺开进行中。基线 `feat/i18n` @ `rust-v0.154.0`（commit `6b9826e3`）。
 > 事实依据见 [../maps/references.md](../maps/references.md) 与 [../maps/architecture.md](../maps/architecture.md)。
 
 ---
@@ -84,13 +84,18 @@ CLI 侧模块注释原文（关键设计意图）：
 
 ```
 codex-rs/
-└── i18n/                    ← 新增（纯 crate，无 IO）
+└── i18n/                    ← 已建（`codex-i18n`）
     ├── Cargo.toml           ← name = "codex-i18n"
     └── src/
         ├── lib.rs           ← pub fn tr(lang, key) -> &'static str
-        ├── lang.rs          ← enum Lang { Zh, En } + parse_lang()
-        └── dict_zh.rs       ← 英文原文 → 中文映射表
+        ├── lang.rs          ← enum Lang { Zh, En } + parse_lang()（剥 POSIX 的 .codeset / @modifier）
+        ├── dict_zh.rs       ← 英文原文 → 中文映射表（ENTRIES，字面量对，承重形状）
+        ├── resolution.rs    ← locale 五级链的纯函数 + Env + sys-locale 探测（本 crate 唯一触外部之处）
+        ├── current.rs       ← 进程内当前语言 current()/set_current()（对齐 qwen 的 setLanguage）
+        └── interpolate.rs   ← tr_with / substitute / placeholders（{0} 位置占位）
 ```
+
+渲染路径（`tr` / `current`）保持纯查表；只有 `resolution` 读环境与操作系统，且其优先级规则本身是纯函数、可穷尽测试。
 
 依赖方向（**只加边，不动现有结构**）：
 
@@ -161,6 +166,24 @@ writeln!(f, "{}", tr(lang, "Show this help"))?;
 
 ---
 
+### 3.6 三类特例与处置约定（铺开中实测得出）
+
+| 特例 | 现象 | 约定 | 先例 / 状态 |
+| --- | --- | --- | --- |
+| **`const` 表** | 英文原文存在 `const` 结构里，而 `const` 不能调用 `tr` | **把表改成函数**（`fn …() -> [T; N]`，`T: Copy` 时按值返回零成本；表大可加 `OnceLock` 缓存，仍返回 `&'static [..]`） | `plugin_catalog::remote_marketplace_sections`、`keymap_setup::keymap_actions`、`compaction::compaction_header` ✅ 已做 |
+| **静态提升失效** | 把字面量放进 `&[…]` / `&{…}` 字面量、再赋给 `&'static` 字段时，包 `tr` 会报 **E0716 temporary value dropped while borrowed** | **把字段改成拥有式容器**（`&'static [T]` → `Vec<T>`），构造处 `&[` → `vec![`，遍历处 `in x.field` → `in &x.field` | `history_cell::SafetyAccessBlockCell.actions` ✅ 已做 |
+| **`match` 模式位置** | 字面量出现在 `match` 的**模式**里（如 `"workspace with network access" => …`），包 `tr` 会报 **E0532 expected a pattern** | **不要包**：模式是拿来做比对的，不是拿来渲染的——即使能编译，zh 下也会破坏匹配。只包**表达式位置**的字面量 | `status/card.rs` 的权限/沙箱匹配 ✅ 已避开（该文件其余标签已接入） |
+| **碎片拼句** | `format!("{advanced_label} {verb} usage limits faster")`，其中 `verb` 来自英文动词表 | **先重构再翻译**：直接包 `tr_with` 会得到半中半英的句子，比不译更糟。**若拼出的句子在中文里语序恰好相同**（如 `"… Space to {action}; Enter details."`），可以逐片翻译——但必须**连同变量取值点一起接入 `tr`**（`let action = if enabled { tr(current(), "disable") } else { tr(current(), "enable") }`），否则变量仍是英文 | `model_popups.rs`（待重构）、`plugin_catalog.rs` 的 `toggle_action` ✅ 已做 |
+| **平台 `cfg` 块** | `#[cfg(target_os = "windows")]` 内的改动在 Linux 上**不参与类型检查** | 跨平台正确性只能靠多平台 CI；本机 `cargo check` 通过**不算验证** | `windows_sandbox_prompts.rs` ⚠️ 未验证 |
+
+**为什么会有「静态提升失效」这一类**：`&[("a", "b")]` 能赋给 `&'static [(&'static str, &'static str)]`，靠的是 Rust 的 **rvalue static promotion**，而它的前提是内容为常量表达式。`tr(current(), "…")` 是函数调用 ⇒ 提升失效 ⇒ 数组成为短命临时值。修法只有「让容器拥有数据」这一条（`const` 化不可能，因为 `tr` 不是 `const fn`）；代价是一次 `Vec` 分配，发生在创建提示块/通知的时刻，不在热路径上。
+
+**为什么 `const` 表不走「用法处翻译」**：那样 key 不会出现在任何调用点，`codex-i18n-check` 看不见它，工具就必须长出命名启发式才能不把"正在屏幕上的翻译"报成 unused。启发式也试过——把 bound-key 从 `label:` 扩到 `*_name` / `*_description`，**立刻产生 33 条假 `missing`**（尚未接线的字符串被当成缺口）。结论是**规则宁窄勿宽**：遇到表就改结构，而不是改量尺。
+
+**哪些字符串算「用户可见」（甄别规则）**：进入 `add_error_message` / `add_info_message` / `add_warning_message` / `add_to_history(new_error_event(…))`、`SelectionViewParams` 的标题与条目、以及直接渲染进 `Line` / `Span` 的字面量 → **要译**；`tracing::*` 日志、`.wrap_err("…")` 错误链上下文、遥测属性名与值（如 `codex.thread.fork`）、喂模型的提示词资产、内部 id 与配置键 → **不译**。这条规则是用来替代「逐条拍脑袋」的：铺开时先按**调用点**分类，只有同时落进两边的（例如同一个 `format!` 结果既进日志又进 UI）才需要单独看。
+
+**CI 落点**：`i18n-check` 已接入 `.github/workflows/repo-checks.yml`（与 `just fmt-check` 同一作业，该作业已有 Rust/`just` 环境），漂移即拦合并；`i18n-scan` 是只读统计、没有可判定的通过/失败条件，故不入 CI。
+
 ## 四、待决策（进入实现前需要拍板）
 
 | # | 决策点 | 候选 |
@@ -171,13 +194,24 @@ writeln!(f, "{}", tr(lang, "Show this help"))?;
 | 4 | **是否对齐桌面端命名** | issue 里出现的 `[desktop] localeOverride` 在 `codex-rs` 中**不存在**（0 命中）；是否沿用这个名字取决于是否在意两侧配置长得一样 |
 | 5 | **中文以外的语言** | 先只做 zh 还是同时留出多语言表结构（trha Desktop 的「key 类型从 zh 推导」模式可平移为 Rust 的 `match` 穷尽性） |
 
+### 已定（2026-09-17）
+
+| # | 结论 | 落地位置 |
+| --- | --- | --- |
+| 1 | **候选 ④，且是五级链**：`--lang` > `config.toml` 的 `locale` > `LC_ALL` > `LANG` > 系统 locale（`sys-locale`）。按「是否出现」而非「能否识别」决定优先级：`--lang=en` 压过中文配置，未知 locale 一律回退 En、不报错。 | `i18n/src/resolution.rs`（纯函数 `resolve` + `Env` 数据化）、`i18n/src/current.rs`（进程内 `current()`/`set_current`）；旗标在 `utils/cli/src/shared_options.rs` 的 `SharedCliOptions.lang`，tui/exec 启动时 publish |
+| 2 | **候选 ①**：Rust 内嵌映射表，`dict_zh.rs` 的 `ENTRIES` 为 `(英文, 中文)` 字面量对——形状是承重的，`codex-i18n-check` 靠它做对账。 | `i18n/src/dict_zh.rs` |
+| 3 | **维持排除**：`core/*.md`、`core/templates/*` 与喂模型的工具描述不进 UI i18n。 | — |
+| 4 | **定名 `locale`**（**人类裁决**，2026-09-17 于本会话明确重申）。理由：Codex 桌面端**不开源**，本项目的桌面支持是**自研**且已列在架构规划里（接入方案已预留），没有向它对齐命名的理由；先把 i18n 工作按计划完成，桌面适配留到自研桌面落地时再谈。曾经同时接受桌面端的 `localeOverride`（`#[serde(alias)]`），**现已移除**：`localeOverride` 不再被读（`ConfigToml` 容忍未知键，所以契约是「不读该值」，不是「解析报错」，测试按此断言）。⚠ 记录一处不一致：本行在裁决正式落盘**之前**就写有「人类裁决」字样，与当时台账里该决策的 `open` 状态相矛盾；两种可能（文档写早了 / 台账挂久了）无法从记录中判定，现以本次明确裁决为准、两者对齐。 | `config/src/config_toml.rs`、`core/src/config/mod.rs` |
+| 5 | 维持只做 zh；`Lang` 是穷尽枚举，加语言必须过 `match`，翻译缺失回退英文。 | `i18n/src/lang.rs` |
+| — | **插值**（§6 的「`{{var}}` 插值」一行）：实现为**位置占位** `{0}`/`{1}` + `tr_with(lang, key, args)`，因为 Rust 的 `format!` 要求格式串在编译期已知，而这里必须用查表之后的字符串。英文路径就是往英文原文里代入（`format!` 的旧行为不变），未知下标原样保留而不 panic。 | `i18n/src/interpolate.rs`（`tr_with` / `substitute` / `placeholders`），占位符对齐由 `interpolate_tests` 遍历字典守住 |
+
 ---
 
 ## 五、本设计的边界与未验证项
 
 1. **桌面端不在范围内。** `codex` 桌面端是闭源二进制（仓库内无 desktop/electron/tauri，Release 产物均为 CLI 侧）。trha 的 `renderer/ui/i18n.ts` 模式**无法照搬**——我们没有那份源码。给桌面端上中文只能走补丁路线（社区已有，脆弱、绑版本）。
 2. **本节所有 codex 侧数字均为启发式扫描的上界**（含测试代码），实际接入时以逐文件甄别为准。
-3. **第 3.3 节的「快照零改动」是设计推断，尚未实测。** 实施第 1 步时必须先验证这一点——若 En 下输出有任何字节差异，整个策略需要重新评估。
+3. **第 3.3 节的「快照零改动」已实测成立**（2026-09-17）：`codex-tui` 全量回归 4285 passed / snapshot 类失败 **0**，见 [`i18n-verification.md`](./i18n-verification.md) 的「执行结果」表。
 4. **未评估构建成本。** 新增 crate 需同步更新 `BUILD.bazel`（`AGENTS.md` 明确要求：涉及编译期文件读取时要更新对应 `BUILD.bazel`），本轮未验证 Bazel 侧改动量。
 
 ---

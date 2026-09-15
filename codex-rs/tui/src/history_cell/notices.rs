@@ -1,9 +1,18 @@
 //! Informational, warning, update, and policy notice history cells.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[cfg_attr(not(test), allow(dead_code))]
-const RECAP_HEADING: &str = "Conversation recap";
+/// Heading for the conversation recap cell.
+///
+/// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`: the
+/// text has to pass through `tr`, which a `const` cannot call.
+fn recap_heading() -> &'static str {
+    tr(current(), "Conversation recap")
+}
 
 #[cfg_attr(debug_assertions, allow(dead_code))]
 #[derive(Debug)]
@@ -39,13 +48,13 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         let content = text![
             line![
                 "✨\u{200A}".bold().cyan(),
-                "Update available!".bold().cyan(),
+                tr(current(), "Update available!").bold().cyan(),
                 " ",
                 format!("{CODEX_CLI_VERSION} -> {}", self.latest_version).bold(),
             ],
             update_instruction,
             "",
-            "See full release notes:",
+            tr(current(), "See full release notes:"),
             "https://github.com/openai/codex/releases/latest"
                 .cyan()
                 .underlined(),
@@ -61,16 +70,24 @@ impl HistoryCell for UpdateAvailableHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let update_instruction = if let Some(update_action) = self.update_action {
-            format!("Run {} to update.", update_action.command_str())
+            tr_with(
+                current(),
+                "Run {0} to update.",
+                &[&update_action.command_str()],
+            )
         } else {
-            "See https://github.com/openai/codex for installation options.".to_string()
+            tr(
+                current(),
+                "See https://github.com/openai/codex for installation options.",
+            )
+            .to_string()
         };
         vec![
-            Line::from("Update available!"),
+            Line::from(tr(current(), "Update available!")),
             Line::from(format!("{CODEX_CLI_VERSION} -> {}", self.latest_version)),
             Line::from(update_instruction),
             Line::from(""),
-            Line::from("See full release notes:"),
+            Line::from(tr(current(), "See full release notes:")),
             Line::from("https://github.com/openai/codex/releases/latest"),
         ]
     }
@@ -92,21 +109,27 @@ pub(crate) fn new_warning_event(message: String) -> PrefixedWrappedHistoryCell {
 pub(crate) struct SafetyAccessBlockCell {
     title: &'static str,
     body: &'static str,
-    actions: &'static [(&'static str, &'static str)],
+    actions: Vec<(&'static str, &'static str)>,
 }
 
 const SAFETY_ACCESS_BLOCK_LEARN_MORE_URL: &str = "https://help.openai.com/en/articles/20001326";
 
 pub(crate) fn new_safety_access_block_event() -> SafetyAccessBlockCell {
     SafetyAccessBlockCell {
-        title: "This content can't be shown",
-        body: "We take extra caution with requests involving biological research and applications that could pose safety risks. Eligible researchers can apply for Trusted Access.",
-        actions: &[
+        title: tr(current(), "This content can't be shown"),
+        body: tr(
+            current(),
+            "We take extra caution with requests involving biological research and applications that could pose safety risks. Eligible researchers can apply for Trusted Access.",
+        ),
+        actions: vec![
             (
-                "Trusted Access",
+                tr(current(), "Trusted Access"),
                 "https://chatgpt.com/r/b749fb02595e04c3007a54375f3f4374",
             ),
-            ("Learn more", SAFETY_ACCESS_BLOCK_LEARN_MORE_URL),
+            (
+                tr(current(), "Learn more"),
+                SAFETY_ACCESS_BLOCK_LEARN_MORE_URL,
+            ),
         ],
     }
 }
@@ -115,28 +138,46 @@ pub(crate) fn new_cyber_policy_error_event(
     notice: crate::daybreak::Notice,
 ) -> SafetyAccessBlockCell {
     use crate::daybreak::Notice;
-    let (body, actions): (_, &'static [(&str, &str)]) = match notice {
+    let (body, actions): (_, Vec<(&str, &str)>) = match notice {
         Notice::Apply => (
-            "We take extra care with some cybersecurity requests. If you’re doing authorized security work, apply for Daybreak to get broader access.",
-            &[
-                ("Learn more", SAFETY_ACCESS_BLOCK_LEARN_MORE_URL),
+            tr(
+                current(),
+                "We take extra care with some cybersecurity requests. If you’re doing authorized security work, apply for Daybreak to get broader access.",
+            ),
+            vec![
                 (
-                    "Apply for Daybreak",
+                    tr(current(), "Learn more"),
+                    SAFETY_ACCESS_BLOCK_LEARN_MORE_URL,
+                ),
+                (
+                    tr(current(), "Apply for Daybreak"),
                     "https://openai.com/form/enterprise-trusted-access-for-cyber/",
                 ),
             ],
         ),
         Notice::Astra => (
-            "Daybreak isn’t available for Astra. Some cybersecurity requests may still be limited.",
-            &[("Learn more", SAFETY_ACCESS_BLOCK_LEARN_MORE_URL)],
+            tr(
+                current(),
+                "Daybreak isn’t available for Astra. Some cybersecurity requests may still be limited.",
+            ),
+            vec![(
+                tr(current(), "Learn more"),
+                SAFETY_ACCESS_BLOCK_LEARN_MORE_URL,
+            )],
         ),
         Notice::Limited => (
-            "We take extra care with some cybersecurity requests.",
-            &[("Learn more", SAFETY_ACCESS_BLOCK_LEARN_MORE_URL)],
+            tr(
+                current(),
+                "We take extra care with some cybersecurity requests.",
+            ),
+            vec![(
+                tr(current(), "Learn more"),
+                SAFETY_ACCESS_BLOCK_LEARN_MORE_URL,
+            )],
         ),
     };
     SafetyAccessBlockCell {
-        title: "This content can’t be shown",
+        title: tr(current(), "This content can’t be shown"),
         body,
         actions,
     }
@@ -161,7 +202,7 @@ impl HistoryCell for SafetyAccessBlockCell {
         push_owned_lines(&wrapped, &mut wrapped_body);
         lines.extend(plain_hyperlink_lines(wrapped_body));
 
-        for &(label, url) in self.actions {
+        for &(label, url) in &self.actions {
             let source = crate::terminal_hyperlinks::annotate_web_urls_in_line(
                 vec![format!("  {label}: ").dim(), url.cyan().underlined()].into(),
             );
@@ -324,7 +365,7 @@ impl HistoryCell for ThreadRecapHistoryCell {
         }
 
         let (visible_heading, _suffix, heading_width) =
-            take_prefix_by_width(RECAP_HEADING, remaining_width);
+            take_prefix_by_width(recap_heading(), remaining_width);
         if !visible_heading.is_empty() {
             heading.push(visible_heading.bold());
             remaining_width -= heading_width;
@@ -347,7 +388,7 @@ impl HistoryCell for ThreadRecapHistoryCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        let mut lines = vec![Line::from(RECAP_HEADING)];
+        let mut lines = vec![Line::from(recap_heading())];
         lines.extend(raw_lines_from_source(&self.recap));
         lines
     }

@@ -4,6 +4,9 @@
 //! resuming/forking saved sessions, replacing ChatWidget instances, and maintaining the agent picker
 //! cache used for multi-agent navigation.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io;
 
 use super::agent_picker::AGENT_PICKER_VIEW_ID;
@@ -145,8 +148,10 @@ impl App {
         }
 
         if self.agent_navigation.is_empty() {
-            self.chat_widget
-                .add_info_message("No agents available yet.".to_string(), /*hint*/ None);
+            self.chat_widget.add_info_message(
+                tr(current(), "No agents available yet.").to_string(),
+                /*hint*/ None,
+            );
             return;
         }
 
@@ -213,7 +218,7 @@ impl App {
 
         SelectionViewParams {
             view_id: Some(AGENT_PICKER_VIEW_ID),
-            title: Some("Subagents".to_string()),
+            title: Some(tr(current(), "Subagents").to_string()),
             subtitle: Some(AgentNavigationState::picker_subtitle()),
             footer_hint: Some(standard_popup_hint_line()),
             items,
@@ -430,9 +435,11 @@ impl App {
                 if turns.is_empty() {
                     // A `thread/read` fallback without turns would create a blank local replay
                     // channel with no live listener attached, which blocks later real re-attach.
-                    return Err(color_eyre::eyre::eyre!(
-                        "Agent thread {thread_id} is not yet available for replay or live attach."
-                    ));
+                    return Err(color_eyre::eyre::eyre!(tr_with(
+                        current(),
+                        "Agent thread {0} is not yet available for replay or live attach.",
+                        &[&thread_id.to_string()],
+                    )));
                 }
                 let mut session = self.session_state_for_thread_read(thread_id, &thread).await;
                 // Reads have no settings. Keep this cached thread's permissions rather than
@@ -546,8 +553,11 @@ impl App {
                 .refresh_agent_picker_thread_liveness(app_server, thread_id)
                 .await)
         {
-            self.chat_widget
-                .add_error_message(format!("Agent thread {thread_id} is no longer available."));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Agent thread {0} is no longer available.",
+                &[&thread_id.to_string()],
+            ));
             return Ok(());
         }
         let mut is_replay_only = self
@@ -569,15 +579,20 @@ impl App {
                     attached_replay_only = true;
                 }
                 Err(err) => {
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to attach to agent thread {thread_id}: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to attach to agent thread {0}: {1}",
+                        &[&thread_id.to_string(), &err.to_string()],
                     ));
                     return Ok(());
                 }
             }
         } else if !self.thread_event_channels.contains_key(&thread_id) && is_replay_only {
-            self.chat_widget
-                .add_error_message(format!("Agent thread {thread_id} is no longer available."));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Agent thread {0} is no longer available.",
+                &[&thread_id.to_string()],
+            ));
             return Ok(());
         }
         let previous_thread_id = self.active_thread_id;
@@ -620,8 +635,11 @@ impl App {
         // Refreshing can merge restored turns into the store, so recap progress must be read only
         // after the refresh while the activated thread channel is still retained.
         let Some(channel) = self.thread_event_channels.get(&thread_id) else {
-            self.chat_widget
-                .add_error_message(format!("Agent thread {thread_id} is no longer available."));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Agent thread {0} is no longer available.",
+                &[&thread_id.to_string()],
+            ));
             return Ok(());
         };
         let recap_progress = {

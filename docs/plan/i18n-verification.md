@@ -1,8 +1,43 @@
 # i18n 前期技术验证计划
 
-> 状态：**计划稿，尚未执行**。
+> 状态：**H1–H4 已执行**（结论见下方「执行结果」；§7 的范围边界有一处有意偏差，已注明）。
 > 上游文档：[`i18n-design.md`](./i18n-design.md)（参考分析与嵌入点设计）。
 > 基线：`feat/i18n` @ `rust-v0.154.0`（commit `6b9826e3`）。
+
+## 执行结果（2026-09-17 实测）
+
+| # | 假设 | 结论 | 证据（可复现命令 → 实测值） |
+| --- | --- | --- | --- |
+| **H1** | 「英文原文即 key」让 En 输出逐字节不变 | ✅ **成立** | `RUST_MIN_STACK=16777216 cargo test -p codex-tui --lib -- --skip ide_context::ipc` → 4285 passed / 2 failed / **snapshot 类失败 0**。两条失败单独重跑均通过（并发时序型）。`ide_context::ipc` 10 条为环境型故显式 skip：其中 `fetch_ide_context_prefers_primary_socket` 单独跑仍 FAILED（panic 在 `tui/src/ide_context/ipc.rs:983`），另有一条永不返回。注：默认 2 MiB 测试线程栈会另致 `app::agents_overview` 一条 SIGABRT，故须带 `RUST_MIN_STACK`。 |
+| **H2** | tui 文案可机械识别 | ✅ **成立**（带上界与已知残余） | `cd codex-rs && python3 ../scripts/i18n_scan.py` → 39,225 字面量 → 3,168 候选（8.1%），40 项抽样精确率约 85–90%；残余误判是喂模型的 `json!` payload 与内部 error-context。 |
+| **H3** | 漂移可自动发现 | ✅ **成立** | `cargo run -p codex-i18n-check -- --root ..` → missing 0 / unused 0 / coverage 100.0%，且**退出码非零即代表真漂移**，可直接入 CI。 |
+| **H4** | locale 解析与配置入口可落地 | ✅ **成立** | 五级链 `--lang` > `config.toml` 的 `locale` > `LC_ALL` > `LANG` > 系统 locale（`codex-i18n::resolve` / `resolve_from_process` + `sys-locale`）；`--lang` 实见于 `cargo run -q -p codex-exec -- --help`；`cargo test -p codex-i18n` → 30 passed。 |
+
+**与 §7 的偏差（有意，且已记录）**：翻译已随 `i18n-design.md` §3.4 的铺开开始（首批 27 条，落在 footer）。这不是「H1 需要译文」——H1 只用机制即可成立——而是为了把「发布出去的语言真的到达渲染输出」变成一条可失败的测试：`tui/src/bottom_pane/footer.rs` 的 `the_rendered_hints_follow_the_language_they_are_given`。
+
+## 铺开进度（滚动记录）
+
+`i18n-design.md` §3.4 的铺开按轮推进，每轮以三条硬证据收口：`cargo test -p codex-i18n`（30 passed）、`just i18n-check`（missing 0 / unused 0 / coverage 100.0% / EXIT=0）、`RUST_MIN_STACK=16777216 cargo test -p codex-tui --lib -- --skip ide_context::ipc`（**snapshot 类失败 0**）。剩余量用 `python3 scripts/i18n_todo.py --top 8` 量。
+
+| 轮次 | 覆盖模块 | 字典条数 | 全量套件 |
+| --- | --- | --- | --- |
+| 28 | `resume_picker.rs`、`bottom_pane/app_link_view.rs` | 934 | 4285 passed / 2 failed / snapshot 0 |
+| 29 | `chatwidget/slash_dispatch.rs`（32 对） | 965 | 4285 passed / 2 failed / snapshot 0 |
+| 30 | `clipboard_copy.rs`（28 对） | 991 | 4285 passed / 2 failed / snapshot 0 |
+
+### 两条失败的归属（H1 的对抗自检）
+
+连续三轮、同一命令下，失败集合**互不相同**：
+
+- 第 28 轮：`app::tests::background_exit_tests::exit_interrupts_before_requesting_shutdown` + `app::tests::safety_buffering::agents_overview_acknowledges_inactive_steer_before_interrupt`
+- 第 29 轮：`app::tests::safety_buffering::active_turn_interrupt_is_nonblocking_and_coalesces_repeated_requests` + `app_server_session::rollout_history::tests::cached_legacy_resume_revalidates_history_across_migration_settings`
+- 第 30 轮：`app::tests::safety_buffering::agents_overview_acknowledges_inactive_steer_before_interrupt` + `app_server_session::rollout_history::tests::cached_legacy_resume_revalidates_history_across_migration_settings`
+
+**测试集逐轮换人**本身就是判据：i18n 接入是确定性变换（En 分支返回 key 本身），不可能让失败集合在相同命令下漂移；这属于并发时序型 flaky。H1 的承重判据仍是 **snapshot 类失败 0**（877 个界面快照逐字节守住 En 输出）。
+
+### 已知工具链限制（非本改动引入）
+
+`just fmt` 在本机**退出码 1**：rustfmt 段通过，失败在最后一步 Bazel/Starlark 格式化 —— `[Errno 2] No such file or directory: 'dotslash'`。Rust 侧格式化改用 `cargo fmt --all`（同配置，退出码 0）。
 
 ## 一、为什么先做"前期验证"
 
@@ -139,7 +174,7 @@
 
 ## 八、未验证 / 风险
 
-1. **H1 目前仍是推断，尚未实测** —— 这正是本计划第一步要验的。
+1. **H1 已实测成立**（2026-09-17，见「执行结果」）——不再是推断。残余风险转移到「铺开的广度」：目前接入面只覆盖 `bottom_pane/footer.rs`，`chatwidget`（705 候选）与 `app`（476 候选）尚未接入，故本报告中的「快照零 diff」只保证**已接入部分**无损。
 2. **Bazel 侧成本未评估** —— `AGENTS.md` 要求新增 crate 时同步更新 `BUILD.bazel`
    （`compile_data` / `build_script_data` 等），本轮未衡量改动量。
 3. **`tui` 的文案量与扫描口径未定** —— [`../maps/references.md`](../maps/references.md) 里的

@@ -1,0 +1,21 @@
+[package]
+name = "codex-i18n"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "codex_i18n"
+path = "src/lib.rs"
+doctest = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# Only `resolution::system_locale` uses this; it is how the fourth and last
+# source in the locale precedence chain is probed.
+sys-locale = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

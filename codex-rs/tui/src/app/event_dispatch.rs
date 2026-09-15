@@ -20,6 +20,9 @@ use crate::session_resume::cwds_differ;
 use codex_app_server_protocol::ThreadGoalStatus;
 #[cfg(target_os = "windows")]
 use codex_config::types::WindowsSandboxModeToml;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const SHUTDOWN_FIRST_EXIT_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 2);
 
@@ -94,7 +97,7 @@ impl App {
             AppEvent::StartManagedWorktree { mode, name } => {
                 if self.pending_start_managed_worktree.is_some() {
                     self.chat_widget
-                        .add_error_message("A worktree is already being created.".to_string());
+                        .add_error_message(tr(current(), "A worktree is already being created.").to_string());
                 } else {
                     self.pending_start_managed_worktree = Some((mode, name));
                 }
@@ -131,7 +134,10 @@ impl App {
                     || !self.chat_widget.can_change_working_directory(thread_id)
                 {
                     self.chat_widget.add_error_message(
-                        "Changing directories requires an idle primary session without queued input."
+                        tr(
+                            current(),
+                            "Changing directories requires an idle primary session without queued input.",
+                        )
                             .to_string(),
                     );
                 } else if crate::uses_remote_workspace_or_environment(
@@ -139,7 +145,10 @@ impl App {
                     self.environment_manager.as_ref(),
                 ) {
                     self.chat_widget.add_error_message(
-                        "Changing directories is not supported for remote workspaces or remote execution environments."
+                        tr(
+                            current(),
+                            "Changing directories is not supported for remote workspaces or remote execution environments.",
+                        )
                             .to_string(),
                     );
                 } else {
@@ -158,10 +167,11 @@ impl App {
                         }
                         Ok(_) => self
                             .chat_widget
-                            .add_error_message(format!("Not a directory: {}", cwd.display())),
-                        Err(error) => self.chat_widget.add_error_message(format!(
-                            "Cannot access directory {}: {error}",
-                            cwd.display()
+                            .add_error_message(tr_with(current(), "Not a directory: {0}", &[&cwd.display().to_string()])),
+                        Err(error) => self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Cannot access directory {0}: {1}",
+                            &[&cwd.display().to_string(), &error.to_string()],
                         )),
                     }
                 }
@@ -239,7 +249,7 @@ impl App {
             AppEvent::ExportTranscript { destination } => {
                 if let Err(error) = self.export_transcript(app_server, destination).await {
                     self.chat_widget
-                        .add_error_message(format!("Export failed: {error}"));
+                        .add_error_message(tr_with(current(), "Export failed: {0}", &[&error.to_string()]));
                 }
                 if self.chat_widget.no_modal_or_popup_active() {
                     self.chat_widget
@@ -328,8 +338,10 @@ impl App {
                             .await;
                     }
                     Ok(None) => {
-                        self.chat_widget.add_error_message(format!(
-                            "No saved chat found matching '{id_or_name}'."
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "No saved chat found matching '{0}'.",
+                            &[&id_or_name],
                         ));
                     }
                     Err(err)
@@ -365,7 +377,7 @@ impl App {
                 if let Some(thread_id) = self.chat_widget.thread_id() {
                     if self.pending_server_profiles.contains_key(&thread_id) {
                         self.chat_widget.add_error_message(
-                            "Wait for permissions to update before forking.".into(),
+                            tr(current(), "Wait for permissions to update before forking.").into(),
                         );
                         return Ok(AppRunControl::Continue);
                     }
@@ -396,7 +408,7 @@ impl App {
                                         None
                                     }
                                     Err(err) => {
-                                        Some(format!("Failed to name the forked session: {err}"))
+                                        Some(tr_with(current(), "Failed to name the forked session: {0}", &[&err.to_string()]))
                                     }
                                 }
                             } else {
@@ -423,7 +435,7 @@ impl App {
                                         }
                                         if let Some(command) = summary.resume_hint {
                                             let spans = vec![
-                                                "To continue this session, run ".into(),
+                                                tr(current(), "To continue this session, run ").into(),
                                                 command.cyan(),
                                             ];
                                             lines.push(spans.into());
@@ -432,21 +444,25 @@ impl App {
                                     }
                                 }
                                 Err(err) => {
-                                    self.chat_widget.add_error_message(format!(
-                                        "Failed to attach to forked app-server thread: {err}"
+                                    self.chat_widget.add_error_message(tr_with(
+                                        current(),
+                                        "Failed to attach to forked app-server thread: {0}",
+                                        &[&err.to_string()],
                                     ));
                                 }
                             }
                         }
                         Err(err) => {
-                            self.chat_widget.add_error_message(format!(
-                                "Failed to fork current session through the app server: {err}"
+                            self.chat_widget.add_error_message(tr_with(
+                                current(),
+                                "Failed to fork current session through the app server: {0}",
+                                &[&err.to_string()],
                             ));
                         }
                     }
                 } else {
                     self.chat_widget.add_error_message(
-                        "A thread must contain at least one turn before it can be forked."
+                        tr(current(), "A thread must contain at least one turn before it can be forked.")
                             .to_string(),
                     );
                 }
@@ -465,7 +481,7 @@ impl App {
                 if self.pending_server_profiles.contains_key(&thread_id) {
                     self.chat_widget.restore_user_message_to_composer(prompt);
                     self.chat_widget.add_error_message(
-                        "Wait for permissions to update before editing this prompt.".into(),
+                        tr(current(), "Wait for permissions to update before editing this prompt.").into(),
                     );
                     tui.frame_requester().schedule_frame();
                     return Ok(AppRunControl::Continue);
@@ -704,7 +720,7 @@ impl App {
                             .await
                     {
                         self.chat_widget
-                            .add_error_message(format!("Failed to interrupt task: {error}"));
+                            .add_error_message(tr_with(current(), "Failed to interrupt task: {0}", &[&error.to_string()]));
                     }
                 }
                 RunningTaskExitAction::Exit => {
@@ -720,7 +736,7 @@ impl App {
                             .await
                     {
                         self.chat_widget
-                            .add_error_message(format!("Failed to pause task goal: {error}"));
+                            .add_error_message(tr_with(current(), "Failed to pause task goal: {0}", &[&error.to_string()]));
                         return Ok(AppRunControl::Continue);
                     }
                     let turn_id = self
@@ -734,7 +750,7 @@ impl App {
                         }
                         Err(error) => {
                             self.chat_widget
-                                .add_error_message(format!("Failed to interrupt task: {error}"));
+                                .add_error_message(tr_with(current(), "Failed to interrupt task: {0}", &[&error.to_string()]));
                         }
                     }
                 }
@@ -749,7 +765,7 @@ impl App {
                 Err(err) => {
                     tracing::error!("failed to logout: {err}");
                     self.chat_widget
-                        .add_error_message(format!("Logout failed: {err}"));
+                        .add_error_message(tr_with(current(), "Logout failed: {0}", &[&err.to_string()]));
                 }
             },
             AppEvent::FatalExitRequest(message) => {
@@ -816,7 +832,7 @@ impl App {
                         ) || unsupported_permissions)
                         && self
                             .chat_widget
-                            .handle_turn_start_rejection(format!("Failed to start turn: {err:#}"));
+                            .handle_turn_start_rejection(tr_with(current(), "Failed to start turn: {0}", &[&format!("{err:#}")]));
                     if !handled {
                         return Err(err);
                     }
@@ -904,13 +920,13 @@ impl App {
                 // Enter alternate screen using TUI helper and build pager lines
                 let _ = tui.enter_alt_screen();
                 let pager_lines: Vec<ratatui::text::Line<'static>> = if text.trim().is_empty() {
-                    vec!["No changes detected.".italic().into()]
+                    vec![tr(current(), "No changes detected.").italic().into()]
                 } else {
                     text.lines().map(ansi_escape_line).collect()
                 };
                 self.overlay = Some(Overlay::new_static_with_lines(
                     pager_lines,
-                    "D I F F".to_string(),
+                    tr(current(), "D I F F").to_string(),
                     self.keymap.pager.clone(),
                 ));
                 tui.frame_requester().schedule_frame();
@@ -1751,17 +1767,17 @@ impl App {
                             model.as_str(),
                             Some(default_effort),
                         ),
-                        "default model and reasoning effort",
+                        tr(current(), "default model and reasoning effort"),
                     )
                     .await
                 {
                     let error = format_config_error(&err);
                     tracing::error!(error = %error, "failed to persist conversation model");
                     self.chat_widget
-                        .add_error_message(format!("Failed to save default model: {error}"));
+                        .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error.to_string()]));
                 } else {
                     self.chat_widget.add_info_message(
-                        format!("Model changed to {model} {effort} for this conversation"),
+                        tr_with(current(), "Model changed to {0} {1} for this conversation", &[&model, &effort.to_string()]),
                         /*hint*/ None,
                     );
                 }
@@ -1875,7 +1891,7 @@ impl App {
                         "refusing to set up elevated Windows sandbox mode disallowed by requirements"
                     );
                     self.chat_widget.add_info_message(
-                        "That Windows sandbox option is disallowed by requirements.".to_string(),
+                        tr(current(), "That Windows sandbox option is disallowed by requirements.").to_string(),
                         /*hint*/ None,
                     );
                     return Ok(AppRunControl::Continue);
@@ -1892,8 +1908,10 @@ impl App {
                                 error = %err,
                                 "failed to resolve permission profile for elevated Windows sandbox setup"
                             );
-                            self.chat_widget.add_error_message(format!(
-                                "Failed to prepare Windows sandbox for the selected permission profile: {err}"
+                            self.chat_widget.add_error_message(tr_with(
+                                current(),
+                                "Failed to prepare Windows sandbox for the selected permission profile: {0}",
+                                &[&err.to_string()],
                             ));
                             return Ok(AppRunControl::Continue);
                         }
@@ -1983,7 +2001,7 @@ impl App {
                         "refusing to set up unelevated Windows sandbox mode disallowed by requirements"
                     );
                     self.chat_widget.add_info_message(
-                        "That Windows sandbox option is disallowed by requirements.".to_string(),
+                        tr(current(), "That Windows sandbox option is disallowed by requirements.").to_string(),
                         /*hint*/ None,
                     );
                     return Ok(AppRunControl::Continue);
@@ -2000,8 +2018,10 @@ impl App {
                                 error = %err,
                                 "failed to resolve permission profile for legacy Windows sandbox setup"
                             );
-                            self.chat_widget.add_error_message(format!(
-                                "Failed to prepare Windows sandbox for the selected permission profile: {err}"
+                            self.chat_widget.add_error_message(tr_with(
+                                current(),
+                                "Failed to prepare Windows sandbox for the selected permission profile: {0}",
+                                &[&err.to_string()],
                             ));
                             return Ok(AppRunControl::Continue);
                         }
@@ -2053,7 +2073,7 @@ impl App {
                 {
                     self.chat_widget
                         .add_to_history(history_cell::new_info_event(
-                            format!("Granting sandbox read access to {path} ..."),
+                            tr_with(current(), "Granting sandbox read access to {0} ...", &[&path]),
                             /*hint*/ None,
                         ));
 
@@ -2095,12 +2115,12 @@ impl App {
             AppEvent::WindowsSandboxGrantReadRootCompleted { path, error } => match error {
                 Some(err) => {
                     self.chat_widget
-                        .add_to_history(history_cell::new_error_event(format!("Error: {err}")));
+                        .add_to_history(history_cell::new_error_event(tr_with(current(), "Error: {0}", &[&err.to_string()])));
                 }
                 None => {
                     self.chat_widget
                         .add_to_history(history_cell::new_info_event(
-                            format!("Sandbox read access granted for {}", path.display()),
+                            tr_with(current(), "Sandbox read access granted for {0}", &[&path.display().to_string()]),
                             /*hint*/ None,
                         ));
                 }
@@ -2131,7 +2151,7 @@ impl App {
                             "refusing to persist Windows sandbox mode disallowed by requirements"
                         );
                         self.chat_widget.add_info_message(
-                            "That Windows sandbox option is disallowed by requirements."
+                            tr(current(), "That Windows sandbox option is disallowed by requirements.")
                                 .to_string(),
                             /*hint*/ None,
                         );
@@ -2215,10 +2235,10 @@ impl App {
                                     self.chat_widget.submit_initial_user_message_if_pending();
                                 }
                                 self.chat_widget.add_plain_history_lines(vec![
-                                    Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
+                                    Line::from(vec!["• ".dim(), tr(current(), "Sandbox ready").into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "Codex can now safely edit files and execute commands in your computer"
+                                        tr(current(), "Codex can now safely edit files and execute commands in your computer")
                                             .dark_gray(),
                                     ]),
                                 ]);
@@ -2248,10 +2268,10 @@ impl App {
                                         preset.active_permission_profile.clone(),
                                     ));
                                 self.chat_widget.add_plain_history_lines(vec![
-                                    Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
+                                    Line::from(vec!["• ".dim(), tr(current(), "Sandbox ready").into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "Codex can now safely edit files and execute commands in your computer"
+                                        tr(current(), "Codex can now safely edit files and execute commands in your computer")
                                             .dark_gray(),
                                     ]),
                                 ]);
@@ -2262,8 +2282,10 @@ impl App {
                                 error = %err,
                                 "failed to enable Windows sandbox feature"
                             );
-                            self.chat_widget.add_error_message(format!(
-                                "Failed to enable the Windows sandbox feature: {err}"
+                            self.chat_widget.add_error_message(tr_with(
+                                current(),
+                                "Failed to enable the Windows sandbox feature: {0}",
+                                &[&err.to_string()],
                             ));
                         }
                     }
@@ -2280,7 +2302,7 @@ impl App {
                         model.as_str(),
                         effort.as_ref(),
                     ),
-                    "default model and reasoning effort",
+                    tr(current(), "default model and reasoning effort"),
                 )
                 .await
                 {
@@ -2304,13 +2326,13 @@ impl App {
                             "failed to persist model selection"
                         );
                         self.chat_widget
-                            .add_error_message(format!("Failed to save default model: {error}"));
+                            .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error.to_string()]));
                     }
                 }
             }
             AppEvent::CyberModelAutoReviewNotice => {
                 self.chat_widget.add_warning_message(
-                    "Cyber models default to \"Approve for me\" for safety reasons.".to_string(),
+                    tr(current(), "Cyber models default to \"Approve for me\" for safety reasons.").to_string(),
                 );
             }
             AppEvent::PluginUninstallLoaded {
@@ -2355,7 +2377,7 @@ impl App {
                 {
                     Ok(_) => {
                         let label = Self::personality_label(personality);
-                        let message = format!("Personality set to {label}");
+                        let message = tr_with(current(), "Personality set to {0}", &[&label]);
                         self.chat_widget.add_info_message(message, /*hint*/ None);
                     }
                     Err(err) => {
@@ -2363,8 +2385,10 @@ impl App {
                             error = %err,
                             "failed to persist personality selection"
                         );
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save default personality: {err}"
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Failed to save default personality: {0}",
+                            &[&err.to_string()],
                         ));
                     }
                 }
@@ -2377,22 +2401,27 @@ impl App {
                 let edits = crate::config_update::build_service_tier_selection_edits(
                     service_tier.as_deref(),
                 );
-                match self.persist_model_defaults(app_server.request_handle(), edits, "default service tier")
+                match self.persist_model_defaults(app_server.request_handle(), edits, tr(current(), "default service tier"))
                     .await
                 {
                     Ok(()) => {
                         let message = if let Some(service_tier) = service_tier {
-                            format!("Service tier set to {service_tier}")
+                            tr_with(current(), "Service tier set to {0}", &[&service_tier])
                         } else {
-                            "Service tier cleared".to_string()
+                            tr(current(), "Service tier cleared").to_string()
                         };
                         self.chat_widget.add_info_message(message, /*hint*/ None);
                     }
                     Err(err) => {
                         tracing::error!(error = %err, "failed to persist service tier selection");
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save default service tier: {err}"
-                        ));
+                        self.chat_widget.add_error_message(
+                            tr_with(
+                                current(),
+                                "Failed to save default service tier: {0}",
+                                &[&err.to_string()],
+                            )
+                            .to_string(),
+                        );
                     }
                 }
             }
@@ -2404,7 +2433,7 @@ impl App {
                 if !self.try_set_approval_policy_on_config(
                     &mut config,
                     policy,
-                    "Failed to set approval policy",
+                    tr(current(), "Failed to set approval policy"),
                     "failed to set approval policy on app config",
                 ) {
                     return Ok(AppRunControl::Continue);
@@ -2427,7 +2456,7 @@ impl App {
                     .try_set_builtin_active_permission_profile_on_config(
                         &mut config,
                         active_permission_profile.clone(),
-                        "Failed to set permission profile",
+                        tr(current(), "Failed to set permission profile"),
                         "failed to set active permission profile on app config",
                     )
                 else {
@@ -2576,9 +2605,14 @@ impl App {
                         error = %err,
                         "failed to persist world-writable warning acknowledgement"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save Agent mode warning preference: {err}"
-                    ));
+                    self.chat_widget.add_error_message(
+                        tr_with(
+                            current(),
+                            "Failed to save Agent mode warning preference: {0}",
+                            &[&err.to_string()],
+                        )
+                        .to_string(),
+                    );
                 }
             }
             AppEvent::PersistRateLimitSwitchPromptHidden => {
@@ -2592,9 +2626,14 @@ impl App {
                         error = %err,
                         "failed to persist rate limit switch prompt preference"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save rate limit reminder preference: {err}"
-                    ));
+                    self.chat_widget.add_error_message(
+                        tr_with(
+                            current(),
+                            "Failed to save rate limit reminder preference: {0}",
+                            &[&err.to_string()],
+                        )
+                        .to_string(),
+                    );
                 }
             }
             AppEvent::PersistPlanModeReasoningEffort(effort) => {
@@ -2610,7 +2649,7 @@ impl App {
                 if let Err(err) = self.persist_model_defaults(
                     app_server.request_handle(),
                     vec![edit],
-                    "Plan mode reasoning effort",
+                    tr(current(), "Plan mode reasoning effort"),
                 )
                 .await
                 {
@@ -2618,9 +2657,14 @@ impl App {
                         error = %err,
                         "failed to persist plan mode reasoning effort"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save Plan mode reasoning effort: {err}"
-                    ));
+                    self.chat_widget.add_error_message(
+                        tr_with(
+                            current(),
+                            "Failed to save Plan mode reasoning effort: {0}",
+                            &[&err.to_string()],
+                        )
+                        .to_string(),
+                    );
                 }
             }
             AppEvent::PersistModelMigrationPromptAcknowledged {
@@ -2636,9 +2680,14 @@ impl App {
                         error = %err,
                         "failed to persist model migration prompt acknowledgement"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save model migration prompt preference: {err}"
-                    ));
+                    self.chat_widget.add_error_message(
+                        tr_with(
+                            current(),
+                            "Failed to save model migration prompt preference: {0}",
+                            &[&err.to_string()],
+                        )
+                        .to_string(),
+                    );
                 }
             }
             AppEvent::OpenAgentsOverview => {
@@ -2752,8 +2801,11 @@ impl App {
             #[cfg(any(unix, windows))]
             AppEvent::AgentsDaemonStarted { result } => match result {
                 Ok(()) => self.chat_widget.add_info_message(
-                    "Background server started. Run `codex agents` in another terminal; this session remains unchanged."
-                        .to_string(),
+                    tr(
+                        current(),
+                        "Background server started. Run `codex agents` in another terminal; this session remains unchanged.",
+                    )
+                    .to_string(),
                     /*hint*/ None,
                 ),
                 Err(error) => self
@@ -2801,9 +2853,14 @@ impl App {
                     }
                     Err(err) => {
                         let path_display = path.display();
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to update skill config for {path_display}: {err}"
-                        ));
+                        self.chat_widget.add_error_message(
+                            tr_with(
+                                current(),
+                                "Failed to update skill config for {0}: {1}",
+                                &[&path_display.to_string(), &err.to_string()],
+                            )
+                            .to_string(),
+                        );
                     }
                 }
             }
@@ -2915,7 +2972,7 @@ impl App {
                     let diff_summary = DiffSummary::new(request.changes, request.cwd);
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![diff_summary.into()],
-                        "P A T C H".to_string(),
+                        tr(current(), "P A T C H").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -2925,7 +2982,7 @@ impl App {
                     let full_cmd_lines = highlight_bash_to_lines(&full_cmd);
                     self.overlay = Some(Overlay::new_static_with_lines(
                         full_cmd_lines,
-                        "E X E C".to_string(),
+                        tr(current(), "E X E C").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -2934,40 +2991,40 @@ impl App {
                     let mut lines = Vec::new();
                     if let Some(environment_id) = request.environment_id {
                         lines.push(Line::from(vec![
-                            "Environment: ".into(),
+                            tr(current(), "Environment: ").into(),
                             environment_id.bold(),
                         ]));
                         lines.push(Line::from(""));
                     }
                     if let Some(reason) = request.reason {
-                        lines.push(Line::from(vec!["Reason: ".into(), reason.italic()]));
+                        lines.push(Line::from(vec![tr(current(), "Reason: ").into(), reason.italic()]));
                         lines.push(Line::from(""));
                     }
                     if let Some(rule_line) =
                         crate::bottom_pane::format_requested_permissions_rule(&request.permissions)
                     {
                         lines.push(Line::from(vec![
-                            "Permission rule: ".into(),
+                            tr(current(), "Permission rule: ").into(),
                             rule_line.cyan(),
                         ]));
                     }
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![Box::new(Paragraph::new(lines).wrap(Wrap { trim: false }))],
-                        "P E R M I S S I O N S".to_string(),
+                        tr(current(), "P E R M I S S I O N S").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
                 ApprovalRequest::McpElicitation(request) => {
                     let _ = tui.enter_alt_screen();
                     let paragraph = Paragraph::new(vec![
-                        Line::from(vec!["Server: ".into(), request.server_name.bold()]),
+                        Line::from(vec![tr(current(), "Server: ").into(), request.server_name.bold()]),
                         Line::from(""),
                         Line::from(request.message),
                     ])
                     .wrap(Wrap { trim: false });
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![Box::new(paragraph)],
-                        "E L I C I T A T I O N".to_string(),
+                        tr(current(), "E L I C I T A T I O N").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -2993,9 +3050,14 @@ impl App {
                     Err(err) => {
                         let error = format_config_error(&err);
                         tracing::error!(error = %error, "failed to persist status line settings; keeping previous selection");
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save status line settings: {error}"
-                        ));
+                        self.chat_widget.add_error_message(
+                            tr_with(
+                                current(),
+                                "Failed to save status line settings: {0}",
+                                &[&error],
+                            )
+                            .to_string(),
+                        );
                     }
                 }
             }
@@ -3033,9 +3095,14 @@ impl App {
                     Err(err) => {
                         tracing::error!(error = %err, "failed to persist terminal title items; keeping previous selection");
                         self.chat_widget.revert_terminal_title_setup_preview();
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save terminal title items: {err}"
-                        ));
+                        self.chat_widget.add_error_message(
+                            tr_with(
+                                current(),
+                                "Failed to save terminal title items: {0}",
+                                &[&err.to_string()],
+                            )
+                            .to_string(),
+                        );
                     }
                 }
             }
@@ -3123,7 +3190,11 @@ impl App {
                 if self.current_displayed_thread_id() == Some(thread_id) {
                     if self.chat_widget.is_user_turn_pending_or_running() {
                         self.chat_widget.add_error_message(
-                            "Wait for the current task to finish before running /recap.".to_string(),
+                            tr(
+                                current(),
+                                "Wait for the current task to finish before running /recap.",
+                            )
+                            .to_string(),
                         );
                     } else {
                         self.request_recap(app_server, thread_id, RecapTrigger::Manual);
@@ -3380,8 +3451,9 @@ impl App {
         app_server: &mut AppServerSession,
     ) -> AppRunControl {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
-            self.chat_widget
-                .add_error_message("A thread must start before it can be archived.".to_string());
+            self.chat_widget.add_error_message(
+                tr(current(), "A thread must start before it can be archived.").to_string(),
+            );
             return AppRunControl::Continue;
         };
         if self.side_threads.contains_key(&thread_id) {
@@ -3407,8 +3479,9 @@ impl App {
         app_server: &mut AppServerSession,
     ) -> AppRunControl {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
-            self.chat_widget
-                .add_error_message("A thread must start before it can be deleted.".to_string());
+            self.chat_widget.add_error_message(
+                tr(current(), "A thread must start before it can be deleted.").to_string(),
+            );
             return AppRunControl::Continue;
         };
         if self.side_threads.contains_key(&thread_id) {

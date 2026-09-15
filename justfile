@@ -177,6 +177,17 @@ write-config-schema:
 write-app-server-schema *args:
     cargo run -p codex-app-server-protocol --bin write_schema_fixtures -- {args}
 
+# Fail when user-facing strings and the zh dictionary have drifted apart:
+# a string rendered without a translation, or an entry whose string is gone.
+# Exits non-zero on real drift, so it can gate CI (docs/plan/i18n-verification.md, H3).
+i18n-check *args:
+    cd {{ justfile_directory() }}/codex-rs && cargo run -p codex-i18n-check -- --root {{ justfile_directory() }} {args}
+
+# Read-only statistics for how much of the TUI is translatable and what the
+# scanner misclassifies (docs/plan/i18n-verification.md, H2). Never writes.
+i18n-scan *args:
+    cd {{ justfile_directory() }}/codex-rs && python3 {{ justfile_directory() }}/scripts/i18n_scan.py {args}
+
 [no-cd]
 write-hooks-schema:
     cargo run --manifest-path {{ justfile_directory() }}/codex-rs/Cargo.toml -p codex-hooks --bin write_hooks_schema_fixtures

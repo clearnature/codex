@@ -6559,6 +6559,10 @@
       "description": "System instructions.",
       "type": "string"
     },
+    "locale": {
+      "description": "Language for user-facing text, for example `zh-CN` or `en`.\n\nSecond-highest precedence in the locale chain implemented by `codex-i18n`: it outranks `LC_ALL` / `LANG` and the operating system's locale, and is outranked by `--lang`. A value that names no language Codex has translations for resolves to English rather than failing.\n\n`localeOverride` is accepted as an alias so that the spelling used by the desktop client resolves here too; `locale` is the canonical name.",
+      "type": "string"
+    },
     "log_dir": {
       "allOf": [
         {

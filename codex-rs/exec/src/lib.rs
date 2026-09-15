@@ -257,6 +257,10 @@ fn exec_stderr_env_filter() -> EnvFilter {
 }
 
 pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
+    // Publish the UI language before any output is produced. `--lang` wins, then
+    // the environment, then the operating system's locale; a later pass adds
+    // `config.toml` to the chain (see `codex-i18n`).
+    codex_i18n::set_current(codex_i18n::resolve_from_process(cli.lang.as_deref(), None));
     if let Err(err) = set_default_originator("codex_exec".to_string()) {
         tracing::warn!(?err, "Failed to set codex exec originator override {err:?}");
     }
@@ -292,6 +296,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         cwd,
         mut add_dir,
         worktree,
+        lang,
     } = shared;
 
     if worktree {
@@ -606,6 +611,13 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         build_config,
     )
     .await?;
+
+    // `config.toml` is available now, so apply the middle link of the locale
+    // chain: `--lang` > `config.locale` > environment > system.
+    codex_i18n::set_current(codex_i18n::resolve_from_process(
+        lang.as_deref(),
+        config.locale.as_deref(),
+    ));
     let resume_approvals_reviewer_override = cli_kv_overrides
         .iter()
         .any(|(key, _)| key == "approvals_reviewer")

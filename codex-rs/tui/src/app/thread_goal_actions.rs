@@ -13,12 +13,21 @@ use crate::goal_files;
 use crate::text_formatting::truncate_text;
 use codex_app_server_protocol::ThreadGoal;
 use codex_app_server_protocol::ThreadGoalStatus;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 
-const EPHEMERAL_THREAD_GOAL_ERROR_MESSAGE: &str = concat!(
-    "Goals need a saved session. This session is temporary.\n",
-    "Run `codex` to start a saved session, or `codex resume` / `/resume` to reopen one.",
-);
+/// Shown when a goal action needs a saved session.
+///
+/// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`: the
+/// text has to pass through `tr`, and a `const` cannot call a non-`const` fn.
+fn ephemeral_thread_goal_error_message() -> &'static str {
+    tr(
+        current(),
+        "Goals need a saved session. This session is temporary.\nRun `codex` to start a saved session, or `codex resume` / `/resume` to reopen one.",
+    )
+}
 
 impl App {
     pub(super) async fn open_thread_goal_menu(
@@ -43,7 +52,7 @@ impl App {
         let Some(goal) = response.goal else {
             self.chat_widget.add_info_message(
                 GOAL_USAGE.to_string(),
-                Some("No goal is currently set.".to_string()),
+                Some(tr(current(), "No goal is currently set.").to_string()),
             );
             return;
         };
@@ -213,7 +222,11 @@ impl App {
                     return;
                 }
                 self.chat_widget.add_info_message(
-                    format!("Goal {}", goal_status_label(response.goal.status)),
+                    tr_with(
+                        current(),
+                        "Goal {0}",
+                        &[goal_status_label(response.goal.status)],
+                    ),
                     Some(goal_usage_summary(&response.goal)),
                 );
                 self.chat_widget.maybe_send_next_queued_input();
@@ -250,7 +263,11 @@ impl App {
 
         match result {
             Ok(response) => self.chat_widget.add_info_message(
-                format!("Goal {}", goal_status_label(response.goal.status)),
+                tr_with(
+                    current(),
+                    "Goal {0}",
+                    &[goal_status_label(response.goal.status)],
+                ),
                 Some(goal_usage_summary(&response.goal)),
             ),
             Err(err) => self
@@ -272,12 +289,17 @@ impl App {
         match result {
             Ok(response) => {
                 if response.cleared {
-                    self.chat_widget
-                        .add_info_message("Goal cleared".to_string(), /*hint*/ None);
+                    self.chat_widget.add_info_message(
+                        tr(current(), "Goal cleared").to_string(),
+                        /*hint*/ None,
+                    );
                 } else {
                     self.chat_widget.add_info_message(
-                        "No goal to clear".to_string(),
-                        Some("This thread does not currently have a goal.".to_string()),
+                        tr(current(), "No goal to clear").to_string(),
+                        Some(
+                            tr(current(), "This thread does not currently have a goal.")
+                                .to_string(),
+                        ),
                     );
                 }
             }
@@ -303,24 +325,27 @@ impl App {
         })];
         let items = vec![
             SelectionItem {
-                name: "Replace current goal".to_string(),
-                description: Some("Set the new objective and start it now".to_string()),
+                name: tr(current(), "Replace current goal").to_string(),
+                description: Some(
+                    tr(current(), "Set the new objective and start it now").to_string(),
+                ),
                 actions: replace_actions,
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Cancel".to_string(),
-                description: Some("Keep the current goal".to_string()),
+                name: tr(current(), "Cancel").to_string(),
+                description: Some(tr(current(), "Keep the current goal").to_string()),
                 dismiss_on_select: true,
                 ..Default::default()
             },
         ];
         self.chat_widget.show_selection_view(SelectionViewParams {
-            title: Some("Replace goal?".to_string()),
-            subtitle: Some(format!(
-                "New objective: {}",
-                truncate_text(&objective, /*max_graphemes*/ 200)
+            title: Some(tr(current(), "Replace goal?").to_string()),
+            subtitle: Some(tr_with(
+                current(),
+                "New objective: {0}",
+                &[&truncate_text(&objective, /*max_graphemes*/ 200)],
             )),
             footer_hint: Some(standard_popup_hint_line()),
             items,
@@ -330,10 +355,10 @@ impl App {
 
     fn show_no_thread_goal_to_edit(&mut self) {
         self.chat_widget
-            .add_error_message("No goal is currently set.".to_string());
+            .add_error_message(tr(current(), "No goal is currently set.").to_string());
         self.chat_widget.add_info_message(
             GOAL_USAGE.to_string(),
-            Some("Create a goal before editing it.".to_string()),
+            Some(tr(current(), "Create a goal before editing it.").to_string()),
         );
     }
 }
@@ -351,7 +376,7 @@ async fn cleanup_materialized_goal_files(
 
 fn thread_goal_error_message(action: &str, err: &color_eyre::Report) -> String {
     if is_ephemeral_thread_goal_error(err) {
-        EPHEMERAL_THREAD_GOAL_ERROR_MESSAGE.to_string()
+        ephemeral_thread_goal_error_message().to_string()
     } else {
         format!("Failed to {action} thread goal: {err}")
     }
@@ -395,7 +420,7 @@ mod tests {
 
         assert_eq!(
             thread_goal_error_message("read", &err),
-            EPHEMERAL_THREAD_GOAL_ERROR_MESSAGE
+            ephemeral_thread_goal_error_message()
         );
     }
 

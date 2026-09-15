@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Duration;
@@ -68,8 +71,19 @@ const PERSONAL_MARKETPLACE_RELATIVE_PATH: &str = ".agents/plugins/marketplace.js
 const REMOTE_LOADING_TAB_ID_PREFIX: &str = "remote-loading:";
 const REMOTE_EMPTY_TAB_ID_PREFIX: &str = "remote-empty:";
 const REMOTE_ERROR_TAB_ID_PREFIX: &str = "remote-error:";
-const OPENAI_CURATED_LOADING_DESCRIPTION: &str =
-    "This updates when OpenAI Curated plugins finish loading.";
+/// Loading hint for the OpenAI Curated tab.
+///
+/// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`: the
+/// text has to pass through `tr`, which a `const` cannot call.
+fn openai_curated_loading_description() -> &'static str {
+    tr(
+        current(),
+        tr(
+            current(),
+            "This updates when OpenAI Curated plugins finish loading.",
+        ),
+    )
+}
 const WORKSPACE_SECTION_TAB_ORDER: u8 = 0;
 const SHARED_WITH_ME_SECTION_TAB_ORDER: u8 = 1;
 const SHARED_WITH_ME_LINK_SECTION_TAB_ORDER: u8 = 2;
@@ -128,11 +142,11 @@ impl MarketplaceProduct {
 
     fn label(self) -> Option<&'static str> {
         match self {
-            Self::OpenAiCurated => Some("OpenAI Curated"),
-            Self::Workspace => Some("Workspace"),
-            Self::SharedWithMe => Some("Shared with me"),
-            Self::SharedWithMeLink => Some("Shared with me (link)"),
-            Self::Local => Some("Local"),
+            Self::OpenAiCurated => Some(tr(current(), "OpenAI Curated")),
+            Self::Workspace => Some(tr(current(), "Workspace")),
+            Self::SharedWithMe => Some(tr(current(), "Shared with me")),
+            Self::SharedWithMeLink => Some(tr(current(), "Shared with me (link)")),
+            Self::Local => Some(tr(current(), "Local")),
             Self::Other => None,
         }
     }
@@ -165,34 +179,60 @@ struct RemoteMarketplaceSection {
     tab_order: u8,
 }
 
-const REMOTE_MARKETPLACE_SECTIONS: [RemoteMarketplaceSection; 2] = [
-    RemoteMarketplaceSection {
-        id: "workspace",
-        label: "Workspace",
-        loading_tab_id: "workspace-loading",
-        loading_item_description: "This updates when workspace plugins finish loading.",
-        marketplace_names: &[REMOTE_WORKSPACE_MARKETPLACE_NAME],
-        show_empty_tab: true,
-        empty_item_name: "No workspace plugins available",
-        empty_item_description: "No workspace directory plugins are available.",
-        tab_order: WORKSPACE_SECTION_TAB_ORDER,
-    },
-    RemoteMarketplaceSection {
-        id: "shared-with-me",
-        label: "Shared with me",
-        loading_tab_id: "shared-with-me-loading",
-        loading_item_description: "This updates when shared plugins finish loading.",
-        marketplace_names: &[
-            REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME,
-            REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME,
-            REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME,
-        ],
-        show_empty_tab: false,
-        empty_item_name: "No shared plugins available",
-        empty_item_description: "No plugins have been shared with you.",
-        tab_order: SHARED_WITH_ME_SECTION_TAB_ORDER,
-    },
-];
+/// The remote marketplace sections, rendered in the current UI language.
+///
+/// A function rather than a `const`, because the English text has to pass
+/// through `tr` and a `const` cannot call a non-`const` function. The alternative
+/// -- keeping the table a `const` and translating at every use site -- was tried
+/// first and is worse: the key then never appears at a call site, so
+/// `codex-i18n-check` cannot see it and the tool would have to grow a naming
+/// heuristic to avoid reporting live translations as unused. That heuristic was
+/// also tried: broadening "bound keys" from `label:` to every `*_name` /
+/// `*_description` field immediately produced 33 false "missing" entries for
+/// strings that were simply not wired yet. `RemoteMarketplaceSection` is `Copy`,
+/// so returning the array by value costs nothing.
+fn remote_marketplace_sections() -> [RemoteMarketplaceSection; 2] {
+    [
+        RemoteMarketplaceSection {
+            id: "workspace",
+            label: tr(current(), "Workspace"),
+            loading_tab_id: "workspace-loading",
+            loading_item_description: tr(
+                current(),
+                tr(
+                    current(),
+                    "This updates when workspace plugins finish loading.",
+                ),
+            ),
+            marketplace_names: &[REMOTE_WORKSPACE_MARKETPLACE_NAME],
+            show_empty_tab: true,
+            empty_item_name: tr(current(), "No workspace plugins available"),
+            empty_item_description: tr(current(), "No workspace directory plugins are available."),
+            tab_order: WORKSPACE_SECTION_TAB_ORDER,
+        },
+        RemoteMarketplaceSection {
+            id: "shared-with-me",
+            label: tr(current(), "Shared with me"),
+            loading_tab_id: "shared-with-me-loading",
+            loading_item_description: tr(
+                current(),
+                tr(
+                    current(),
+                    "This updates when shared plugins finish loading.",
+                ),
+            ),
+            marketplace_names: &[
+                REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME,
+                REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME,
+                REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME,
+            ],
+            show_empty_tab: false,
+            empty_item_name: tr(current(), "No shared plugins available"),
+            empty_item_description: tr(current(), "No plugins have been shared with you."),
+            tab_order: SHARED_WITH_ME_SECTION_TAB_ORDER,
+        },
+    ]
+}
 
 impl RemoteMarketplaceSection {
     fn fallback_tab(
@@ -285,7 +325,7 @@ impl Renderable for DelayedLoadingHeader {
         }
 
         let mut lines = Vec::with_capacity(3);
-        lines.push(Line::from("Plugins".bold()));
+        lines.push(Line::from(tr(current(), "Plugins").bold()));
 
         let now = Instant::now();
         let elapsed = now.saturating_duration_since(self.started_at);
@@ -344,12 +384,30 @@ impl ChatWidget {
             header: Box::new(DelayedLoadingHeader::new(
                 self.frame_requester.clone(),
                 self.local_settings.tui.animations,
-                "Loading available plugins...".to_string(),
-                Some("This updates when the marketplace list is ready.".to_string()),
+                tr(current(), "Loading available plugins...").to_string(),
+                Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when the marketplace list is ready.",
+                        ),
+                    )
+                    .to_string(),
+                ),
             )),
             items: vec![SelectionItem {
-                name: "Loading plugins...".to_string(),
-                description: Some("This updates when the marketplace list is ready.".to_string()),
+                name: tr(current(), "Loading plugins...").to_string(),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when the marketplace list is ready.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -363,13 +421,20 @@ impl ChatWidget {
             header: Box::new(DelayedLoadingHeader::new(
                 self.frame_requester.clone(),
                 self.local_settings.tui.animations,
-                "Adding marketplace...".to_string(),
+                tr(current(), "Adding marketplace...").to_string(),
                 /*note*/ None,
             )),
             items: vec![SelectionItem {
-                name: "Adding marketplace...".to_string(),
+                name: tr(current(), "Adding marketplace...").to_string(),
                 description: Some(
-                    "This updates when marketplace installation completes.".to_string(),
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when marketplace installation completes.",
+                        ),
+                    )
+                    .to_string(),
                 ),
                 is_disabled: true,
                 ..Default::default()
@@ -385,12 +450,24 @@ impl ChatWidget {
         marketplace_display_name: String,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            format!("Remove {marketplace_display_name} marketplace?").dim(),
+            tr_with(
+                current(),
+                "Remove {0} marketplace?",
+                &[&marketplace_display_name],
+            )
+            .dim(),
         ));
         header.push(Line::from(
-            "This removes the configured marketplace from Codex.".dim(),
+            tr(
+                current(),
+                tr(
+                    current(),
+                    "This removes the configured marketplace from Codex.",
+                ),
+            )
+            .dim(),
         ));
 
         let cwd_for_remove = self.config.cwd.to_path_buf();
@@ -404,18 +481,32 @@ impl ChatWidget {
             header: Box::new(header),
             footer_hint: Some(Line::from(vec![
                 Span::from(key_hint::plain(KeyCode::Enter)),
-                " select".dim(),
+                tr(current(), " select").dim(),
                 " · ".into(),
-                "esc close".dim(),
+                tr(current(), "esc close").dim(),
             ])),
             items: vec![
                 SelectionItem {
-                    name: "Remove marketplace".to_string(),
+                    name: tr(current(), "Remove marketplace").to_string(),
                     description: Some(
-                        "Remove this marketplace from the available plugin list.".to_string(),
+                        tr(
+                            current(),
+                            tr(
+                                current(),
+                                "Remove this marketplace from the available plugin list.",
+                            ),
+                        )
+                        .to_string(),
                     ),
                     selected_description: Some(
-                        "Remove this marketplace from the available plugin list.".to_string(),
+                        tr(
+                            current(),
+                            tr(
+                                current(),
+                                "Remove this marketplace from the available plugin list.",
+                            ),
+                        )
+                        .to_string(),
                     ),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::OpenMarketplaceRemoveLoading {
@@ -430,9 +521,13 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Back to plugins".to_string(),
-                    description: Some("Keep this marketplace installed.".to_string()),
-                    selected_description: Some("Keep this marketplace installed.".to_string()),
+                    name: tr(current(), "Back to plugins").to_string(),
+                    description: Some(
+                        tr(current(), "Keep this marketplace installed.").to_string(),
+                    ),
+                    selected_description: Some(
+                        tr(current(), "Keep this marketplace installed.").to_string(),
+                    ),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::OpenPluginsList {
                             cwd: cwd_for_cancel.clone(),
@@ -457,17 +552,26 @@ impl ChatWidget {
         marketplace_display_name: &str,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            format!("Removing {marketplace_display_name}...").dim(),
+            tr_with(current(), "Removing {0}...", &[&marketplace_display_name]).dim(),
         ));
 
         SelectionViewParams {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
             header: Box::new(header),
             items: vec![SelectionItem {
-                name: "Removing marketplace...".to_string(),
-                description: Some("This updates when marketplace removal completes.".to_string()),
+                name: tr(current(), "Removing marketplace...").to_string(),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when marketplace removal completes.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -480,8 +584,8 @@ impl ChatWidget {
         marketplace_name: Option<&str>,
     ) -> SelectionViewParams {
         let loading_text = marketplace_name
-            .map(|name| format!("Upgrading {name} marketplace..."))
-            .unwrap_or_else(|| "Upgrading marketplaces...".to_string());
+            .map(|name| tr_with(current(), "Upgrading {0} marketplace...", &[&name]))
+            .unwrap_or_else(|| tr(current(), "Upgrading marketplaces...").to_string());
         SelectionViewParams {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
             header: Box::new(DelayedLoadingHeader::new(
@@ -492,7 +596,16 @@ impl ChatWidget {
             )),
             items: vec![SelectionItem {
                 name: loading_text,
-                description: Some("This updates when marketplace upgrade completes.".to_string()),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when marketplace upgrade completes.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -509,12 +622,18 @@ impl ChatWidget {
             header: Box::new(DelayedLoadingHeader::new(
                 self.frame_requester.clone(),
                 self.local_settings.tui.animations,
-                format!("Loading details for {plugin_display_name}..."),
+                tr_with(
+                    current(),
+                    "Loading details for {0}...",
+                    &[&plugin_display_name],
+                ),
                 /*note*/ None,
             )),
             items: vec![SelectionItem {
-                name: "Loading plugin details...".to_string(),
-                description: Some("This updates when plugin details load.".to_string()),
+                name: tr(current(), "Loading plugin details...").to_string(),
+                description: Some(
+                    tr(current(), "This updates when plugin details load.").to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -527,7 +646,7 @@ impl ChatWidget {
         plugin_display_name: &str,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
             format!("Installing {plugin_display_name}...").dim(),
         ));
@@ -536,8 +655,17 @@ impl ChatWidget {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
             header: Box::new(header),
             items: vec![SelectionItem {
-                name: "Installing plugin...".to_string(),
-                description: Some("This updates when plugin installation completes.".to_string()),
+                name: tr(current(), "Installing plugin...").to_string(),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This updates when plugin installation completes.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -550,7 +678,7 @@ impl ChatWidget {
         plugin_display_name: &str,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
             format!("Uninstalling {plugin_display_name}...").dim(),
         ));
@@ -559,8 +687,10 @@ impl ChatWidget {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
             header: Box::new(header),
             items: vec![SelectionItem {
-                name: "Uninstalling plugin...".to_string(),
-                description: Some("This updates when the plugin removal completes.".to_string()),
+                name: tr(current(), "Uninstalling plugin...").to_string(),
+                description: Some(
+                    tr(current(), "This updates when the plugin removal completes.").to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -570,14 +700,14 @@ impl ChatWidget {
 
     pub(super) fn plugins_error_popup_params(&self, err: &str) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
-        header.push(Line::from("Failed to load plugins.".dim()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
+        header.push(Line::from(tr(current(), "Failed to load plugins.").dim()));
 
         SelectionViewParams {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
             header: Box::new(header),
             items: vec![SelectionItem {
-                name: "Plugin marketplace unavailable".to_string(),
+                name: tr(current(), "Plugin marketplace unavailable").to_string(),
                 description: Some(err.to_string()),
                 is_disabled: true,
                 ..Default::default()
@@ -588,22 +718,33 @@ impl ChatWidget {
 
     pub(super) fn marketplace_add_error_popup_params(&self) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
-        header.push(Line::from("Failed to add marketplace.".dim()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
+        header.push(Line::from(
+            tr(current(), "Failed to add marketplace.").dim(),
+        ));
 
         let mut items = vec![
             SelectionItem {
-                name: "Marketplace add failed".to_string(),
+                name: tr(current(), "Marketplace add failed").to_string(),
                 description: Some(
-                    "Failed to add marketplace from the provided source.".to_string(),
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "Failed to add marketplace from the provided source.",
+                        ),
+                    )
+                    .to_string(),
                 ),
                 is_disabled: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Try again".to_string(),
-                description: Some("Enter a marketplace source.".to_string()),
-                selected_description: Some("Enter a marketplace source.".to_string()),
+                name: tr(current(), "Try again").to_string(),
+                description: Some(tr(current(), "Enter a marketplace source.").to_string()),
+                selected_description: Some(
+                    tr(current(), "Enter a marketplace source.").to_string(),
+                ),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::OpenMarketplaceAddPrompt);
                 })],
@@ -614,9 +755,9 @@ impl ChatWidget {
         if let PluginsCacheState::Ready(plugins_response) = self.plugins_cache_for_current_cwd() {
             let cwd = self.config.cwd.to_path_buf();
             items.push(SelectionItem {
-                name: "Back to plugins".to_string(),
-                description: Some("Return to the plugin list.".to_string()),
-                selected_description: Some("Return to the plugin list.".to_string()),
+                name: tr(current(), "Back to plugins").to_string(),
+                description: Some(tr(current(), "Return to the plugin list.").to_string()),
+                selected_description: Some(tr(current(), "Return to the plugin list.").to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenPluginsList {
                         cwd: cwd.clone(),
@@ -642,22 +783,30 @@ impl ChatWidget {
         marketplace_display_name: &str,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
-        header.push(Line::from("Failed to remove marketplace.".dim()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
+        header.push(Line::from(
+            tr(current(), "Failed to remove marketplace.").dim(),
+        ));
 
         let marketplace_name = marketplace_name.to_string();
         let marketplace_display_name = marketplace_display_name.to_string();
         let mut items = vec![
             SelectionItem {
-                name: "Marketplace removal failed".to_string(),
-                description: Some("Failed to remove the selected marketplace.".to_string()),
+                name: tr(current(), "Marketplace removal failed").to_string(),
+                description: Some(
+                    tr(current(), "Failed to remove the selected marketplace.").to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Try again".to_string(),
-                description: Some("Review the confirmation prompt again.".to_string()),
-                selected_description: Some("Review the confirmation prompt again.".to_string()),
+                name: tr(current(), "Try again").to_string(),
+                description: Some(
+                    tr(current(), "Review the confirmation prompt again.").to_string(),
+                ),
+                selected_description: Some(
+                    tr(current(), "Review the confirmation prompt again.").to_string(),
+                ),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenMarketplaceRemoveConfirm {
                         marketplace_name: marketplace_name.clone(),
@@ -671,9 +820,9 @@ impl ChatWidget {
         if let PluginsCacheState::Ready(plugins_response) = self.plugins_cache_for_current_cwd() {
             let cwd = self.config.cwd.to_path_buf();
             items.push(SelectionItem {
-                name: "Back to plugins".to_string(),
-                description: Some("Return to the plugin list.".to_string()),
-                selected_description: Some("Return to the plugin list.".to_string()),
+                name: tr(current(), "Back to plugins").to_string(),
+                description: Some(tr(current(), "Return to the plugin list.").to_string()),
+                selected_description: Some(tr(current(), "Return to the plugin list.").to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenPluginsList {
                         cwd: cwd.clone(),
@@ -699,11 +848,13 @@ impl ChatWidget {
         plugins_response: Option<&PluginListResponse>,
     ) -> SelectionViewParams {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
-        header.push(Line::from("Failed to load plugin details.".dim()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
+        header.push(Line::from(
+            tr(current(), "Failed to load plugin details.").dim(),
+        ));
 
         let mut items = vec![SelectionItem {
-            name: "Plugin detail unavailable".to_string(),
+            name: tr(current(), "Plugin detail unavailable").to_string(),
             description: Some(err.to_string()),
             is_disabled: true,
             ..Default::default()
@@ -711,9 +862,9 @@ impl ChatWidget {
         if let Some(plugins_response) = plugins_response.cloned() {
             let cwd = self.config.cwd.to_path_buf();
             items.push(SelectionItem {
-                name: "Back to plugins".to_string(),
-                description: Some("Return to the plugin list.".to_string()),
-                selected_description: Some("Return to the plugin list.".to_string()),
+                name: tr(current(), "Back to plugins").to_string(),
+                description: Some(tr(current(), "Return to the plugin list.").to_string()),
+                selected_description: Some(tr(current(), "Return to the plugin list.").to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenPluginsList {
                         cwd: cwd.clone(),
@@ -753,7 +904,7 @@ impl ChatWidget {
             .map(|(_, _, display_name)| {
                 PLUGIN_ROW_PREFIX_WIDTH + UnicodeWidthStr::width(display_name.as_str())
             })
-            .chain([UnicodeWidthStr::width("Add marketplace")])
+            .chain([UnicodeWidthStr::width(tr(current(), "Add marketplace"))])
             .max();
         let installed_entries = all_entries
             .iter()
@@ -767,15 +918,21 @@ impl ChatWidget {
             all_entries,
             &preferred_local_sources,
             /*include_marketplace_names*/ true,
-            "No marketplace plugins available",
-            "No plugins are available in the discovered marketplaces.",
+            tr(current(), "No marketplace plugins available"),
+            tr(
+                current(),
+                tr(
+                    current(),
+                    "No plugins are available in the discovered marketplaces.",
+                ),
+            ),
         );
 
         tabs.push(SelectionTab {
             id: ALL_PLUGINS_TAB_ID.to_string(),
-            label: "All Plugins".to_string(),
+            label: tr(current(), "All Plugins").to_string(),
             header: plugins_header(
-                "Browse plugins from available marketplaces.".to_string(),
+                tr(current(), "Browse plugins from available marketplaces.").to_string(),
                 format!("Installed {installed} of {total} available plugins."),
             ),
             items: all_items,
@@ -783,17 +940,17 @@ impl ChatWidget {
 
         tabs.push(SelectionTab {
             id: INSTALLED_PLUGINS_TAB_ID.to_string(),
-            label: format!("Installed ({installed})"),
+            label: tr_with(current(), "Installed ({0})", &[&installed.to_string()]),
             header: plugins_header(
-                "Installed plugins.".to_string(),
+                tr(current(), "Installed plugins.").to_string(),
                 format!("Showing {installed} installed plugins."),
             ),
             items: self.plugin_selection_items(
                 installed_entries,
                 &preferred_local_sources,
                 /*include_marketplace_names*/ true,
-                "No installed plugins",
-                "No installed plugins.",
+                tr(current(), "No installed plugins"),
+                tr(current(), "No installed plugins."),
             ),
         });
 
@@ -814,17 +971,20 @@ impl ChatWidget {
         let (curated_empty_name, curated_empty_description) =
             if curated_loading && !curated_has_entries {
                 (
-                    "Loading OpenAI Curated plugins...",
-                    OPENAI_CURATED_LOADING_DESCRIPTION,
+                    tr(current(), "Loading OpenAI Curated plugins..."),
+                    openai_curated_loading_description(),
                 )
             } else if let Some(section_error) = by_openai_section_error
                 && !curated_has_entries
             {
-                ("OpenAI Curated unavailable", section_error.message.as_str())
+                (
+                    tr(current(), "OpenAI Curated unavailable"),
+                    section_error.message.as_str(),
+                )
             } else {
                 (
-                    "No OpenAI Curated plugins available",
-                    "No OpenAI Curated plugins available.",
+                    tr(current(), "No OpenAI Curated plugins available"),
+                    tr(current(), "No OpenAI Curated plugins available."),
                 )
             };
         let mut curated_items = self.plugin_selection_items(
@@ -836,8 +996,8 @@ impl ChatWidget {
         );
         if curated_loading && curated_has_entries {
             curated_items.push(remote_section_loading_item(
-                "OpenAI Curated",
-                OPENAI_CURATED_LOADING_DESCRIPTION,
+                tr(current(), "OpenAI Curated"),
+                openai_curated_loading_description(),
             ));
         }
         if let Some(section_error) = by_openai_section_error
@@ -850,9 +1010,9 @@ impl ChatWidget {
         }
         tabs.push(SelectionTab {
             id: OPENAI_CURATED_TAB_ID.to_string(),
-            label: "OpenAI Curated".to_string(),
+            label: tr(current(), "OpenAI Curated").to_string(),
             header: plugins_header(
-                "OpenAI Curated marketplace.".to_string(),
+                tr(current(), "OpenAI Curated marketplace.").to_string(),
                 format!("Installed {curated_installed} of {curated_total} OpenAI Curated plugins."),
             ),
             items: curated_items,
@@ -873,7 +1033,7 @@ impl ChatWidget {
         });
 
         let mut additional_tabs = Vec::new();
-        for section in REMOTE_MARKETPLACE_SECTIONS {
+        for section in remote_marketplace_sections() {
             if let Some(fallback_tab) = section.fallback_tab(
                 marketplaces,
                 self.plugin_remote_sections_loading,
@@ -913,15 +1073,21 @@ impl ChatWidget {
             }
             let header = if self.newly_installed_marketplace_tab_id.as_deref() == Some(&tab_id) {
                 plugins_header(
-                    format!("{label} installed successfully."),
-                    "Select the plugins you want to use and press Enter to install or view details."
+                    tr_with(current(), "{0} installed successfully.", &[&label]),
+                    tr(current(), "Select the plugins you want to use and press Enter to install or view details.")
                         .to_string(),
                 )
             } else {
                 plugins_header(
                     format!("{label}."),
-                    format!(
-                        "Installed {marketplace_installed} of {marketplace_total} {label} plugins."
+                    tr_with(
+                        current(),
+                        "Installed {0} of {1} {2} plugins.",
+                        &[
+                            &marketplace_installed.to_string(),
+                            &marketplace_total.to_string(),
+                            &label,
+                        ],
                     ),
                 )
             };
@@ -935,8 +1101,8 @@ impl ChatWidget {
                         entries,
                         &preferred_local_sources,
                         /*include_marketplace_names*/ false,
-                        "No plugins available in this marketplace",
-                        "No plugins available in this marketplace.",
+                        tr(current(), "No plugins available in this marketplace"),
+                        tr(current(), "No plugins available in this marketplace."),
                     ),
                 },
             ));
@@ -958,7 +1124,7 @@ impl ChatWidget {
             tabs,
             initial_tab_id,
             is_searchable: true,
-            search_placeholder: Some("Type to search plugins".to_string()),
+            search_placeholder: Some(tr(current(), "Type to search plugins").to_string()),
             col_width_mode: ColumnWidthMode::AutoAllRows,
             row_display: SelectionRowDisplay::SingleLine,
             name_column_width,
@@ -970,18 +1136,39 @@ impl ChatWidget {
     fn marketplace_add_tab(&self) -> SelectionTab {
         SelectionTab {
             id: ADD_MARKETPLACE_TAB_ID.to_string(),
-            label: "Add Marketplace".to_string(),
+            label: tr(current(), "Add Marketplace").to_string(),
             header: plugins_header(
-                "Add a marketplace from a Git repo or local root.".to_string(),
-                "Enter a source to make its plugins available in this menu.".to_string(),
+                tr(
+                    current(),
+                    tr(
+                        current(),
+                        "Add a marketplace from a Git repo or local root.",
+                    ),
+                )
+                .to_string(),
+                tr(
+                    current(),
+                    tr(
+                        current(),
+                        "Enter a source to make its plugins available in this menu.",
+                    ),
+                )
+                .to_string(),
             ),
             items: vec![SelectionItem {
-                name: "Add marketplace".to_string(),
+                name: tr(current(), "Add marketplace").to_string(),
                 description: Some(
-                    "Enter owner/repo, a Git URL, or a local marketplace path.".to_string(),
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "Enter owner/repo, a Git URL, or a local marketplace path.",
+                        ),
+                    )
+                    .to_string(),
                 ),
                 selected_description: Some(
-                    "Press Enter to enter a marketplace source.".to_string(),
+                    tr(current(), "Press Enter to enter a marketplace source.").to_string(),
                 ),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::OpenMarketplaceAddPrompt);
@@ -1006,19 +1193,26 @@ impl ChatWidget {
         let display_name = plugin_display_name(&plugin.summary);
         let detail_status_label = plugin_detail_status_label(&plugin.summary);
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
             format!("{display_name} · {detail_status_label} · {marketplace_label}").bold(),
         ));
         if !plugin.summary.installed {
             header.push(PluginDisclosureLine {
                 line: Line::from(vec![
-                    "Data shared with this app is subject to the app's ".into(),
-                    "terms of service".bold(),
-                    " and ".into(),
-                    "privacy policy".bold(),
-                    ". ".into(),
-                    "Learn more".cyan().underlined(),
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "Data shared with this app is subject to the app's ",
+                        ),
+                    )
+                    .into(),
+                    tr(current(), "terms of service").bold(),
+                    tr(current(), " and ").into(),
+                    tr(current(), "privacy policy").bold(),
+                    tr(current(), ". ").into(),
+                    tr(current(), "Learn more").cyan().underlined(),
                     ".".into(),
                 ]),
             });
@@ -1030,9 +1224,9 @@ impl ChatWidget {
         let cwd = self.config.cwd.to_path_buf();
         let plugins_response = plugins_response.clone();
         let mut items = vec![SelectionItem {
-            name: "Back to plugins".to_string(),
-            description: Some("Return to the plugin list.".to_string()),
-            selected_description: Some("Return to the plugin list.".to_string()),
+            name: tr(current(), "Back to plugins").to_string(),
+            description: Some(tr(current(), "Return to the plugin list.").to_string()),
+            selected_description: Some(tr(current(), "Return to the plugin list.").to_string()),
             actions: vec![Box::new(move |tx| {
                 tx.send(AppEvent::OpenPluginsList {
                     cwd: cwd.clone(),
@@ -1045,9 +1239,13 @@ impl ChatWidget {
         if plugin.summary.installed {
             if plugin.summary.install_policy == PluginInstallPolicy::InstalledByDefault {
                 items.push(SelectionItem {
-                    name: "Installed by admin".to_string(),
+                    name: tr(current(), "Installed by admin").to_string(),
                     description: Some(
-                        "This plugin is installed by your workspace admin.".to_string(),
+                        tr(
+                            current(),
+                            "This plugin is installed by your workspace admin.",
+                        )
+                        .to_string(),
                     ),
                     is_disabled: true,
                     ..Default::default()
@@ -1056,9 +1254,11 @@ impl ChatWidget {
                 let uninstall_cwd = self.config.cwd.to_path_buf();
                 let plugin_display_name = display_name;
                 items.push(SelectionItem {
-                    name: "Uninstall plugin".to_string(),
-                    description: Some("Remove this plugin now.".to_string()),
-                    selected_description: Some("Remove this plugin now.".to_string()),
+                    name: tr(current(), "Uninstall plugin").to_string(),
+                    description: Some(tr(current(), "Remove this plugin now.").to_string()),
+                    selected_description: Some(
+                        tr(current(), "Remove this plugin now.").to_string(),
+                    ),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::OpenPluginUninstallLoading {
                             plugin_display_name: plugin_display_name.clone(),
@@ -1073,9 +1273,16 @@ impl ChatWidget {
                 });
             } else {
                 items.push(SelectionItem {
-                    name: "Uninstall plugin".to_string(),
+                    name: tr(current(), "Uninstall plugin").to_string(),
                     description: Some(
-                        "This remote plugin did not provide an uninstall identity.".to_string(),
+                        tr(
+                            current(),
+                            tr(
+                                current(),
+                                "This remote plugin did not provide an uninstall identity.",
+                            ),
+                        )
+                        .to_string(),
                     ),
                     is_disabled: true,
                     ..Default::default()
@@ -1083,16 +1290,32 @@ impl ChatWidget {
             }
         } else if plugin.summary.availability == PluginAvailability::DisabledByAdmin {
             items.push(SelectionItem {
-                name: "Install plugin".to_string(),
-                description: Some("This plugin is disabled by your workspace admin.".to_string()),
+                name: tr(current(), "Install plugin").to_string(),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This plugin is disabled by your workspace admin.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             });
         } else if plugin.summary.install_policy == PluginInstallPolicy::NotAvailable {
             items.push(SelectionItem {
-                name: "Install plugin".to_string(),
+                name: tr(current(), "Install plugin").to_string(),
                 description: Some(
-                    "This plugin is not installable from this marketplace.".to_string(),
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This plugin is not installable from this marketplace.",
+                        ),
+                    )
+                    .to_string(),
                 ),
                 is_disabled: true,
                 ..Default::default()
@@ -1102,9 +1325,9 @@ impl ChatWidget {
             let plugin_name = plugin_request_name(&plugin.summary);
             let plugin_display_name = display_name;
             items.push(SelectionItem {
-                name: "Install plugin".to_string(),
-                description: Some("Install this plugin now.".to_string()),
-                selected_description: Some("Install this plugin now.".to_string()),
+                name: tr(current(), "Install plugin").to_string(),
+                description: Some(tr(current(), "Install this plugin now.").to_string()),
+                selected_description: Some(tr(current(), "Install this plugin now.").to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenPluginInstallLoading {
                         plugin_display_name: plugin_display_name.clone(),
@@ -1120,8 +1343,17 @@ impl ChatWidget {
             });
         } else {
             items.push(SelectionItem {
-                name: "Install plugin".to_string(),
-                description: Some("This plugin did not provide an install location.".to_string()),
+                name: tr(current(), "Install plugin").to_string(),
+                description: Some(
+                    tr(
+                        current(),
+                        tr(
+                            current(),
+                            "This plugin did not provide an install location.",
+                        ),
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             });
@@ -1130,7 +1362,7 @@ impl ChatWidget {
         items.extend(plugin_metadata_items(plugin));
 
         items.push(SelectionItem {
-            name: "Skills".to_string(),
+            name: tr(current(), "Skills").to_string(),
             description: Some(plugin_skill_summary(plugin)),
             is_disabled: true,
             ..Default::default()
@@ -1148,7 +1380,7 @@ impl ChatWidget {
             ..Default::default()
         });
         items.push(SelectionItem {
-            name: "MCP Servers".to_string(),
+            name: tr(current(), "MCP Servers").to_string(),
             description: Some(plugin_mcp_summary(plugin)),
             is_disabled: true,
             ..Default::default()
@@ -1197,26 +1429,60 @@ impl ChatWidget {
                 && !disabled_by_admin;
             let selected_status_label = format!("{status_label:<status_label_width$}");
             let selected_description = if can_toggle_plugin {
-                let toggle_action = if plugin.enabled { "disable" } else { "enable" };
+                let toggle_action = if plugin.enabled {
+                    tr(current(), "disable")
+                } else {
+                    tr(current(), "enable")
+                };
                 if can_view_details {
-                    format!(
-                        "{selected_status_label}   Space to {toggle_action}; Enter view details."
+                    tr_with(
+                        current(),
+                        "{0}   Space to {1}; Enter view details.",
+                        &[&selected_status_label, &toggle_action],
                     )
                 } else {
-                    format!("{selected_status_label}   Space to {toggle_action}.")
+                    tr_with(
+                        current(),
+                        "{0}   Space to {1}.",
+                        &[&selected_status_label, &toggle_action],
+                    )
                 }
             } else if disabled_by_admin && can_view_details {
-                format!("{selected_status_label}   Press Enter to view plugin details.")
+                tr_with(
+                    current(),
+                    "{0}   Press Enter to view plugin details.",
+                    &[&selected_status_label],
+                )
             } else if disabled_by_admin {
-                format!("{selected_status_label}   Plugin details are unavailable.")
+                tr_with(
+                    current(),
+                    "{0}   Plugin details are unavailable.",
+                    &[&selected_status_label],
+                )
             } else if plugin.installed && can_view_details {
-                format!("{selected_status_label}   Press Enter to view plugin details.")
+                tr_with(
+                    current(),
+                    "{0}   Press Enter to view plugin details.",
+                    &[&selected_status_label],
+                )
             } else if plugin.installed {
-                format!("{selected_status_label}   Plugin details are unavailable.")
+                tr_with(
+                    current(),
+                    "{0}   Plugin details are unavailable.",
+                    &[&selected_status_label],
+                )
             } else if can_view_details {
-                format!("{selected_status_label}   Press Enter to install or view plugin details.")
+                tr_with(
+                    current(),
+                    "{0}   Press Enter to install or view plugin details.",
+                    &[&selected_status_label],
+                )
             } else {
-                format!("{selected_status_label}   Remote plugin details are not available yet.")
+                tr_with(
+                    current(),
+                    "{0}   Remote plugin details are not available yet.",
+                    &[&selected_status_label],
+                )
             };
             let search_value = format!(
                 "{display_name} {} {} {} {} {}",
@@ -1261,7 +1527,8 @@ impl ChatWidget {
                     Vec::new()
                 };
             let is_disabled = !can_view_details && !plugin.installed;
-            let disabled_reason = is_disabled.then(|| "plugin details are unavailable".to_string());
+            let disabled_reason =
+                is_disabled.then(|| tr(current(), "plugin details are unavailable").to_string());
 
             items.push(SelectionItem {
                 name: display_name,
@@ -1300,28 +1567,41 @@ fn plugins_popup_hint_line(
     can_upgrade_marketplace: bool,
 ) -> Line<'static> {
     match (can_remove_marketplace, can_upgrade_marketplace) {
-        (true, true) => Line::from(
-            "ctrl + u upgrade · ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
-        ),
-        (true, false) => {
-            Line::from("ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close")
-        }
-        (false, true) => {
-            Line::from("ctrl + u upgrade · space toggle · ←/→ tabs · enter details · esc close")
-        }
-        (false, false) => Line::from(
+        (true, true) => Line::from(tr(
+            current(),
+            tr(
+                current(),
+                "ctrl + u upgrade · ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
+            ),
+        )),
+        (true, false) => Line::from(tr(
+            current(),
+            tr(
+                current(),
+                "ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
+            ),
+        )),
+        (false, true) => Line::from(tr(
+            current(),
+            tr(
+                current(),
+                "ctrl + u upgrade · space toggle · ←/→ tabs · enter details · esc close",
+            ),
+        )),
+        (false, false) => Line::from(tr(
+            current(),
             "space enable/disable · ←/→ select marketplace · enter view details · esc close",
-        ),
+        )),
     }
 }
 
 pub(super) fn plugin_detail_hint_line() -> Line<'static> {
-    Line::from("Press esc to close.")
+    Line::from(tr(current(), "Press esc to close."))
 }
 
 pub(super) fn plugins_header(subtitle: String, count_line: String) -> Box<dyn Renderable> {
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Plugins".bold()));
+    header.push(Line::from(tr(current(), "Plugins").bold()));
     header.push(Line::from(subtitle.dim()));
     header.push(Line::from(count_line.dim()));
     Box::new(header)
@@ -1409,26 +1689,26 @@ fn preferred_local_plugin_sources(
 
 fn plugin_detail_status_label(plugin: &PluginSummary) -> &'static str {
     if plugin.availability == PluginAvailability::DisabledByAdmin {
-        return "Disabled by admin";
+        return tr(current(), "Disabled by admin");
     }
     if plugin.install_policy == PluginInstallPolicy::InstalledByDefault {
         return if plugin.installed {
-            "Installed by admin"
+            tr(current(), "Installed by admin")
         } else {
-            "Enabled by Admin"
+            tr(current(), "Enabled by Admin")
         };
     }
     if plugin.installed {
         if plugin.enabled {
-            "Installed"
+            tr(current(), "Installed")
         } else {
-            "Disabled"
+            tr(current(), "Disabled")
         }
     } else {
         match plugin.install_policy {
-            PluginInstallPolicy::NotAvailable => "Not installable",
-            PluginInstallPolicy::Available => "Can be installed",
-            PluginInstallPolicy::InstalledByDefault => "Installed by admin",
+            PluginInstallPolicy::NotAvailable => tr(current(), "Not installable"),
+            PluginInstallPolicy::Available => tr(current(), "Can be installed"),
+            PluginInstallPolicy::InstalledByDefault => tr(current(), "Installed by admin"),
         }
     }
 }
@@ -1436,7 +1716,7 @@ fn plugin_detail_status_label(plugin: &PluginSummary) -> &'static str {
 fn plugin_metadata_items(plugin: &PluginDetail) -> Vec<SelectionItem> {
     let mut items = Vec::new();
     items.push(SelectionItem {
-        name: "Source".to_string(),
+        name: tr(current(), "Source").to_string(),
         description: Some(plugin_source_summary(plugin)),
         is_disabled: true,
         ..Default::default()
@@ -1449,7 +1729,7 @@ fn plugin_metadata_items(plugin: &PluginDetail) -> Vec<SelectionItem> {
     });
     if let Some(version) = plugin_version_summary(&plugin.summary) {
         items.push(SelectionItem {
-            name: "Version".to_string(),
+            name: tr(current(), "Version").to_string(),
             description: Some(version),
             is_disabled: true,
             ..Default::default()
@@ -1457,7 +1737,7 @@ fn plugin_metadata_items(plugin: &PluginDetail) -> Vec<SelectionItem> {
     }
     if let Some(share_context) = &plugin.summary.share_context {
         items.push(SelectionItem {
-            name: "Sharing".to_string(),
+            name: tr(current(), "Sharing").to_string(),
             description: Some(plugin_share_context_summary(share_context)),
             is_disabled: true,
             ..Default::default()
@@ -1491,8 +1771,8 @@ fn plugin_source_summary(plugin: &PluginDetail) -> String {
 
 fn plugin_auth_policy_summary(auth_policy: PluginAuthPolicy) -> String {
     match auth_policy {
-        PluginAuthPolicy::OnInstall => "Auth on install".to_string(),
-        PluginAuthPolicy::OnUse => "Auth on use".to_string(),
+        PluginAuthPolicy::OnInstall => tr(current(), "Auth on install").to_string(),
+        PluginAuthPolicy::OnUse => tr(current(), "Auth on use").to_string(),
     }
 }
 
@@ -1538,9 +1818,9 @@ fn plugin_share_context_summary(context: &PluginShareContext) -> String {
 
 fn plugin_share_discoverability_label(discoverability: PluginShareDiscoverability) -> &'static str {
     match discoverability {
-        PluginShareDiscoverability::Listed => "Listed",
-        PluginShareDiscoverability::Unlisted => "Workspace link",
-        PluginShareDiscoverability::Private => "Private",
+        PluginShareDiscoverability::Listed => tr(current(), "Listed"),
+        PluginShareDiscoverability::Unlisted => tr(current(), "Workspace link"),
+        PluginShareDiscoverability::Private => tr(current(), "Private"),
     }
 }
 
@@ -1558,7 +1838,7 @@ fn plugin_share_creator_summary(context: &PluginShareContext) -> Option<String> 
 
 fn plugin_share_principals_summary(principals: &[PluginSharePrincipal]) -> String {
     match principals.len() {
-        0 => "No explicit principals".to_string(),
+        0 => tr(current(), "No explicit principals").to_string(),
         1 => format!("1 principal: {}", principals[0].name),
         count => format!("{count} principals"),
     }
@@ -1640,7 +1920,7 @@ fn remote_section_marketplace_tab_id(
     saved_tab_id: &str,
     marketplaces: &[PluginMarketplaceEntry],
 ) -> Option<String> {
-    let section = REMOTE_MARKETPLACE_SECTIONS
+    let section = remote_marketplace_sections()
         .into_iter()
         .find(|section| section.is_fallback_tab_id(saved_tab_id))?;
 
@@ -1664,7 +1944,7 @@ fn plugin_tab_id_matching_saved_id(saved_tab_id: &str, tabs: &[SelectionTab]) ->
         return Some(tab_id);
     }
 
-    let section = REMOTE_MARKETPLACE_SECTIONS
+    let section = remote_marketplace_sections()
         .into_iter()
         .find(|section| section.contains_tab_id(saved_tab_id))?;
 
@@ -1691,7 +1971,7 @@ pub(super) fn merge_remote_marketplaces(
         }
 
         marketplace.path.is_some()
-            || !REMOTE_MARKETPLACE_SECTIONS
+            || !remote_marketplace_sections()
                 .into_iter()
                 .any(|section| section.contains_marketplace(&marketplace.name))
                 && !remote_names.contains(marketplace.name.as_str())
@@ -1740,7 +2020,11 @@ fn remote_section_loading_tab(id: &str, label: &str, item_description: &str) -> 
         label: label.to_string(),
         header: plugins_header(
             format!("Loading {label} plugins."),
-            "Local plugin functionality is already available.".to_string(),
+            tr(
+                current(),
+                "Local plugin functionality is already available.",
+            )
+            .to_string(),
         ),
         items: vec![remote_section_loading_item(label, item_description)],
     }
@@ -1757,7 +2041,7 @@ fn remote_section_empty_tab(
         label: label.to_string(),
         header: plugins_header(
             format!("{label}."),
-            "This section loaded successfully.".to_string(),
+            tr(current(), "This section loaded successfully.").to_string(),
         ),
         items: vec![SelectionItem {
             name: item_name.to_string(),
@@ -1773,8 +2057,12 @@ fn remote_section_error_tab(section_error: &PluginRemoteSectionError) -> Selecti
         id: format!("{REMOTE_ERROR_TAB_ID_PREFIX}{}", section_error.section_id),
         label: section_error.label.clone(),
         header: plugins_header(
-            format!("{} unavailable.", section_error.label),
-            "Local plugin functionality is still available.".to_string(),
+            tr_with(
+                current(),
+                "{0} unavailable.",
+                &[section_error.label.as_str()],
+            ),
+            tr(current(), "Local plugin functionality is still available.").to_string(),
         ),
         items: vec![remote_section_error_item(
             &section_error.label,
@@ -1880,22 +2168,22 @@ fn plugin_brief_description_without_marketplace(
 
 fn plugin_status_label(plugin: &PluginSummary) -> &'static str {
     if plugin.availability == PluginAvailability::DisabledByAdmin {
-        return "Disabled";
+        return tr(current(), "Disabled");
     }
     if !plugin.installed && plugin.install_policy == PluginInstallPolicy::InstalledByDefault {
-        return "Admin assigned";
+        return tr(current(), "Admin assigned");
     }
     if plugin.installed {
         if plugin.enabled {
-            "Installed"
+            tr(current(), "Installed")
         } else {
-            "Disabled"
+            tr(current(), "Disabled")
         }
     } else {
         match plugin.install_policy {
-            PluginInstallPolicy::NotAvailable => "Not installable",
-            PluginInstallPolicy::Available => "Available",
-            PluginInstallPolicy::InstalledByDefault => "Installed",
+            PluginInstallPolicy::NotAvailable => tr(current(), "Not installable"),
+            PluginInstallPolicy::Available => tr(current(), "Available"),
+            PluginInstallPolicy::InstalledByDefault => tr(current(), "Installed"),
         }
     }
 }
@@ -2008,7 +2296,7 @@ fn plugin_detail_description(plugin: &PluginDetail) -> Option<String> {
 
 fn plugin_skill_summary(plugin: &PluginDetail) -> String {
     if plugin.skills.is_empty() {
-        "No plugin skills.".to_string()
+        tr(current(), "No plugin skills.").to_string()
     } else {
         plugin
             .skills
@@ -2021,7 +2309,7 @@ fn plugin_skill_summary(plugin: &PluginDetail) -> String {
 
 fn plugin_app_summary(plugin: &PluginDetail) -> String {
     if plugin.apps.is_empty() {
-        "No plugin apps.".to_string()
+        tr(current(), "No plugin apps.").to_string()
     } else {
         plugin
             .apps
@@ -2034,7 +2322,7 @@ fn plugin_app_summary(plugin: &PluginDetail) -> String {
 
 fn plugin_hook_summary(plugin: &PluginDetail) -> String {
     if plugin.hooks.is_empty() {
-        "No plugin hooks.".to_string()
+        tr(current(), "No plugin hooks.").to_string()
     } else {
         let mut event_counts = Vec::<(codex_app_server_protocol::HookEventName, usize)>::new();
         for hook in &plugin.hooks {
@@ -2057,7 +2345,7 @@ fn plugin_hook_summary(plugin: &PluginDetail) -> String {
 
 fn plugin_mcp_summary(plugin: &PluginDetail) -> String {
     if plugin.mcp_servers.is_empty() {
-        "No plugin MCP servers.".to_string()
+        tr(current(), "No plugin MCP servers.").to_string()
     } else {
         plugin.mcp_servers.join(", ")
     }

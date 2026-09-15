@@ -25,6 +25,36 @@
 | 29 | `chatwidget/slash_dispatch.rs`（32 对） | 965 | 4285 passed / 2 failed / snapshot 0 |
 | 30 | `clipboard_copy.rs`（28 对） | 991 | 4285 passed / 2 failed / snapshot 0 |
 
+**此表在 round 30 处停更。** 之后仍有推进（`2def58b6a` / `8b2a439be` / `e6847b6b8` 三个提交都改过 `dict_zh.rs`），
+但没有逐轮记录。以下是 **2026-09-16 对现状的独立实测**（每行标注口径，可复跑）：
+
+| 指标 | 实测值 | 口径 |
+| --- | --- | --- |
+| 字典条目 · 已提交（HEAD `e6847b6b8`） | 1226 | 用 `codex-i18n-check` 二进制指向 HEAD 版 `dict_zh.rs` 的副本 |
+| 字典条目 · 工作区 | **1262** | `just i18n-check` |
+| 漂移与覆盖 | rendered 1262；missing **0**、unused **0**、coverage **100.0%**、CJK 边界空格 **0**、`EXIT=0` | `just i18n-check` |
+| 接入面 | **44 文件 / 1632 处 `tr`·`tr_with` 调用点** | 独立正则统计（`(?<![A-Za-z0-9_])tr(_with)?\(`） |
+| 　`tui` | 42 文件 / 1548 点：`chatwidget` 11·420、`keymap_setup` 2·308、`bottom_pane` 7·248、`app` 9·179、`tui/src` 顶层 4·174、`history_cell` 5·89、`onboarding` 2·72、`status` 1·42、`ide_context` 1·16 | 同上 |
+| 　`cli` / `exec` | 各 1 文件 · 47 / 37 点 | 同上 |
+| 剩余候选 | **≈1831**：`<top>` 439、`chatwidget` 344、`app` 312、`bottom_pane` 256、`history_cell` 91、`pets` 85、`external_agent_config_migration` 70、`ide_context` 48 … | `python3 scripts/i18n_todo.py --top 15` |
+| 完成度 | ≈ **40%**（1262 / H2 估的 3168 候选 = 39.8%，两口径吻合） | 上两行 |
+| 未提交 | `i18n/src/dict_zh.rs` +124/-0（+36 条）；`exec/src/lib.rs` +188/-51 | `git diff --numstat` |
+| 快照 | 877 个 `.snap`、**0 个待审 `.snap.new`** | `find codex-rs/tui/src -name '*.snap'` |
+
+2026-09-16 复跑三条硬证据。第三条走 Bazel 侧，与本文的 cargo 口径**不完全等价**（Bazel：8 分片 + `flaky` 重试 +
+`RUST_MIN_STACK=8388608`；本文：`RUST_MIN_STACK=16777216 cargo test -p codex-tui --lib -- --skip ide_context::ipc`）：
+
+- `cargo test -p codex-i18n` → **30 passed; 0 failed** —— 与本文记录一致。
+- `just i18n-check` → 见上表，全绿。
+- `bazel test //codex-rs/tui:tui-unit-tests //codex-rs/exec:exec-unit-tests` → `exec` PASSED；`tui` FLAKY
+  （12 分片 4 次首试失败，重试后通过），**失败集合中没有任何快照测试**，故 **snapshot 类失败 0** 成立。
+  本轮失败集与第 28/29/30 轮**均不重合**，再次印证「逐轮换人」判据：
+  - `app::tests::background_exit_tests::exit_interrupts_before_requesting_shutdown` —— 第 28 轮已记过；
+  - `ide_context::ipc::tests::fetch_ide_context_uses_unregistered_request_route` —— 本节已标为环境型；
+  - `startup_draft::tests::startup_draft_does_not_turn_a_standalone_enter_into_a_newline_at_handoff` —— **新增**。
+    断言 `pump.pending_paste_newline.is_some()`（lookahead 时间窗）。该模块未接入 i18n，本分支从未改动此文件，
+    其最后改动是上游 `9587c9ef3`（2026-09-06）且基线中已存在 → 负载敏感型 flaky，与适配无关。
+
 ### 两条失败的归属（H1 的对抗自检）
 
 连续三轮、同一命令下，失败集合**互不相同**：
@@ -174,7 +204,7 @@
 
 ## 八、未验证 / 风险
 
-1. **H1 已实测成立**（2026-09-17，见「执行结果」）——不再是推断。残余风险转移到「铺开的广度」：目前接入面只覆盖 `bottom_pane/footer.rs`，`chatwidget`（705 候选）与 `app`（476 候选）尚未接入，故本报告中的「快照零 diff」只保证**已接入部分**无损。
+1. **H1 已实测成立**（2026-09-17，见「执行结果」）——不再是推断。残余风险转移到「铺开的广度」：接入面已从最初的 `bottom_pane/footer.rs` 扩到 **44 文件 / 1632 处调用点**（2026-09-16 实测，见「铺开进度」——含 `chatwidget` 11 文件·420 点、`app` 9·179、`bottom_pane` 7·248），**未接入**部分尚余 **≈1831** 个候选（`chatwidget` 344、`app` 312、`bottom_pane` 256 …），故本报告中的「快照零 diff」只保证**已接入部分**无损。
 2. **Bazel 侧成本未评估** —— `AGENTS.md` 要求新增 crate 时同步更新 `BUILD.bazel`
    （`compile_data` / `build_script_data` 等），本轮未衡量改动量。
 3. **`tui` 的文案量与扫描口径未定** —— [`../maps/references.md`](../maps/references.md) 里的

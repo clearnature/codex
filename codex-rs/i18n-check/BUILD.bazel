@@ -3,4 +3,7 @@ load("//:defs.bzl", "codex_rust_crate")
 codex_rust_crate(
     name = "i18n-check",
     crate_name = "codex_i18n_check",
+    # Binary-only crate: without this the default `src/**/*.rs` glob builds a
+    # library out of the `*_tests.rs` modules that sit beside main.rs.
+    crate_srcs = [],
 )

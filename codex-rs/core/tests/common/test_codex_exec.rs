@@ -17,6 +17,11 @@ impl TestCodexExecBuilder {
         cmd.current_dir(self.cwd.path())
             .env("CODEX_HOME", self.home.path())
             .env("CODEX_SQLITE_HOME", self.home.path())
+            // The CLI resolves its locale from the environment (`--lang` > config
+            // `locale` > `LC_ALL` > `LANG` > system locale). These tests assert on
+            // English output, so pin the locale rather than inheriting whatever the
+            // developer（或 CI 机器）has exported.
+            .env("LC_ALL", "C")
             .env(CODEX_API_KEY_ENV_VAR, "dummy");
         cmd
     }

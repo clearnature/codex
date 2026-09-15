@@ -3015,6 +3015,130 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "\n🎉 Update ran successfully! Please restart Codex.",
         "\n🎉 更新成功！请重启Codex。",
     ),
+    (
+        "--worktree cannot be combined with --ignore-user-config",
+        "--worktree不能与--ignore-user-config同时使用",
+    ),
+    (
+        "--worktree cannot be combined with --ephemeral",
+        "--worktree不能与--ephemeral同时使用",
+    ),
+    (
+        "--worktree is not supported with `codex exec resume`",
+        "`codex exec resume`不支持--worktree",
+    ),
+    (
+        "--worktree is not supported with `codex exec review`",
+        "`codex exec review`不支持--worktree",
+    ),
+    (
+        "--worktree requires local execution",
+        "--worktree需要本地执行",
+    ),
+    (
+        "--worktree requires the worktrees feature; enable it with --enable worktrees",
+        "--worktree需要worktrees特性；请用--enable worktrees启用",
+    ),
+    (
+        "--worktree requires a source that is not explicitly untrusted",
+        "--worktree要求来源未被明确标记为不受信任",
+    ),
+    (
+        "Could not create otel exporter: panicked during initialization",
+        "无法创建otel导出器：初始化时发生panic",
+    ),
+    (
+        "Forking with images requires a prompt",
+        "带图片分叉需要提供提示词",
+    ),
+    (
+        "Forking with output options requires a prompt",
+        "带输出选项分叉需要提供提示词",
+    ),
+    ("Ephemeral forks require a prompt", "临时分叉需要提供提示词"),
+    (
+        "Not inside a trusted directory and --skip-git-repo-check was not specified.",
+        "不在受信任目录内，且未指定--skip-git-repo-check。",
+    ),
+    ("Reading prompt from stdin...", "正在从标准输入读取提示词…"),
+    (
+        "Reading additional input from stdin...",
+        "正在从标准输入读取附加输入…",
+    ),
+    (
+        "No prompt provided via stdin.",
+        "未通过标准输入提供提示词。",
+    ),
+    ("Review prompt cannot be empty", "审查提示词不能为空"),
+    (
+        "Specify --uncommitted, --base, --commit, or provide custom review instructions",
+        "请指定--uncommitted、--base、--commit，或提供自定义审查说明",
+    ),
+    (
+        "--worktree requires a source that is not explicitly untrusted; unused checkout at {0} remains. Remove it manually with `git worktree remove` when safe",
+        "--worktree要求来源未被明确标记为不受信任；{0}处仍留有未使用的检出。请在安全时用`git worktree remove`手动移除",
+    ),
+    (
+        "No default OSS provider configured. Use --local-provider=provider or set oss_provider to one of: {0}, {1} in config.toml",
+        "未配置默认OSS提供方。请使用--local-provider=provider，或在config.toml中把oss_provider设为{0}、{1}之一",
+    ),
+    (
+        "Error loading rules:
+{0}",
+        "加载规则失败：
+{0}",
+    ),
+    (
+        "Error loading config.toml:
+{0}",
+        "加载config.toml失败：
+{0}",
+    ),
+    (
+        "Failed to read output schema file {0}: {1}",
+        "读取输出schema文件{0}失败：{1}",
+    ),
+    (
+        "Output schema file {0} is not valid JSON: {1}",
+        "输出schema文件{0}不是合法JSON：{1}",
+    ),
+    ("Error parsing -c overrides: {0}", "解析-c覆盖项失败：{0}"),
+    ("Error finding codex home: {0}", "查找codex主目录失败：{0}"),
+    (
+        "Could not create otel exporter: {0}",
+        "无法创建otel导出器：{0}",
+    ),
+    ("Error loading config.toml: {0}", "加载config.toml失败：{0}"),
+    ("OSS setup failed: {0}", "OSS设置失败：{0}"),
+    (
+        "failed to initialize in-process app-server client: {0}",
+        "初始化进程内app-server客户端失败：{0}",
+    ),
+    ("Session not found: {0}", "未找到会话：{0}"),
+    (
+        "in-process app-server shutdown failed: {0}",
+        "进程内app-server关闭失败：{0}",
+    ),
+    (
+        "input is not valid UTF-8 (invalid byte at offset {0}). Convert it to UTF-8 and retry (e.g., `iconv -f <ENC> -t UTF-8 prompt.txt`).",
+        "输入不是合法的UTF-8（偏移{0}处的字节无效）。请转换为UTF-8后重试（例如`iconv -f <ENC> -t UTF-8 prompt.txt`）。",
+    ),
+    (
+        "input looked like {0} but could not be decoded. Convert it to UTF-8 and retry.",
+        "输入看起来是{0}但无法解码。请转换为UTF-8后重试。",
+    ),
+    (
+        "input appears to be {0}. Convert it to UTF-8 and retry.",
+        "输入似乎是{0}。请转换为UTF-8后重试。",
+    ),
+    (
+        "No prompt provided. Either specify one as an argument or pipe the prompt into stdin.",
+        "未提供提示词。请将其作为参数传入，或通过标准输入管道输入。",
+    ),
+    (
+        "Failed to read prompt from stdin: {0}",
+        "从标准输入读取提示词失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

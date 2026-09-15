@@ -83,6 +83,9 @@ use codex_feedback::CodexFeedback;
 use codex_git_utils::get_git_repo_root;
 use codex_history::RolloutItem;
 use codex_history::RolloutLine;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::default_client::set_default_client_residency_requirement;
 use codex_login::default_client::set_default_originator;
 use codex_login::enforce_login_restrictions;
@@ -301,17 +304,29 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
 
     if worktree {
         if ignore_user_config {
-            anyhow::bail!("--worktree cannot be combined with --ignore-user-config");
+            anyhow::bail!(tr(
+                current(),
+                "--worktree cannot be combined with --ignore-user-config"
+            ));
         }
         if ephemeral {
-            anyhow::bail!("--worktree cannot be combined with --ephemeral");
+            anyhow::bail!(tr(
+                current(),
+                "--worktree cannot be combined with --ephemeral"
+            ));
         }
         match command.as_ref() {
             Some(ExecCommand::Resume(_)) => {
-                anyhow::bail!("--worktree is not supported with `codex exec resume`");
+                anyhow::bail!(tr(
+                    current(),
+                    "--worktree is not supported with `codex exec resume`"
+                ));
             }
             Some(ExecCommand::Review(_)) => {
-                anyhow::bail!("--worktree is not supported with `codex exec review`");
+                anyhow::bail!(tr(
+                    current(),
+                    "--worktree is not supported with `codex exec review`"
+                ));
             }
             Some(ExecCommand::Fork(_)) | None => {}
         }
@@ -341,7 +356,14 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         Ok(v) => v,
         #[allow(clippy::print_stderr)]
         Err(e) => {
-            eprintln!("Error parsing -c overrides: {e}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error parsing -c overrides: {0}",
+                    &[&e.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -359,7 +381,14 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     let codex_home = match find_codex_home() {
         Ok(codex_home) => codex_home,
         Err(err) => {
-            eprintln!("Error finding codex home: {err}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error finding codex home: {0}",
+                    &[&err.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -379,7 +408,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .await?
             .default_environment_is_remote()
     {
-        anyhow::bail!("--worktree requires local execution");
+        anyhow::bail!(tr(current(), "--worktree requires local execution"));
     }
 
     let managed_worktree = if worktree {
@@ -410,9 +439,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .build()
             .await?;
         if !gate_config.features.enabled(Feature::Worktrees) {
-            anyhow::bail!(
+            anyhow::bail!(tr(
+                current(),
                 "--worktree requires the worktrees feature; enable it with --enable worktrees"
-            );
+            ));
         }
         if let Some(ExecCommand::Fork(args)) = command.as_mut() {
             let saved_cwd = worktree::fork_source(
@@ -442,7 +472,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .build()
             .await?;
         if source_config.active_project.is_untrusted() {
-            anyhow::bail!("--worktree requires a source that is not explicitly untrusted");
+            anyhow::bail!(tr(
+                current(),
+                "--worktree requires a source that is not explicitly untrusted"
+            ));
         }
         for path in &mut add_dir {
             if path.is_relative() {
@@ -510,10 +543,11 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .build()
             .await?;
         if source_config.active_project.is_untrusted() {
-            anyhow::bail!(
-                "--worktree requires a source that is not explicitly untrusted; unused checkout at {} remains. Remove it manually with `git worktree remove` when safe",
-                worktree.checkout.display()
-            );
+            anyhow::bail!(tr_with(
+                current(),
+                "--worktree requires a source that is not explicitly untrusted; unused checkout at {0} remains. Remove it manually with `git worktree remove` when safe",
+                &[&worktree.checkout.display().to_string()],
+            ));
         }
     }
     let run_cli_overrides = cli_kv_overrides.clone();
@@ -545,9 +579,11 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         if let Some(provider) = resolved {
             Some(provider)
         } else {
-            return Err(anyhow::anyhow!(
-                "No default OSS provider configured. Use --local-provider=provider or set oss_provider to one of: {LMSTUDIO_OSS_PROVIDER_ID}, {OLLAMA_OSS_PROVIDER_ID} in config.toml"
-            ));
+            return Err(anyhow::anyhow!(tr_with(
+                current(),
+                "No default OSS provider configured. Use --local-provider=provider or set oss_provider to one of: {0}, {1} in config.toml",
+                &[LMSTUDIO_OSS_PROVIDER_ID, OLLAMA_OSS_PROVIDER_ID],
+            )));
         }
     } else {
         None // No OSS mode enabled
@@ -628,8 +664,12 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         Ok(None) => {}
         Ok(Some(err)) | Err(err) => {
             eprintln!(
-                "Error loading rules:\n{}",
-                format_exec_policy_error_with_source(&err)
+                "{}",
+                tr_with(
+                    current(),
+                    "Error loading rules:\n{0}",
+                    &[&format_exec_policy_error_with_source(&err)],
+                )
             );
             std::process::exit(1);
         }
@@ -654,11 +694,24 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     })) {
         Ok(Ok(otel)) => otel,
         Ok(Err(e)) => {
-            eprintln!("Could not create otel exporter: {e}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Could not create otel exporter: {0}",
+                    &[&e.to_string()]
+                )
+            );
             None
         }
         Err(_) => {
-            eprintln!("Could not create otel exporter: panicked during initialization");
+            eprintln!(
+                "{}",
+                tr(
+                    current(),
+                    "Could not create otel exporter: panicked during initialization"
+                )
+            );
             None
         }
     };
@@ -818,11 +871,22 @@ async fn load_bootstrap_config_or_exit(
                 .map(ConfigLoadError::config_error);
             if let Some(config_error) = config_error {
                 eprintln!(
-                    "Error loading config.toml:\n{}",
-                    format_config_error_with_source(config_error)
+                    "{}",
+                    tr_with(
+                        current(),
+                        "Error loading config.toml:\n{0}",
+                        &[&format_config_error_with_source(config_error)],
+                    )
                 );
             } else {
-                eprintln!("Error loading config.toml: {err}");
+                eprintln!(
+                    "{}",
+                    tr_with(
+                        current(),
+                        "Error loading config.toml: {0}",
+                        &[&err.to_string()]
+                    )
+                );
             }
             std::process::exit(1);
         }
@@ -873,7 +937,13 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         };
         ensure_oss_provider_ready(provider_id, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("OSS setup failed: {e}"))?;
+            .map_err(|e| {
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "OSS setup failed: {0}",
+                    &[&e.to_string()]
+                ))
+            })?;
     }
 
     let default_cwd = config.cwd.to_path_buf();
@@ -940,11 +1010,14 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                     prompt_text,
                 )
             } else if !imgs.is_empty() || !args.images.is_empty() {
-                anyhow::bail!("Forking with images requires a prompt");
+                anyhow::bail!(tr(current(), "Forking with images requires a prompt"));
             } else if output_schema_path.is_some() || last_message_file.is_some() {
-                anyhow::bail!("Forking with output options requires a prompt");
+                anyhow::bail!(tr(
+                    current(),
+                    "Forking with output options requires a prompt"
+                ));
             } else if config.ephemeral {
-                anyhow::bail!("Ephemeral forks require a prompt");
+                anyhow::bail!(tr(current(), "Ephemeral forks require a prompt"));
             } else {
                 (InitialOperation::ForkOnly, String::new())
             }
@@ -977,7 +1050,13 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         && !dangerously_bypass_approvals_and_sandbox
         && get_git_repo_root(&default_cwd).is_none()
     {
-        eprintln!("Not inside a trusted directory and --skip-git-repo-check was not specified.");
+        eprintln!(
+            "{}",
+            tr(
+                current(),
+                "Not inside a trusted directory and --skip-git-repo-check was not specified."
+            )
+        );
         std::process::exit(1);
     }
 
@@ -985,7 +1064,11 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
     let mut client = InProcessAppServerClient::start(in_process_start_args)
         .await
         .map_err(|err| {
-            anyhow::anyhow!("failed to initialize in-process app-server client: {err}")
+            anyhow::anyhow!(tr_with(
+                current(),
+                "failed to initialize in-process app-server client: {0}",
+                &[&err.to_string()],
+            ))
         })?;
 
     // Resolve resume and fork through existing app-server thread lifecycle APIs.
@@ -1033,7 +1116,13 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         let source_thread_id =
             resolve_resume_thread_id(&client, &config, state_db.as_ref(), &source_args)
                 .await?
-                .ok_or_else(|| anyhow::anyhow!("Session not found: {}", args.session_id))?;
+                .ok_or_else(|| {
+                    anyhow::anyhow!(tr_with(
+                        current(),
+                        "Session not found: {0}",
+                        &[&args.session_id],
+                    ))
+                })?;
         let permissions = permissions_selection_from_config(&config);
         let sandbox = permissions.is_none().then(|| {
             sandbox_mode_from_permission_profile(
@@ -1135,10 +1224,13 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
             request_shutdown(&client, &mut request_ids, &primary_thread_id_for_span)
                 .await
                 .map_err(anyhow::Error::msg)?;
-            client
-                .shutdown()
-                .await
-                .map_err(|err| anyhow::anyhow!("in-process app-server shutdown failed: {err}"))?;
+            client.shutdown().await.map_err(|err| {
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "in-process app-server shutdown failed: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
             event_processor.print_final_output();
             return Ok(());
         }
@@ -2135,8 +2227,12 @@ fn load_output_schema(path: Option<PathBuf>) -> Option<Value> {
         Ok(contents) => contents,
         Err(err) => {
             eprintln!(
-                "Failed to read output schema file {}: {err}",
-                path.display()
+                "{}",
+                tr_with(
+                    current(),
+                    "Failed to read output schema file {0}: {1}",
+                    &[&path.display().to_string(), &err.to_string()],
+                )
             );
             std::process::exit(1);
         }
@@ -2146,8 +2242,12 @@ fn load_output_schema(path: Option<PathBuf>) -> Option<Value> {
         Ok(value) => Some(value),
         Err(err) => {
             eprintln!(
-                "Output schema file {} is not valid JSON: {err}",
-                path.display()
+                "{}",
+                tr_with(
+                    current(),
+                    "Output schema file {0} is not valid JSON: {1}",
+                    &[&path.display().to_string(), &err.to_string()],
+                )
             );
             std::process::exit(1);
         }
@@ -2166,15 +2266,30 @@ impl std::fmt::Display for PromptDecodeError {
         match self {
             PromptDecodeError::InvalidUtf8 { valid_up_to } => write!(
                 f,
-                "input is not valid UTF-8 (invalid byte at offset {valid_up_to}). Convert it to UTF-8 and retry (e.g., `iconv -f <ENC> -t UTF-8 prompt.txt`)."
+                "{}",
+                tr_with(
+                    current(),
+                    "input is not valid UTF-8 (invalid byte at offset {0}). Convert it to UTF-8 and retry (e.g., `iconv -f <ENC> -t UTF-8 prompt.txt`).",
+                    &[&valid_up_to.to_string()],
+                )
             ),
             PromptDecodeError::InvalidUtf16 { encoding } => write!(
                 f,
-                "input looked like {encoding} but could not be decoded. Convert it to UTF-8 and retry."
+                "{}",
+                tr_with(
+                    current(),
+                    "input looked like {0} but could not be decoded. Convert it to UTF-8 and retry.",
+                    &[&encoding.to_string()],
+                )
             ),
             PromptDecodeError::UnsupportedBom { encoding } => write!(
                 f,
-                "input appears to be {encoding}. Convert it to UTF-8 and retry."
+                "{}",
+                tr_with(
+                    current(),
+                    "input appears to be {0}. Convert it to UTF-8 and retry.",
+                    &[&encoding.to_string()],
+                )
             ),
         }
     }
@@ -2233,30 +2348,51 @@ fn read_prompt_from_stdin(behavior: StdinPromptBehavior) -> Option<String> {
     match behavior {
         StdinPromptBehavior::RequiredIfPiped if stdin_is_terminal => {
             eprintln!(
-                "No prompt provided. Either specify one as an argument or pipe the prompt into stdin."
+                "{}",
+                tr(
+                    current(),
+                    "No prompt provided. Either specify one as an argument or pipe the prompt into stdin."
+                )
             );
             std::process::exit(1);
         }
         StdinPromptBehavior::RequiredIfPiped => {
-            eprintln!("Reading prompt from stdin...");
+            eprintln!("{}", tr(current(), "Reading prompt from stdin..."));
         }
         StdinPromptBehavior::Forced => {}
         StdinPromptBehavior::OptionalAppend if stdin_is_terminal => return None,
         StdinPromptBehavior::OptionalAppend => {
-            eprintln!("Reading additional input from stdin...");
+            eprintln!(
+                "{}",
+                tr(current(), "Reading additional input from stdin...")
+            );
         }
     }
 
     let mut bytes = Vec::new();
     if let Err(e) = std::io::stdin().read_to_end(&mut bytes) {
-        eprintln!("Failed to read prompt from stdin: {e}");
+        eprintln!(
+            "{}",
+            tr_with(
+                current(),
+                "Failed to read prompt from stdin: {0}",
+                &[&e.to_string()]
+            )
+        );
         std::process::exit(1);
     }
 
     let buffer = match decode_prompt_bytes(&bytes) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("Failed to read prompt from stdin: {e}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Failed to read prompt from stdin: {0}",
+                    &[&e.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -2265,7 +2401,7 @@ fn read_prompt_from_stdin(behavior: StdinPromptBehavior) -> Option<String> {
         match behavior {
             StdinPromptBehavior::OptionalAppend => None,
             StdinPromptBehavior::RequiredIfPiped | StdinPromptBehavior::Forced => {
-                eprintln!("No prompt provided via stdin.");
+                eprintln!("{}", tr(current(), "No prompt provided via stdin."));
                 std::process::exit(1);
             }
         }
@@ -2326,15 +2462,16 @@ fn build_review_request(args: &ReviewArgs) -> anyhow::Result<ReviewRequest> {
     } else if let Some(prompt_arg) = args.prompt.clone() {
         let prompt = resolve_prompt(Some(prompt_arg)).trim().to_string();
         if prompt.is_empty() {
-            anyhow::bail!("Review prompt cannot be empty");
+            anyhow::bail!(tr(current(), "Review prompt cannot be empty"));
         }
         ReviewTarget::Custom {
             instructions: prompt,
         }
     } else {
-        anyhow::bail!(
+        anyhow::bail!(tr(
+            current(),
             "Specify --uncommitted, --base, --commit, or provide custom review instructions"
-        );
+        ));
     };
 
     Ok(ReviewRequest {

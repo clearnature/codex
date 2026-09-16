@@ -235,6 +235,23 @@
    不做独立的短串扫荡（`--only short` 下 tui 253 条、keymap 205 条，绝大多数是内部标识符，噪声过大）；
    漏译判定以 `codex-i18n-check` 的 missing/unused 为准，最终兜底是 locale 快照。
 
+### 9.1 补充类别（第 54–55 轮新增）
+
+5. **协议 / 错误匹配串** —— 不译，且**译了就坏**。锚点：`tui/src/app_server_session.rs:209-222` 的
+   `["historymode", "history mode", "excludeturns", "exclude turns", "thread/turns/list",
+   "thread/items/list"]` 与 `:262` 的 `["dynamictools", "dynamic tool", "namespace", "inputschema"]`
+   —— 它们用 `message.contains(field)` **匹配服务端返回的英文错误文本**来决定是否降级重试。
+   翻译会静默破坏回退逻辑（不是排版问题，是逻辑错误）。
+6. **配置键值转储** —— 不译。锚点：`tui/src/debug_config.rs:36,50,51,61,63,73,78,83,425,628`
+   的 `  - network_proxy` / `    - HTTP_PROXY  = http://{addr}` / `  - enabled = {}` /
+   `{key} = {value}` 等行：内容全是 **config.toml 的键名与值**，用户的动作是把键名贴回配置文件，
+   译名反而不可用；这些行没有散文（真正的散文如 `(V1 only; ignored by V2)` 已单独包装成
+   `  - max_depth = {0} (V1 only; ignored by V2)` 模板）。
+7. **thiserror 属性宏**（**已知缺口，不是"已排除"**）—— 锚点：`tui/src/app_server_session.rs:393-396`
+   的 `#[error("the selected permission profile cannot be safely represented by the legacy
+   app-server sandbox policy; …")]`。`#[error(..)]` 里放不下 `tr()` 调用（属性宏要求字面量），
+   要译只能把该 variant 改成手写 `Display`。**当前未译，登记为待办**，不要当成已排除。
+
 ## 九、翻译口径判据（"不译"的依据）
 
 判据是**文本流向**，不是「用哪个宏产生」：同一段文案经 `.context(…)` 走到 UI 就译，进日志 / 协议 /

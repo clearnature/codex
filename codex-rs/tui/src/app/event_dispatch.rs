@@ -584,7 +584,7 @@ impl App {
                         Err(err) => Err(err),
                     },
                     None => Err(color_eyre::eyre::eyre!(
-                        "the selected thread is no longer available for prompt editing"
+                        tr(current(), "the selected thread is no longer available for prompt editing")
                     )),
                 };
                 match started {
@@ -1261,7 +1261,7 @@ impl App {
             AppEvent::SkillsListLoaded { result, .. } => {
                 self.handle_skills_list_result(
                     result.map_err(|err| color_eyre::eyre::eyre!(err)),
-                    "failed to load skills on startup",
+                    tr(current(), "failed to load skills on startup"),
                 );
                 self.skill_load_warnings.startup_complete = true;
             }
@@ -2549,7 +2549,11 @@ impl App {
                         "failed to persist approvals reviewer update"
                     );
                     self.chat_widget
-                        .add_error_message(format!("Failed to save approvals reviewer: {err}"));
+                        .add_error_message(tr_with(
+                        current(),
+                        "Failed to save approvals reviewer: {0}",
+                        &[&err.to_string()],
+                    ));
                 }
             }
             AppEvent::FetchExperimentalFeatures { thread_id, response_tx } => {
@@ -2721,7 +2725,11 @@ impl App {
                             state.renaming = true;
                         }
                         self.chat_widget
-                            .add_error_message(format!("Failed to rename task: {error}"));
+                            .add_error_message(tr_with(
+                            current(),
+                            "Failed to rename task: {0}",
+                            &[&error.to_string()],
+                        ));
                     }
                 }
             }
@@ -2810,7 +2818,11 @@ impl App {
                 ),
                 Err(error) => self
                     .chat_widget
-                    .add_error_message(format!("Failed to start the background server: {error}")),
+                    .add_error_message(tr_with(
+                current(),
+                "Failed to start the background server: {0}",
+                &[&error.to_string()],
+            )),
             },
             AppEvent::OpenAgentPicker => {
                 self.open_agent_picker(app_server).await;
@@ -2893,8 +2905,10 @@ impl App {
                         self.chat_widget.update_connector_enabled(&id, enabled);
                     }
                     Err(err) => {
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to update app config for {id}: {err}"
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Failed to update app config for {0}: {1}",
+                            &[&id.to_string(), &err.to_string()],
                         ));
                     }
                 }
@@ -3352,8 +3366,11 @@ impl App {
         let runtime_keymap = match RuntimeKeymap::from_config(&keymap_config) {
             Ok(runtime_keymap) => runtime_keymap,
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to refresh shortcuts: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to refresh shortcuts: {0}",
+                    &[&err.to_string()],
+                ));
                 return;
             }
         };
@@ -3374,7 +3391,11 @@ impl App {
                 self.chat_widget
                     .return_to_keymap_picker(&context, &action, &runtime_keymap);
                 self.chat_widget.add_info_message(
-                    format!("Removed custom shortcut for `{context}.{action}`."),
+                    tr_with(
+                        current(),
+                        "Removed custom shortcut for `{0}.{1}`.",
+                        &[context.as_str(), action.as_str()],
+                    ),
                     /*hint*/ None,
                 );
             }
@@ -3458,7 +3479,10 @@ impl App {
         };
         if self.side_threads.contains_key(&thread_id) {
             self.chat_widget.add_error_message(
-                "'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first."
+                tr(
+                    current(),
+                    "'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.",
+                )
                     .to_string(),
             );
             return AppRunControl::Continue;
@@ -3467,8 +3491,11 @@ impl App {
         match app_server.thread_archive(thread_id).await {
             Ok(()) => AppRunControl::Exit(ExitReason::Archived(thread_id)),
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to archive current thread: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to archive current thread: {0}",
+                    &[&err.to_string()],
+                ));
                 AppRunControl::Continue
             }
         }
@@ -3486,7 +3513,10 @@ impl App {
         };
         if self.side_threads.contains_key(&thread_id) {
             self.chat_widget.add_error_message(
-                "'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first."
+                tr(
+                    current(),
+                    "'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.",
+                )
                     .to_string(),
             );
             return AppRunControl::Continue;
@@ -3495,8 +3525,11 @@ impl App {
         match app_server.thread_delete(thread_id).await {
             Ok(()) => AppRunControl::Exit(ExitReason::ThreadRemoved),
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to delete current thread: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to delete current thread: {0}",
+                    &[&err.to_string()],
+                ));
                 AppRunControl::Continue
             }
         }

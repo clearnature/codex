@@ -2,6 +2,9 @@
 
 use super::*;
 use crate::app_event::TranscriptExportDestination;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     pub(crate) fn copy_transcript_to_clipboard(&mut self, markdown: &str) {
@@ -12,11 +15,15 @@ impl ChatWidget {
             Ok(lease) => {
                 self.clipboard_lease = lease;
                 self.add_info_message(
-                    "Copied conversation to clipboard".to_string(),
+                    tr(current(), "Copied conversation to clipboard").to_string(),
                     /*hint*/ None,
                 );
             }
-            Err(error) => self.add_error_message(format!("Copy failed: {error}")),
+            Err(error) => self.add_error_message(tr_with(
+                current(),
+                "Copy failed: {0}",
+                &[&error.to_string()],
+            )),
         }
     }
 

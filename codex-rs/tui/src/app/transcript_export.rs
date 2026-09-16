@@ -264,10 +264,10 @@ fn render_markdown_transcript(cells: &[Arc<dyn HistoryCell>]) -> Result<String, 
                 && lines.first().is_some_and(|line| {
                     let text = line.to_string();
                     [
-                        "• Saved conversation to ",
-                        "• Copied conversation to clipboard",
-                        "■ Export failed: ",
-                        "■ Copy failed: ",
+                        tr(current(), "• Saved conversation to "),
+                        tr(current(), "• Copied conversation to clipboard"),
+                        tr(current(), "■ Export failed: "),
+                        tr(current(), "■ Copy failed: "),
                     ]
                     .iter()
                     .any(|prefix| text.starts_with(prefix))
@@ -322,8 +322,13 @@ fn write_transcript(cwd: &Path, requested_path: &Path, markdown: &str) -> Result
                 &[&path.display().to_string(), &error.to_string()],
             )
         })?;
-    file.write_all(markdown.as_bytes())
-        .map_err(|error| format!("could not write {}: {error}", path.display()))?;
+    file.write_all(markdown.as_bytes()).map_err(|error| {
+        tr_with(
+            current(),
+            "could not write {0}: {1}",
+            &[&path.display().to_string(), &error.to_string()],
+        )
+    })?;
     file.persist_noclobber(&path).map_err(|error| {
         tr_with(
             current(),

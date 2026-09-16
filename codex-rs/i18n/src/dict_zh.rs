@@ -95,6 +95,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     (" to toggle, ", " 切换，"),
     (" unbound · ", " 未绑定 · "),
+    ("'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.", "侧会话中不可用'/archive'。请先按Ctrl+C返回主线程。"),
+    ("'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.", "侧会话中不可用'/delete'。请先按Ctrl+C返回主线程。"),
     ("1 action.", "1个操作。"),
     (
         "Actions without an active shortcut.",
@@ -206,6 +208,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Context {0}% left", "剩余上下文 {0}%"),
     ("Context {0}% used", "已用上下文 {0}%"),
     ("Conversation history is not saved.", "会话历史未保存。"),
+    ("Copied conversation to clipboard", "已复制会话到剪贴板"),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
     (
         "Could not read goal objective file {0}",
@@ -253,11 +256,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Error", "错误"),
     ("Execpolicy tooling", "Execpolicy工具。"),
     ("Exited review mode", "已退出审查模式"),
+    ("Failed to archive current thread: {0}", "归档当前线程失败：{0}"),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
         "Failed to name the worktree session: {0}",
         "无法命名工作树会话：{0}",
     ),
+    ("Failed to delete current thread: {0}", "删除当前线程失败：{0}"),
+    ("Failed to refresh shortcuts: {0}", "刷新快捷键失败：{0}"),
+    ("Failed to rename task: {0}", "重命名任务失败：{0}"),
+    ("Failed to save approvals reviewer: {0}", "保存审批复核者失败：{0}"),
+    ("Failed to start the background server: {0}", "启动后台服务器失败：{0}"),
+    ("Failed to update app config for {0}: {1}", "更新{0}的应用配置失败：{1}"),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
     ("Finished waiting", "等待结束"),
@@ -388,6 +398,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Resume a previous interactive session (picker by default; use --last to continue the most recent)",
         "恢复之前的交互会话（默认弹出选择器；用--last继续最近一个）。",
     ),
+    ("Removed custom shortcut for `{0}.{1}`.", "已删除 `{0}.{1}` 的自定义快捷键。"),
     ("Resumed an agent", "已恢复一个代理"),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
     (
@@ -524,6 +535,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("cancelled", "已取消"),
     ("canonicalize {0}", "规范化{0}"),
     ("connected", "已连接"),
+    ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
@@ -560,6 +572,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to serialize Auto Review denial event",
         "无法序列化Auto Review拒绝事件",
     ),
+    ("failed to load skills on startup", "启动时加载技能失败"),
     ("failed to unarchive session", "无法取消归档会话"),
     ("forked_from_id is invalid: {0}", "forked_from_id无效：{0}"),
     (
@@ -640,6 +653,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("sixel pixel index overflow", "sixel像素索引溢出"),
     ("starting", "正在启动"),
     ("terminal image write failed: {0}", "终端图像写入失败：{0}"),
+    ("the selected thread is no longer available for prompt editing", "所选线程已不可用于编辑提示词"),
     ("thread id `{0}` is invalid: {1}", "线程ID`{0}`无效：{1}"),
     (
         "thread usage request timed out in TUI",
@@ -1925,6 +1939,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // 钩子; the provenance prefix keeps its arrow and separator spacing.
     ("Running hooks", "正在运行钩子"),
     ("Running hook", "正在运行钩子"),
+    ("• Copied conversation to clipboard", "• 已复制会话到剪贴板"),
+    ("• Saved conversation to ", "• 会话已保存到"),
     ("↳ Hook · ", "↳ 钩子 · "),
     ("Hook completed", "钩子已完成"),
     ("Hook failed", "钩子失败"),
@@ -3163,6 +3179,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "  Powered by your ChatGPT account",
         "  由你的ChatGPT账户提供支持",
     ),
+    ("■ Copy failed: ", "■ 复制失败"),
+    ("■ Export failed: ", "■ 导出失败："),
     ("✓ API key configured", "✓ API key已配置"),
     (
         "  Codex will use usage-based billing with your API key.",

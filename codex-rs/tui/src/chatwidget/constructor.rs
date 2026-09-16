@@ -37,8 +37,8 @@ impl ChatWidget {
         let mut config = config;
         config.model = model.clone();
         let prevent_idle_sleep = config.features.enabled(Feature::PreventIdleSleep);
-        let placeholder = PLACEHOLDER.to_string();
-        let side_placeholder = SIDE_PLACEHOLDER.to_string();
+        let placeholder = chat_widget_placeholder().to_string();
+        let side_placeholder = chat_widget_side_placeholder().to_string();
 
         let model_override = model.as_deref();
         let model_for_header = model

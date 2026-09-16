@@ -32,6 +32,7 @@
 //! records the attempted slash command after dispatch just like ordinary submitted text.
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -1075,20 +1076,28 @@ impl ChatWidget {
             _ => return,
         };
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some(format!("Enable {name}?")),
-            subtitle: Some(format!("{label} are disabled in this TUI session.")),
+            title: Some(tr_with(current(), "Enable {0}?", &[&name])),
+            subtitle: Some(tr_with(
+                current(),
+                "{0} are disabled in this TUI session.",
+                &[&label],
+            )),
             footer_note: (feature == Feature::MemoryTool).then(|| {
                 Line::from(vec![
-                    "Learn more: ".dim(),
+                    tr(current(), "Learn more: ").dim(),
                     MEMORIES_DOC_URL.cyan().underlined(),
                 ])
             }),
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Yes, enable".to_string(),
+                    name: tr(current(), "Yes, enable").to_string(),
                     description: Some(
-                        "Save on the server for new threads. This thread is unchanged.".to_string(),
+                        tr(
+                            current(),
+                            "Save on the server for new threads. This thread is unchanged.",
+                        )
+                        .to_string(),
                     ),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::EnableFeatureForNewThreads(feature));
@@ -1098,7 +1107,7 @@ impl ChatWidget {
                 },
                 SelectionItem {
                     name: "Not now".to_string(),
-                    description: Some(format!("Keep {name} disabled.")),
+                    description: Some(tr_with(current(), "Keep {0} disabled.", &[&name])),
                     dismiss_on_select: true,
                     ..Default::default()
                 },
@@ -1276,7 +1285,7 @@ impl ChatWidget {
         if !from_replay {
             self.bottom_pane.ensure_status_indicator();
         }
-        let banner = format!(">> Code review started: {hint} <<");
+        let banner = tr_with(current(), ">> Code review started: {0} <<", &[&hint]);
         self.add_to_history(history_cell::new_review_status_line(banner));
         self.request_redraw();
     }
@@ -1288,7 +1297,7 @@ impl ChatWidget {
         self.review.is_review_mode = false;
         self.restore_pre_review_token_info();
         self.add_to_history(history_cell::new_review_status_line(
-            "<< Code review finished >>".to_string(),
+            tr(current(), "<< Code review finished >>").to_string(),
         ));
         self.request_redraw();
     }
@@ -1456,7 +1465,7 @@ impl ChatWidget {
         self.unified_exec_processes.clear();
         self.sync_unified_exec_footer();
         self.add_info_message(
-            "Stopping all background terminals.".to_string(),
+            tr(current(), "Stopping all background terminals.").to_string(),
             /*hint*/ None,
         );
     }
@@ -1631,9 +1640,15 @@ impl ChatWidget {
 
     pub(crate) fn raw_output_mode_notice(enabled: bool) -> &'static str {
         if enabled {
-            "Raw output mode on: transcript text is shown for clean terminal selection."
+            tr(
+                current(),
+                "Raw output mode on: transcript text is shown for clean terminal selection.",
+            )
         } else {
-            "Raw output mode off: rich transcript rendering restored."
+            tr(
+                current(),
+                "Raw output mode off: rich transcript rendering restored.",
+            )
         }
     }
 
@@ -1702,9 +1717,9 @@ impl ChatWidget {
     pub(crate) fn toggle_vim_mode_and_notify(&mut self) {
         let enabled = self.bottom_pane.toggle_vim_enabled();
         let message = if enabled {
-            "Vim mode enabled."
+            tr(current(), "Vim mode enabled.")
         } else {
-            "Vim mode disabled."
+            tr(current(), "Vim mode disabled.")
         };
         self.add_info_message(message.to_string(), /*hint*/ None);
     }
@@ -1797,8 +1812,11 @@ impl ChatWidget {
             )
         {
             self.add_error_message(if self.external_writer_view {
-                "This thread is open elsewhere. Close it there and retry resume to continue."
-                    .to_string()
+                tr(
+                    current(),
+                    "This thread is open elsewhere. Close it there and retry resume to continue.",
+                )
+                .to_string()
             } else {
                 parent_owned_input_message().to_string()
             });
@@ -2003,8 +2021,15 @@ impl Drop for ChatWidget {
     }
 }
 
-const PLACEHOLDER: &str = "Ask Codex to do anything";
-const SIDE_PLACEHOLDER: &str = "Ask a follow-up question";
+/// 输入框占位符。用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+/// 引用点（`chatwidget/constructor.rs:40-41`）已 `grep -rnE '\bPLACEHOLDER\b'` 确认。
+fn chat_widget_placeholder() -> &'static str {
+    tr(current(), "Ask Codex to do anything")
+}
+
+fn chat_widget_side_placeholder() -> &'static str {
+    tr(current(), "Ask a follow-up question")
+}
 
 // Extract the first bold (Markdown) element in the form **...** from `s`.
 // Returns the inner text if found; otherwise `None`.

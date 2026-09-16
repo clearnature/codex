@@ -188,10 +188,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "1 hook needs review before it can run.",
         "有1个钩子在运行前需要审查。",
     ),
+    ("<< Code review finished >>", "<< 代码审查已完成 >>"),
     ("<audio content>", "<音频内容>"),
     ("<image content>", "<图像内容>"),
     ("<unknown embedded resource>", "<未知嵌入式资源>"),
     ("<unspecified>", "<未指定>"),
+    (
+        ">> Code review started: {0} <<",
+        ">> 代码审查已开始：{0} <<",
+    ),
     ("A balanced stack for deep work", "深度工作用的平衡堆栈"),
     (
         "A steady rock when the diff gets large",
@@ -258,6 +263,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Attestation generation is not available in TUI.",
         "TUI中不支持生成证明。",
     ),
+    ("Ask Codex to do anything", "让Codex做任何事"),
+    ("Ask a follow-up question", "继续追问"),
     ("Assigned actions:", "已绑定的操作："),
     ("Auto-reviewer ", "自动审查器 "),
     ("Background terminals", "后台终端"),
@@ -430,6 +437,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Earlier messages unavailable — scroll up to retry",
         "更早的消息不可用 — 向上滚动以重试",
     ),
+    ("Enable {0}?", "启用{0}？"),
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
     ("Error", "错误"),
@@ -579,6 +587,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Job：running/completed/failed/expired；Run/Experiment：succeeded/failed/unknown（排查长时间后台任务与状态变化时推荐）",
     ),
     ("Keep waiting", "继续等待"),
+    ("Keep {0} disabled.", "保持禁用{0}。"),
     ("Keymap", "快捷键"),
     (
         "No configurable actions are available in this group.",
@@ -716,6 +725,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Questions {0}/{1} answered", "问题 已答 {0}/{1}"),
     ("Quiet signal from the void", "来自虚空的安静信号"),
     ("Raw event: ", "原始事件："),
+    (
+        "Raw output mode off: rich transcript rendering restored.",
+        "原始输出模式已关闭：已恢复富文本转录渲染。",
+    ),
+    (
+        "Raw output mode on: transcript text is shown for clean terminal selection.",
+        "原始输出模式已开启：显示纯文本转录，便于在终端中干净地选取。",
+    ),
     ("Ready", "就绪"),
     ("Recent chat sessions", "最近的聊天会话"),
     ("Reconnect: {0}", "重新连接：{0}"),
@@ -768,6 +785,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Run targeted tests", "运行针对性测试"),
     ("Run tests", "运行测试"),
     ("Running", "运行中"),
+    (
+        "Save on the server for new threads. This thread is unchanged.",
+        "在服务器上保存以用于新线程。当前线程不受影响。",
+    ),
     ("Saving experimental features…", "正在保存实验性特性…"),
     (
         "Saving was interrupted. Reopen /experimental to check configured values.",
@@ -836,6 +857,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Stop and retry", "停止并重试"),
     ("Stop this attempt and retry?", "停止本次尝试并重试？"),
+    (
+        "Stopping all background terminals.",
+        "正在停止所有后台终端。",
+    ),
     ("Stream", "流"),
     ("Streams", "流"),
     ("Sub-agents running", "运行中的子代理"),
@@ -886,6 +911,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Tip: Codex can only inspect keys your terminal sends.",
         "提示：Codex只能检查终端实际发送的按键。",
+    ),
+    (
+        "This thread is open elsewhere. Close it there and retry resume to continue.",
+        "该线程正在其他地方打开。请先在那里关闭，再重试恢复以继续。",
     ),
     ("Thread usage", "线程用量"),
     ("To continue this session, run:", "要继续此会话，请运行："),
@@ -951,6 +980,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Viewing sub-agent — direct input is disabled",
         "正在查看子代理 — 已禁用直接输入",
     ),
+    ("Vim mode disabled.", "Vim模式已关闭。"),
+    ("Vim mode enabled.", "Vim模式已开启。"),
     ("Waited for an agent", "等待了一个代理"),
     ("Waited for background terminal", "已等待后台终端"),
     ("Waited for background terminal: {0}", "已等待后台终端：{0}"),
@@ -970,6 +1001,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Worked for {0}", "耗时 {0}"),
     ("Working directory changed to: {0}", "工作目录已切换到：{0}"),
     ("Yes, clear context and implement", "是，清空上下文并实施"),
+    ("Yes, enable", "是，启用"),
     ("Yes, implement this plan", "是，实施此计划"),
     (
         "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.",
@@ -1305,6 +1337,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} MCP servers", "{0}个MCP服务器"),
     ("{0} actions.", "{0}个操作。"),
     ("{0} apps", "{0}个应用"),
+    (
+        "{0} are disabled in this TUI session.",
+        "本次TUI会话中{0}已禁用。",
+    ),
     ("{0} credits", "{0} 额度"),
     ("{0} events received ({1})", "接收{0}个事件（{1}）"),
     ("{0} hooks", "{0}钩子"),

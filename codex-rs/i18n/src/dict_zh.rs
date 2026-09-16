@@ -498,7 +498,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Do you trust the contents of this directory? Working with untrusted \n                 contents comes with higher risk of prompt injection. Trusting the \n                 directory allows project-local config, hooks, and exec policies to load.",
         "你信任此目录的内容吗？处理不受信任的内容会带来更高的提示词注入风险。信任该目录后，项目本地的配置、钩子与执行策略才会被加载。",
     ),
-    ("Each column = 1 week · tallest ", "每列 = 1 周 · 最高 "),
+    ("Each column = 1 week · tallest ", "每列=1周 · 最高 "),
     ("Enable {0}?", "启用{0}？"),
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),

@@ -37,6 +37,20 @@ use std::sync::LazyLock;
 pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // Footer hints (`tui/src/bottom_pane/footer.rs`). The leading space is part
     // of the key: it separates the hint from the key binding rendered before it.
+    ("    See the ", "    参见 "),
+    ("    • Auth: ", "    • 认证："),
+    ("    • Resource templates: ", "    • 资源模板："),
+    ("    • Resource templates: (none)", "    • 资源模板：（无）"),
+    ("    • Resources: ", "    • 资源："),
+    ("    • Resources: (none)", "    • 资源：（无）"),
+    ("    • Tools: ", "    • 工具："),
+    ("    • Tools: (none)", "    • 工具：（无）"),
+    (
+        "  Use /mcp verbose for tools and resources.",
+        "  使用/mcp verbose查看工具与资源。",
+    ),
+    ("  • No MCP servers configured.", "  • 未配置MCP服务器。"),
+    ("  • No MCP tools available.", "  • 没有可用的MCP工具。"),
     (" close", " 关闭"),
     (" custom · ", " 自定义 · "),
     (" edit shortcut · ", " 编辑快捷键 · "),
@@ -44,6 +58,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" for shortcuts", " 查看快捷键"),
     (" group · ", " 分组 · "),
     (" start inspector · ", " 启动检查器 · "),
+    (" to configure them.", " 进行配置。"),
     (" to continue, ", " 继续，"),
     (" to customize", " 自定义"),
     (" to move, ", " 移动，"),
@@ -115,8 +130,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Fast on", "Fast开"),
     ("Finished waiting", "等待结束"),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
-    ("Ignored invalid status line {0}: {1}.", "已忽略无效的状态行{0}：{1}。"),
-    ("Ignored invalid terminal title {0}: {1}.", "已忽略无效的终端标题{0}：{1}。"),
+    (
+        "Ignored invalid status line {0}: {1}.",
+        "已忽略无效的状态行{0}：{1}。",
+    ),
+    (
+        "Ignored invalid terminal title {0}: {1}.",
+        "已忽略无效的终端标题{0}：{1}。",
+    ),
     ("Import setup", "导入配置"),
     ("Inspect keypresses", "检查按键"),
     (
@@ -133,6 +154,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "No configurable actions are available in this group.",
         "此分组没有可配置的操作。",
     ),
+    ("Loading MCP inventory", "正在加载MCP清单"),
+    ("Loading MCP inventory...", "正在加载MCP清单…"),
+    ("MCP Tools", "MCP工具"),
     ("No agents completed yet", "还没有代理完成"),
     ("No changes", "无变更"),
     ("No shortcuts in this group", "此分组没有快捷键"),
@@ -171,6 +195,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Waiting for {0} agents", "正在等待{0}个代理"),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
+    ("authentication required", "需要认证"),
+    ("cancelled", "已取消"),
+    ("connected", "已连接"),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
     // Shortcut descriptors. These are the labels the `_` arm of the matcher in
@@ -188,9 +215,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" reasoning up", " 提高推理强度"),
     // Context-window line. Templates: the placeholders are substituted after
     // the lookup, so the translation may move them but not drop them.
+    ("disabled", "已禁用"),
+    ("failed", "失败"),
     ("item", "条目"),
     ("items", "条目"),
+    ("not started", "未启动"),
     ("raw output", "原始输出"),
+    ("starting", "正在启动"),
+    ("tool", "工具"),
+    ("tools", "工具"),
+    ("unknown", "未知"),
     ("{0} actions.", "{0}个操作。"),
     ("{0} credits", "{0} 额度"),
     ("{0} window", "{0} 窗口"),

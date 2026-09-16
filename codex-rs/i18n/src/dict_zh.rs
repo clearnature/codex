@@ -997,6 +997,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "OSS provider selection was cancelled by user",
         "用户取消了开源提供方选择",
     ),
+    ("Objective: {0}", "目标：{0}"),
     ("Ollama (Chat)", "Ollama（Chat）"),
     ("Ollama (Responses)", "Ollama（Responses）"),
     (
@@ -1234,6 +1235,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "还在等待？如果按键后没有任何变化，说明你的终端没有把该按键发送给Codex。只有接收到的按键才能被指定为快捷键。",
     ),
     ("Starting MCP servers", "正在启动MCP服务器"),
+    (
+        "Startup did not finish binding a thread to this worktree: {0}\nThe checkout was kept. Inspect it and confirm no session is using it.\nTo remove it, run `git worktree remove <checkout-path>` from the source repository,\nreplacing <checkout-path> with the path above. Do not use --force.",
+        "启动未能把线程绑定到该工作树：{0}\n已保留检出。请检查并确认没有会话在用。\n如需删除，请在源仓库运行 `git worktree remove <checkout-path>`，\n把 <checkout-path> 替换为上面的路径。不要使用 --force。",
+    ),
     ("Stop and retry", "停止并重试"),
     ("Stop this attempt and retry?", "停止本次尝试并重试？"),
     (
@@ -1309,6 +1314,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Tip: press $ to open this list directly.",
         "提示：按$直接打开此列表。",
     ),
+    ("Time: {0}.", "耗时：{0}。"),
     ("To continue this session, run:", "要继续此会话，请运行："),
     ("Token usage so far:", "目前Token用量："),
     ("Token usage:", "Token用量："),
@@ -1316,6 +1322,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Token usage: total={0} input={1}{2} output={3}{4}",
         "Token用量：总计={0} 输入={1}{2} 输出={3}{4}",
     ),
+    ("Tokens: {0}/{1}.", "Token：{0}/{1}。"),
     ("Tool {0}", "工具{0}"),
     (
         "Try again later; local plugin functionality is still available.",
@@ -1507,6 +1514,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`--worktree` is only supported for local sessions",
         "`--worktree`仅支持本地会话",
     ),
+    (
+        "`--worktree` cannot create a checkout from an explicitly untrusted source",
+        "`--worktree`无法从未经信任的来源创建检出",
+    ),
+    (
+        "`--worktree` requires the worktrees feature; enable it with `--enable worktrees`",
+        "`--worktree`需要worktrees特性；请用`--enable worktrees`启用",
+    ),
     ("`open {0}` exited with {1}", "`open {0}` 以{1}退出"),
     ("a patch touching ", "涉及以下内容的补丁 "),
     ("agent tool: {0} · {1}", "代理工具：{0} · {1}"),
@@ -1608,6 +1623,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "failed to connect to remote app server",
         "无法连接到远程app-server",
+    ),
+    (
+        "failed to bind managed worktree thread",
+        "无法绑定托管工作树线程",
     ),
     ("failed to delete session", "无法删除会话"),
     (
@@ -3222,6 +3241,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0}% used", "已用{0}%"),
     ("{0}d (best {1}d)", "{0}天（最长{1}天）"),
     ("{0}d ago", "{0}天前"),
+    ("{0}d {1}h {2}m", "{0}天{1}小时{2}分"),
     ("{0}h", "{0}小时"),
     ("{0}h ago", "{0}小时前"),
     ("{0}h {1}m", "{0}小时{1}分"),

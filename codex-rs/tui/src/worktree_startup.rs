@@ -2,6 +2,9 @@
 //! Source distrust is never upgraded; ownership is bound before exposing the new thread.
 //! Failed startup retains the checkout and reports manual recovery until ownership is bound.
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
@@ -17,7 +20,7 @@ impl ManagedTuiWorktree {
         self.manager
             .bind_thread(&self.checkout.root, &thread_id.to_string())
             .map_err(std::io::Error::other)
-            .wrap_err("failed to bind managed worktree thread")?;
+            .wrap_err(tr(current(), "failed to bind managed worktree thread"))?;
         self.recovery.finished.store(true, Ordering::Relaxed);
         Ok(())
     }
@@ -45,9 +48,10 @@ impl ManagedTuiWorktree {
             .await
             .map_err(std::io::Error::other)?;
         if source.active_project.is_untrusted() {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`--worktree` cannot create a checkout from an explicitly untrusted source",
-            ));
+            )));
         }
         Ok(())
     }
@@ -61,12 +65,10 @@ struct StartupRecovery {
 
 impl StartupRecovery {
     fn message(&self) -> String {
-        format!(
-            "Startup did not finish binding a thread to this worktree: {:?}\n\
-             The checkout was kept. Inspect it and confirm no session is using it.\n\
-             To remove it, run `git worktree remove <checkout-path>` from the source repository,\n\
-             replacing <checkout-path> with the path above. Do not use --force.",
-            self.root
+        tr_with(
+            current(),
+            "Startup did not finish binding a thread to this worktree: {0}\nThe checkout was kept. Inspect it and confirm no session is using it.\nTo remove it, run `git worktree remove <checkout-path>` from the source repository,\nreplacing <checkout-path> with the path above. Do not use --force.",
+            &[&format!("{:?}", self.root)],
         )
     }
 
@@ -135,7 +137,10 @@ pub(super) async fn prepare(
         }
         .map_err(std::io::Error::other)?;
         if prepared.default_environment_is_remote() {
-            color_eyre::eyre::bail!("`--worktree` is only supported for local sessions");
+            color_eyre::eyre::bail!(tr(
+                current(),
+                "`--worktree` is only supported for local sessions"
+            ));
         }
         let environment = prepared.build(
             Some(ExecServerRuntimePaths::from_optional_paths(
@@ -168,7 +173,13 @@ pub(super) async fn prepare(
         let resolved = async {
             let target = lookup_session_target_with_app_server(&mut lookup, &source, id_or_name)
                 .await?
-                .ok_or_else(|| color_eyre::eyre::eyre!("Session not found: {id_or_name}"))?;
+                .ok_or_else(|| {
+                    color_eyre::eyre::eyre!(tr_with(
+                        current(),
+                        "Session not found: {0}",
+                        &[&id_or_name.to_string()],
+                    ))
+                })?;
             lookup
                 .thread_read(target.thread_id, /*include_turns*/ false)
                 .await
@@ -205,14 +216,16 @@ pub(super) async fn prepare(
         }
     }
     if !source.features.enabled(codex_features::Feature::Worktrees) {
-        color_eyre::eyre::bail!(
-            "`--worktree` requires the worktrees feature; enable it with `--enable worktrees`"
-        );
+        color_eyre::eyre::bail!(tr(
+            current(),
+            "`--worktree` requires the worktrees feature; enable it with `--enable worktrees`",
+        ));
     }
     if source.active_project.is_untrusted() {
-        color_eyre::eyre::bail!(
-            "`--worktree` cannot create a checkout from an explicitly untrusted source"
-        );
+        color_eyre::eyre::bail!(tr(
+            current(),
+            "`--worktree` cannot create a checkout from an explicitly untrusted source",
+        ));
     }
     let invocation_cwd = std::env::current_dir()?;
     for path in &mut overrides.additional_writable_roots {

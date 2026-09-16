@@ -3,6 +3,7 @@ use codex_app_server_protocol::ThreadGoal;
 use codex_app_server_protocol::ThreadGoalStatus;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 /// Rendered as a hint when `/goal` is invoked without a usable session.
 ///
@@ -31,40 +32,56 @@ pub(crate) fn format_goal_elapsed_seconds(seconds: i64) -> String {
     if hours >= 24 {
         let days = hours / 24;
         let remaining_hours = hours % 24;
-        return format!("{days}d {remaining_hours}h {remaining_minutes}m");
+        return tr_with(
+            current(),
+            "{0}d {1}h {2}m",
+            &[
+                &days.to_string(),
+                &remaining_hours.to_string(),
+                &remaining_minutes.to_string(),
+            ],
+        );
     }
 
     if remaining_minutes == 0 {
-        format!("{hours}h")
+        tr_with(current(), "{0}h", &[&hours.to_string()])
     } else {
-        format!("{hours}h {remaining_minutes}m")
+        tr_with(
+            current(),
+            "{0}h {1}m",
+            &[&hours.to_string(), &remaining_minutes.to_string()],
+        )
     }
 }
 
 pub(crate) fn goal_status_label(status: ThreadGoalStatus) -> &'static str {
     match status {
-        ThreadGoalStatus::Active => "active",
-        ThreadGoalStatus::Paused => "paused",
-        ThreadGoalStatus::Blocked => "stalled",
-        ThreadGoalStatus::UsageLimited => "usage limited",
-        ThreadGoalStatus::BudgetLimited => "limited by budget",
-        ThreadGoalStatus::Complete => "complete",
+        ThreadGoalStatus::Active => tr(current(), "active"),
+        ThreadGoalStatus::Paused => tr(current(), "paused"),
+        ThreadGoalStatus::Blocked => tr(current(), "stalled"),
+        ThreadGoalStatus::UsageLimited => tr(current(), "usage limited"),
+        ThreadGoalStatus::BudgetLimited => tr(current(), "limited by budget"),
+        ThreadGoalStatus::Complete => tr(current(), "complete"),
     }
 }
 
 pub(crate) fn goal_usage_summary(goal: &ThreadGoal) -> String {
-    let mut parts = vec![format!("Objective: {}", goal.objective)];
+    let mut parts = vec![tr_with(current(), "Objective: {0}", &[&goal.objective])];
     if goal.time_used_seconds > 0 {
-        parts.push(format!(
-            "Time: {}.",
-            format_goal_elapsed_seconds(goal.time_used_seconds)
+        parts.push(tr_with(
+            current(),
+            "Time: {0}.",
+            &[&format_goal_elapsed_seconds(goal.time_used_seconds)],
         ));
     }
     if let Some(token_budget) = goal.token_budget {
-        parts.push(format!(
-            "Tokens: {}/{}.",
-            format_tokens_compact(goal.tokens_used),
-            format_tokens_compact(token_budget)
+        parts.push(tr_with(
+            current(),
+            "Tokens: {0}/{1}.",
+            &[
+                &format_tokens_compact(goal.tokens_used),
+                &format_tokens_compact(token_budget),
+            ],
         ));
     }
     parts.join(" ")

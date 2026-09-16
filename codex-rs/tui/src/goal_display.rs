@@ -1,8 +1,19 @@
 use crate::status::format_tokens_compact;
 use codex_app_server_protocol::ThreadGoal;
 use codex_app_server_protocol::ThreadGoalStatus;
+use codex_i18n::current;
+use codex_i18n::tr;
 
-pub(crate) const GOAL_USAGE: &str = "Usage: /goal [<objective>|clear|edit|pause|resume]";
+/// Rendered as a hint when `/goal` is invoked without a usable session.
+///
+/// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`:
+/// the text has to pass through `tr`, which a `const` cannot call.
+pub(crate) fn goal_usage() -> &'static str {
+    tr(
+        current(),
+        "Usage: /goal [<objective>|clear|edit|pause|resume]",
+    )
+}
 
 pub(crate) fn format_goal_elapsed_seconds(seconds: i64) -> String {
     let seconds = seconds.max(0) as u64;

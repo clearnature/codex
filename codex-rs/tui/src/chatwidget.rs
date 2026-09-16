@@ -30,6 +30,8 @@
 //! Slash-command parsing lives in the bottom-pane composer, but slash-command acceptance lives
 //! here. That split lets the composer stage a recall entry before clearing input while this module
 //! records the attempted slash command after dispatch just like ordinary submitted text.
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -187,9 +189,17 @@ const PLAN_MODE_REASONING_SCOPE_ALL_MODES: &str = "Apply to global default and P
 const CONNECTORS_SELECTION_VIEW_ID: &str = "connectors-selection";
 const PET_SELECTION_LOADING_VIEW_ID: &str = "pet-selection-loading";
 const AMBIENT_PET_WRAP_GAP_COLUMNS: u16 = 2;
-const TUI_STUB_MESSAGE: &str = "Not available in TUI yet.";
-const PARENT_OWNED_INPUT_MESSAGE: &str =
-    "This sub-agent is controlled by its parent. Direct input is disabled.";
+// Functions rather than `const`s, per §3.6 of `docs/plan/i18n-design.md`:
+// the text has to pass through `tr`, which a `const` cannot call.
+fn tui_stub_message() -> &'static str {
+    tr(current(), "Not available in TUI yet.")
+}
+fn parent_owned_input_message() -> &'static str {
+    tr(
+        current(),
+        "This sub-agent is controlled by its parent. Direct input is disabled.",
+    )
+}
 
 /// Choose the keybinding used to edit the most-recently queued message.
 ///
@@ -1533,7 +1543,7 @@ impl ChatWidget {
 
     fn add_app_server_stub_message(&mut self, feature: &str) {
         warn!(feature, "stubbed unsupported TUI feature");
-        self.add_error_message(format!("{feature}: {TUI_STUB_MESSAGE}"));
+        self.add_error_message(format!("{feature}: {}", tui_stub_message()));
     }
 
     /// Begin the asynchronous MCP inventory flow: show a loading spinner and
@@ -1791,7 +1801,7 @@ impl ChatWidget {
                 "This thread is open elsewhere. Close it there and retry resume to continue."
                     .to_string()
             } else {
-                PARENT_OWNED_INPUT_MESSAGE.to_string()
+                parent_owned_input_message().to_string()
             });
             return false;
         }

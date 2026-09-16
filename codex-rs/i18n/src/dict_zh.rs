@@ -3650,6 +3650,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "This cannot be undone. Subagent threads will also be deleted.",
         "此操作无法撤销。子代理线程也会被删除。",
     ),
+    (
+        "Usage: /goal [<objective>|clear|edit|pause|resume]",
+        "用法：/goal [<objective>|clear|edit|pause|resume]",
+    ),
+    ("Not available in TUI yet.", "TUI中尚不可用。"),
+    (
+        "This sub-agent is controlled by its parent. Direct input is disabled.",
+        "此子代理由其父级控制。已禁用直接输入。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -13,7 +13,7 @@ use crate::bottom_pane::slash_commands::BuiltinCommandFlags;
 use crate::bottom_pane::slash_commands::ServiceTierCommand;
 use crate::bottom_pane::slash_commands::SlashCommandItem;
 use crate::bottom_pane::slash_commands::find_slash_command;
-use crate::goal_display::GOAL_USAGE;
+use crate::goal_display::goal_usage;
 use crate::goal_files::GoalDraft;
 use codex_i18n::current;
 use codex_i18n::tr;
@@ -318,7 +318,7 @@ impl ChatWidget {
             }
             SlashCommand::Compact => {
                 if self.blocks_direct_input {
-                    self.add_error_message(PARENT_OWNED_INPUT_MESSAGE.to_string());
+                    self.add_error_message(parent_owned_input_message().to_string());
                     return;
                 }
                 self.clear_token_usage();
@@ -381,7 +381,7 @@ impl ChatWidget {
                     self.append_message_history_entry("/goal".to_string());
                 } else {
                     self.add_info_message(
-                        GOAL_USAGE.to_string(),
+                        goal_usage().to_string(),
                         Some(goal_usage_hint().to_string()),
                     );
                 }
@@ -980,7 +980,7 @@ impl ChatWidget {
                 if let Some(command) = control_command {
                     let Some(thread_id) = self.thread_id else {
                         self.add_info_message(
-                            GOAL_USAGE.to_string(),
+                            goal_usage().to_string(),
                             Some(
                                 tr(
                                     current(),
@@ -1044,7 +1044,7 @@ impl ChatWidget {
                         self.clear_live_goal_submission();
                     } else {
                         self.add_info_message(
-                            GOAL_USAGE.to_string(),
+                            goal_usage().to_string(),
                             Some(
                                 tr(
                                     current(),

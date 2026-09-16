@@ -55,7 +55,7 @@ impl ChatWidget {
             | ServerRequest::ApplyPatchApproval { .. }
             | ServerRequest::ExecCommandApproval { .. } => {
                 if replay_kind.is_none() {
-                    self.add_error_message(TUI_STUB_MESSAGE.to_string());
+                    self.add_error_message(tui_stub_message().to_string());
                 }
             }
         }

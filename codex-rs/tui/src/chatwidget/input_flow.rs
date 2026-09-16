@@ -72,7 +72,7 @@ impl ChatWidget {
                 self.handle_slash_command_with_args_dispatch(cmd, args, text_elements);
             }
             InputResult::ParentOwnedInputBlocked => {
-                self.add_error_message(PARENT_OWNED_INPUT_MESSAGE.to_string());
+                self.add_error_message(parent_owned_input_message().to_string());
             }
             InputResult::None => {}
         }
@@ -269,7 +269,7 @@ impl ChatWidget {
                 "This thread is open elsewhere. Close it there and retry resume to continue."
                     .to_string()
             } else {
-                PARENT_OWNED_INPUT_MESSAGE.to_string()
+                parent_owned_input_message().to_string()
             });
             return;
         }

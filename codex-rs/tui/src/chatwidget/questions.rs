@@ -103,7 +103,7 @@ impl ChatWidget {
                     QuestionSubmission::Queue(text) => (text, true),
                 };
                 if self.blocks_direct_input {
-                    self.add_error_message(PARENT_OWNED_INPUT_MESSAGE.to_string());
+                    self.add_error_message(parent_owned_input_message().to_string());
                     return true;
                 }
                 if self.has_misalignment_policy_violation() {

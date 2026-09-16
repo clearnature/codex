@@ -6,8 +6,8 @@ use crate::bottom_pane::SelectionAction;
 use crate::bottom_pane::SelectionItem;
 use crate::bottom_pane::SelectionViewParams;
 use crate::bottom_pane::popup_consts::standard_popup_hint_line;
-use crate::goal_display::GOAL_USAGE;
 use crate::goal_display::goal_status_label;
+use crate::goal_display::goal_usage;
 use crate::goal_display::goal_usage_summary;
 use crate::goal_files;
 use crate::text_formatting::truncate_text;
@@ -51,7 +51,7 @@ impl App {
 
         let Some(goal) = response.goal else {
             self.chat_widget.add_info_message(
-                GOAL_USAGE.to_string(),
+                goal_usage().to_string(),
                 Some(tr(current(), "No goal is currently set.").to_string()),
             );
             return;
@@ -357,7 +357,7 @@ impl App {
         self.chat_widget
             .add_error_message(tr(current(), "No goal is currently set.").to_string());
         self.chat_widget.add_info_message(
-            GOAL_USAGE.to_string(),
+            goal_usage().to_string(),
             Some(tr(current(), "Create a goal before editing it.").to_string()),
         );
     }

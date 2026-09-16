@@ -4,6 +4,8 @@
 use super::config_persistence::overridden_write_message;
 use super::*;
 use crate::experimental_features::FeatureWriteResult;
+use codex_i18n::current;
+use codex_i18n::tr;
 use tokio::sync::oneshot;
 
 impl App {
@@ -81,8 +83,10 @@ impl App {
         response_tx: oneshot::Sender<Result<FeatureWriteResult, String>>,
     ) {
         let Ok(guard) = self.feature_write_lock.clone().try_lock_owned() else {
-            let error =
-                "An experimental feature save is still in progress. Retry after it finishes.";
+            let error = tr(
+                current(),
+                "An experimental feature save is still in progress. Retry after it finishes.",
+            );
             self.chat_widget.add_warning_message(error.to_string());
             let _ = response_tx.send(Err(error.to_string()));
             return;

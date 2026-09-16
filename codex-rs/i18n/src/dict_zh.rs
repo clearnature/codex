@@ -3752,6 +3752,29 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0}。按Enter打开应用页面以安装此应用。",
     ),
     ("{0}. App link unavailable.", "{0}。应用链接不可用。"),
+    (
+        "Your usage does not need a reset right now.",
+        "你的用量目前无需重置。",
+    ),
+    (
+        "That reset is no longer available. Refresh to see your current resets.",
+        "该重置项已不可用。请刷新以查看当前的重置项。",
+    ),
+    (
+        "No usage limit resets are available.",
+        "没有可用的用量限额重置项。",
+    ),
+    ("Usage reset.", "用量已重置。"),
+    ("usage limit reset", "用量限额重置项"),
+    ("usage limit resets", "用量限额重置项"),
+    (
+        "Usage reset. You have {0} {1} left.",
+        "用量已重置。你还剩{0}个{1}。",
+    ),
+    (
+        "You have {0} {1} available. Run /usage to use one.",
+        "你有{0}个{1}可用。运行/usage使用一个。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

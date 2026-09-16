@@ -397,18 +397,18 @@ impl ChatWidget {
                 self.pending_rate_limit_reset_request_id = None;
                 let message = match response.outcome {
                     ConsumeAccountRateLimitResetCreditOutcome::NothingToReset => {
-                        "Your usage does not need a reset right now."
+                        tr(current(), "Your usage does not need a reset right now.")
                     }
                     ConsumeAccountRateLimitResetCreditOutcome::NoCredit if credit_id.is_some() => {
                         self.available_rate_limit_reset_credits = None;
                         self.replace_rate_limit_reset_popup(Self::reset_refresh_params(
-                            "That reset is no longer available. Refresh to see your current resets.",
+                            tr(current(), "That reset is no longer available. Refresh to see your current resets."),
                         ));
                         return false;
                     }
                     ConsumeAccountRateLimitResetCreditOutcome::NoCredit => {
                         self.available_rate_limit_reset_credits = Some(0);
-                        "No usage limit resets are available."
+                        tr(current(), "No usage limit resets are available.")
                     }
                     ConsumeAccountRateLimitResetCreditOutcome::Reset
                     | ConsumeAccountRateLimitResetCreditOutcome::AlreadyRedeemed => unreachable!(),
@@ -466,12 +466,13 @@ impl ChatWidget {
             Ok(response) => {
                 let available_count = response.available_count;
                 self.available_rate_limit_reset_credits = Some(available_count);
-                format!(
-                    "Usage reset. You have {available_count} {} left.",
-                    reset_label(available_count)
+                tr_with(
+                    current(),
+                    "Usage reset. You have {0} {1} left.",
+                    &[&available_count.to_string(), reset_label(available_count)],
                 )
             }
-            Err(_) => "Usage reset.".to_string(),
+            Err(_) => tr(current(), "Usage reset.").to_string(),
         };
         self.replace_rate_limit_reset_popup(Self::rate_limit_reset_message_params(&message));
         true
@@ -571,9 +572,10 @@ impl ChatWidget {
             return;
         }
         self.pending_rate_limit_reset_hint = Some(history_cell::new_info_event(
-            format!(
-                "You have {available_count} {} available. Run /usage to use one.",
-                reset_label(available_count)
+            tr_with(
+                current(),
+                "You have {0} {1} available. Run /usage to use one.",
+                &[&available_count.to_string(), reset_label(available_count)],
             ),
             /*hint*/ None,
         ));
@@ -592,8 +594,8 @@ impl ChatWidget {
 
 fn reset_label(count: i64) -> &'static str {
     if count == 1 {
-        "usage limit reset"
+        tr(current(), "usage limit reset")
     } else {
-        "usage limit resets"
+        tr(current(), "usage limit resets")
     }
 }

@@ -7,6 +7,8 @@ use crate::model_catalog::LUNA_RESERVE_MODEL;
 use crate::model_catalog::model_display_name;
 use crate::service_tier_resolution;
 use codex_app_server_protocol::ThreadSettingsUpdateParams;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::openai_models::ReasoningEffort;
@@ -98,12 +100,13 @@ impl App {
             self.sync_active_thread_service_tier_to_cached_session()
                 .await;
             let (prefix, suffix) = match switch.reason {
-                AutomaticModelSwitchReason::UsageLimit => {
-                    ("Automatically switched to", " due to usage limits.")
-                }
+                AutomaticModelSwitchReason::UsageLimit => (
+                    tr(current(), "Automatically switched to"),
+                    tr(current(), " due to usage limits."),
+                ),
                 AutomaticModelSwitchReason::UsageRecovered => (
-                    "Automatically switched back to",
-                    " because ordinary usage is available again.",
+                    tr(current(), "Automatically switched back to"),
+                    tr(current(), " because ordinary usage is available again."),
                 ),
             };
             let mut message = format!("{prefix} {}", model_display_name(&target.model));

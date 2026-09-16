@@ -8,6 +8,8 @@ use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::TurnStartParams;
 use codex_app_server_protocol::TurnStartResponse;
 use codex_app_server_protocol::UserInput;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl App {
     pub(super) fn open_misalignment_review(
@@ -22,7 +24,7 @@ impl App {
             .show_misalignment_review_confirmation(Arc::clone(&review));
         let mut lines = Vec::new();
         if let Some(message) = review.continuation_message() {
-            lines.push(Line::from("Continuation request (quoted)").bold());
+            lines.push(Line::from(tr(current(), "Continuation request (quoted)")).bold());
             // Keep the submitted text ahead of potentially long findings, without interpreting it.
             lines.push(Line::from(format!("{message:?}")));
             lines.push(Line::default());
@@ -40,7 +42,7 @@ impl App {
         let _ = tui.enter_alt_screen();
         self.overlay = Some(Overlay::new_static_with_lines(
             lines,
-            "What we detected".to_string(),
+            tr(current(), "What we detected").to_string(),
             self.keymap.pager.clone(),
         ));
         tui.frame_requester().schedule_frame();
@@ -125,8 +127,11 @@ impl App {
             turn_permissions_overrides(permissions_override, config.cwd.as_path())
         else {
             self.chat_widget.add_error_message(
-                "Couldn’t continue this chat. Review its latest status before trying again."
-                    .to_string(),
+                tr(
+                    current(),
+                    "Couldn’t continue this chat. Review its latest status before trying again.",
+                )
+                .to_string(),
             );
             return;
         };
@@ -174,7 +179,7 @@ impl App {
             Err(_) => {
                 // An RPC diagnostic can contain the submitted steer. Keep the review error generic.
                 self.chat_widget.add_error_message(
-                    "Couldn’t continue this chat. Review its latest status before trying again."
+                    tr(current(), "Couldn’t continue this chat. Review its latest status before trying again.")
                         .to_string(),
                 );
             }

@@ -2,6 +2,9 @@
 
 use super::*;
 use codex_app_server_protocol::ThreadSettingsUpdateParams;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) async fn apply_permission_shortcut(
@@ -44,7 +47,10 @@ impl App {
                 approvals_reviewer: selection.approvals_reviewer.map(Into::into),
                 ..Default::default()
             }).await? {
-                color_eyre::eyre::bail!("this app server does not support confirmed permission changes; use /permissions");
+                color_eyre::eyre::bail!(tr(
+                current(),
+                "this app server does not support confirmed permission changes; use /permissions"
+            ));
             }
 
             // This exact widget configuration was validated before the request.
@@ -58,7 +64,12 @@ impl App {
             self.runtime_approval_policy_override = selection.approval_policy.map(RuntimeApprovalPolicyOverride::Explicit);
             self.runtime_permission_profile_override = Some(RuntimePermissionProfileOverride::from_config(&config));
             self.sync_active_thread_permission_settings_to_cached_session().await;
-            self.insert_history_cell(tui, Box::new(history_cell::new_info_event(format!("Permissions updated to {}", selection.display_label), /*hint*/ None)));
+            self.insert_history_cell(tui, Box::new(history_cell::new_info_event(tr_with(
+                current(),
+                "Permissions updated to {0}",
+                &[&selection.display_label],
+            )
+            .to_string(), /*hint*/ None)));
             Ok(())
         }.await;
         self.chat_widget.complete_permission_shortcut(thread_id);
@@ -66,9 +77,14 @@ impl App {
             let error = crate::config_update::format_config_error(&err);
             self.insert_history_cell(
                 tui,
-                Box::new(history_cell::new_error_event(format!(
-                    "Failed to update permissions: {error}"
-                ))),
+                Box::new(history_cell::new_error_event(
+                    tr_with(
+                        current(),
+                        "Failed to update permissions: {0}",
+                        &[&error.to_string()],
+                    )
+                    .to_string(),
+                )),
             );
         }
     }

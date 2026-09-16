@@ -6431,6 +6431,28 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Permanently delete session '{0}' ({1})?",
         "永久删除会话{0}（{1}）？",
     ),
+    // Misalignment review overlay, the automatic model-switch banner and the
+    // permission-shortcut result messages. The banner is assembled as
+    // `{prefix} {model}{suffix}` in Rust, so the space after the prefix stays a
+    // format-string detail; `app server` and `/permissions` keep their spelling.
+    ("Continuation request (quoted)", "继续请求（引用）"),
+    ("What we detected", "我们检测到的内容"),
+    (
+        "Couldn’t continue this chat. Review its latest status before trying again.",
+        "无法继续此对话。请先查看其最新状态后再试。",
+    ),
+    ("Automatically switched to", "已自动切换到"),
+    (" due to usage limits.", "，因为已达用量上限。"),
+    ("Automatically switched back to", "已自动切回"),
+    (
+        " because ordinary usage is available again.",
+        "，因为常规用量已恢复。",
+    ),
+    (
+        "this app server does not support confirmed permission changes; use /permissions",
+        "此app server不支持经确认的权限变更；请使用/permissions",
+    ),
+    ("Failed to update permissions: {0}", "更新权限失败：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

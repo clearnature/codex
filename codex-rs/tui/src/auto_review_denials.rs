@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::VecDeque;
 
 use codex_protocol::approvals::GuardianAssessmentAction;
@@ -55,17 +58,29 @@ pub(crate) fn action_summary(action: &GuardianAssessmentAction) -> String {
                 &format!("{stdin:?}"),
                 /*max_graphemes*/ 80,
             );
-            format!("send input to terminal {process_id}: {stdin}")
+            tr_with(
+                current(),
+                "send input to terminal {0}: {1}",
+                &[&process_id.to_string(), &stdin],
+            )
         }
         GuardianAssessmentAction::ApplyPatch { files, .. } => {
             if files.len() == 1 {
-                format!("apply_patch touching {}", files[0].render_for_ui())
+                tr_with(
+                    current(),
+                    "apply_patch touching {0}",
+                    &[&files[0].render_for_ui().to_string()],
+                )
             } else {
-                format!("apply_patch touching {} files", files.len())
+                tr_with(
+                    current(),
+                    "apply_patch touching {0} files",
+                    &[&files.len().to_string()],
+                )
             }
         }
         GuardianAssessmentAction::NetworkAccess { target, .. } => {
-            format!("network access to {target}")
+            tr_with(current(), "network access to {0}", &[target])
         }
         GuardianAssessmentAction::McpToolCall {
             server,
@@ -74,12 +89,12 @@ pub(crate) fn action_summary(action: &GuardianAssessmentAction) -> String {
             ..
         } => {
             let label = connector_name.as_deref().unwrap_or(server.as_str());
-            format!("MCP {tool_name} on {label}")
+            tr_with(current(), "MCP {0} on {1}", &[tool_name, &label])
         }
         GuardianAssessmentAction::RequestPermissions { reason, .. } => reason
             .as_deref()
-            .map(|reason| format!("permission request: {reason}"))
-            .unwrap_or_else(|| "permission request".to_string()),
+            .map(|reason| tr_with(current(), "permission request: {0}", &[reason]))
+            .unwrap_or_else(|| tr(current(), "permission request").to_string()),
     }
 }
 

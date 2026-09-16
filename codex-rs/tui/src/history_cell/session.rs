@@ -90,7 +90,7 @@ impl HistoryCell for TooltipHistoryCell {
             .max(1);
         let mut lines: Vec<Line<'static>> = Vec::new();
         append_markdown(
-            &format!("**Tip:** {}", self.tip),
+            &tr_with(current(), "**Tip:** {0}", &[self.tip.as_str()]),
             Some(wrap_width),
             Some(self.cwd.as_path()),
             &mut lines,
@@ -156,34 +156,45 @@ pub(crate) fn new_session_info(
     if is_first_event {
         // Help lines below the header (new copy and list)
         let help_lines: Vec<Line<'static>> = vec![
-            "  To get started, describe a task or try one of these commands:"
-                .dim()
-                .into(),
+            tr(
+                current(),
+                "  To get started, describe a task or try one of these commands:",
+            )
+            .dim()
+            .into(),
             Line::from(""),
             Line::from(vec![
                 "  ".into(),
                 "/init".into(),
-                " - create an AGENTS.md file with instructions for Codex".dim(),
+                tr(
+                    current(),
+                    " - create an AGENTS.md file with instructions for Codex",
+                )
+                .dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/status".into(),
-                " - show current session configuration".dim(),
+                tr(current(), " - show current session configuration").dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                " - choose what Codex is allowed to do".dim(),
+                tr(current(), " - choose what Codex is allowed to do").dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/model".into(),
-                " - choose what model and reasoning effort to use".dim(),
+                tr(
+                    current(),
+                    " - choose what model and reasoning effort to use",
+                )
+                .dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/review".into(),
-                " - review any changes and find issues".dim(),
+                tr(current(), " - review any changes and find issues").dim(),
             ]),
         ];
 
@@ -334,13 +345,13 @@ impl HistoryCell for SessionHeaderHistoryCell {
         ];
 
         const CHANGE_MODEL_HINT_COMMAND: &str = "/model";
-        const CHANGE_MODEL_HINT_EXPLANATION: &str = " to change";
-        const DIR_LABEL: &str = "directory:";
-        const PERMISSIONS_LABEL: &str = "permissions:";
+        let change_model_hint_explanation = tr(current(), " to change");
+        let dir_label = tr(current(), "directory:");
+        let permissions_label = tr(current(), "permissions:");
         let label_width = if self.yolo_mode {
-            DIR_LABEL.len().max(PERMISSIONS_LABEL.len())
+            dir_label.len().max(permissions_label.len())
         } else {
-            DIR_LABEL.len()
+            dir_label.len()
         };
 
         let model_label = format!(
@@ -364,11 +375,11 @@ impl HistoryCell for SessionHeaderHistoryCell {
             }
             spans.push("   ".dim());
             spans.push(CHANGE_MODEL_HINT_COMMAND.cyan());
-            spans.push(CHANGE_MODEL_HINT_EXPLANATION.dim());
+            spans.push(change_model_hint_explanation.dim());
             spans
         };
 
-        let dir_label = format!("{DIR_LABEL:<label_width$}");
+        let dir_label = format!("{dir_label:<label_width$}");
         let dir_prefix = format!("{dir_label} ");
         let dir_prefix_width = display_width(dir_prefix.as_str());
         let dir_max_width = inner_width.saturating_sub(dir_prefix_width);
@@ -383,7 +394,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
         ];
 
         if self.yolo_mode {
-            let permissions_label = format!("{PERMISSIONS_LABEL:<label_width$}");
+            let permissions_label = format!("{permissions_label:<label_width$}");
             lines.push(make_row(vec![
                 Span::from(format!("{permissions_label} ")).dim(),
                 tr(current(), "YOLO mode").magenta().bold(),
@@ -404,16 +415,21 @@ impl HistoryCell for SessionHeaderHistoryCell {
                 "OpenAI Codex (v{0})",
                 &[&self.version.to_string()],
             )),
-            Line::from(format!(
-                "model: {}{}",
-                self.model,
-                self.reasoning_label()
-                    .map(|reasoning| format!(" {reasoning}"))
-                    .unwrap_or_default()
+            Line::from(tr_with(
+                current(),
+                "model: {0}{1}",
+                &[
+                    self.model.as_str(),
+                    self.reasoning_label()
+                        .map(|reasoning| format!(" {reasoning}"))
+                        .unwrap_or_default()
+                        .as_str(),
+                ],
             )),
-            Line::from(format!(
-                "directory: {}",
-                self.format_directory(/*max_width*/ None)
+            Line::from(tr_with(
+                current(),
+                "directory: {0}",
+                &[&self.format_directory(/*max_width*/ None)],
             )),
         ];
         if self.yolo_mode {

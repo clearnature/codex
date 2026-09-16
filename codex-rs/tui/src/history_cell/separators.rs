@@ -1,6 +1,9 @@
 //! Turn separators and runtime-metrics labels for transcript history.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[derive(Debug)]
 /// A visual divider between turns, optionally showing how long the assistant "worked for".
@@ -32,7 +35,11 @@ impl HistoryCell for FinalMessageSeparator {
             .filter(|seconds| *seconds > 60)
             .map(crate::status_indicator_widget::fmt_elapsed_compact)
         {
-            label_parts.push(format!("Worked for {elapsed_seconds}"));
+            label_parts.push(tr_with(
+                current(),
+                "Worked for {0}",
+                &[&elapsed_seconds.to_string()],
+            ));
         }
         if let Some(metrics_label) = self.runtime_metrics.and_then(runtime_metrics_label) {
             label_parts.push(metrics_label);
@@ -60,7 +67,11 @@ impl HistoryCell for FinalMessageSeparator {
             .filter(|seconds| *seconds > 60)
             .map(crate::status_indicator_widget::fmt_elapsed_compact)
         {
-            label_parts.push(format!("Worked for {elapsed_seconds}"));
+            label_parts.push(tr_with(
+                current(),
+                "Worked for {0}",
+                &[&elapsed_seconds.to_string()],
+            ));
         }
         if let Some(metrics_label) = self.runtime_metrics.and_then(runtime_metrics_label) {
             label_parts.push(metrics_label);
@@ -77,31 +88,61 @@ pub(crate) fn runtime_metrics_label(summary: RuntimeMetricsSummary) -> Option<St
     let mut parts = Vec::new();
     if summary.tool_calls.count > 0 {
         let duration = format_duration_ms(summary.tool_calls.duration_ms);
-        let calls = pluralize(summary.tool_calls.count, "call", "calls");
-        parts.push(format!(
-            "Local tools: {} {calls} ({duration})",
-            summary.tool_calls.count
+        let calls = pluralize(
+            summary.tool_calls.count,
+            tr(current(), "call"),
+            tr(current(), "calls"),
+        );
+        parts.push(tr_with(
+            current(),
+            "Local tools: {0} {1} ({2})",
+            &[
+                &summary.tool_calls.count.to_string(),
+                calls,
+                duration.as_str(),
+            ],
         ));
     }
     if summary.api_calls.count > 0 {
         let duration = format_duration_ms(summary.api_calls.duration_ms);
-        let calls = pluralize(summary.api_calls.count, "call", "calls");
-        parts.push(format!(
-            "Inference: {} {calls} ({duration})",
-            summary.api_calls.count
+        let calls = pluralize(
+            summary.api_calls.count,
+            tr(current(), "call"),
+            tr(current(), "calls"),
+        );
+        parts.push(tr_with(
+            current(),
+            "Inference: {0} {1} ({2})",
+            &[
+                &summary.api_calls.count.to_string(),
+                calls,
+                duration.as_str(),
+            ],
         ));
     }
     if summary.websocket_calls.count > 0 {
         let duration = format_duration_ms(summary.websocket_calls.duration_ms);
-        parts.push(format!(
-            "WebSocket: {} events send ({duration})",
-            summary.websocket_calls.count
+        parts.push(tr_with(
+            current(),
+            "WebSocket: {0} events send ({1})",
+            &[
+                &summary.websocket_calls.count.to_string(),
+                duration.as_str(),
+            ],
         ));
     }
     if summary.streaming_events.count > 0 {
         let duration = format_duration_ms(summary.streaming_events.duration_ms);
-        let stream_label = pluralize(summary.streaming_events.count, "Stream", "Streams");
-        let events = pluralize(summary.streaming_events.count, "event", "events");
+        let stream_label = pluralize(
+            summary.streaming_events.count,
+            tr(current(), "Stream"),
+            tr(current(), "Streams"),
+        );
+        let events = pluralize(
+            summary.streaming_events.count,
+            tr(current(), "event"),
+            tr(current(), "events"),
+        );
         parts.push(format!(
             "{stream_label}: {} {events} ({duration})",
             summary.streaming_events.count
@@ -109,18 +150,30 @@ pub(crate) fn runtime_metrics_label(summary: RuntimeMetricsSummary) -> Option<St
     }
     if summary.websocket_events.count > 0 {
         let duration = format_duration_ms(summary.websocket_events.duration_ms);
-        parts.push(format!(
-            "{} events received ({duration})",
-            summary.websocket_events.count
+        parts.push(tr_with(
+            current(),
+            "{0} events received ({1})",
+            &[
+                &summary.websocket_events.count.to_string(),
+                duration.as_str(),
+            ],
         ));
     }
     if summary.responses_api_overhead_ms > 0 {
         let duration = format_duration_ms(summary.responses_api_overhead_ms);
-        parts.push(format!("Responses API overhead: {duration}"));
+        parts.push(tr_with(
+            current(),
+            "Responses API overhead: {0}",
+            &[duration.as_str()],
+        ));
     }
     if summary.responses_api_inference_time_ms > 0 {
         let duration = format_duration_ms(summary.responses_api_inference_time_ms);
-        parts.push(format!("Responses API inference: {duration}"));
+        parts.push(tr_with(
+            current(),
+            "Responses API inference: {0}",
+            &[duration.as_str()],
+        ));
     }
     if summary.responses_api_engine_iapi_ttft_ms > 0
         || summary.responses_api_engine_service_ttft_ms > 0
@@ -128,13 +181,13 @@ pub(crate) fn runtime_metrics_label(summary: RuntimeMetricsSummary) -> Option<St
         let mut ttft_parts = Vec::new();
         if summary.responses_api_engine_iapi_ttft_ms > 0 {
             let duration = format_duration_ms(summary.responses_api_engine_iapi_ttft_ms);
-            ttft_parts.push(format!("{duration} (iapi)"));
+            ttft_parts.push(tr_with(current(), "{0} (iapi)", &[duration.as_str()]));
         }
         if summary.responses_api_engine_service_ttft_ms > 0 {
             let duration = format_duration_ms(summary.responses_api_engine_service_ttft_ms);
-            ttft_parts.push(format!("{duration} (service)"));
+            ttft_parts.push(tr_with(current(), "{0} (service)", &[duration.as_str()]));
         }
-        parts.push(format!("TTFT: {}", ttft_parts.join(" ")));
+        parts.push(tr_with(current(), "TTFT: {0}", &[&ttft_parts.join(" ")]));
     }
     if summary.responses_api_engine_iapi_tbt_ms > 0.0
         || summary.responses_api_engine_service_tbt_ms > 0.0
@@ -143,14 +196,14 @@ pub(crate) fn runtime_metrics_label(summary: RuntimeMetricsSummary) -> Option<St
         if summary.responses_api_engine_iapi_tbt_ms > 0.0 {
             let duration =
                 format_duration_ms(summary.responses_api_engine_iapi_tbt_ms.round() as u64);
-            tbt_parts.push(format!("{duration} (iapi)"));
+            tbt_parts.push(tr_with(current(), "{0} (iapi)", &[duration.as_str()]));
         }
         if summary.responses_api_engine_service_tbt_ms > 0.0 {
             let duration =
                 format_duration_ms(summary.responses_api_engine_service_tbt_ms.round() as u64);
-            tbt_parts.push(format!("{duration} (service)"));
+            tbt_parts.push(tr_with(current(), "{0} (service)", &[duration.as_str()]));
         }
-        parts.push(format!("TBT: {}", tbt_parts.join(" ")));
+        parts.push(tr_with(current(), "TBT: {0}", &[&tbt_parts.join(" ")]));
     }
     if parts.is_empty() {
         None

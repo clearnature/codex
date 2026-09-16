@@ -3504,6 +3504,44 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to switch into side conversation {0}.",
         "切换到侧边会话{0}失败。",
     ),
+    ("missing spritesheet {0}", "缺少精灵图{0}"),
+    ("CODEX_HOME is not available", "CODEX_HOME不可用"),
+    ("unknown pet {0}", "未知的宠物{0}"),
+    ("pet path {0}", "宠物路径{0}"),
+    (
+        "pet json path has no containing directory",
+        "宠物json路径没有所在目录",
+    ),
+    ("resolve {0}", "解析路径{0}"),
+    (
+        "missing pet.json or avatar.json in {0}",
+        "在{0}中缺少pet.json或avatar.json",
+    ),
+    ("parse {0}", "解析{0}"),
+    (
+        "spritesheet path must stay inside {0}",
+        "精灵图路径必须位于{0}内",
+    ),
+    (
+        "pet frame dimensions and grid counts must be non-zero",
+        "宠物帧尺寸与网格数量必须为非零",
+    ),
+    ("pet frame grid width overflow", "宠物帧网格宽度溢出"),
+    ("pet frame grid height overflow", "宠物帧网格高度溢出"),
+    ("pet frame count overflow", "宠物帧数量溢出"),
+    (
+        "pet frame count does not fit usize",
+        "宠物帧数量超出usize范围",
+    ),
+    (
+        "pet frame count {0} exceeds maximum {1}",
+        "宠物帧数量{0}超过上限{1}",
+    ),
+    ("HOME is not set", "未设置HOME"),
+    (
+        "animation {0} must include at least one frame",
+        "动画{0}必须至少包含一帧",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

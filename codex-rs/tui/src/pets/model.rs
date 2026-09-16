@@ -10,6 +10,9 @@
 //! Asset acquisition is intentionally out of scope here; callers must ensure a
 //! built-in pet has been downloaded before asking the model layer to load it.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Component;
@@ -162,10 +165,14 @@ struct AnimationSpec {
 }
 
 fn load_builtin_pet(pet: catalog::BuiltinPet, codex_home: Option<&Path>) -> Result<Pet> {
-    let codex_home = codex_home.context("CODEX_HOME is not available")?;
+    let codex_home = codex_home.context(tr(current(), "CODEX_HOME is not available"))?;
     let spritesheet_path = super::builtin_spritesheet_path(codex_home, pet.spritesheet_file);
     if !spritesheet_path.exists() {
-        bail!("missing spritesheet {}", spritesheet_path.display());
+        bail!(tr_with(
+            current(),
+            "missing spritesheet {0}",
+            &[&spritesheet_path.display().to_string()]
+        ));
     }
 
     Ok(Pet {
@@ -183,7 +190,7 @@ fn load_builtin_pet(pet: catalog::BuiltinPet, codex_home: Option<&Path>) -> Resu
 }
 
 fn load_custom_pet(value: &str, codex_home: Option<&Path>) -> Result<Pet> {
-    let codex_home = codex_home.context("CODEX_HOME is not available")?;
+    let codex_home = codex_home.context(tr(current(), "CODEX_HOME is not available"))?;
     let pet_dir = codex_home.join("pets").join(value);
     if pet_dir.join("pet.json").is_file() {
         return load_pet_manifest(&pet_dir, "pet.json", value, &custom_pet_cache_id(value));
@@ -199,28 +206,33 @@ fn load_custom_pet(value: &str, codex_home: Option<&Path>) -> Result<Pet> {
         );
     }
 
-    bail!("unknown pet {value}")
+    bail!(tr_with(current(), "unknown pet {0}", &[&value]));
 }
 
 fn load_pet_path(value: &str) -> Result<Pet> {
     let path = expand_path(value)?;
-    let metadata = fs::metadata(&path).with_context(|| format!("pet path {}", path.display()))?;
+    let metadata = fs::metadata(&path)
+        .with_context(|| tr_with(current(), "pet path {0}", &[&path.display().to_string()]))?;
     let dir = if metadata.is_dir() {
         path
     } else {
         path.parent()
-            .context("pet json path has no containing directory")?
+            .context(tr(current(), "pet json path has no containing directory"))?
             .to_path_buf()
     };
     let pet_dir = dir
         .canonicalize()
-        .with_context(|| format!("resolve {}", dir.display()))?;
+        .with_context(|| tr_with(current(), "resolve {0}", &[&dir.display().to_string()]))?;
     let manifest_file = if pet_dir.join("pet.json").is_file() {
         "pet.json"
     } else if pet_dir.join("avatar.json").is_file() {
         "avatar.json"
     } else {
-        bail!("missing pet.json or avatar.json in {}", pet_dir.display());
+        bail!(tr_with(
+            current(),
+            "missing pet.json or avatar.json in {0}",
+            &[&pet_dir.display().to_string()]
+        ));
     };
     let fallback_id = pet_dir
         .file_name()
@@ -238,8 +250,13 @@ fn load_pet_manifest(
     let config_path = pet_dir.join(manifest_file);
     let raw = fs::read_to_string(&config_path)
         .with_context(|| format!("read {}", config_path.display()))?;
-    let file: PetFile =
-        serde_json::from_str(&raw).with_context(|| format!("parse {}", config_path.display()))?;
+    let file: PetFile = serde_json::from_str(&raw).with_context(|| {
+        tr_with(
+            current(),
+            "parse {0}",
+            &[&config_path.display().to_string()],
+        )
+    })?;
 
     let manifest_id = file
         .id
@@ -272,7 +289,11 @@ fn load_pet_manifest(
             .unwrap_or("spritesheet.webp"),
     )?;
     if !spritesheet_path.exists() {
-        bail!("missing spritesheet {}", spritesheet_path.display());
+        bail!(tr_with(
+            current(),
+            "missing spritesheet {0}",
+            &[&spritesheet_path.display().to_string()]
+        ));
     }
     let (spritesheet_width, spritesheet_height) =
         validate_app_spritesheet_dimensions(&spritesheet_path)?;
@@ -306,7 +327,11 @@ fn resolve_spritesheet_path(pet_dir: &Path, spritesheet_path: &str) -> Result<Pa
             .components()
             .any(|component| matches!(component, Component::ParentDir | Component::Prefix(_)))
     {
-        bail!("spritesheet path must stay inside {}", pet_dir.display());
+        bail!(tr_with(
+            current(),
+            "spritesheet path must stay inside {0}",
+            &[&pet_dir.display().to_string()]
+        ));
     }
     Ok(pet_dir.join(path))
 }
@@ -330,17 +355,20 @@ fn validate_frame_spec(
     spritesheet_height: u32,
 ) -> Result<usize> {
     if frame.width == 0 || frame.height == 0 || frame.columns == 0 || frame.rows == 0 {
-        bail!("pet frame dimensions and grid counts must be non-zero");
+        bail!(tr(
+            current(),
+            "pet frame dimensions and grid counts must be non-zero"
+        ));
     }
 
     let total_width = frame
         .width
         .checked_mul(frame.columns)
-        .context("pet frame grid width overflow")?;
+        .context(tr(current(), "pet frame grid width overflow"))?;
     let total_height = frame
         .height
         .checked_mul(frame.rows)
-        .context("pet frame grid height overflow")?;
+        .context(tr(current(), "pet frame grid height overflow"))?;
     if total_width != spritesheet_width || total_height != spritesheet_height {
         bail!(
             "pet frame grid must cover spritesheet exactly: expected {spritesheet_width}x{spritesheet_height}, got {total_width}x{total_height}"
@@ -350,10 +378,15 @@ fn validate_frame_spec(
     let frame_count = frame
         .columns
         .checked_mul(frame.rows)
-        .context("pet frame count overflow")?;
-    let frame_count = usize::try_from(frame_count).context("pet frame count does not fit usize")?;
+        .context(tr(current(), "pet frame count overflow"))?;
+    let frame_count = usize::try_from(frame_count)
+        .context(tr(current(), "pet frame count does not fit usize"))?;
     if frame_count > MAX_PET_FRAMES {
-        bail!("pet frame count {frame_count} exceeds maximum {MAX_PET_FRAMES}");
+        bail!(tr_with(
+            current(),
+            "pet frame count {0} exceeds maximum {1}",
+            &[&frame_count.to_string(), &MAX_PET_FRAMES.to_string()]
+        ));
     }
     Ok(frame_count)
 }
@@ -375,7 +408,7 @@ fn path_like(value: &str) -> bool {
 
 fn expand_path(value: &str) -> Result<PathBuf> {
     if value == "~" || value.starts_with("~/") {
-        let home = std::env::var_os("HOME").context("HOME is not set")?;
+        let home = std::env::var_os("HOME").context(tr(current(), "HOME is not set"))?;
         if value == "~" {
             return Ok(PathBuf::from(home));
         }
@@ -397,7 +430,11 @@ fn load_animations(
 
     for (name, spec) in specs {
         if spec.frames.is_empty() {
-            bail!("animation {name} must include at least one frame");
+            bail!(tr_with(
+                current(),
+                "animation {0} must include at least one frame",
+                &[&name]
+            ));
         }
         for sprite_index in &spec.frames {
             if *sprite_index >= frame_count {
@@ -457,7 +494,11 @@ fn validate_animation_indices(
 ) -> Result<()> {
     for (name, animation) in animations {
         if animation.frames.is_empty() {
-            bail!("animation {name} must include at least one frame");
+            bail!(tr_with(
+                current(),
+                "animation {0} must include at least one frame",
+                &[&name]
+            ));
         }
         for frame in &animation.frames {
             if frame.sprite_index >= frame_count {

@@ -237,7 +237,7 @@ pub fn new_approval_decision_cell(
                     vec![
                         actor.subject().into(),
                         "canceled".bold(),
-                        " the request to run ".into(),
+                        tr(current(), " the request to run ").into(),
                         Span::from(snippet).dim(),
                     ]
                 } else {
@@ -254,7 +254,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     actor.subject().into(),
                     "canceled".bold(),
-                    " the request for codex network access to ".into(),
+                    tr(current(), " the request for codex network access to ").into(),
                     Span::from(target).dim(),
                 ],
             ),
@@ -278,7 +278,7 @@ impl ApprovalDecisionActor {
     fn subject(self) -> &'static str {
         match self {
             Self::User => "You ",
-            Self::Guardian => "Auto-reviewer ",
+            Self::Guardian => tr(current(), "Auto-reviewer "),
         }
     }
 }
@@ -290,10 +290,10 @@ pub fn new_guardian_denied_patch_request(files: Vec<String>) -> Box<dyn HistoryC
         " for codex to apply ".into(),
     ];
     if files.len() == 1 {
-        summary.push("a patch touching ".into());
+        summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files[0].clone()).dim());
     } else {
-        summary.push("a patch touching ".into());
+        summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files.len().to_string()).dim());
         summary.push(" files".into());
     }
@@ -322,10 +322,10 @@ pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn Histo
         " before codex could apply ".into(),
     ];
     if files.len() == 1 {
-        summary.push("a patch touching ".into());
+        summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files[0].clone()).dim());
     } else {
-        summary.push("a patch touching ".into());
+        summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files.len().to_string()).dim());
         summary.push(" files".into());
     }

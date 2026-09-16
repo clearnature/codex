@@ -6,6 +6,9 @@
 use crate::exec_cell::TOOL_CALL_MAX_LINES;
 use crate::text_formatting::format_and_truncate_tool_result;
 use base64::Engine;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::mcp::CallToolResult;
 use image::DynamicImage;
 use image::ImageReader;
@@ -73,24 +76,24 @@ impl McpToolResult {
                         if !has_image {
                             has_image = decode_mcp_image(&image.data).is_some();
                         }
-                        McpContentDisplay::Summary("<image content>".into())
+                        McpContentDisplay::Summary(tr(current(), "<image content>").into())
                     }
                     Ok(ContentBlock::Audio(_)) => {
-                        McpContentDisplay::Summary("<audio content>".into())
+                        McpContentDisplay::Summary(tr(current(), "<audio content>").into())
                     }
                     Ok(ContentBlock::Resource(resource)) => {
                         let summary = match resource.resource {
                             ResourceContents::TextResourceContents { uri, .. }
                             | ResourceContents::BlobResourceContents { uri, .. } => {
-                                format!("embedded resource: {uri}").into()
+                                tr_with(current(), "embedded resource: {0}", &[uri.as_str()]).into()
                             }
-                            _ => "<unknown embedded resource>".into(),
+                            _ => tr(current(), "<unknown embedded resource>").into(),
                         };
                         McpContentDisplay::Summary(summary)
                     }
-                    Ok(ContentBlock::ResourceLink(link)) => {
-                        McpContentDisplay::Summary(format!("link: {}", link.uri).into())
-                    }
+                    Ok(ContentBlock::ResourceLink(link)) => McpContentDisplay::Summary(
+                        tr_with(current(), "link: {0}", &[link.uri.as_str()]).into(),
+                    ),
                     Ok(_) | Err(_) => McpContentDisplay::Json(block.to_string()),
                 };
                 McpContentBlock {

@@ -212,6 +212,9 @@ use crate::key_hint::ShortcutHint;
 use crate::key_hint::has_ctrl_or_alt;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::ui_consts::FOOTER_INDENT_COLS;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_message_history::HistoryBatchCursor;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -1691,7 +1694,8 @@ impl ChatComposer {
 
     pub(crate) fn set_parent_owned_thread(&mut self) {
         self.blocks_direct_input = true;
-        self.placeholder_text = "Viewing sub-agent — direct input is disabled".to_string();
+        self.placeholder_text =
+            tr(current(), "Viewing sub-agent — direct input is disabled").to_string();
     }
 
     /// Move the cursor to the end of the current text buffer.
@@ -1970,7 +1974,11 @@ impl ChatComposer {
     }
 
     fn next_large_paste_placeholder(&self, char_count: usize) -> String {
-        let base = format!("[Pasted Content {char_count} chars]");
+        let base = tr_with(
+            current(),
+            "[Pasted Content {0} chars]",
+            &[&char_count.to_string()],
+        );
         let prefix = format!("{base} #");
         let mut max_suffix = 0usize;
 
@@ -3087,8 +3095,10 @@ impl ChatComposer {
                 .slash_input()
                 .validate_submission(&text, input_starts_with_space)
         {
-            let message = format!(
-                r#"Unrecognized command '/{name}'. Type "/" for a list of supported commands."#
+            let message = tr_with(
+                current(),
+                "Unrecognized command '/{0}'. Type \"/\" for a list of supported commands.",
+                &[name.as_str()],
             );
             self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
                 history_cell::new_info_event(message, /*hint*/ None),
@@ -3126,8 +3136,12 @@ impl ChatComposer {
             if self.footer.hint_override.is_some() {
                 self.show_footer_flash(
                     Line::from(
-                        format!("Message too long; limit {MAX_USER_INPUT_TEXT_CHARS} characters")
-                            .red(),
+                        tr_with(
+                            current(),
+                            "Message too long; limit {0} characters",
+                            &[&MAX_USER_INPUT_TEXT_CHARS.to_string()],
+                        )
+                        .red(),
                     ),
                     Duration::from_secs(5),
                 );
@@ -3432,9 +3446,10 @@ impl ChatComposer {
         if !self.is_task_running || command.available_during_task() {
             return false;
         }
-        let message = format!(
-            "'/{}' is disabled while a task is in progress.",
-            command.command()
+        let message = tr_with(
+            current(),
+            "'/{0}' is disabled while a task is in progress.",
+            &[&command.command().to_string()],
         );
         self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
             history_cell::new_error_event(message),
@@ -3618,7 +3633,7 @@ impl ChatComposer {
     fn shell_mode_footer_line(&self) -> Option<Line<'static>> {
         self.is_bang_shell_command()
             .then_some(())
-            .map(|_| Line::from(vec![Span::from("Shell mode").light_red()]))
+            .map(|_| Line::from(vec![Span::from(tr(current(), "Shell mode")).light_red()]))
     }
 
     /// Applies any due `PasteBurst` flush at time `now`.
@@ -4304,24 +4319,28 @@ impl ChatComposer {
                 if !plugin.mcp_server_names.is_empty() {
                     let mcp_server_count = plugin.mcp_server_names.len();
                     capability_labels.push(if mcp_server_count == 1 {
-                        "1 MCP server".to_string()
+                        tr(current(), "1 MCP server").to_string()
                     } else {
-                        format!("{mcp_server_count} MCP servers")
+                        tr_with(
+                            current(),
+                            "{0} MCP servers",
+                            &[&mcp_server_count.to_string()],
+                        )
                     });
                 }
                 if !plugin.app_connector_ids.is_empty() {
                     let app_count = plugin.app_connector_ids.len();
                     capability_labels.push(if app_count == 1 {
-                        "1 app".to_string()
+                        tr(current(), "1 app").to_string()
                     } else {
-                        format!("{app_count} apps")
+                        tr_with(current(), "{0} apps", &[&app_count.to_string()])
                     });
                 }
                 let description = plugin.description.clone().or_else(|| {
                     Some(if capability_labels.is_empty() {
-                        "Plugin".to_string()
+                        tr(current(), "Plugin").to_string()
                     } else {
-                        format!("Plugin · {}", capability_labels.join(" · "))
+                        tr_with(current(), "Plugin · {0}", &[&capability_labels.join(" · ")])
                     })
                 });
                 let mut search_terms = vec![plugin_name.to_string(), plugin.config_name.clone()];
@@ -4399,7 +4418,10 @@ impl ChatComposer {
     }
 
     pub(crate) fn show_shutdown_in_progress(&mut self) {
-        self.set_input_enabled(/*enabled*/ false, Some("Shutting down...".to_string()));
+        self.set_input_enabled(
+            /*enabled*/ false,
+            Some(tr(current(), "Shutting down...").to_string()),
+        );
         self.footer.quit_shortcut_expires_at = None;
         self.footer.mode = FooterMode::ComposerEmpty;
         self.footer.hint_override = Some(Vec::new());

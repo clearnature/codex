@@ -114,6 +114,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.",
         "侧会话中不可用'/delete'。请先按Ctrl+C返回主线程。",
     ),
+    ("1 MCP server", "1个MCP服务器"),
     ("1 action.", "1个操作。"),
     (
         "Actions without an active shortcut.",
@@ -123,6 +124,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Bring over supported setup from another coding agent.",
         "从另一个编码代理迁移受支持的配置。",
     ),
+    ("1 app", "1个应用"),
     ("<unspecified>", "<未指定>"),
     ("A balanced stack for deep work", "深度工作用的平衡堆栈"),
     (
@@ -489,6 +491,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "管理Codex的外部MCP服务器。",
     ),
     ("Manage login", "管理登录。"),
+    ("Message too long; limit {0} characters", "消息过长；上限{0}个字符"),
     ("Needs input", "需要输入"),
     ("New task", "新建任务"),
     ("No agents completed yet", "还没有代理完成"),
@@ -547,6 +550,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Permanently delete a saved session by id or session name",
         "按id或会话名永久删除已保存的会话。",
     ),
+    ("Plugin · {0}", "插件 · {0}"),
     ("Preview unavailable", "预览不可用"),
     (
         "Queue a message for an existing session",
@@ -622,6 +626,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Session ID: {0}", "会话ID：{0}"),
     ("Session archived: {0}", "会话已归档：{0}"),
     ("Session runtime:", "会话运行时："),
+    ("Shell mode", "Shell模式"),
     ("Ship it", "发布"),
     ("Shutdown", "已停止"),
     (
@@ -632,6 +637,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
         "请用ChatGPT账号登录；API key认证无法加载远程插件目录。",
     ),
+    ("Shutting down...", "正在关闭…"),
     ("Small green shoots for new ideas", "新想法的嫩绿幼苗"),
     ("Spawned", "已启动"),
     ("Spawned an agent", "已启动一个代理"),
@@ -727,6 +733,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "在以下线程中使用记忆。在下一个线程生效。",
     ),
     ("Viewed {0}", "已查看{0}"),
+    ("Viewing sub-agent — direct input is disabled", "正在查看子代理 — 已禁用直接输入"),
     ("Waited for an agent", "等待了一个代理"),
     ("Waiting for", "正在等待"),
     ("Waiting for agents", "正在等待代理"),
@@ -767,6 +774,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "[experimental] Run the app server or related tooling",
         "[实验性]运行app server或相关工具。",
     ),
+    ("[Pasted Content {0} chars]", "[粘贴内容 {0} 字符]"),
     ("\n\nStartup warnings:\n{0}", "\n\n启动警告：\n{0}"),
     ("authentication required", "需要认证"),
     (
@@ -978,7 +986,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0}   {1} 工作中   {2} 就绪",
     ),
     ("{0} ({1} unanswered)", "{0}（{1}个未回答）"),
+    ("{0} MCP servers", "{0}个MCP服务器"),
     ("{0} actions.", "{0}个操作。"),
+    ("{0} apps", "{0}个应用"),
     ("{0} credits", "{0} 额度"),
     ("{0} need input", "{0} 需要输入"),
     ("{0} of {1}", "{0}/{1}"),

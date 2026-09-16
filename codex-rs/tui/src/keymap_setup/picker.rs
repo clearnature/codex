@@ -284,15 +284,18 @@ fn build_keymap_picker_params_for_action(
         .collect::<Vec<_>>();
     tabs.push(SelectionTab {
         id: KEYMAP_UNBOUND_TAB_ID.to_string(),
-        label: format!("Unbound ({unbound_count})"),
+        label: tr_with(current(), "Unbound ({0})", &[&unbound_count.to_string()]).to_string(),
         header: keymap_header(
-            "Actions without an active shortcut.".to_string(),
+            tr(current(), "Actions without an active shortcut.").to_string(),
             action_count_line(unbound_count),
         ),
         items: keymap_selection_items(
             unbound_rows,
-            "No unbound shortcuts",
-            "Every configurable action currently has a shortcut.",
+            tr(current(), "No unbound shortcuts"),
+            tr(
+                current(),
+                "Every configurable action currently has a shortcut.",
+            ),
         ),
     });
 
@@ -308,8 +311,11 @@ fn build_keymap_picker_params_for_action(
             header: keymap_header(tab.description.to_string(), action_count_line(count)),
             items: keymap_selection_items(
                 tab_rows,
-                "No shortcuts in this group",
-                "No configurable actions are available in this group.",
+                tr(current(), "No shortcuts in this group"),
+                tr(
+                    current(),
+                    "No configurable actions are available in this group.",
+                ),
             ),
         });
     }
@@ -323,7 +329,7 @@ fn build_keymap_picker_params_for_action(
         tabs,
         initial_tab_id: Some(KEYMAP_ALL_TAB_ID.to_string()),
         is_searchable: true,
-        search_placeholder: Some("Type to search shortcuts".to_string()),
+        search_placeholder: Some(tr(current(), "Type to search shortcuts").to_string()),
         col_width_mode: ColumnWidthMode::AutoAllRows,
         row_display: SelectionRowDisplay::SingleLine,
         name_column_width,
@@ -335,19 +341,19 @@ fn build_keymap_picker_params_for_action(
 fn keymap_debug_tab() -> SelectionTab {
     SelectionTab {
         id: KEYMAP_DEBUG_TAB_ID.to_string(),
-        label: "Debug".to_string(),
+        label: tr(current(), "Debug").to_string(),
         header: keymap_header(
-            "Inspect keypresses from your terminal.".to_string(),
-            "See the key Codex detects and any shortcuts assigned to it.".to_string(),
+            tr(current(), "Inspect keypresses from your terminal.").to_string(),
+            tr(current(), "See the key Codex detects and any shortcuts assigned to it.").to_string(),
         ),
         items: vec![SelectionItem {
-            name: "Inspect keypresses".to_string(),
+            name: tr(current(), "Inspect keypresses").to_string(),
             description: Some(
-                "Press Enter to start. Then press any key to inspect it; Ctrl+C exits."
+                tr(current(), "Press Enter to start. Then press any key to inspect it; Ctrl+C exits.")
                     .to_string(),
             ),
             selected_description: Some(
-                "Open a live inspector that shows the detected key, config key, and matching actions."
+                tr(current(), "Open a live inspector that shows the detected key, config key, and matching actions.")
                     .to_string(),
             ),
             actions: vec![Box::new(|tx| {
@@ -471,7 +477,7 @@ fn keymap_row_prefix(row: &KeymapActionRow) -> Vec<Span<'static>> {
 
 fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Keymap".bold()));
+    header.push(Line::from(tr(current(), "Keymap").bold()));
     header.push(Line::from(description.dim()));
     header.push(Line::from(summary.dim()));
     Box::new(header)
@@ -479,8 +485,8 @@ fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
 
 fn action_count_line(count: usize) -> String {
     match count {
-        1 => "1 action.".to_string(),
-        _ => format!("{count} actions."),
+        1 => tr(current(), "1 action.").to_string(),
+        _ => tr_with(current(), "{0} actions.", &[&count.to_string()]).to_string(),
     }
 }
 
@@ -488,15 +494,15 @@ fn keymap_picker_hint_line() -> Line<'static> {
     let style = accent_style();
     Line::from(vec![
         "left/right".set_style(style),
-        " group · ".dim(),
+        tr(current(), " group · ").dim(),
         "enter".set_style(style),
-        " edit shortcut · ".dim(),
+        tr(current(), " edit shortcut · ").dim(),
         "*".set_style(style),
-        " custom · ".dim(),
+        tr(current(), " custom · ").dim(),
         "-".set_style(style),
-        " unbound · ".dim(),
+        tr(current(), " unbound · ").dim(),
         "esc".set_style(style),
-        " close".dim(),
+        tr(current(), " close").dim(),
     ])
 }
 
@@ -504,8 +510,8 @@ fn keymap_debug_hint_line() -> Line<'static> {
     let style = accent_style();
     Line::from(vec![
         "enter".set_style(style),
-        " start inspector · ".dim(),
+        tr(current(), " start inspector · ").dim(),
         "esc".set_style(style),
-        " close".dim(),
+        tr(current(), " close").dim(),
     ])
 }

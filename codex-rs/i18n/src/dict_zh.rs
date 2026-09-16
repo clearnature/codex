@@ -37,8 +37,13 @@ use std::sync::LazyLock;
 pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // Footer hints (`tui/src/bottom_pane/footer.rs`). The leading space is part
     // of the key: it separates the hint from the key binding rendered before it.
+    (" close", " 关闭"),
+    (" custom · ", " 自定义 · "),
+    (" edit shortcut · ", " 编辑快捷键 · "),
     (" for agents", " 切换智能体"),
     (" for shortcuts", " 查看快捷键"),
+    (" group · ", " 分组 · "),
+    (" start inspector · ", " 启动检查器 · "),
     (" to queue message", " 排队发送消息"),
     (" to queue", " 排队"),
     (" to submit message", " 发送消息"),
@@ -56,6 +61,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Could not create goal attachment directory {0}",
         "无法创建目标附件目录{0}",
     ),
+    (" unbound · ", " 未绑定 · "),
+    ("1 action.", "1个操作。"),
+    ("Actions without an active shortcut.", "没有生效快捷键的操作。"),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
     (
         "Could not read goal objective file {0}",
@@ -70,7 +78,19 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Goal objective file {0} is not valid UTF-8",
         "目标内容文件{0}不是有效的UTF-8",
     ),
+    ("Every configurable action currently has a shortcut.", "当前每个可配置操作都已绑定快捷键。"),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
+    ("Inspect keypresses", "检查按键"),
+    ("Inspect keypresses from your terminal.", "检查终端发来的按键。"),
+    ("Keymap", "快捷键"),
+    ("No configurable actions are available in this group.", "此分组没有可配置的操作。"),
+    ("No shortcuts in this group", "此分组没有快捷键"),
+    ("No unbound shortcuts", "没有未绑定的快捷键"),
+    ("Open a live inspector that shows the detected key, config key, and matching actions.", "打开实时检查器，显示识别到的按键、配置键名与匹配的操作。"),
+    ("Press Enter to start. Then press any key to inspect it; Ctrl+C exits.", "按Enter开始。之后按任意键即可检查；Ctrl+C退出。"),
+    ("See the key Codex detects and any shortcuts assigned to it.", "查看Codex识别到的按键及其绑定的快捷键。"),
+    ("Type to search shortcuts", "输入以搜索快捷键"),
+    ("Unbound ({0})", "未绑定（{0}）"),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
     // Shortcut descriptors. These are the labels the `_` arm of the matcher in
@@ -88,6 +108,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" reasoning up", " 提高推理强度"),
     // Context-window line. Templates: the placeholders are substituted after
     // the lookup, so the translation may move them but not drop them.
+    ("{0} actions.", "{0}个操作。"),
     ("{0}% context left", "剩余上下文 {0}%"),
     ("{0} used", "已用 {0}"),
     ("100% context left", "剩余上下文100%"),

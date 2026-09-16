@@ -452,12 +452,18 @@ impl ChatWidget {
         // Keep owner remediation in history even when the optional backend banner is unavailable.
         let (message, nudge) = match rate_limit_reached_type {
             Some(RateLimitReachedType::WorkspaceOwnerCreditsDepleted) => (
-                    "You're out of credits. Your workspace is out of credits. Add credits to continue using Codex."
+                    tr(
+                        current(),
+                        "You're out of credits. Your workspace is out of credits. Add credits to continue using Codex.",
+                    )
                         .to_string(),
                     None,
             ),
             Some(RateLimitReachedType::WorkspaceOwnerUsageLimitReached) => (
-                    "Usage limit reached. You've reached your usage limit. Increase your limits to continue using codex."
+                    tr(
+                        current(),
+                        "Usage limit reached. You've reached your usage limit. Increase your limits to continue using codex.",
+                    )
                         .to_string(),
                     None,
             ),
@@ -563,6 +569,10 @@ impl ChatWidget {
             return tr(current(), "Goal budget reached - the turn was stopped.").to_string();
         }
 
-        "Conversation interrupted - tell the model what to do differently. Something went wrong? Hit `/feedback` to report the issue.".to_string()
+        tr(
+            current(),
+            "Conversation interrupted - tell the model what to do differently. Something went wrong? Hit `/feedback` to report the issue.",
+        )
+        .to_string()
     }
 }

@@ -175,7 +175,7 @@ impl ChatWidget {
                 .iter()
                 .find(|skill| skill.path.as_path() == path)
             {
-                *name = format!("{name} ({} skill)", skill.name);
+                *name = tr_with(current(), "{0} ({1} skill)", &[name.as_str(), &skill.name]);
             }
         }
 

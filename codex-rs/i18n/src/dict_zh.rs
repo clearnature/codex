@@ -495,6 +495,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Continue planning with the model.", "继续与模型一起规划。"),
     ("Continue with Luna Reserve", "使用Luna Reserve继续"),
     ("Conversation history is not saved.", "会话历史未保存。"),
+    (
+        "Conversation interrupted - tell the model what to do differently. Something went wrong? Hit `/feedback` to report the issue.",
+        "对话已中断 — 请告诉模型该如何调整。遇到问题？可用`/feedback`反馈。",
+    ),
     ("Copied conversation to clipboard", "已复制会话到剪贴板"),
     (
         "Could not generate a recap. Please try again.",
@@ -1287,6 +1291,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "把Codex更新到最新版本。",
     ),
     ("Updated {0} file(s)", "已更新{0}个文件"),
+    (
+        "Usage limit reached. You've reached your usage limit. Increase your limits to continue using codex.",
+        "已达用量限额。你的用量限额已用尽。要提高限额才能继续使用codex。",
+    ),
     ("Usage: /ide [on|off|status]", "用法：/ide [on|off|status]"),
     ("Use ", "用 "),
     (
@@ -1374,6 +1382,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Your included usage is exhausted. Choose an option below to continue.",
         "你的包含用量已用尽。请从下方选择一个选项继续。",
+    ),
+    (
+        "You're out of credits. Your workspace is out of credits. Add credits to continue using Codex.",
+        "你的额度已用尽。你的工作区额度已用尽。请充值额度以继续使用Codex。",
     ),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
@@ -1786,6 +1798,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} (custom)", "{0}（自定义）"),
     ("{0} (iapi)", "{0}（iapi）"),
     ("{0} (service)", "{0}（service）"),
+    ("{0} ({1} skill)", "{0}（{1}个技能）"),
     ("{0} ({1} unanswered)", "{0}（{1}个未回答）"),
     ("{0} MCP servers", "{0}个MCP服务器"),
     ("{0} actions.", "{0}个操作。"),

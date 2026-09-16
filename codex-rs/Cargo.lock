@@ -2992,6 +2992,7 @@ dependencies = [
  "codex-home",
  "codex-hooks",
  "codex-http-client",
+ "codex-i18n",
  "codex-image-generation-extension",
  "codex-install-context",
  "codex-login",

@@ -3139,6 +3139,100 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to read prompt from stdin: {0}",
         "从标准输入读取提示词失败：{0}",
     ),
+    (
+        "features.token_budget.reminder_threshold_tokens must be positive",
+        "features.token_budget.reminder_threshold_tokens必须为正数",
+    ),
+    (
+        "features.token_budget.reminder_message_template must not be empty",
+        "features.token_budget.reminder_message_template不能为空",
+    ),
+    (
+        "features.token_budget.auto_compact_fallback_buffer_tokens is required when auto_compact_fallback_prompt is set",
+        "设置auto_compact_fallback_prompt时必须提供features.token_budget.auto_compact_fallback_buffer_tokens",
+    ),
+    (
+        "features.token_budget.auto_compact_fallback_buffer_tokens must be positive",
+        "features.token_budget.auto_compact_fallback_buffer_tokens必须为正数",
+    ),
+    (
+        "projects table missing after initialization",
+        "初始化后缺少projects表",
+    ),
+    (
+        "features.rollout_budget.limit_tokens is required when rollout_budget is enabled",
+        "启用rollout_budget时必须提供features.rollout_budget.limit_tokens",
+    ),
+    (
+        "features.rollout_budget.limit_tokens must be positive",
+        "features.rollout_budget.limit_tokens必须为正数",
+    ),
+    (
+        "features.rollout_budget.reminder_at_remaining_tokens is required when rollout_budget is enabled",
+        "启用rollout_budget时必须提供features.rollout_budget.reminder_at_remaining_tokens",
+    ),
+    (
+        "features.rollout_budget.reminder_at_remaining_tokens must contain only positive values below limit_tokens",
+        "features.rollout_budget.reminder_at_remaining_tokens只能包含小于limit_tokens的正数值",
+    ),
+    (
+        "`experimental_thread_store_endpoint` is no longer supported; remove it from config.toml",
+        "不再支持`experimental_thread_store_endpoint`；请从config.toml中移除",
+    ),
+    (
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.",
+        "已启用`--dangerously-bypass-hook-trust`。本次调用中已启用的钩子可能不经审查就运行。",
+    ),
+    (
+        "`sandbox_mode` and `permission_profile` overrides cannot both be set",
+        "`sandbox_mode`与`permission_profile`覆盖不能同时设置",
+    ),
+    (
+        "`sandbox_mode` and `default_permissions` overrides cannot both be set",
+        "`sandbox_mode`与`default_permissions`覆盖不能同时设置",
+    ),
+    (
+        "`permission_profile` and `default_permissions` overrides cannot both be set",
+        "`permission_profile`与`default_permissions`覆盖不能同时设置",
+    ),
+    (
+        "config defines `[permissions]` profiles but does not set `default_permissions`",
+        "配置定义了`[permissions]`配置档，但未设置`default_permissions`",
+    ),
+    (
+        "features.multi_agent_v2.max_concurrent_threads_per_session must be at least 1",
+        "features.multi_agent_v2.max_concurrent_threads_per_session至少为1",
+    ),
+    (
+        "features.multi_agent_v2.min_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms",
+        "features.multi_agent_v2.min_wait_timeout_ms不能大于features.multi_agent_v2.max_wait_timeout_ms",
+    ),
+    (
+        "features.multi_agent_v2.default_wait_timeout_ms must be at least features.multi_agent_v2.min_wait_timeout_ms",
+        "features.multi_agent_v2.default_wait_timeout_ms不能小于features.multi_agent_v2.min_wait_timeout_ms",
+    ),
+    (
+        "features.multi_agent_v2.default_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms",
+        "features.multi_agent_v2.default_wait_timeout_ms不能大于features.multi_agent_v2.max_wait_timeout_ms",
+    ),
+    (
+        "agents.max_concurrent_threads_per_session must be at least 1",
+        "agents.max_concurrent_threads_per_session至少为1",
+    ),
+    (
+        "thread_unload_delay_secs is too large",
+        "thread_unload_delay_secs过大",
+    ),
+    ("`approval_policy = \"never\"` cannot be used because requirements do not allow `sandbox_mode = \"danger-full-access\"`; Codex would fall back to read-only permissions with approvals disabled. Choose an `approval_policy` based on what you need, such as `on-request`, or choose an allowed sandbox mode.", "`approval_policy = \"never\"`不可用，因为requirements不允许`sandbox_mode = \"danger-full-access\"`；Codex将退化为禁用审批的只读权限。请根据需求选择`approval_policy`（例如`on-request`），或选择允许的沙箱模式。"),
+    (
+        "goals.max_goal_token_budget exceeds the maximum supported token budget",
+        "goals.max_goal_token_budget超过支持的最大token预算",
+    ),
+    (
+        "requirements.toml default_permissions requires allowed_permission_profiles",
+        "requirements.toml在设置default_permissions时需要allowed_permission_profiles",
+    ),
+    ("requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`", "requirements.toml的default_permissions必须设置，除非allowed_permission_profiles同时允许`:workspace`和`:read-only`"),
 ];
 
 /// English source text -> Simplified Chinese.

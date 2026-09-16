@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -33,7 +35,10 @@ use super::scroll_state::ScrollState;
 use super::selection_popup_common::GenericDisplayRow;
 use super::selection_popup_common::render_rows_single_line;
 
-const SEARCH_PLACEHOLDER: &str = "Type to search skills";
+/// 搜索框占位符。用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+fn search_placeholder() -> &'static str {
+    tr(current(), "Type to search skills")
+}
 const SEARCH_PROMPT_PREFIX: &str = "> ";
 
 pub(crate) struct SkillsToggleItem {
@@ -65,7 +70,11 @@ impl SkillsToggleView {
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Enable/Disable Skills".bold()));
         header.push(Line::from(
-            "Turn skills on or off. Your changes are saved automatically.".dim(),
+            tr(
+                current(),
+                "Turn skills on or off. Your changes are saved automatically.",
+            )
+            .dim(),
         ));
 
         let mut view = Self {
@@ -345,7 +354,7 @@ impl Renderable for SkillsToggleView {
         if search_area.height >= 2 {
             let [placeholder_area, input_area] =
                 Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).areas(search_area);
-            Line::from(SEARCH_PLACEHOLDER.dim()).render(placeholder_area, buf);
+            Line::from(search_placeholder().dim()).render(placeholder_area, buf);
             let line = if self.search_query.is_empty() {
                 Line::from(vec![SEARCH_PROMPT_PREFIX.dim()])
             } else {
@@ -357,7 +366,7 @@ impl Renderable for SkillsToggleView {
             line.render(input_area, buf);
         } else if search_area.height > 0 {
             let query_span = if self.search_query.is_empty() {
-                SEARCH_PLACEHOLDER.dim()
+                search_placeholder().dim()
             } else {
                 self.search_query.clone().into()
             };
@@ -377,7 +386,7 @@ impl Renderable for SkillsToggleView {
                 &rows,
                 &self.state,
                 render_area.height as usize,
-                "no matches",
+                tr(current(), "no matches"),
             );
         }
 
@@ -402,25 +411,25 @@ fn skills_toggle_hint_line(keymap: &ListKeymap) -> Line<'static> {
         (Some(accept), Some(cancel)) => Line::from(vec![
             "Press ".into(),
             space.into(),
-            " or ".into(),
+            tr(current(), " or ").into(),
             accept.into(),
-            " to toggle; ".into(),
+            tr(current(), " to toggle; ").into(),
             cancel.into(),
-            " to close".into(),
+            tr(current(), " to close").into(),
         ]),
         (Some(accept), None) => Line::from(vec![
             "Press ".into(),
             space.into(),
-            " or ".into(),
+            tr(current(), " or ").into(),
             accept.into(),
-            " to toggle".into(),
+            tr(current(), " to toggle").into(),
         ]),
         (None, Some(cancel)) => Line::from(vec![
             "Press ".into(),
             space.into(),
-            " to toggle; ".into(),
+            tr(current(), " to toggle; ").into(),
             cancel.into(),
-            " to close".into(),
+            tr(current(), " to close").into(),
         ]),
         (None, None) => Line::from(vec!["Press ".into(), space.into(), " to toggle".into()]),
     }

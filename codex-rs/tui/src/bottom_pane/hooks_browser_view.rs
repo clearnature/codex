@@ -322,7 +322,11 @@ impl HooksBrowserView {
         event_name: HookEventName,
         review_needed_count: usize,
     ) -> Vec<Line<'static>> {
-        let mut lines = vec![format!("{} hooks", event_label(event_name)).bold().into()];
+        let mut lines = vec![
+            tr_with(current(), "{0} hooks", &[event_label(event_name)])
+                .bold()
+                .into(),
+        ];
         match review_needed_message(review_needed_count) {
             None => lines.push(
                 tr(
@@ -452,10 +456,16 @@ impl HooksBrowserView {
                     ' '
                 };
                 let row = match hook.trust_status {
-                    HookTrustStatus::Modified => {
-                        format!("[{marker}] {} · modified", hook_title(idx))
-                    }
-                    HookTrustStatus::Untrusted => format!("[{marker}] {} · new", hook_title(idx)),
+                    HookTrustStatus::Modified => tr_with(
+                        current(),
+                        "[{0}] {1} · modified",
+                        &[&marker.to_string(), &hook_title(idx).to_string()],
+                    ),
+                    HookTrustStatus::Untrusted => tr_with(
+                        current(),
+                        "[{0}] {1} · new",
+                        &[&marker.to_string(), &hook_title(idx).to_string()],
+                    ),
                     HookTrustStatus::Managed | HookTrustStatus::Trusted => {
                         format!("[{marker}] {}", hook_title(idx))
                     }
@@ -584,12 +594,12 @@ impl HooksBrowserView {
                 let mut spans = vec![
                     tr(current(), "Press ").into(),
                     key_hint::plain(KeyCode::Char('t')).into(),
-                    " to trust all; ".into(),
+                    tr(current(), " to trust all; ").into(),
                 ];
                 if let Some(accept) = accept {
-                    spans.extend([accept.into(), " to review hooks; ".into()]);
+                    spans.extend([accept.into(), tr(current(), " to review hooks; ").into()]);
                 }
-                spans.extend([cancel.into(), " to close".into()]);
+                spans.extend([cancel.into(), tr(current(), " to close").into()]);
                 Line::from(spans)
             }
             HooksBrowserPage::Events => {
@@ -597,7 +607,7 @@ impl HooksBrowserView {
                 if let Some(accept) = accept {
                     spans.extend([accept.into(), " to view hooks; ".into()]);
                 }
-                spans.extend([cancel.into(), " to close".into()]);
+                spans.extend([cancel.into(), tr(current(), " to close").into()]);
                 Line::from(spans)
             }
             HooksBrowserPage::Handlers(event_name) => {
@@ -631,7 +641,7 @@ impl HooksBrowserView {
                         spans.extend([" or ".into(), accept.into()]);
                     }
                     spans.extend([
-                        " to toggle; ".into(),
+                        tr(current(), " to toggle; ").into(),
                         cancel.into(),
                         tr(current(), " to go back").into(),
                     ]);
@@ -796,8 +806,12 @@ fn hook_is_active(hook: &HookMetadata) -> bool {
 fn review_needed_message(count: usize) -> Option<String> {
     match count {
         0 => None,
-        1 => Some("1 hook needs review before it can run.".to_string()),
-        count => Some(format!("{count} hooks need review before they can run.")),
+        1 => Some(tr(current(), "1 hook needs review before it can run.").to_string()),
+        count => Some(tr_with(
+            current(),
+            "{0} hooks need review before they can run.",
+            &[&count.to_string()],
+        )),
     }
 }
 

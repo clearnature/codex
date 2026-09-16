@@ -230,6 +230,19 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         ", OpenAI's command-line coding agent",
         "，OpenAI的命令行编码代理",
     ),
+    ("*New* Build faster with Codex.", "*新* 用Codex更快构建。"),
+    (
+        "*New* Build faster with the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true",
+        "*新* 用**桌面应用**更快构建。运行'codex app'，或访问https://chatgpt.com/codex?app-landing-page=true",
+    ),
+    (
+        "*New* For a limited time, Codex is included in your plan for free – let’s build together.",
+        "*新* 限时福利：你的套餐已免费包含Codex — 一起构建吧。",
+    ),
+    (
+        "*New* Use **/fast** to enable our fastest inference with increased plan usage.",
+        "*新* 用 **/fast** 开启最快推理（套餐用量会增加）。",
+    ),
     ("+{0} more", "还有{0}个"),
     ("- (best {0}d)", "-（最长{0}天）"),
     ("1 MCP server", "1个MCP服务器"),
@@ -1143,6 +1156,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Run commands within a Codex-provided sandbox",
         "在Codex提供的沙箱中运行命令。",
     ),
+    (
+        "Run `codex app` to open the Desktop app (it installs on macOS if needed).",
+        "运行 `codex app` 打开桌面应用（必要时会在macOS上自动安装）。",
+    ),
     ("Run in background", "在后台运行"),
     ("Run targeted tests", "运行针对性测试"),
     ("Run tests", "运行测试"),
@@ -1337,6 +1354,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Trusting hooks...", "正在信任钩子…"),
     ("Try new model", "试用新模型"),
     ("Try setting up admin sandbox again", "重试管理员沙箱设置"),
+    (
+        "Try the **Desktop app** on Linux: install it from https://learn.chatgpt.com/docs/linux/linux-app and run 'chatgpt'.",
+        "在Linux上试试**桌面应用**：从https://learn.chatgpt.com/docs/linux/linux-app安装后运行'chatgpt'。",
+    ),
+    (
+        "Try the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true",
+        "试试**桌面应用**。运行'codex app'，或访问https://chatgpt.com/codex?app-landing-page=true",
+    ),
     ("Type a filename and press Enter", "输入文件名后按Enter"),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to filter themes...", "输入以筛选主题…"),

@@ -1,4 +1,6 @@
 use codex_features::FEATURES;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::account::PlanType;
 use lazy_static::lazy_static;
 use rand::Rng;
@@ -9,16 +11,45 @@ const ANNOUNCEMENT_TIP_URL: &str =
 const IS_MACOS: bool = cfg!(target_os = "macos");
 const IS_WINDOWS: bool = cfg!(target_os = "windows");
 
-const APP_TOOLTIP: &str = "Try the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true";
-const MACOS_APP_TOOLTIP: &str =
-    "Run `codex app` to open the Desktop app (it installs on macOS if needed).";
-const LINUX_APP_TOOLTIP: &str = "Try the **Desktop app** on Linux: install it from https://learn.chatgpt.com/docs/linux/linux-app and run 'chatgpt'.";
-const FAST_TOOLTIP: &str =
-    "*New* Use **/fast** to enable our fastest inference with increased plan usage.";
-const OTHER_TOOLTIP: &str = "*New* Build faster with the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true";
-const OTHER_TOOLTIP_NON_MAC: &str = "*New* Build faster with Codex.";
-const FREE_GO_TOOLTIP: &str =
-    "*New* For a limited time, Codex is included in your plan for free – let’s build together.";
+fn app_tooltip() -> &'static str {
+    tr(
+        current(),
+        "Try the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true",
+    )
+}
+fn macos_app_tooltip() -> &'static str {
+    tr(
+        current(),
+        "Run `codex app` to open the Desktop app (it installs on macOS if needed).",
+    )
+}
+fn linux_app_tooltip_const() -> &'static str {
+    tr(
+        current(),
+        "Try the **Desktop app** on Linux: install it from https://learn.chatgpt.com/docs/linux/linux-app and run 'chatgpt'.",
+    )
+}
+fn fast_tooltip() -> &'static str {
+    tr(
+        current(),
+        "*New* Use **/fast** to enable our fastest inference with increased plan usage.",
+    )
+}
+fn other_tooltip() -> &'static str {
+    tr(
+        current(),
+        "*New* Build faster with the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true",
+    )
+}
+fn other_tooltip_non_mac() -> &'static str {
+    tr(current(), "*New* Build faster with Codex.")
+}
+fn free_go_tooltip() -> &'static str {
+    tr(
+        current(),
+        "*New* For a limited time, Codex is included in your plan for free – let’s build together.",
+    )
+}
 
 const RAW_TOOLTIPS: &str = include_str!("../assets/tooltips.txt");
 
@@ -28,7 +59,7 @@ lazy_static! {
         .map(str::trim)
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .chain(if IS_MACOS {
-            Some(MACOS_APP_TOOLTIP)
+            Some(macos_app_tooltip())
         } else {
             linux_app_tooltip(LinuxDesktopSession::current())
         })
@@ -71,13 +102,13 @@ pub(crate) fn get_tooltip(plan: Option<PlanType>, fast_mode_enabled: bool) -> Op
                 }
             }
             Some(PlanType::Go) | Some(PlanType::Free) => {
-                return Some(FREE_GO_TOOLTIP.to_string());
+                return Some(free_go_tooltip().to_string());
             }
             _ => {
                 let tooltip = if IS_MACOS {
-                    OTHER_TOOLTIP
+                    other_tooltip()
                 } else {
-                    OTHER_TOOLTIP_NON_MAC
+                    other_tooltip_non_mac()
                 };
                 return Some(tooltip.to_string());
             }
@@ -114,12 +145,12 @@ impl LinuxDesktopSession {
 }
 
 fn linux_app_tooltip(session: LinuxDesktopSession) -> Option<&'static str> {
-    (session.has_display && !session.is_wsl).then_some(LINUX_APP_TOOLTIP)
+    (session.has_display && !session.is_wsl).then_some(linux_app_tooltip_const())
 }
 
 fn paid_app_tooltip() -> Option<&'static str> {
     if IS_MACOS || IS_WINDOWS {
-        Some(APP_TOOLTIP)
+        Some(app_tooltip())
     } else {
         linux_app_tooltip(LinuxDesktopSession::current())
     }
@@ -136,7 +167,7 @@ fn pick_paid_tooltip<R: Rng + ?Sized>(
     if fast_mode_enabled || rng.random_bool(0.5) {
         paid_app_tooltip()
     } else {
-        Some(FAST_TOOLTIP)
+        Some(fast_tooltip())
     }
 }
 
@@ -388,10 +419,10 @@ mod tests {
         } else if IS_MACOS {
             let tooltip = tooltip.expect("macOS should advertise the desktop app");
             insta::assert_snapshot!(tooltip, @"Run `codex app` to open the Desktop app (it installs on macOS if needed).");
-            assert_eq!(paid_app_tooltip(), Some(APP_TOOLTIP));
+            assert_eq!(paid_app_tooltip(), Some(app_tooltip()));
         } else if IS_WINDOWS {
             assert_eq!(tooltip, None);
-            assert_eq!(paid_app_tooltip(), Some(APP_TOOLTIP));
+            assert_eq!(paid_app_tooltip(), Some(app_tooltip()));
         } else {
             assert_eq!(tooltip, None);
             assert_eq!(paid_app_tooltip(), None);
@@ -433,7 +464,7 @@ mod tests {
             ));
         }
 
-        let expected = std::collections::BTreeSet::from([paid_app_tooltip(), Some(FAST_TOOLTIP)]);
+        let expected = std::collections::BTreeSet::from([paid_app_tooltip(), Some(fast_tooltip())]);
         assert_eq!(seen, expected);
     }
 
@@ -447,7 +478,7 @@ mod tests {
 
         let expected = std::collections::BTreeSet::from([paid_app_tooltip()]);
         assert_eq!(seen, expected);
-        assert!(!seen.contains(&Some(FAST_TOOLTIP)));
+        assert!(!seen.contains(&Some(fast_tooltip())));
     }
 
     #[test]

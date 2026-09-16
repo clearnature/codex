@@ -600,8 +600,11 @@ impl App {
         self.active_thread_id = None;
         let Some((receiver, mut snapshot)) = self.activate_thread_for_replay(thread_id).await
         else {
-            self.chat_widget
-                .add_error_message(format!("Agent thread {thread_id} is already active."));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Agent thread {0} is already active.",
+                &[&thread_id.to_string()],
+            ));
             if let Some(previous_thread_id) = previous_thread_id {
                 self.activate_thread_channel(previous_thread_id).await;
             }
@@ -683,11 +686,17 @@ impl App {
         {
             self.chat_widget.pause_unavailable_thread();
             let message = if attached_replay_only {
-                format!(
-                    "Agent thread {thread_id} could not be resumed live. Replaying saved transcript."
+                tr_with(
+                    current(),
+                    "Agent thread {0} could not be resumed live. Replaying saved transcript.",
+                    &[&thread_id.to_string()],
                 )
             } else {
-                format!("Agent thread {thread_id} is closed. Replaying saved transcript.")
+                tr_with(
+                    current(),
+                    "Agent thread {0} is closed. Replaying saved transcript.",
+                    &[&thread_id.to_string()],
+                )
             };
             self.chat_widget.add_info_message(message, /*hint*/ None);
         }
@@ -875,7 +884,13 @@ impl App {
                             .downcast_ref::<history_cell::StartupWarningsCell>()
                     })
                     .filter(|cell| cell.pending_header)
-                    .map(|cell| format!("\n\nStartup warnings:\n{}", cell.messages.join("\n")))
+                    .map(|cell| {
+                        tr_with(
+                            current(),
+                            "\n\nStartup warnings:\n{0}",
+                            &[&cell.messages.join("\n")],
+                        )
+                    })
                     .unwrap_or_default();
                 return Err(color_eyre::eyre::eyre!(
                     "Failed to start a fresh session through the app server: {err}{warnings}"
@@ -902,8 +917,11 @@ impl App {
                 if let Some(message) = initial_user_message {
                     self.chat_widget.restore_user_message_to_composer(message);
                 }
-                self.chat_widget
-                    .add_error_message(format!("Failed to read new session defaults: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to read new session defaults: {0}",
+                    &[&err.to_string()],
+                ));
                 tui.frame_requester().schedule_frame();
                 return;
             }
@@ -951,7 +969,11 @@ impl App {
                             started.session.thread_name = Some(name);
                             None
                         }
-                        Err(err) => Some(format!("Failed to name the new session: {err}")),
+                        Err(err) => Some(tr_with(
+                            current(),
+                            "Failed to name the new session: {0}",
+                            &[&err.to_string()],
+                        )),
                     }
                 } else {
                     None
@@ -965,8 +987,10 @@ impl App {
                     )
                     .await
                 {
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to attach to fresh app-server thread: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to attach to fresh app-server thread: {0}",
+                        &[&err.to_string()],
                     ));
                 } else {
                     if let Some(err) = name_error {
@@ -978,8 +1002,10 @@ impl App {
                             lines.push(usage_line.into());
                         }
                         if let Some(command) = summary.resume_hint {
-                            let spans =
-                                vec!["To continue this session, run ".into(), command.cyan()];
+                            let spans = vec![
+                                tr(current(), "To continue this session, run ").into(),
+                                command.cyan(),
+                            ];
                             lines.push(spans.into());
                         }
                         self.chat_widget.add_plain_history_lines(lines);
@@ -987,8 +1013,10 @@ impl App {
                 }
             }
             Err(err) => {
-                self.chat_widget.add_error_message(format!(
-                    "Failed to start a fresh session through the app server: {err}"
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to start a fresh session through the app server: {0}",
+                    &[&err.to_string()],
                 ));
                 if let Some(message) = initial_user_message {
                     self.chat_widget.restore_user_message_to_composer(message);
@@ -1219,16 +1247,20 @@ impl App {
             {
                 Ok(thread) => (thread, true),
                 Err(read_err) => {
-                    self.add_session_picker_error(format!(
-                        "Failed to view thread open elsewhere: {read_err}"
+                    self.add_session_picker_error(tr_with(
+                        current(),
+                        "Failed to view thread open elsewhere: {0}",
+                        &[&read_err.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
             },
             Err(err) => {
                 let path_display = target_session.display_label();
-                self.add_session_picker_error(format!(
-                    "Failed to resume session from {path_display}: {err}"
+                self.add_session_picker_error(tr_with(
+                    current(),
+                    "Failed to resume session from {0}: {1}",
+                    &[&path_display.to_string(), &err.to_string()],
                 ));
                 return Ok(AppRunControl::Continue);
             }
@@ -1295,7 +1327,10 @@ impl App {
                         lines.push(usage_line.into());
                     }
                     if let Some(command) = summary.resume_hint {
-                        let spans = vec!["To continue this session, run ".into(), command.cyan()];
+                        let spans = vec![
+                            tr(current(), "To continue this session, run ").into(),
+                            command.cyan(),
+                        ];
                         lines.push(spans.into());
                     }
                     self.chat_widget.add_plain_history_lines(lines);
@@ -1309,8 +1344,10 @@ impl App {
                 }
             }
             Err(err) => {
-                self.add_session_picker_error(format!(
-                    "Failed to attach to resumed app-server thread: {err}"
+                self.add_session_picker_error(tr_with(
+                    current(),
+                    "Failed to attach to resumed app-server thread: {0}",
+                    &[&err.to_string()],
                 ));
             }
         }

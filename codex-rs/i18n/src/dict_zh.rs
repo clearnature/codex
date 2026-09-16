@@ -95,8 +95,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     (" to toggle, ", " 切换，"),
     (" unbound · ", " 未绑定 · "),
-    ("'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.", "侧会话中不可用'/archive'。请先按Ctrl+C返回主线程。"),
-    ("'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.", "侧会话中不可用'/delete'。请先按Ctrl+C返回主线程。"),
+    (
+        "'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.",
+        "侧会话中不可用'/archive'。请先按Ctrl+C返回主线程。",
+    ),
+    (
+        "'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first.",
+        "侧会话中不可用'/delete'。请先按Ctrl+C返回主线程。",
+    ),
     ("1 action.", "1个操作。"),
     (
         "Actions without an active shortcut.",
@@ -140,6 +146,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Apply the latest diff produced by Codex agent as a `git apply` to your local working tree",
         "把Codex代理生成的最新diff以 `git apply` 应用到本地工作树。",
     ),
+    (
+        "Agent thread {0} could not be resumed live. Replaying saved transcript.",
+        "代理线程{0}无法实时恢复。正在回放已保存的记录。",
+    ),
+    (
+        "Agent thread {0} is already active.",
+        "代理线程{0}已经处于活动状态。",
+    ),
+    (
+        "Agent thread {0} is closed. Replaying saved transcript.",
+        "代理线程{0}已关闭。正在回放已保存的记录。",
+    ),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
     (
         "Archive a saved session by id or session name",
@@ -174,6 +192,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Browse all agent sessions on the shared local app-server daemon",
         "浏览共享本地app-server守护进程上的所有代理会话。",
     ),
+    ("Cancel task", "取消任务"),
     ("Cannot change directories: {0}", "无法切换目录：{0}"),
     (
         "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
@@ -184,7 +203,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Cannot register managed worktree ownership: {0}",
         "无法注册托管工作树归属：{0}",
     ),
+    (
+        "Cannot open external editor: set $VISUAL or $EDITOR before starting Codex.",
+        "无法打开外部编辑器：请在启动Codex前设置$VISUAL或$EDITOR。",
+    ),
     ("Choose items to import.", "选择要导入的条目。"),
+    (
+        "Choose what happens to the current task.",
+        "选择如何处理当前任务。",
+    ),
     ("Choose what to import", "选择要导入的内容"),
     (
         "Codex may add files to your current project folder.",
@@ -255,19 +282,68 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Enterprise-managed config value", "企业托管配置值"),
     ("Error", "错误"),
     ("Execpolicy tooling", "Execpolicy工具。"),
+    (
+        "Exit Codex and leave the task running",
+        "退出Codex并让任务继续运行",
+    ),
     ("Exited review mode", "已退出审查模式"),
-    ("Failed to archive current thread: {0}", "归档当前线程失败：{0}"),
+    (
+        "Failed to archive current thread: {0}",
+        "归档当前线程失败：{0}",
+    ),
+    (
+        "Failed to attach to fresh app-server thread: {0}",
+        "附加到新的app-server线程失败：{0}",
+    ),
+    (
+        "Failed to attach to resumed app-server thread: {0}",
+        "附加到已恢复的app-server线程失败：{0}",
+    ),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
         "Failed to name the worktree session: {0}",
         "无法命名工作树会话：{0}",
     ),
-    ("Failed to delete current thread: {0}", "删除当前线程失败：{0}"),
+    (
+        "Failed to delete current thread: {0}",
+        "删除当前线程失败：{0}",
+    ),
+    ("Failed to name the new session: {0}", "命名新会话失败：{0}"),
+    ("Failed to open editor: {0}", "打开编辑器失败：{0}"),
+    (
+        "Failed to read new session defaults: {0}",
+        "读取新会话默认值失败：{0}",
+    ),
     ("Failed to refresh shortcuts: {0}", "刷新快捷键失败：{0}"),
     ("Failed to rename task: {0}", "重命名任务失败：{0}"),
-    ("Failed to save approvals reviewer: {0}", "保存审批复核者失败：{0}"),
-    ("Failed to start the background server: {0}", "启动后台服务器失败：{0}"),
-    ("Failed to update app config for {0}: {1}", "更新{0}的应用配置失败：{1}"),
+    (
+        "Failed to save approvals reviewer: {0}",
+        "保存审批复核者失败：{0}",
+    ),
+    (
+        "Failed to start the background server: {0}",
+        "启动后台服务器失败：{0}",
+    ),
+    (
+        "Failed to update app config for {0}: {1}",
+        "更新{0}的应用配置失败：{1}",
+    ),
+    (
+        "Failed to resume session from {0}: {1}",
+        "从{0}恢复会话失败：{1}",
+    ),
+    (
+        "Failed to start a fresh session through the app server: {0}",
+        "通过app server启动新会话失败：{0}",
+    ),
+    (
+        "Failed to switch side conversation: {0}",
+        "切换侧会话失败：{0}",
+    ),
+    (
+        "Failed to view thread open elsewhere: {0}",
+        "查看在其他位置打开的线程失败：{0}",
+    ),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
     ("Finished waiting", "等待结束"),
@@ -398,7 +474,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Resume a previous interactive session (picker by default; use --last to continue the most recent)",
         "恢复之前的交互会话（默认弹出选择器；用--last继续最近一个）。",
     ),
-    ("Removed custom shortcut for `{0}.{1}`.", "已删除 `{0}.{1}` 的自定义快捷键。"),
+    (
+        "Removed custom shortcut for `{0}.{1}`.",
+        "已删除 `{0}.{1}` 的自定义快捷键。",
+    ),
     ("Resumed an agent", "已恢复一个代理"),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
     (
@@ -409,6 +488,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Run commands within a Codex-provided sandbox",
         "在Codex提供的沙箱中运行命令。",
     ),
+    ("Run in background", "在后台运行"),
     ("Running", "运行中"),
     ("Select Pet", "选择宠物"),
     ("Selected {0} of {1} {2}.", "已选择{0}/{1}个{2}。"),
@@ -436,11 +516,20 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Stop the current turn: run {0}, select this task, and {1}.",
         "停止当前轮次：运行{0}，选择此任务，然后{1}。",
     ),
+    (
+        "Stop the current task and exit Codex",
+        "停止当前任务并退出Codex",
+    ),
+    (
+        "Stop the current task and stay in Codex",
+        "停止当前任务并留在Codex",
+    ),
     ("Sub-agents running", "运行中的子代理"),
     (
         "Switch to the matching workspace or ask the sharer for access.",
         "请切换到匹配的工作区，或向共享者申请访问权限。",
     ),
+    ("Task is still running", "任务仍在运行"),
     ("Tasks {0}/{1}", "任务 {0}/{1}"),
     ("Terminal pets disabled", "终端宠物已禁用"),
     (
@@ -527,6 +616,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "[experimental] Run the app server or related tooling",
         "[实验性]运行app server或相关工具。",
     ),
+    ("\n\nStartup warnings:\n{0}", "\n\n启动警告：\n{0}"),
     ("authentication required", "需要认证"),
     (
         "base64 payload is not valid UTF-8",
@@ -653,7 +743,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("sixel pixel index overflow", "sixel像素索引溢出"),
     ("starting", "正在启动"),
     ("terminal image write failed: {0}", "终端图像写入失败：{0}"),
-    ("the selected thread is no longer available for prompt editing", "所选线程已不可用于编辑提示词"),
+    (
+        "the selected thread is no longer available for prompt editing",
+        "所选线程已不可用于编辑提示词",
+    ),
     ("thread id `{0}` is invalid: {1}", "线程ID`{0}`无效：{1}"),
     (
         "thread usage request timed out in TUI",
@@ -671,6 +764,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "不支持的宠物资源下载URL协议{0}",
     ),
     ("use the configured stop shortcut", "使用已配置的停止快捷键"),
+    ("waiting for next key", "等待下一个按键"),
     ("write {0}", "写入{0}"),
     (
         "{0} A checkout was retained at {1}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",

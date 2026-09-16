@@ -6349,6 +6349,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Experimental feature changes", "实验性功能变更"),
     ("Memory setting changes", "记忆设置变更"),
+    // Startup warnings that DO reach the user: `project_config_warning` and
+    // `skill_load_warning_messages` feed StartupWarningsCell / add_warning_message
+    // (app/startup.rs:183, app/working_directory.rs:531, app/thread_routing.rs:1807).
+    // The folder list (`    N. <folder>`) and the per-folder reasons stay verbatim.
+    (
+        "Skipped loading {0} skill(s) due to invalid SKILL.md files.",
+        "由于SKILL.md文件无效，已跳过加载{0}个技能。",
+    ),
+    (
+        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
+        "在项目被信任之前，以下文件夹中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

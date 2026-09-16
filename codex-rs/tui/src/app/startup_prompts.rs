@@ -5,6 +5,9 @@
 
 use super::*;
 use codex_config::ConfigLayerSource;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -53,9 +56,14 @@ pub(super) fn skill_load_warning_messages(errors: &[SkillErrorInfo]) -> Vec<Stri
     }
 
     let error_count = errors.len();
-    let mut messages = vec![format!(
-        "Skipped loading {error_count} skill(s) due to invalid SKILL.md files."
-    )];
+    let mut messages = vec![
+        tr_with(
+            current(),
+            "Skipped loading {0} skill(s) due to invalid SKILL.md files.",
+            &[&error_count.to_string()],
+        )
+        .to_string(),
+    ];
     messages.extend(
         errors
             .iter()
@@ -84,11 +92,17 @@ pub(super) fn project_config_warning(config: &Config) -> Option<String> {
         return None;
     }
 
-    let mut message = concat!(
-        "Project-local config, hooks, and exec policies are disabled in the following folders ",
-        "until the project is trusted, but skills still load.\n",
-    )
-    .to_string();
+    // Composed from fragments: the folder list and the per-folder reasons are
+    // rendered verbatim as data (`    N. <folder>` / `       <reason>`), so only
+    // the two sentences go through the dictionary.
+    let mut message = format!(
+        "{}{}",
+        tr(
+            current(),
+            "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
+        ),
+        "\n",
+    );
     for (index, (folder, reason)) in disabled_folders.iter().enumerate() {
         let display_index = index + 1;
         message.push_str(&format!("    {display_index}. {folder}\n"));

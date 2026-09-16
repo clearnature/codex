@@ -6,6 +6,9 @@
 //! - Typing while focused on options jumps into notes to keep freeform input fast.
 //! - The composer submit binding advances to the next question; the last question submits all answers.
 //! - Freeform-only questions submit an empty answer list when empty.
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -64,8 +67,7 @@ const UNANSWERED_CONFIRM_TITLE: &str = "Submit with unanswered questions?";
 const UNANSWERED_CONFIRM_GO_BACK: &str = "Go back";
 const UNANSWERED_CONFIRM_GO_BACK_DESC: &str = "Return to the first unanswered question.";
 const UNANSWERED_CONFIRM_SUBMIT: &str = "Proceed";
-const UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR: &str = "question";
-const UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL: &str = "questions";
+
 const AUTO_RESOLUTION_HIDDEN_GRACE: Duration = Duration::from_secs(/*secs*/ 60);
 const AUTO_RESOLUTION_VISIBLE_COUNTDOWN: Duration = Duration::from_secs(/*secs*/ 60);
 
@@ -93,7 +95,11 @@ fn format_auto_resolution_remaining(remaining: Duration) -> String {
     }
     let minutes = seconds / 60;
     let seconds = seconds % 60;
-    format!("{minutes}m {seconds:02}s")
+    tr_with(
+        current(),
+        "{0}m {1}s",
+        &[&minutes.to_string(), &format!("{seconds:02}")],
+    )
 }
 
 #[derive(Default, Clone, PartialEq)]
@@ -331,9 +337,10 @@ impl RequestUserInputOverlay {
 
     fn auto_resolution_countdown_text_at(&self, now: Instant) -> Option<String> {
         match self.auto_resolution_timing_at(now) {
-            AutoResolutionTiming::VisibleCountdown { remaining } => Some(format!(
-                "auto-resolves in {}",
-                format_auto_resolution_remaining(remaining)
+            AutoResolutionTiming::VisibleCountdown { remaining } => Some(tr_with(
+                current(),
+                "auto-resolves in {0}",
+                &[&format_auto_resolution_remaining(remaining)],
             )),
             AutoResolutionTiming::Disabled
             | AutoResolutionTiming::HiddenGrace { .. }
@@ -345,15 +352,23 @@ impl RequestUserInputOverlay {
         if self.question_count() > 0 {
             let idx = self.current_index() + 1;
             let total = self.question_count();
-            let base = format!("Question {idx}/{total}");
+            let base = tr_with(
+                current(),
+                "Question {0}/{1}",
+                &[&idx.to_string(), &total.to_string()],
+            );
             let unanswered = self.unanswered_count();
             if unanswered > 0 {
-                format!("{base} ({unanswered} unanswered)")
+                tr_with(
+                    current(),
+                    "{0} ({1} unanswered)",
+                    &[base.as_str(), &unanswered.to_string()],
+                )
             } else {
                 base
             }
         } else {
-            "No questions".to_string()
+            tr(current(), "No questions").to_string()
         }
     }
 
@@ -591,10 +606,10 @@ impl RequestUserInputOverlay {
         let notes_visible = self.notes_ui_visible();
         if self.has_options() {
             if self.selected_option_index().is_some() && !notes_visible {
-                tips.push(FooterTip::highlighted("tab to add notes"));
+                tips.push(FooterTip::highlighted(tr(current(), "tab to add notes")));
             }
             if self.selected_option_index().is_some() && notes_visible {
-                tips.push(FooterTip::new("tab or esc to clear notes"));
+                tips.push(FooterTip::new(tr(current(), "tab or esc to clear notes")));
             }
         }
 
@@ -609,19 +624,34 @@ impl RequestUserInputOverlay {
         };
         if let Some(submit_key) = submit_key {
             let submit_tip = if question_count == 1 {
-                FooterTip::highlighted(format!("{submit_key} to submit answer"))
+                FooterTip::highlighted(tr_with(
+                    current(),
+                    "{0} to submit answer",
+                    &[submit_key.as_str()],
+                ))
             } else if is_last_question {
-                FooterTip::highlighted(format!("{submit_key} to submit all"))
+                FooterTip::highlighted(tr_with(
+                    current(),
+                    "{0} to submit all",
+                    &[submit_key.as_str()],
+                ))
             } else {
-                FooterTip::new(format!("{submit_key} to submit answer"))
+                FooterTip::new(tr_with(
+                    current(),
+                    "{0} to submit answer",
+                    &[submit_key.as_str()],
+                ))
             };
             tips.push(submit_tip);
         }
         if question_count > 1 {
             if self.has_options() && !self.focus_is_notes() {
-                tips.push(FooterTip::new("←/→ to navigate questions"));
+                tips.push(FooterTip::new(tr(current(), "←/→ to navigate questions")));
             } else if !self.has_options() {
-                tips.push(FooterTip::new("ctrl + p / ctrl + n change question"));
+                tips.push(FooterTip::new(tr(
+                    current(),
+                    "ctrl + p / ctrl + n change question",
+                )));
             }
         }
         if let Some(interrupt_key) = self.interrupt_turn_hint
@@ -629,9 +659,10 @@ impl RequestUserInputOverlay {
                 && notes_visible
                 && interrupt_key == ShortcutHint::Single(crate::key_hint::plain(KeyCode::Esc)))
         {
-            tips.push(FooterTip::new(format!(
-                "{} to interrupt",
-                interrupt_key.display_label()
+            tips.push(FooterTip::new(tr_with(
+                current(),
+                "{0} to interrupt",
+                &[&interrupt_key.display_label().to_string()],
             )));
         }
         tips
@@ -985,11 +1016,15 @@ impl RequestUserInputOverlay {
     fn unanswered_submit_description(&self) -> String {
         let count = self.unanswered_question_count();
         let suffix = if count == 1 {
-            UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR
+            tr(current(), "question")
         } else {
-            UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL
+            tr(current(), "questions")
         };
-        format!("Submit with {count} unanswered {suffix}.")
+        tr_with(
+            current(),
+            "Submit with {0} unanswered {1}.",
+            &[&count.to_string(), suffix],
+        )
     }
 
     fn first_unanswered_index(&self) -> Option<usize> {

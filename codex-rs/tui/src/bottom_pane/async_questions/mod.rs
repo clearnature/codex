@@ -15,6 +15,8 @@ use crate::key_hint::KeyBindingListExt;
 use crate::keymap::KeymapContext;
 use crate::keymap::ListAction;
 use crate::keymap::RuntimeKeymap;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::items::AsyncUserInputQuestion;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -83,7 +85,7 @@ impl AsyncQuestions {
             has_input_focus,
             app_event_tx.clone(),
             enhanced_keys_supported,
-            "Type your answer".into(),
+            tr(codex_i18n::current(), "Type your answer").into(),
             disable_paste_burst,
             ChatComposerConfig {
                 reset_vim_on_submission: false,
@@ -122,7 +124,11 @@ impl AsyncQuestions {
     pub(super) fn progress_prefix_text(&self) -> String {
         let current = self.state.current_idx + 1;
         let total = self.unanswered_count();
-        format!("{current} of {total}")
+        tr_with(
+            codex_i18n::current(),
+            "{0} of {1}",
+            &[&current.to_string(), &total.to_string()],
+        )
     }
 
     fn options(&self) -> &[String] {
@@ -237,7 +243,7 @@ impl AsyncQuestions {
             .iter()
             .any(|label| label.eq_ignore_ascii_case("Other"))
         {
-            "Other (write an answer)"
+            tr(codex_i18n::current(), "Other (write an answer)")
         } else {
             OTHER_OPTION_LABEL
         }
@@ -247,7 +253,7 @@ impl AsyncQuestions {
         let text = if self.other_selected() {
             self.other_placeholder()
         } else {
-            "Type your answer"
+            tr(codex_i18n::current(), "Type your answer")
         };
         self.composer.set_placeholder_text(text.to_string());
     }

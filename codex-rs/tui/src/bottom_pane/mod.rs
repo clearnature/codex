@@ -15,6 +15,8 @@
 //! hint. The pane schedules redraws so those hints can expire even when the UI is otherwise idle.
 //! Inline banners sit above the composer. Number shortcuts apply only to an empty, idle composer;
 //! drafts, paste bursts, and active dialogs keep their normal input routing.
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 
@@ -1704,7 +1706,7 @@ impl BottomPane {
         self.pause_status_timer_for_modal();
         self.set_composer_input_enabled(
             /*enabled*/ false,
-            Some("Answer the questions to continue.".to_string()),
+            Some(tr(current(), "Answer the questions to continue.").to_string()),
         );
         self.push_view(Box::new(modal));
     }
@@ -1744,12 +1746,16 @@ impl BottomPane {
                     title: tool_suggestion.tool_name.clone(),
                     description: None,
                     instructions: match suggestion_type {
-                        AppLinkSuggestionType::Install => {
-                            "Install this app in your browser, then return here.".to_string()
-                        }
-                        AppLinkSuggestionType::Enable => {
-                            "Enable this app to use it for the current request.".to_string()
-                        }
+                        AppLinkSuggestionType::Install => tr(
+                            current(),
+                            "Install this app in your browser, then return here.",
+                        )
+                        .to_string(),
+                        AppLinkSuggestionType::Enable => tr(
+                            current(),
+                            "Enable this app to use it for the current request.",
+                        )
+                        .to_string(),
                         AppLinkSuggestionType::Auth => unreachable!(
                             "auth uses URL mode elicitation, not tool suggestion forms"
                         ),
@@ -1774,7 +1780,7 @@ impl BottomPane {
             self.pause_status_timer_for_modal();
             self.set_composer_input_enabled(
                 /*enabled*/ false,
-                Some("Respond to the tool suggestion to continue.".to_string()),
+                Some(tr(current(), "Respond to the tool suggestion to continue.").to_string()),
             );
             self.push_view(Box::new(view));
             return;
@@ -1791,7 +1797,7 @@ impl BottomPane {
         self.pause_status_timer_for_modal();
         self.set_composer_input_enabled(
             /*enabled*/ false,
-            Some("Respond to the MCP server request to continue.".to_string()),
+            Some(tr(current(), "Respond to the MCP server request to continue.").to_string()),
         );
         self.push_view(Box::new(modal));
     }

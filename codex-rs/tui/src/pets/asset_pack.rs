@@ -10,6 +10,9 @@
 //! allowed, when previews should block on them, and when a successfully loaded
 //! built-in pet is safe to persist to config.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -53,7 +56,7 @@ pub(crate) async fn ensure_builtin_pet(
         validate_cached_spritesheet(&cache_destination).is_ok()
     })
     .await
-    .context("join pet spritesheet cache validation task")?;
+    .context(tr(current(), "join pet spritesheet cache validation task"))?;
     if cache_valid {
         return Ok(());
     }
@@ -61,17 +64,20 @@ pub(crate) async fn ensure_builtin_pet(
     let url = builtin_pet_url(pet)?;
     let bytes = download_bytes_with_limit(http_client, &url, PET_MAX_DOWNLOAD_BYTES).await?;
     tokio::task::spawn_blocking(move || {
-        let parent = destination
-            .parent()
-            .context("pet spritesheet path should include an assets directory")?;
-        fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+        let parent = destination.parent().context(tr(
+            current(),
+            "pet spritesheet path should include an assets directory",
+        ))?;
+        fs::create_dir_all(parent)
+            .with_context(|| tr_with(current(), "create {0}", &[&parent.display().to_string()]))?;
 
         let staging = destination.with_file_name(format!(
             ".{}.download-{}.webp",
             pet.spritesheet_file,
             Uuid::new_v4()
         ));
-        fs::write(&staging, &bytes).with_context(|| format!("write {}", staging.display()))?;
+        fs::write(&staging, &bytes)
+            .with_context(|| tr_with(current(), "write {0}", &[&staging.display().to_string()]))?;
         if let Err(err) = validate_cached_spritesheet(&staging) {
             let _ = fs::remove_file(&staging);
             return Err(err);
@@ -87,13 +93,18 @@ pub(crate) async fn ensure_builtin_pet(
         }
 
         if destination.exists() {
-            fs::remove_file(&destination)
-                .with_context(|| format!("remove {}", destination.display()))?;
+            fs::remove_file(&destination).with_context(|| {
+                tr_with(
+                    current(),
+                    "remove {0}",
+                    &[&destination.display().to_string()],
+                )
+            })?;
         }
         install_downloaded_spritesheet(&staging, &destination)
     })
     .await
-    .context("join pet spritesheet install task")?
+    .context(tr(current(), "join pet spritesheet install task"))?
 }
 
 fn builtin_pet_url(pet: catalog::BuiltinPet) -> Result<String> {
@@ -117,20 +128,27 @@ async fn download_bytes_with_limit(
         .timeout(PET_DOWNLOAD_TIMEOUT)
         .send()
         .await
-        .with_context(|| format!("download pet asset from {url}"))?
+        .with_context(|| tr_with(current(), "download pet asset from {0}", &[url]))?
         .error_for_status()
-        .with_context(|| format!("download pet asset from {url}"))?;
+        .with_context(|| tr_with(current(), "download pet asset from {0}", &[url]))?;
     validate_download_url(response.url().as_str())?;
 
     if response.content_length().is_some_and(|len| len > max_bytes) {
-        bail!("pet asset download from {url} exceeded {max_bytes} bytes");
+        bail!(
+            "{}",
+            tr_with(
+                current(),
+                "pet asset download from {0} exceeded {1} bytes",
+                &[url, &max_bytes.to_string()],
+            )
+        );
     }
 
     let mut bytes = Vec::new();
     while let Some(chunk) = response
         .chunk()
         .await
-        .with_context(|| format!("read pet asset download from {url}"))?
+        .with_context(|| tr_with(current(), "read pet asset download from {0}", &[url]))?
     {
         append_download_chunk(&mut bytes, &chunk, max_bytes, url)?;
     }
@@ -144,27 +162,48 @@ fn append_download_chunk(
     url: &str,
 ) -> Result<()> {
     if (bytes.len() as u64).saturating_add(chunk.len() as u64) > max_bytes {
-        bail!("pet asset download from {url} exceeded {max_bytes} bytes");
+        bail!(
+            "{}",
+            tr_with(
+                current(),
+                "pet asset download from {0} exceeded {1} bytes",
+                &[url, &max_bytes.to_string()],
+            )
+        );
     }
     bytes.extend_from_slice(chunk);
     Ok(())
 }
 
 fn install_downloaded_spritesheet(staging: &Path, destination: &Path) -> Result<()> {
-    fs::rename(staging, destination).with_context(|| format!("install {}", destination.display()))
+    fs::rename(staging, destination).with_context(|| {
+        tr_with(
+            current(),
+            "install {0}",
+            &[&destination.display().to_string()],
+        )
+    })
 }
 
 fn validate_download_url(value: &str) -> Result<()> {
-    let url = Url::parse(value).with_context(|| format!("parse pet asset download URL {value}"))?;
+    let url = Url::parse(value)
+        .with_context(|| tr_with(current(), "parse pet asset download URL {0}", &[value]))?;
     if url.scheme() != "https" {
-        bail!("unsupported pet asset download URL scheme {}", url.scheme());
+        bail!(
+            "{}",
+            tr_with(
+                current(),
+                "unsupported pet asset download URL scheme {0}",
+                &[url.scheme()],
+            )
+        );
     }
     Ok(())
 }
 
 fn validate_cached_spritesheet(path: &Path) -> Result<()> {
-    let (width, height) =
-        image::image_dimensions(path).with_context(|| format!("read {}", path.display()))?;
+    let (width, height) = image::image_dimensions(path)
+        .with_context(|| tr_with(current(), "read {0}", &[&path.display().to_string()]))?;
     if width != catalog::SPRITESHEET_WIDTH || height != catalog::SPRITESHEET_HEIGHT {
         bail!(
             "invalid pet spritesheet dimensions for {}: expected {}x{}, got {}x{}",
@@ -182,7 +221,7 @@ fn validate_cached_spritesheet(path: &Path) -> Result<()> {
 pub(crate) fn write_test_pack(codex_home: &Path) {
     let assets_dir = pack_dir(codex_home).join("assets");
     fs::create_dir_all(&assets_dir).unwrap();
-    for pet in catalog::BUILTIN_PETS {
+    for pet in catalog::builtin_pets() {
         let path = assets_dir.join(pet.spritesheet_file);
         catalog::write_test_spritesheet(&path);
     }
@@ -227,7 +266,7 @@ mod tests {
 
         write_test_pack(dir.path());
 
-        for pet in catalog::BUILTIN_PETS {
+        for pet in catalog::builtin_pets() {
             let path = builtin_spritesheet_path(dir.path(), pet.spritesheet_file);
             assert!(path.is_file());
             validate_cached_spritesheet(&path).unwrap();

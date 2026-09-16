@@ -13,6 +13,9 @@
 //! persistence or popup orchestration; callers must persist the final selection
 //! only after the load succeeds.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io::Write;
 
 mod ambient;
@@ -89,7 +92,7 @@ pub(crate) async fn load_pet_with_assets(
         )
     })
     .await
-    .context("join pet load task")?
+    .context(tr(current(), "join pet load task"))?
 }
 
 #[derive(Debug)]
@@ -101,8 +104,24 @@ pub(crate) enum PetImageRenderError {
 impl std::fmt::Display for PetImageRenderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Terminal(err) => write!(f, "terminal image write failed: {err}"),
-            Self::Asset(err) => write!(f, "pet image asset unavailable: {err}"),
+            Self::Terminal(err) => write!(
+                f,
+                "{}",
+                tr_with(
+                    current(),
+                    "terminal image write failed: {0}",
+                    &[&err.to_string()]
+                )
+            ),
+            Self::Asset(err) => write!(
+                f,
+                "{}",
+                tr_with(
+                    current(),
+                    "pet image asset unavailable: {0}",
+                    &[&err.to_string()]
+                )
+            ),
         }
     }
 }
@@ -200,7 +219,7 @@ fn render_pet_image(
                 image_protocol::sixel_frame(&request.frame, &request.sixel_dir, request.height_px)
                     .map_err(PetImageRenderError::Asset)?;
             let sixel = std::fs::read(&path)
-                .with_context(|| format!("read {}", path.display()))
+                .with_context(|| tr_with(current(), "read {0}", &[&path.display().to_string()]))
                 .map_err(PetImageRenderError::Asset)?;
             AmbientPetPayload::Bytes(sixel)
         }

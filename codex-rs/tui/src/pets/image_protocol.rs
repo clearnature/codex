@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -63,18 +66,22 @@ pub(crate) enum PetImageUnsupportedReason {
 impl PetImageUnsupportedReason {
     fn message(self) -> &'static str {
         match self {
-            Self::Tmux => {
-                "Pets are disabled in tmux. Terminal images don’t stay pane-local in tmux and can corrupt scrollback or move between panes. Run Codex outside tmux to use pets."
-            }
-            Self::Zellij => {
-                "Pets are disabled in Zellij. Terminal images don’t stay reliably pane-local in Zellij. Run Codex outside Zellij to use pets."
-            }
-            Self::Iterm2TooOld => {
-                "Pets require iTerm2 3.6 or newer. Upgrade iTerm2 to use terminal pets."
-            }
-            Self::Terminal => {
-                "Pets aren’t available in this terminal. Terminal pets need image support, and this terminal environment doesn’t expose a supported image protocol. Try a terminal with Kitty graphics or Sixel support, or run Codex outside tmux."
-            }
+            Self::Tmux => tr(
+                current(),
+                "Pets are disabled in tmux. Terminal images don’t stay pane-local in tmux and can corrupt scrollback or move between panes. Run Codex outside tmux to use pets.",
+            ),
+            Self::Zellij => tr(
+                current(),
+                "Pets are disabled in Zellij. Terminal images don’t stay reliably pane-local in Zellij. Run Codex outside Zellij to use pets.",
+            ),
+            Self::Iterm2TooOld => tr(
+                current(),
+                "Pets require iTerm2 3.6 or newer. Upgrade iTerm2 to use terminal pets.",
+            ),
+            Self::Terminal => tr(
+                current(),
+                "Pets aren’t available in this terminal. Terminal pets need image support, and this terminal environment doesn’t expose a supported image protocol. Try a terminal with Kitty graphics or Sixel support, or run Codex outside tmux.",
+            ),
         }
     }
 }
@@ -104,7 +111,14 @@ impl FromStr for ProtocolSelection {
             "auto" => Ok(Self::Auto),
             "kitty" => Ok(Self::Kitty),
             "sixel" => Ok(Self::Sixel),
-            other => bail!("unknown protocol {other}; expected auto, kitty, or sixel"),
+            other => bail!(
+                "{}",
+                tr_with(
+                    current(),
+                    "unknown protocol {0}; expected auto, kitty, or sixel",
+                    &[other],
+                )
+            ),
         }
     }
 }
@@ -226,7 +240,8 @@ pub fn kitty_transmit_png_with_id(
     rows: u16,
     image_id: Option<u32>,
 ) -> Result<String> {
-    let png = fs::read(path).with_context(|| format!("read {}", path.display()))?;
+    let png = fs::read(path)
+        .with_context(|| tr_with(current(), "read {0}", &[&path.display().to_string()]))?;
     let payload = general_purpose::STANDARD.encode(png);
     let chunks = payload
         .as_bytes()
@@ -235,7 +250,8 @@ pub fn kitty_transmit_png_with_id(
 
     let mut command = String::new();
     for (index, chunk) in chunks.iter().enumerate() {
-        let chunk = std::str::from_utf8(chunk).context("base64 payload is not valid UTF-8")?;
+        let chunk = std::str::from_utf8(chunk)
+            .context(tr(current(), "base64 payload is not valid UTF-8"))?;
         let has_more = index + 1 < chunks.len();
         let more_flag = u8::from(has_more);
         if index == 0 {
@@ -257,9 +273,13 @@ pub fn kitty_transmit_png_file_with_id(
     rows: u16,
     image_id: Option<u32>,
 ) -> Result<String> {
-    let path = path
-        .canonicalize()
-        .with_context(|| format!("canonicalize {}", path.display()))?;
+    let path = path.canonicalize().with_context(|| {
+        tr_with(
+            current(),
+            "canonicalize {0}",
+            &[&path.display().to_string()],
+        )
+    })?;
     let payload = general_purpose::STANDARD.encode(path.to_string_lossy().as_bytes());
     let image_id = kitty_image_id_arg(image_id);
     let command = format!("{ESC}_Ga=T,t=f,f=100,c={columns},r={rows},q=2{image_id};{payload}{ST}");
@@ -283,19 +303,20 @@ fn wrap_for_tmux_if_needed(command: &str) -> String {
 }
 
 pub fn sixel_frame(frame_path: &Path, cache_dir: &Path, height_px: u16) -> Result<PathBuf> {
-    fs::create_dir_all(cache_dir).with_context(|| format!("create {}", cache_dir.display()))?;
+    fs::create_dir_all(cache_dir)
+        .with_context(|| tr_with(current(), "create {0}", &[&cache_dir.display().to_string()]))?;
 
     let stem = frame_path
         .file_stem()
         .and_then(|stem| stem.to_str())
-        .context("frame path has no valid file stem")?;
+        .context(tr(current(), "frame path has no valid file stem"))?;
     let path = cache_dir.join(format!("{stem}_h{height_px}_{SIXEL_CACHE_VERSION}.six"));
     if path.exists() {
         return Ok(path);
     }
 
-    let frame =
-        image::open(frame_path).with_context(|| format!("read {}", frame_path.display()))?;
+    let frame = image::open(frame_path)
+        .with_context(|| tr_with(current(), "read {0}", &[&frame_path.display().to_string()]))?;
     let height = u32::from(height_px).max(1);
     let width = ((u64::from(frame.width()) * u64::from(height)) / u64::from(frame.height()))
         .try_into()
@@ -305,7 +326,8 @@ pub fn sixel_frame(frame_path: &Path, cache_dir: &Path, height_px: u16) -> Resul
     let (width, height) = rgba.dimensions();
     let sixel = sixel::encode_rgba(&rgba.into_raw(), width, height)?;
 
-    fs::write(&path, sixel).with_context(|| format!("write {}", path.display()))?;
+    fs::write(&path, sixel)
+        .with_context(|| tr_with(current(), "write {0}", &[&path.display().to_string()]))?;
     Ok(path)
 }
 

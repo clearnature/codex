@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -9,7 +12,8 @@ use image::GenericImageView;
 use super::model::Pet;
 
 pub(super) fn prepare_png_frames(pet: &Pet, frame_dir: &Path) -> Result<Vec<PathBuf>> {
-    fs::create_dir_all(frame_dir).with_context(|| format!("create {}", frame_dir.display()))?;
+    fs::create_dir_all(frame_dir)
+        .with_context(|| tr_with(current(), "create {0}", &[&frame_dir.display().to_string()]))?;
 
     let expected: Vec<PathBuf> = (0..pet.frame_count())
         .map(|index| frame_dir.join(format!("frame_{index:03}.png")))
@@ -21,29 +25,38 @@ pub(super) fn prepare_png_frames(pet: &Pet, frame_dir: &Path) -> Result<Vec<Path
             let _ = fs::remove_file(stale);
         }
 
-        let spritesheet = image::open(&pet.spritesheet_path)
-            .with_context(|| format!("read {}", pet.spritesheet_path.display()))?;
+        let spritesheet = image::open(&pet.spritesheet_path).with_context(|| {
+            tr_with(
+                current(),
+                "read {0}",
+                &[&pet.spritesheet_path.display().to_string()],
+            )
+        })?;
         for row in 0..pet.rows {
             for column in 0..pet.columns {
                 let index = row
                     .checked_mul(pet.columns)
                     .and_then(|row_offset| row_offset.checked_add(column))
-                    .context("pet frame index overflow")?;
-                let index = usize::try_from(index).context("pet frame index does not fit usize")?;
-                let path = expected
-                    .get(index)
-                    .context("pet frame index exceeds expected frame count")?;
+                    .context(tr(current(), "pet frame index overflow"))?;
+                let index = usize::try_from(index)
+                    .context(tr(current(), "pet frame index does not fit usize"))?;
+                let path = expected.get(index).context(tr(
+                    current(),
+                    "pet frame index exceeds expected frame count",
+                ))?;
                 let x = column
                     .checked_mul(pet.frame_width)
-                    .context("pet frame x offset overflow")?;
+                    .context(tr(current(), "pet frame x offset overflow"))?;
                 let y = row
                     .checked_mul(pet.frame_height)
-                    .context("pet frame y offset overflow")?;
+                    .context(tr(current(), "pet frame y offset overflow"))?;
                 let frame = spritesheet.try_view(x, y, pet.frame_width, pet.frame_height)?;
                 frame
                     .to_image()
                     .save_with_format(path, image::ImageFormat::Png)
-                    .with_context(|| format!("write {}", path.display()))?;
+                    .with_context(|| {
+                        tr_with(current(), "write {0}", &[&path.display().to_string()])
+                    })?;
             }
         }
     }
@@ -57,7 +70,9 @@ fn glob_frame_files(frame_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 
     let mut paths = Vec::new();
-    for entry in fs::read_dir(frame_dir).with_context(|| format!("read {}", frame_dir.display()))? {
+    for entry in fs::read_dir(frame_dir)
+        .with_context(|| tr_with(current(), "read {0}", &[&frame_dir.display().to_string()]))?
+    {
         let path = entry?.path();
         if path
             .file_name()

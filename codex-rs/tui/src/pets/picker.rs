@@ -6,6 +6,9 @@
 //! change events so the surrounding chat widget can coordinate async asset
 //! downloads, preview loading, and final config persistence.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -118,12 +121,12 @@ pub(crate) fn build_pet_picker_params(
 
     SelectionViewParams {
         view_id: Some(PET_PICKER_VIEW_ID),
-        title: Some("Select Pet".to_string()),
-        subtitle: Some("Choose a pet to wake in the terminal.".to_string()),
+        title: Some(tr(current(), "Select Pet").to_string()),
+        subtitle: Some(tr(current(), "Choose a pet to wake in the terminal.").to_string()),
         footer_hint: Some(standard_popup_hint_line()),
         items,
         is_searchable: true,
-        search_placeholder: Some("Type to filter pets...".to_string()),
+        search_placeholder: Some(tr(current(), "Type to filter pets...").to_string()),
         initial_selected_idx,
         side_content: Box::new(preview_state.renderable()),
         side_content_width: SideContentWidth::Fixed(PET_PICKER_PREVIEW_WIDTH),
@@ -136,7 +139,7 @@ pub(crate) fn build_pet_picker_params(
 }
 
 fn available_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
-    let mut entries = catalog::BUILTIN_PETS
+    let mut entries = catalog::builtin_pets()
         .iter()
         .map(|pet| PetPickerEntry {
             selector: pet.id.to_string(),
@@ -148,7 +151,7 @@ fn available_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
     entries.push(PetPickerEntry {
         selector: DISABLED_PET_ID.to_string(),
         legacy_selector: None,
-        display_name: "Disable terminal pets".to_string(),
+        display_name: tr(current(), "Disable terminal pets").to_string(),
         description: None,
     });
     entries.extend(custom_pet_entries(codex_home));

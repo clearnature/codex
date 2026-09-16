@@ -8,6 +8,9 @@
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::bail;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const ST: &[u8] = b"\x1b\\";
 const SIXEL_BAND_HEIGHT: u32 = 6;
@@ -17,12 +20,15 @@ const TRANSPARENT_BACKGROUND_DCS: &[u8] = b"\x1bP9;1;0q";
 
 pub(crate) fn encode_rgba(rgba: &[u8], width: u32, height: u32) -> Result<Vec<u8>> {
     if width == 0 || height == 0 {
-        bail!("sixel image dimensions must be non-zero");
+        bail!(
+            "{}",
+            tr(current(), "sixel image dimensions must be non-zero")
+        );
     }
 
     let expected_len = pixel_count(width, height)?
         .checked_mul(4)
-        .context("sixel RGBA buffer length overflow")?;
+        .context(tr(current(), "sixel RGBA buffer length overflow"))?;
     if rgba.len() != expected_len {
         bail!(
             "sixel RGBA buffer has {} bytes, expected {expected_len}",
@@ -167,18 +173,18 @@ fn pixel_offset(width: u32, x: u32, y: u32) -> Result<usize> {
     let pixel_index = u64::from(y)
         .checked_mul(u64::from(width))
         .and_then(|row| row.checked_add(u64::from(x)))
-        .context("sixel pixel index overflow")?;
+        .context(tr(current(), "sixel pixel index overflow"))?;
     let byte_index = pixel_index
         .checked_mul(4)
-        .context("sixel byte index overflow")?;
-    usize::try_from(byte_index).context("sixel byte index does not fit usize")
+        .context(tr(current(), "sixel byte index overflow"))?;
+    usize::try_from(byte_index).context(tr(current(), "sixel byte index does not fit usize"))
 }
 
 fn pixel_count(width: u32, height: u32) -> Result<usize> {
     let count = u64::from(width)
         .checked_mul(u64::from(height))
-        .context("sixel pixel count overflow")?;
-    usize::try_from(count).context("sixel pixel count does not fit usize")
+        .context(tr(current(), "sixel pixel count overflow"))?;
+    usize::try_from(count).context(tr(current(), "sixel pixel count does not fit usize"))
 }
 
 fn rgb332_index(red: u8, green: u8, blue: u8) -> u8 {

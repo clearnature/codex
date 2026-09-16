@@ -11,7 +11,8 @@
 //! that does not overlap reserved bottom-pane space. It does not persist pet
 //! selection or decide when modal/popover UI should suppress the sprite.
 
-#[cfg(test)]
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -63,19 +64,19 @@ impl PetNotificationKind {
 
     fn label(self) -> &'static str {
         match self {
-            Self::Running => "Running",
-            Self::Waiting => "Needs input",
-            Self::Review => "Ready",
-            Self::Failed => "Blocked",
+            Self::Running => tr(current(), "Running"),
+            Self::Waiting => tr(current(), "Needs input"),
+            Self::Review => tr(current(), "Ready"),
+            Self::Failed => tr(current(), "Blocked"),
         }
     }
 
     fn fallback_body(self) -> &'static str {
         match self {
-            Self::Running => "Thinking",
-            Self::Waiting => "Needs input",
-            Self::Review => "Ready",
-            Self::Failed => "Blocked",
+            Self::Running => tr(current(), "Thinking"),
+            Self::Waiting => tr(current(), "Needs input"),
+            Self::Review => tr(current(), "Ready"),
+            Self::Failed => tr(current(), "Blocked"),
         }
     }
 

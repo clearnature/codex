@@ -103,8 +103,13 @@ impl Pet {
     }
 
     pub(super) fn frame_cache_key(&self) -> Result<String> {
-        let bytes = fs::read(&self.spritesheet_path)
-            .with_context(|| format!("read {}", self.spritesheet_path.display()))?;
+        let bytes = fs::read(&self.spritesheet_path).with_context(|| {
+            tr_with(
+                current(),
+                "read {0}",
+                &[&self.spritesheet_path.display().to_string()],
+            )
+        })?;
         let digest = Sha256::digest(&bytes);
         Ok(format!(
             "sha256-{digest:x}-{}x{}-{}x{}",
@@ -249,7 +254,7 @@ fn load_pet_manifest(
 ) -> Result<Pet> {
     let config_path = pet_dir.join(manifest_file);
     let raw = fs::read_to_string(&config_path)
-        .with_context(|| format!("read {}", config_path.display()))?;
+        .with_context(|| tr_with(current(), "read {0}", &[&config_path.display().to_string()]))?;
     let file: PetFile = serde_json::from_str(&raw).with_context(|| {
         tr_with(
             current(),
@@ -337,8 +342,8 @@ fn resolve_spritesheet_path(pet_dir: &Path, spritesheet_path: &str) -> Result<Pa
 }
 
 fn validate_app_spritesheet_dimensions(path: &Path) -> Result<(u32, u32)> {
-    let (width, height) =
-        image::image_dimensions(path).with_context(|| format!("read {}", path.display()))?;
+    let (width, height) = image::image_dimensions(path)
+        .with_context(|| tr_with(current(), "read {0}", &[&path.display().to_string()]))?;
     if width != catalog::SPRITESHEET_WIDTH || height != catalog::SPRITESHEET_HEIGHT {
         bail!(
             "spritesheet must be {}x{} pixels",
@@ -439,7 +444,16 @@ fn load_animations(
         for sprite_index in &spec.frames {
             if *sprite_index >= frame_count {
                 bail!(
-                    "animation {name} references sprite index {sprite_index}, but pet has {frame_count} frames"
+                    "{}",
+                    tr_with(
+                        current(),
+                        "animation {0} references sprite index {1}, but pet has {2} frames",
+                        &[
+                            name.as_str(),
+                            &sprite_index.to_string(),
+                            &frame_count.to_string()
+                        ],
+                    )
                 );
             }
         }
@@ -448,7 +462,16 @@ fn load_animations(
             Some(fps) if fps.is_finite() && fps > 0.0 && fps <= MAX_ANIMATION_FPS => fps,
             Some(fps) => {
                 bail!(
-                    "animation {name} fps must be finite and between 0 and {MAX_ANIMATION_FPS}, got {fps}"
+                    "{}",
+                    tr_with(
+                        current(),
+                        "animation {0} fps must be finite and between 0 and {1}, got {2}",
+                        &[
+                            name.as_str(),
+                            &MAX_ANIMATION_FPS.to_string(),
+                            &fps.to_string()
+                        ],
+                    )
                 );
             }
             None => 8.0,
@@ -503,15 +526,27 @@ fn validate_animation_indices(
         for frame in &animation.frames {
             if frame.sprite_index >= frame_count {
                 bail!(
-                    "animation {name} references sprite index {}, but pet has {frame_count} frames",
-                    frame.sprite_index
+                    "{}",
+                    tr_with(
+                        current(),
+                        "animation {0} references sprite index {1}, but pet has {2} frames",
+                        &[
+                            name,
+                            &frame.sprite_index.to_string(),
+                            &frame_count.to_string()
+                        ],
+                    )
                 );
             }
         }
         if !animations.contains_key(&animation.fallback) {
             bail!(
-                "animation {name} fallback {} does not exist",
-                animation.fallback
+                "{}",
+                tr_with(
+                    current(),
+                    "animation {0} fallback {1} does not exist",
+                    &[name, animation.fallback.as_str()],
+                )
             );
         }
     }

@@ -331,6 +331,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "始终使用当前目录（{0}）",
     ),
     ("Always use session directory", "始终使用会话目录"),
+    (
+        "Ambiguous `tui.keymap.{2}` bindings: `{0}` shadows `{1}` with the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+        "`tui.keymap.{2}` 的绑定有歧义：`{0}` 以同一个按键遮蔽了 `{1}`。请在`~/.codex/config.toml`中设置不重复的按键后重试。支持的动作与示例见Codex快捷键文档。",
+    ),
+    (
+        "Ambiguous `tui.keymap.{2}` bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+        "`tui.keymap.{2}`的绑定有歧义：`{0}`与`{1}`使用了同一个按键。请在`~/.codex/config.toml`中设置不重复的按键后重试。支持的动作与示例见Codex快捷键文档。",
+    ),
+    (
+        "Ambiguous approval overlay keymap bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+        "审批浮层的快捷键绑定有歧义：`{0}`与`{1}`使用了同一个按键。请在`~/.codex/config.toml`中设置不重复的按键后重试。支持的动作与示例见Codex快捷键文档。",
+    ),
     ("Answer the questions to continue.", "回答问题以继续。"),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
     (
@@ -767,6 +779,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Invalid `{0}` = `{1}`: a ctrl-alt character prefix may be AltGr text input on Windows. Choose a different chord and retry.",
         "`{0}` = `{1}` 无效：ctrl-alt字符前缀在Windows上可能是AltGr文本输入。请换一组和弦后重试。",
+    ),
+    (
+        "Invalid `{0}` = `{1}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. See the Codex keymap documentation for supported actions and examples.",
+        "`{0}` = `{1}` 无效。请使用`ctrl-a`、`shift-enter`或`page-down`这类取值。支持的动作与示例见Codex快捷键文档。",
     ),
     ("Keep waiting", "继续等待"),
     ("Keep {0} disabled.", "保持禁用{0}。"),
@@ -1490,6 +1506,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
         "远程地址 `{0}` 无效；应为 `ws://host:port`、`wss://host:port`、`unix://` 或 `unix://PATH`",
     ),
+    ("invalid visualization fragment", "可视化片段无效"),
     ("item", "条目"),
     ("items", "条目"),
     (
@@ -1608,6 +1625,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("tool", "工具"),
     ("tool: {0} · {1}", "工具：{0} · {1}"),
     ("tools", "工具"),
+    (
+        "tui.keymap.agents.{action}: ctrl-z is reserved for suspend",
+        "tui.keymap.agents.{action}：ctrl-z保留用于挂起",
+    ),
+    (
+        "tui.keymap.agents.{action}: printable keys and backspace are reserved for task input",
+        "tui.keymap.agents.{action}：可打印字符键与backspace保留用于任务输入",
+    ),
+    (
+        "tui.keymap.chat.{action}: printable keys are reserved for text input",
+        "tui.keymap.chat.{action}：可打印字符键保留用于文本输入",
+    ),
+    (
+        "tui.keymap.global.open_agents: AltGr characters are reserved for text input",
+        "tui.keymap.global.open_agents：AltGr字符保留用于文本输入",
+    ),
+    (
+        "tui.keymap.global.open_agents: ctrl-z is reserved for suspend",
+        "tui.keymap.global.open_agents：ctrl-z保留用于挂起",
+    ),
     ("unknown", "未知"),
     (
         "unknown protocol {0}; expected auto, kitty, or sixel",
@@ -1619,6 +1656,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("unsupported - {0}", "不支持 - {0}"),
     ("use the configured stop shortcut", "使用已配置的停止快捷键"),
+    (
+        "visualization fragment has no file name",
+        "可视化片段没有文件名",
+    ),
+    (
+        "visualization viewer cache is unavailable",
+        "可视化查看器缓存不可用",
+    ),
+    (
+        "visualization viewer directory must not contain symbolic links",
+        "可视化查看器目录不能包含符号链接",
+    ),
     ("waiting for next key", "等待下一个按键"),
     ("web search: ", "网络搜索："),
     (

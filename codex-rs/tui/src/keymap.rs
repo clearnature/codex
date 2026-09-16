@@ -25,6 +25,9 @@ use crate::key_hint::ShortcutHint;
 use codex_config::types::KeybindingsSpec;
 use codex_config::types::MAX_FUNCTION_KEY;
 use codex_config::types::TuiKeymap;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -1800,8 +1803,10 @@ impl RuntimeKeymap {
                 crate::key_hint::is_plain_text_key_event(KeyEvent::new(code, modifiers))
                     || matches!(code, KeyCode::Char(_)) && crate::key_hint::is_altgr(modifiers)
             }) {
-                return Err(format!(
-                    "tui.keymap.chat.{action}: printable keys are reserved for text input"
+                return Err(tr_with(
+                    current(),
+                    "tui.keymap.chat.{action}: printable keys are reserved for text input",
+                    &[&action.to_string()],
                 ));
             }
         }
@@ -1811,18 +1816,21 @@ impl RuntimeKeymap {
             .open_agents
             .contains(&key_hint::ctrl(KeyCode::Char('z')))
         {
-            return Err(
-                "tui.keymap.global.open_agents: ctrl-z is reserved for suspend".to_string(),
-            );
+            return Err(tr(
+                current(),
+                "tui.keymap.global.open_agents: ctrl-z is reserved for suspend",
+            )
+            .to_string());
         }
         if self.app.open_agents.iter().any(|binding| {
             matches!(binding.parts(), (KeyCode::Char(_), modifiers)
                 if crate::key_hint::is_altgr(modifiers))
         }) {
-            return Err(
-                "tui.keymap.global.open_agents: AltGr characters are reserved for text input"
-                    .to_string(),
-            );
+            return Err(tr(
+                current(),
+                "tui.keymap.global.open_agents: AltGr characters are reserved for text input",
+            )
+            .to_string());
         }
         let mut side_toggle_bindings = self.app.toggle_side_conversation.clone();
         let slash_binding = key_hint::ctrl(KeyCode::Char('/'));
@@ -2118,8 +2126,10 @@ impl RuntimeKeymap {
         for (action, bindings) in context_bindings(KeymapContext::Agents) {
             #[cfg(unix)]
             if bindings.contains(&key_hint::ctrl(KeyCode::Char('z'))) {
-                return Err(format!(
-                    "tui.keymap.agents.{action}: ctrl-z is reserved for suspend"
+                return Err(tr_with(
+                    current(),
+                    "tui.keymap.agents.{action}: ctrl-z is reserved for suspend",
+                    &[&action.to_string()],
                 ));
             }
             if bindings.iter().any(|binding| {
@@ -2129,8 +2139,10 @@ impl RuntimeKeymap {
                         || crate::key_hint::is_altgr(modifiers))
                     || binding.parts() == (KeyCode::Backspace, KeyModifiers::NONE)
             }) {
-                return Err(format!(
-                    "tui.keymap.agents.{action}: printable keys and backspace are reserved for task input"
+                return Err(tr_with(
+                    current(),
+                    "tui.keymap.agents.{action}: printable keys and backspace are reserved for task input",
+                    &[&action.to_string()],
                 ));
             }
         }
@@ -2151,10 +2163,10 @@ impl RuntimeKeymap {
                     {
                         continue;
                     }
-                    return Err(format!(
-                        "Ambiguous approval overlay keymap bindings: `{previous}` and `{action}` use the same key. \
-Set unique keys in `~/.codex/config.toml` and retry. \
-See the Codex keymap documentation for supported actions and examples."
+                    return Err(tr_with(
+                        current(),
+                        "Ambiguous approval overlay keymap bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+                        &[&previous.to_string(), &action.to_string()],
                     ));
                 }
             }
@@ -2177,10 +2189,14 @@ fn validate_unique<'a>(
         for binding in bindings {
             let key = binding.normalized_parts();
             if let Some(previous) = seen.insert(key, action) {
-                return Err(format!(
-                    "Ambiguous `tui.keymap.{context}` bindings: `{previous}` and `{action}` use the same key. \
-Set unique keys in `~/.codex/config.toml` and retry. \
-See the Codex keymap documentation for supported actions and examples."
+                return Err(tr_with(
+                    current(),
+                    "Ambiguous `tui.keymap.{2}` bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+                    &[
+                        &previous.to_string(),
+                        &action.to_string(),
+                        &context.to_string(),
+                    ],
                 ));
             }
         }
@@ -2213,10 +2229,14 @@ fn validate_no_shadow_with_allowed_overlaps<const N: usize, const M: usize, cons
                 ) {
                     continue;
                 }
-                return Err(format!(
-                    "Ambiguous `tui.keymap.{context}` bindings: `{previous}` shadows `{action}` with the same key. \
-Set unique keys in `~/.codex/config.toml` and retry. \
-See the Codex keymap documentation for supported actions and examples."
+                return Err(tr_with(
+                    current(),
+                    "Ambiguous `tui.keymap.{2}` bindings: `{0}` shadows `{1}` with the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+                    &[
+                        &previous.to_string(),
+                        &action.to_string(),
+                        &context.to_string(),
+                    ],
                 ));
             }
         }
@@ -2247,9 +2267,7 @@ fn validate_no_reserved<'a, const A: usize>(
                     continue;
                 }
                 return Err(format!(
-                    "Ambiguous `tui.keymap.{context}` bindings: `{action}` uses a key reserved by `{reserved_action}`. \
-Set a different key in `~/.codex/config.toml` and retry. \
-See the Codex keymap documentation for supported actions and examples."
+                    "Ambiguous `tui.keymap.{context}` bindings: `{action}` uses a key reserved by `{reserved_action}`. Set a different key in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples."
                 ));
             }
         }
@@ -2430,10 +2448,10 @@ fn parse_bindings(spec: &KeybindingsSpec, path: &str) -> Result<Vec<KeyBinding>,
             continue;
         }
         let binding = parse_keybinding(raw.as_str()).ok_or_else(|| {
-            format!(
-                "Invalid `{path}` = `{}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. \
-See the Codex keymap documentation for supported actions and examples.",
-                raw.as_str()
+            tr_with(
+                current(),
+                "Invalid `{0}` = `{1}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. See the Codex keymap documentation for supported actions and examples.",
+                &[&path.to_string(), &raw.as_str().to_string()],
             )
         })?;
 

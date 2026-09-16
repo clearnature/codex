@@ -1,4 +1,6 @@
 use super::MAX_FRAGMENT_BYTES;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -23,7 +25,10 @@ pub(super) fn materialize_document(
 ) -> std::io::Result<PathBuf> {
     let metadata = path.metadata()?;
     if !metadata.is_file() || metadata.len() > MAX_FRAGMENT_BYTES {
-        return Err(std::io::Error::other("invalid visualization fragment"));
+        return Err(std::io::Error::other(tr(
+            current(),
+            "invalid visualization fragment",
+        )));
     }
 
     let fragment = fs::read_to_string(path)?;
@@ -37,17 +42,18 @@ pub(super) fn materialize_document(
     let viewer_dir = viewer_dir.join(VIEWER_DIRECTORY_NAME);
     fs::create_dir_all(&viewer_dir)?;
     if fs::canonicalize(&viewer_dir)? != viewer_dir {
-        return Err(std::io::Error::other(
+        return Err(std::io::Error::other(tr(
+            current(),
             "visualization viewer directory must not contain symbolic links",
-        ));
+        )));
     }
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| std::io::Error::other("visualization fragment has no file name"))?;
+    let file_name = path.file_name().ok_or_else(|| {
+        std::io::Error::other(tr(current(), "visualization fragment has no file name"))
+    })?;
     let viewer_path = viewer_dir.join(file_name);
-    let mut materialized_viewers = materialized_viewers
-        .lock()
-        .map_err(|_| std::io::Error::other("visualization viewer cache is unavailable"))?;
+    let mut materialized_viewers = materialized_viewers.lock().map_err(|_| {
+        std::io::Error::other(tr(current(), "visualization viewer cache is unavailable"))
+    })?;
     if materialized_viewers.get(&viewer_path) == Some(&document) {
         return Ok(viewer_path);
     }

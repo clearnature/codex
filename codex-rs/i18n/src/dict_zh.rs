@@ -3364,7 +3364,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Granting sandbox read access to {0} ...",
         "正在授予 {0} 的沙箱读权限…",
     ),
-    ("Error: {0}", "错误：{0}"),
     (
         "Sandbox read access granted for {0}",
         "已授予 {0} 的沙箱读权限",
@@ -3547,7 +3546,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Could not load transcript preview", "无法加载记录预览"),
     ("(no message yet)", "（还没有消息）"),
     ("Type to search", "输入以搜索"),
-    ("Status: ", "状态："),
     ("Filter: ", "筛选："),
     ("start new", "新建"),
     ("clear search", "清除搜索"),
@@ -3715,8 +3713,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无效的`tui.keymap`配置：{0}",
     ),
     ("Usage: /keymap [debug]", "用法：/keymap [debug]"),
-    ("Thread name cannot be empty.", "线程名不能为空。"),
-    ("Working", "处理中"),
     (
         "The session must start before you can change a goal.",
         "会话开始后才能修改目标。",

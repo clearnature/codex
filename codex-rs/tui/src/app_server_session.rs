@@ -128,6 +128,9 @@ use codex_app_server_protocol::TurnSteerParams;
 use codex_app_server_protocol::TurnSteerResponse;
 use codex_app_server_protocol::UserInput;
 use codex_config::ConfigLayerSource;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_otel::TelemetryAuthMode;
 use codex_protocol::ThreadId;
 use codex_protocol::approvals::GuardianAssessmentEvent;
@@ -441,7 +444,10 @@ impl AppServerSession {
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::AlreadyExists,
-                "a user-configured MCP server already owns the codex_tui namespace",
+                tr(
+                    current(),
+                    "a user-configured MCP server already owns the codex_tui namespace",
+                ),
             ));
         }
         let managed_requirement = config
@@ -456,7 +462,10 @@ impl AppServerSession {
                     .ok_or_else(|| {
                         std::io::Error::new(
                             std::io::ErrorKind::PermissionDenied,
-                            "managed MCP requirements do not permit the TUI task-tools server",
+                            tr(
+                                current(),
+                                "managed MCP requirements do not permit the TUI task-tools server",
+                            ),
                         )
                     })
             })
@@ -1125,7 +1134,10 @@ impl AppServerSession {
         self.client
             .request_typed(ClientRequest::ThreadLoadedList { request_id, params })
             .await
-            .wrap_err("failed to list loaded threads from app server")
+            .wrap_err(tr(
+                current(),
+                "failed to list loaded threads from app server",
+            ))
     }
 
     pub(crate) async fn thread_read(
@@ -1188,7 +1200,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to archive session")?;
+            .wrap_err(tr(current(), "failed to archive session"))?;
         Ok(())
     }
 
@@ -1203,7 +1215,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to delete session")?;
+            .wrap_err(tr(current(), "failed to delete session"))?;
         Ok(())
     }
 
@@ -1218,7 +1230,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to unarchive session")?;
+            .wrap_err(tr(current(), "failed to unarchive session"))?;
         Ok(response.thread)
     }
 
@@ -1288,7 +1300,10 @@ impl AppServerSession {
             .into_iter()
             .map(serde_json::to_value)
             .collect::<std::result::Result<Vec<_>, _>>()
-            .wrap_err("failed to encode thread/inject_items payload")?;
+            .wrap_err(tr(
+                current(),
+                "failed to encode thread/inject_items payload",
+            ))?;
         let request_id = self.next_request_id();
         self.client
             .request_typed(ClientRequest::ThreadInjectItems {
@@ -1590,8 +1605,10 @@ impl AppServerSession {
                 request_id,
                 params: ThreadApproveGuardianDeniedActionParams {
                     thread_id: thread_id.to_string(),
-                    event: serde_json::to_value(event)
-                        .wrap_err("failed to serialize Auto Review denial event")?,
+                    event: serde_json::to_value(event).wrap_err(tr(
+                        current(),
+                        "failed to serialize Auto Review denial event",
+                    ))?,
                 },
             })
             .await
@@ -2399,13 +2416,24 @@ async fn thread_session_state_from_thread_response(
     personality: Option<codex_protocol::config_types::Personality>,
     local_settings: &LocalSettings,
 ) -> Result<ThreadSessionState, String> {
-    let thread_id = ThreadId::from_string(thread_id)
-        .map_err(|err| format!("thread id `{thread_id}` is invalid: {err}"))?;
+    let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+        tr_with(
+            current(),
+            "thread id `{0}` is invalid: {1}",
+            &[&thread_id.to_string(), &err.to_string()],
+        )
+    })?;
     let forked_from_id = forked_from_id
         .as_deref()
         .map(ThreadId::from_string)
         .transpose()
-        .map_err(|err| format!("forked_from_id is invalid: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "forked_from_id is invalid: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     let history_config = codex_message_history::HistoryConfig::new(
         local_settings.codex_home.clone(),
         &local_settings.history,

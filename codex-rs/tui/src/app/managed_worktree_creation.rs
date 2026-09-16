@@ -9,6 +9,9 @@ use crate::app_event::ManagedWorktreeTransition;
 use crate::history_cell::McpInventoryLoadingCell as LoadingCell;
 use codex_app_server_protocol::ThreadBackgroundTerminalsListParams;
 use codex_app_server_protocol::ThreadBackgroundTerminalsListResponse as ListResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) async fn start_managed_worktree(
@@ -19,30 +22,46 @@ impl App {
     ) {
         if !self.config.features.enabled(Feature::Worktrees) {
             self.chat_widget.add_error_message(
-                "Enable worktrees in /experimental to create a worktree.".to_string(),
+                tr(
+                    current(),
+                    "Enable worktrees in /experimental to create a worktree.",
+                )
+                .to_string(),
             );
         } else if self.config.active_project.is_untrusted() {
             self.chat_widget.add_error_message(
-                "Cannot create a worktree from an explicitly untrusted source.".to_string(),
+                tr(
+                    current(),
+                    "Cannot create a worktree from an explicitly untrusted source.",
+                )
+                .to_string(),
             );
         } else if crate::uses_remote_workspace_or_environment(
             &self.app_server_target,
             self.environment_manager.as_ref(),
         ) {
             self.chat_widget.add_error_message(
-                "Managed worktrees are only supported for local sessions.".to_string(),
+                tr(
+                    current(),
+                    "Managed worktrees are only supported for local sessions.",
+                )
+                .to_string(),
             );
         } else if self
             .primary_thread_id
             .is_none_or(|thread_id| !self.chat_widget.can_change_working_directory(thread_id))
         {
             self.chat_widget.add_error_message(
-                "Creating a worktree requires an idle primary session without queued input."
-                    .to_string(),
+                tr(
+                    current(),
+                    "Creating a worktree requires an idle primary session without queued input.",
+                )
+                .to_string(),
             );
         } else if self.pending_managed_worktree_creation {
-            self.chat_widget
-                .add_error_message("A worktree is already being created.".to_string());
+            self.chat_widget.add_error_message(
+                tr(current(), "A worktree is already being created.").to_string(),
+            );
         } else {
             // These source-only checks must precede allocation. The transition repeats them
             // after the background task, since the session can change while Git is running.
@@ -51,12 +70,14 @@ impl App {
                 .iter()
                 .any(|cell| cell.as_any().is::<LoadingCell>())
             {
-                return self.working_directory_error("MCP inventory is still loading.");
+                return self
+                    .working_directory_error(tr(current(), "MCP inventory is still loading."));
             }
             let Some(thread_id) = self.primary_thread_id else {
-                return self.working_directory_error(
+                return self.working_directory_error(tr(
+                    current(),
                     "Creating a worktree requires an idle primary session without queued input.",
-                );
+                ));
             };
             let agents = self.agent_navigation.ordered_threads();
             let closed_agents: HashSet<_> = agents
@@ -76,7 +97,10 @@ impl App {
                     .iter()
                     .any(|(id, agent)| *id != thread_id && agent.is_running)
             {
-                return self.working_directory_error("Cannot change: another agent is running.");
+                return self.working_directory_error(tr(
+                    current(),
+                    "Cannot change: another agent is running.",
+                ));
             }
             let rollout = self.chat_widget.rollout_path();
             let has_rollout = rollout.as_deref().is_some_and(rollout_path_is_resumable);
@@ -97,7 +121,8 @@ impl App {
                             })
                         }))
             {
-                return self.working_directory_error("Conversation history is not saved.");
+                return self
+                    .working_directory_error(tr(current(), "Conversation history is not saved."));
             }
             let mut ids: HashSet<_> = self
                 .thread_event_channels
@@ -124,7 +149,10 @@ impl App {
                     .request_typed::<ListResponse>(request)
                     .await;
                 if !matches!(result, Ok(response) if response.data.is_empty()) {
-                    return self.working_directory_error("Active background terminals block /cd.");
+                    return self.working_directory_error(tr(
+                        current(),
+                        "Active background terminals block /cd.",
+                    ));
                 }
             }
             let setup = async {
@@ -134,7 +162,10 @@ impl App {
                     .map_err(|error| anyhow::anyhow!(error.to_string()))?;
                 anyhow::ensure!(
                     !source.active_project.is_untrusted(),
-                    "Cannot create a worktree from an explicitly untrusted source."
+                    tr(
+                        current(),
+                        "Cannot create a worktree from an explicitly untrusted source."
+                    )
                 );
                 let host = crate::legacy_core::config::load_config_toml_with_layer_stack(
                     &self.config.codex_home,
@@ -211,7 +242,7 @@ impl App {
         if !can_continue {
             return self.retained_worktree_error(
                 &checkout,
-                "Cannot continue into the new worktree while the source session changed or is unavailable.",
+                tr(current(), "Cannot continue into the new worktree while the source session changed or is unavailable."),
             );
         }
         match self
@@ -222,7 +253,7 @@ impl App {
             Ok(_) | Err(_) => {
                 return self.retained_worktree_error(
                     &checkout,
-                    "Cannot continue into the new worktree because source configuration changed.",
+                    tr(current(), "Cannot continue into the new worktree because source configuration changed."),
                 );
             }
         }
@@ -231,13 +262,20 @@ impl App {
             Ok(_) => {
                 return self.retained_worktree_error(
                     &checkout,
-                    "The new worktree is not trusted; run Codex there.",
+                    tr(
+                        current(),
+                        "The new worktree is not trusted; run Codex there.",
+                    ),
                 );
             }
             Err(error) => {
                 return self.retained_worktree_error(
                     &checkout,
-                    format!("Cannot load the new worktree configuration: {error}"),
+                    tr_with(
+                        current(),
+                        "Cannot load the new worktree configuration: {0}",
+                        &[&error.to_string()],
+                    ),
                 );
             }
         };
@@ -257,9 +295,13 @@ impl App {
         checkout: &codex_worktree::ManagedWorktree,
         reason: impl std::fmt::Display,
     ) {
-        self.working_directory_error(format!(
-            "{reason} A checkout was retained at {}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
-            checkout.root.display()
+        self.working_directory_error(tr_with(
+            current(),
+            "{0} A checkout was retained at {1}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
+            &[
+                &reason.to_string(),
+                &checkout.root.display().to_string(),
+            ],
         ));
     }
 }

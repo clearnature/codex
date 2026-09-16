@@ -25,6 +25,7 @@ use codex_app_server_protocol::MarketplaceUpgradeParams;
 use codex_app_server_protocol::MarketplaceUpgradeResponse;
 use codex_app_server_protocol::RequestId;
 use codex_i18n::current;
+use codex_i18n::tr;
 use codex_i18n::tr_with;
 
 use crate::hooks_rpc::fetch_hooks_list;
@@ -159,7 +160,7 @@ impl App {
                 fetch_thread_usage(request_handle, thread_id),
             )
             .await
-            .map_err(|_| "thread usage request timed out in TUI".to_string())
+            .map_err(|_| tr(current(), "thread usage request timed out in TUI").to_string())
             .and_then(|result| result.map_err(|err| err.to_string()));
             app_event_tx.send(AppEvent::ThreadUsageLoaded {
                 thread_id,
@@ -1032,19 +1033,19 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
     if !remote_plugin_enabled {
         sections.push((
             "vertical",
-            "OpenAI Curated",
+            tr(current(), "OpenAI Curated"),
             vec![PluginListMarketplaceKind::Vertical],
         ));
     }
     sections.push((
         "workspace",
-        "Workspace",
+        tr(current(), "Workspace"),
         vec![PluginListMarketplaceKind::WorkspaceDirectory],
     ));
     if plugin_sharing_enabled {
         sections.push((
             "shared-with-me",
-            "Shared with me",
+            tr(current(), "Shared with me"),
             vec![PluginListMarketplaceKind::SharedWithMe],
         ));
     } else {
@@ -1064,7 +1065,7 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
                 section_errors.push(PluginRemoteSectionError {
                     section_id: section_id.to_string(),
                     label: label.to_string(),
-                    message: plugin_remote_section_error_message(label, &message),
+                    message: plugin_remote_section_error_message(section_id, &message),
                 });
             }
         }
@@ -1073,8 +1074,8 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
     (marketplaces, section_errors)
 }
 
-fn plugin_remote_section_error_message(label: &str, err: &str) -> String {
-    let next_step = plugin_remote_section_error_next_step(label, err);
+fn plugin_remote_section_error_message(section_id: &str, err: &str) -> String {
+    let next_step = plugin_remote_section_error_next_step(section_id, err);
     if next_step.is_empty() {
         err.to_string()
     } else {
@@ -1082,27 +1083,45 @@ fn plugin_remote_section_error_message(label: &str, err: &str) -> String {
     }
 }
 
-fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str {
+fn plugin_remote_section_error_next_step(section_id: &str, err: &str) -> &'static str {
     let err = err.to_ascii_lowercase();
     if err.contains("api key auth is not supported") {
-        "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs."
+        tr(
+            current(),
+            "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
+        )
     } else if err.contains("authentication required")
         || err.contains("not signed in")
         || err.contains("not logged in")
     {
-        "Sign in to ChatGPT, then try loading this section again."
+        tr(
+            current(),
+            "Sign in to ChatGPT, then try loading this section again.",
+        )
     } else if err.contains("codex plugins are disabled")
         || err.contains("plugin sharing is disabled")
         || err.contains("plugin sharing is not enabled")
         || err.contains("feature disabled")
     {
-        "Ask a workspace admin to enable Codex plugins or plugin sharing."
+        tr(
+            current(),
+            "Ask a workspace admin to enable Codex plugins or plugin sharing.",
+        )
     } else if err.contains("workspace") && (err.contains("access") || err.contains("mismatch")) {
-        "Switch to the matching workspace or ask the sharer for access."
+        tr(
+            current(),
+            "Switch to the matching workspace or ask the sharer for access.",
+        )
     } else if err.contains("not found") || err.contains("status 404") {
-        "Check that you are signed in to the correct workspace and still have access."
+        tr(
+            current(),
+            "Check that you are signed in to the correct workspace and still have access.",
+        )
     } else if err.contains("old build") || err.contains("update codex") || err.contains("stale") {
-        "Update Codex, then try opening the shared plugin again."
+        tr(
+            current(),
+            "Update Codex, then try opening the shared plugin again.",
+        )
     } else if err.contains("service unavailable")
         || err.contains("temporarily unavailable")
         || err.contains("status 503")
@@ -1110,11 +1129,17 @@ fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str
         || err.contains("request")
         || err.contains("status")
     {
-        "Try again later; local plugin functionality is still available."
+        tr(
+            current(),
+            "Try again later; local plugin functionality is still available.",
+        )
     } else if err.contains("disabled by admin") || err.contains("admin disabled") {
-        "Ask a workspace admin to confirm plugin access."
-    } else if label == "Shared with me" && err.contains("plugin") && err.contains("disabled") {
-        "Ask the sharer or a workspace admin to confirm plugin access."
+        tr(current(), "Ask a workspace admin to confirm plugin access.")
+    } else if section_id == "shared-with-me" && err.contains("plugin") && err.contains("disabled") {
+        tr(
+            current(),
+            "Ask the sharer or a workspace admin to confirm plugin access.",
+        )
     } else {
         ""
     }
@@ -1123,8 +1148,8 @@ fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str
 fn plugin_sharing_disabled_remote_section_error() -> PluginRemoteSectionError {
     PluginRemoteSectionError {
         section_id: "shared-with-me".to_string(),
-        label: "Shared with me".to_string(),
-        message: "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.".to_string(),
+        label: tr(current(), "Shared with me").to_string(),
+        message: tr(current(), "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.").to_string(),
     }
 }
 
@@ -1157,7 +1182,8 @@ async fn request_plugin_list_with_marketplace_kinds(
     cwd: PathBuf,
     marketplace_kinds: Option<Vec<PluginListMarketplaceKind>>,
 ) -> Result<PluginListResponse> {
-    let cwd = AbsolutePathBuf::try_from(cwd).wrap_err("plugin list cwd must be absolute")?;
+    let cwd = AbsolutePathBuf::try_from(cwd)
+        .wrap_err(tr(current(), "plugin list cwd must be absolute"))?;
     let request_id = RequestId::String(format!("plugin-list-{}", Uuid::new_v4()));
     request_handle
         .request_typed(ClientRequest::PluginList {
@@ -1582,44 +1608,65 @@ mod tests {
     fn plugin_remote_section_error_message_adds_concrete_next_steps() {
         let cases = [
             (
-                "Workspace",
+                tr(current(), "Workspace"),
                 "chatgpt authentication required for remote plugin catalog",
-                "Sign in to ChatGPT, then try loading this section again.",
+                tr(
+                    current(),
+                    "Sign in to ChatGPT, then try loading this section again.",
+                ),
             ),
             (
-                "OpenAI Curated",
+                tr(current(), "OpenAI Curated"),
                 "chatgpt authentication required for remote plugin catalog; api key auth is not supported",
-                "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
+                tr(
+                    current(),
+                    "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
+                ),
             ),
             (
-                "Shared with me",
+                tr(current(), "Shared with me"),
                 "remote plugin catalog request failed with status 404: missing",
-                "Check that you are signed in to the correct workspace and still have access.",
+                tr(
+                    current(),
+                    "Check that you are signed in to the correct workspace and still have access.",
+                ),
             ),
             (
-                "Shared with me",
+                tr(current(), "Shared with me"),
                 "workspace access mismatch",
-                "Switch to the matching workspace or ask the sharer for access.",
+                tr(
+                    current(),
+                    "Switch to the matching workspace or ask the sharer for access.",
+                ),
             ),
             (
-                "Shared with me",
+                tr(current(), "Shared with me"),
                 "old build fallback",
-                "Update Codex, then try opening the shared plugin again.",
+                tr(
+                    current(),
+                    "Update Codex, then try opening the shared plugin again.",
+                ),
             ),
             (
-                "Shared with me",
+                tr(current(), "Shared with me"),
                 "remote service unavailable",
-                "Try again later; local plugin functionality is still available.",
+                tr(
+                    current(),
+                    "Try again later; local plugin functionality is still available.",
+                ),
             ),
             (
-                "Workspace",
+                tr(current(), "Workspace"),
                 "plugin disabled by admin",
-                "Ask a workspace admin to confirm plugin access.",
+                tr(current(), "Ask a workspace admin to confirm plugin access."),
             ),
             (
-                "Shared with me",
+                tr(current(), "Shared with me"),
                 "plugin sharing is not enabled",
-                "Ask a workspace admin to enable Codex plugins or plugin sharing.",
+                tr(
+                    current(),
+                    "Ask a workspace admin to enable Codex plugins or plugin sharing.",
+                ),
             ),
         ];
 
@@ -1637,8 +1684,8 @@ mod tests {
             plugin_sharing_disabled_remote_section_error(),
             PluginRemoteSectionError {
                 section_id: "shared-with-me".to_string(),
-                label: "Shared with me".to_string(),
-                message: "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.".to_string(),
+                label: tr(current(), "Shared with me").to_string(),
+                message: tr(current(), "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.").to_string(),
             }
         );
     }

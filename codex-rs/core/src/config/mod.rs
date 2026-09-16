@@ -4707,7 +4707,10 @@ fn resolve_default_permissions<'a>(
     else {
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
-            tr(current(), "requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`"),
+            tr(
+                current(),
+                "requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`",
+            ),
         ));
     };
 
@@ -4769,7 +4772,10 @@ fn validate_required_permission_profile_catalog(
     else {
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
-            tr(current(), "requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`"),
+            tr(
+                current(),
+                "requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`",
+            ),
         ));
     };
     if !is_permission_allowed(allowed_permission_profiles, default_permissions) {

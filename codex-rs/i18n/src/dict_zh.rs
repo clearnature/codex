@@ -3223,7 +3223,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "thread_unload_delay_secs is too large",
         "thread_unload_delay_secs过大",
     ),
-    ("`approval_policy = \"never\"` cannot be used because requirements do not allow `sandbox_mode = \"danger-full-access\"`; Codex would fall back to read-only permissions with approvals disabled. Choose an `approval_policy` based on what you need, such as `on-request`, or choose an allowed sandbox mode.", "`approval_policy = \"never\"`不可用，因为requirements不允许`sandbox_mode = \"danger-full-access\"`；Codex将退化为禁用审批的只读权限。请根据需求选择`approval_policy`（例如`on-request`），或选择允许的沙箱模式。"),
+    (
+        "`approval_policy = \"never\"` cannot be used because requirements do not allow `sandbox_mode = \"danger-full-access\"`; Codex would fall back to read-only permissions with approvals disabled. Choose an `approval_policy` based on what you need, such as `on-request`, or choose an allowed sandbox mode.",
+        "`approval_policy = \"never\"`不可用，因为requirements不允许`sandbox_mode = \"danger-full-access\"`；Codex将退化为禁用审批的只读权限。请根据需求选择`approval_policy`（例如`on-request`），或选择允许的沙箱模式。",
+    ),
     (
         "goals.max_goal_token_budget exceeds the maximum supported token budget",
         "goals.max_goal_token_budget超过支持的最大token预算",
@@ -3232,7 +3235,79 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "requirements.toml default_permissions requires allowed_permission_profiles",
         "requirements.toml在设置default_permissions时需要allowed_permission_profiles",
     ),
-    ("requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`", "requirements.toml的default_permissions必须设置，除非allowed_permission_profiles同时允许`:workspace`和`:read-only`"),
+    (
+        "requirements.toml default_permissions must be set unless allowed_permission_profiles allows both `:workspace` and `:read-only`",
+        "requirements.toml的default_permissions必须设置，除非allowed_permission_profiles同时允许`:workspace`和`:read-only`",
+    ),
+    ("{0} (non-admin sandbox)", "{0}（非管理员沙箱）"),
+    (
+        "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ",
+        "非管理员沙箱在多数情况下会保护你的文件并阻止网络访问。但若遭遇提示词注入，风险更高。要升级到默认沙箱，请运行 ",
+    ),
+    (
+        "No recent auto-review denials in this thread.",
+        "此线程中没有最近的自动审查拒绝记录。",
+    ),
+    (
+        "Denials are recorded after auto-review rejects an action.",
+        "自动审查拒绝某个操作后会记录拒绝项。",
+    ),
+    ("That thread is no longer available.", "该线程已不可用。"),
+    ("Auto-review Denials", "自动审查拒绝记录"),
+    (
+        "Select a denied action to approve.",
+        "选择一条被拒绝的操作进行批准。",
+    ),
+    (
+        "That auto-review denial is no longer available.",
+        "该自动审查拒绝记录已不可用。",
+    ),
+    (
+        "Approval recorded for one retry of the selected auto-review denial.",
+        "已记录批准，所选自动审查拒绝项可重试一次。",
+    ),
+    (
+        "The model will see the approval context; the retry still goes through auto-review.",
+        "模型会看到批准上下文；重试仍会经过自动审查。",
+    ),
+    ("Enable full access?", "启用完全访问？"),
+    (
+        "We strongly recommend selecting \"Approve for me\" instead, and customizing the reviewer policy for your use case.",
+        "我们强烈建议改为选择「替我批准」，并按你的使用场景自定义审查策略。",
+    ),
+    (
+        "We strongly recommend selecting \"Ask for approval\" instead.",
+        "我们强烈建议改为选择「请求批准」。",
+    ),
+    (
+        "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval.",
+        "Codex以完全访问运行时，可以不经你批准就编辑电脑上的任何文件并执行带网络的命令。",
+    ),
+    (
+        "Cyber models carry a higher risk of dangerous actions.",
+        "网络安全模型带来危险操作的风险更高。",
+    ),
+    (
+        " Ensure proper safeguards are in place before granting full access. ",
+        " 在授予完全访问前，请确保已设置适当的防护措施。 ",
+    ),
+    (
+        "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. ",
+        "Codex以完全访问运行时，可以不经你批准就编辑电脑上的任何文件并执行带网络的命令。 ",
+    ),
+    (
+        "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior.",
+        "启用完全访问时请谨慎。这会显著增加数据丢失、泄露或意外行为的风险。",
+    ),
+    ("Yes, continue anyway", "是，仍然继续"),
+    (
+        "Apply full access for this session",
+        "为本次会话应用完全访问",
+    ),
+    (
+        "Go back without enabling full access",
+        "返回且不启用完全访问",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

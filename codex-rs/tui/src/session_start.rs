@@ -9,6 +9,9 @@ use crate::app_server_session::ResumeModelSettings;
 use crate::legacy_core::config::Config;
 use crate::resume_picker::SessionTarget;
 use crate::unarchive_prompt::UnarchiveChoice;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use color_eyre::Result;
 use color_eyre::eyre::WrapErr;
 
@@ -21,8 +24,8 @@ pub(crate) enum SessionStartAction {
 impl SessionStartAction {
     pub(crate) fn verb(self) -> &'static str {
         match self {
-            Self::Resume(_) => "resume",
-            Self::Fork(_) => "fork",
+            Self::Resume(_) => tr(current(), "resume"),
+            Self::Fork(_) => tr(current(), "fork"),
         }
     }
 
@@ -82,7 +85,13 @@ pub(crate) async fn complete_session_start(
     app_server
         .thread_unarchive(target.thread_id)
         .await
-        .wrap_err_with(|| format!("Failed to unarchive session {}", target.thread_id))?;
+        .wrap_err_with(|| {
+            tr_with(
+                current(),
+                "Failed to unarchive session {0}",
+                &[&target.thread_id.to_string()],
+            )
+        })?;
     // Retry by ID, not by the old rollout path, which unarchiving may have moved.
     action
         .start(app_server, config, target)
@@ -115,7 +124,11 @@ fn session_start_error(
     }
 
     let target_label = target_session.display_label();
-    color_eyre::eyre::eyre!("Failed to {action} session from {target_label}: {err}")
+    color_eyre::eyre::eyre!(tr_with(
+        current(),
+        "Failed to {0} session from {1}: {2}",
+        &[action, target_label.as_str(), &err.to_string()],
+    ))
 }
 
 fn archived_session_guidance(err: &color_eyre::Report) -> Option<String> {

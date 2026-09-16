@@ -156,7 +156,12 @@ pub(crate) fn thread_items_to_transcript_cells(
                     )
                 {
                     cells.push(Arc::new(PrefixedWrappedHistoryCell::new(
-                        format!("Sent by Codex from task {source_thread_id}\n{prompt}"),
+                        tr_with(
+                            current(),
+                            "Sent by Codex from task {0}\n{1}",
+                            &[&source_thread_id.to_string(), &prompt],
+                        )
+                        .to_string(),
                         "• ".dim(),
                         "  ",
                     )));

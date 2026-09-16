@@ -154,7 +154,12 @@ async fn resolve_session_target(
                 .thread_read(session_id, /*include_turns*/ false)
                 .await
                 .with_context(|| {
-                    format!("No active or archived session found matching '{target}'.")
+                    tr_with(
+                        current(),
+                        "No active or archived session found matching '{0}'.",
+                        &[target],
+                    )
+                    .to_string()
                 })?;
             return Ok(ResolvedSessionTarget {
                 session_id,
@@ -170,7 +175,7 @@ async fn resolve_session_target(
     let (search_scope, collections): (&str, &[SessionCollection]) = match action {
         SessionArchiveAction::Archive => ("active", &[SessionCollection::Active]),
         SessionArchiveAction::Delete(_) => (
-            "active or archived",
+            tr(current(), "active or archived"),
             &[SessionCollection::Active, SessionCollection::Archived],
         ),
         SessionArchiveAction::Unarchive => ("archived", &[SessionCollection::Archived]),
@@ -189,9 +194,11 @@ async fn resolve_session_target(
     {
         return session_target_from_app_server_thread(thread);
     }
-    Err(eyre!(
-        "No {search_scope} session found matching '{target}'."
-    ))
+    Err(eyre!(tr_with(
+        current(),
+        "No {0} session found matching '{1}'.",
+        &[search_scope, target],
+    )))
 }
 
 fn session_target_from_app_server_thread(thread: AppServerThread) -> Result<ResolvedSessionTarget> {
@@ -220,8 +227,12 @@ fn confirm_session_delete(target: &ResolvedSessionTarget) -> Result<bool> {
     match target.session_name.as_deref() {
         Some(name) => writeln!(
             stderr,
-            "Permanently delete session '{name}' ({})?",
-            target.session_id
+            "{}",
+            tr_with(
+                current(),
+                "Permanently delete session '{0}' ({1})?",
+                &[name, &target.session_id.to_string()],
+            )
         ),
         None => writeln!(
             stderr,

@@ -6388,6 +6388,49 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Skip", "跳过"),
     ("  Resuming session…", "  正在恢复会话…"),
     ("  Forking session…", "  正在分叉会话…"),
+    // Unarchive prompt, session start/archive commands, the status-indicator
+    // interrupt hint, the proper-join helper, --add-dir advice, the fatal-error
+    // prefix, the cross-thread transcript header and the branch failure. The verbs
+    // interpolated into those sentences (`resume`/`fork`, participles) are translated
+    // at their definitions so the rendered sentence is not half English.
+    ("This conversation is archived", "此对话已归档"),
+    ("Unarchive and {0}", "取消归档并{0}"),
+    (" to continue or ", "继续，或"),
+    ("fork", "分叉"),
+    ("resumed", "已恢复"),
+    ("forked", "已分叉"),
+    ("Failed to unarchive session {0}", "取消归档会话失败：{0}"),
+    (
+        "Failed to {0} session from {1}: {2}",
+        "从{1}{0}会话失败：{2}",
+    ),
+    (" to interrupt)", " 中断）"),
+    ("{0} and {1}", "{0} 和 {1}"),
+    (
+        "Ignoring --add-dir ({0}) because the effective permissions do not allow additional writable roots. Switch to workspace-write or danger-full-access to allow them.",
+        "忽略--add-dir（{0}）：当前生效的权限不允许额外的可写根目录。请切换到workspace-write或danger-full-access以允许它们。",
+    ),
+    (
+        "Sent by Codex from task {0}\n{1}",
+        "由Codex从任务{0}发送\n{1}",
+    ),
+    (
+        "Failed to branch before the selected prompt: {0}",
+        "无法在所选提示词之前分叉：{0}",
+    ),
+    (
+        "No active or archived session found matching '{0}'.",
+        "没有找到匹配{0}的活跃或已归档会话。",
+    ),
+    ("active or archived", "活跃或已归档"),
+    (
+        "No {0} session found matching '{1}'.",
+        "没有找到匹配{1}的{0}会话。",
+    ),
+    (
+        "Permanently delete session '{0}' ({1})?",
+        "永久删除会话{0}（{1}）？",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

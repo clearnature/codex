@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::width::display_width;
@@ -335,7 +337,12 @@ pub(crate) fn proper_join<T: AsRef<str>>(items: &[T]) -> String {
     match items.len() {
         0 => String::new(),
         1 => items[0].as_ref().to_string(),
-        2 => format!("{} and {}", items[0].as_ref(), items[1].as_ref()),
+        2 => tr_with(
+            current(),
+            "{0} and {1}",
+            &[items[0].as_ref(), items[1].as_ref()],
+        )
+        .to_string(),
         _ => {
             let last = items[items.len() - 1].as_ref();
             let mut result = String::new();
@@ -347,7 +354,7 @@ pub(crate) fn proper_join<T: AsRef<str>>(items: &[T]) -> String {
                 result.push_str(item.as_ref());
             }
 
-            format!("{result} and {last}")
+            tr_with(current(), "{0} and {1}", &[&result, last]).to_string()
         }
     }
 }

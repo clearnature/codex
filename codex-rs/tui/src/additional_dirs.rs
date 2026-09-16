@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::models::PermissionProfile;
 use std::path::PathBuf;
 
@@ -38,9 +40,12 @@ fn format_warning(additional_dirs: &[PathBuf]) -> String {
         .map(|path| path.to_string_lossy())
         .collect::<Vec<_>>()
         .join(", ");
-    format!(
-        "Ignoring --add-dir ({joined_paths}) because the effective permissions do not allow additional writable roots. Switch to workspace-write or danger-full-access to allow them."
+    tr_with(
+        current(),
+        "Ignoring --add-dir ({0}) because the effective permissions do not allow additional writable roots. Switch to workspace-write or danger-full-access to allow them.",
+        &[&joined_paths],
     )
+    .to_string()
 }
 
 #[cfg(test)]

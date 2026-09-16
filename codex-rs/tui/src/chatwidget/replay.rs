@@ -4,6 +4,8 @@
 //! live-only side effects.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     /// Flush prior activity and preserve its separator before live or replayed assistant text.
@@ -249,7 +251,12 @@ impl ChatWidget {
                     )
                 {
                     self.add_to_history(history_cell::PrefixedWrappedHistoryCell::new(
-                        format!("Sent by Codex from task {source_thread_id}\n{prompt}"),
+                        tr_with(
+                            current(),
+                            "Sent by Codex from task {0}\n{1}",
+                            &[&source_thread_id.to_string(), &prompt],
+                        )
+                        .to_string(),
                         "• ".dim(),
                         "  ",
                     ));

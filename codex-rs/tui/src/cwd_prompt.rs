@@ -39,15 +39,15 @@ pub(crate) enum CwdPromptAction {
 impl CwdPromptAction {
     fn verb(self) -> &'static str {
         match self {
-            CwdPromptAction::Resume => "resume",
-            CwdPromptAction::Fork => "fork",
+            CwdPromptAction::Resume => tr(current(), "resume"),
+            CwdPromptAction::Fork => tr(current(), "fork"),
         }
     }
 
     fn past_participle(self) -> &'static str {
         match self {
-            CwdPromptAction::Resume => "resumed",
-            CwdPromptAction::Fork => "forked",
+            CwdPromptAction::Resume => tr(current(), "resumed"),
+            CwdPromptAction::Fork => tr(current(), "forked"),
         }
     }
 }

@@ -5,6 +5,9 @@ use crate::selection_list::selection_option_row;
 use crate::session_start::SessionStartAction;
 use crate::tui::Tui;
 use crate::tui::TuiEvent;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use color_eyre::Result;
 use crossterm::event::KeyCode;
@@ -161,7 +164,8 @@ impl UnarchivePrompt {
         let mut column = ColumnRenderable::new();
         column.push("");
         column.push(
-            Paragraph::new("This conversation is archived".bold()).wrap(Wrap { trim: false }),
+            Paragraph::new(tr(current(), "This conversation is archived").bold())
+                .wrap(Wrap { trim: false }),
         );
         column.push(
             Paragraph::new(Line::from(self.thread_id.to_string()).dim()).wrap(Wrap { trim: false }),
@@ -169,22 +173,22 @@ impl UnarchivePrompt {
         column.push("");
         column.push(selection_option_row(
             /*index*/ 0,
-            format!("Unarchive and {}", self.action.verb()),
+            tr_with(current(), "Unarchive and {0}", &[self.action.verb()]).to_string(),
             self.highlighted == UnarchiveChoice::Unarchive,
         ));
         column.push(selection_option_row(
             /*index*/ 1,
-            "Cancel".to_string(),
+            tr(current(), "Cancel").to_string(),
             self.highlighted == UnarchiveChoice::Cancel,
         ));
         column.push("");
         column.push(
             Paragraph::new(Line::from(vec![
-                "Press ".dim(),
+                tr(current(), "Press ").dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to continue or ".dim(),
+                tr(current(), " to continue or ").dim(),
                 key_hint::plain(KeyCode::Esc).into(),
-                " to cancel".dim(),
+                tr(current(), " to cancel").dim(),
             ]))
             .wrap(Wrap { trim: false }),
         );

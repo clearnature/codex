@@ -21,6 +21,8 @@
 //! `TranscriptOverlay::sync_live_tail`. This preserves the invariant that the overlay reflects
 //! both committed history and in-flight activity without changing flush or coalescing behavior.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 mod legacy_input;
 
 use std::any::TypeId;
@@ -139,9 +141,14 @@ impl App {
         err: impl std::fmt::Display,
     ) {
         self.chat_widget.restore_user_message_to_composer(prompt);
-        self.chat_widget.add_error_message(format!(
-            "Failed to branch before the selected prompt: {err}"
-        ));
+        self.chat_widget.add_error_message(
+            tr_with(
+                current(),
+                "Failed to branch before the selected prompt: {0}",
+                &[&err.to_string()],
+            )
+            .to_string(),
+        );
     }
 
     /// Open transcript overlay (enters alternate screen and shows full transcript).

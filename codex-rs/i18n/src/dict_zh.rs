@@ -354,6 +354,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Creating a worktree requires an idle primary session without queued input.",
         "创建工作树需要主会话空闲且没有排队输入。",
     ),
+    (
+        "Couldn't set up your sandbox with Administrator permissions",
+        "无法以管理员权限完成沙箱设置",
+    ),
     ("Custom permissions", "自定义权限"),
     ("Debugging tools", "调试工具。"),
     (
@@ -488,10 +492,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Ignored invalid terminal title {0}: {1}.",
         "已忽略无效的终端标题{0}：{1}。",
     ),
+    (
+        "Hang tight, this may take a few minutes",
+        "请稍候，这可能需要几分钟",
+    ),
     ("Hot path energy for fast iteration", "快速迭代的热路径能量"),
     ("Implement this plan?", "要实施此计划吗？"),
     ("Import setup", "导入配置"),
     ("Inference: {0} {1} ({2})", "推理：{0} {1}（{2}）"),
+    (
+        "Input disabled until setup completes.",
+        "设置完成前无法输入。",
+    ),
     ("Inspect feature flags", "查看特性开关。"),
     ("Inspect keypresses", "检查按键"),
     (
@@ -537,6 +549,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Legacy patch approval requests are not available in TUI yet.",
         "TUI中尚不支持旧版补丁审批请求。",
+    ),
+    (
+        "Learn more <https://developers.openai.com/codex/windows>",
+        "了解更多 <https://developers.openai.com/codex/windows>",
     ),
     ("Learn more: ", "了解更多： "),
     ("Loading MCP inventory", "正在加载MCP清单"),
@@ -701,6 +717,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Session ID: {0}", "会话ID：{0}"),
     ("Session archived: {0}", "会话已归档：{0}"),
     ("Session runtime:", "会话运行时："),
+    (
+        "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>",
+        "设置Codex代理沙箱，以保护你的文件并控制网络访问。了解更多 <https://developers.openai.com/codex/windows>",
+    ),
+    ("Setting up sandbox...", "正在设置沙箱…"),
     ("Shell mode", "Shell模式"),
     ("Ship it", "发布"),
     ("Shutdown", "已停止"),
@@ -789,6 +810,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Turn skills on or off. Your changes are saved automatically.",
         "开启或关闭技能。更改会自动保存。",
     ),
+    ("Try setting up admin sandbox again", "重试管理员沙箱设置"),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to search shortcuts", "输入以搜索快捷键"),
     (
@@ -812,6 +834,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Your existing setup will not be changed.",
         "你现有的配置不会被修改。",
     ),
+    (
+        "Use Codex with non-admin sandbox",
+        "在非管理员沙箱中使用Codex",
+    ),
     ("Use Detailed Hint A (Recommended)", "使用详细提示A（推荐）"),
     ("Use Detailed Hint B", "使用详细提示B"),
     ("Use Detailed Hint C", "使用详细提示C"),
@@ -819,6 +845,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Use memories in the following threads. Applied at next thread.",
         "在以下线程中使用记忆。在下一个线程生效。",
+    ),
+    (
+        "Use non-admin sandbox (higher risk if prompt injected)",
+        "使用非管理员沙箱（提示词注入时风险更高）",
     ),
     ("Viewed {0}", "已查看{0}"),
     (
@@ -831,6 +861,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Waiting for", "正在等待"),
     ("Waiting for agents", "正在等待代理"),
     ("Waiting for {0} agents", "正在等待{0}个代理"),
+    (
+        "We couldn't complete the world-writable scan, so protections cannot be verified. ",
+        "无法完成全局可写扫描，因此无法验证防护。 ",
+    ),
     ("Web search: {0}", "网络搜索：{0}"),
     (
         "WebSocket: {0} events send ({1})",
@@ -840,6 +874,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Working directory changed to: {0}", "工作目录已切换到：{0}"),
     ("Yes, clear context and implement", "是，清空上下文并实施"),
     ("Yes, implement this plan", "是，实施此计划"),
+    (
+        "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.",
+        "你仍可在非管理员沙箱中使用Codex。提示词注入时风险更高。",
+    ),
+    (
+        "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access.",
+        "你的组织要求继续使用默认的Codex代理沙箱。请完成设置以保护你的文件并控制网络访问。",
+    ),
+    (
+        "Your organization requires the default sandbox before Codex can continue.",
+        "你的组织要求先使用默认沙箱，Codex才能继续。",
+    ),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
     (

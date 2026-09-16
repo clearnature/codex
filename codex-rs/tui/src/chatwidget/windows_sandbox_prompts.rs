@@ -115,7 +115,7 @@ impl ChatWidget {
             });
         let info_line = if failed_scan {
             Line::from(vec![
-                "We couldn't complete the world-writable scan, so protections cannot be verified. "
+                tr(current(), "We couldn't complete the world-writable scan, so protections cannot be verified. ")
                     .into(),
                 tr_with(
                     current(),
@@ -267,12 +267,12 @@ impl ChatWidget {
         header.push(*Box::new(
             Paragraph::new(if allow_unelevated {
                 vec![
-                    line!["Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"],
+                    line![tr(current(), "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>")],
                 ]
             } else {
                 vec![
-                    line!["Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access."],
-                    line!["Learn more <https://developers.openai.com/codex/windows>"],
+                    line![tr(current(), "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access.")],
+                    line![tr(current(), "Learn more <https://developers.openai.com/codex/windows>")],
                 ]
             })
             .wrap(Wrap { trim: false }),
@@ -308,7 +308,11 @@ impl ChatWidget {
         }];
         if allow_unelevated {
             items.push(SelectionItem {
-                name: "Use non-admin sandbox (higher risk if prompt injected)".to_string(),
+                name: tr(
+                    current(),
+                    "Use non-admin sandbox (higher risk if prompt injected)",
+                )
+                .to_string(),
                 description: None,
                 actions: vec![Box::new(move |tx| {
                     legacy_otel.counter(
@@ -380,21 +384,27 @@ impl ChatWidget {
             !allow_unelevated || self.elevated_windows_sandbox_setup_required();
         let mut lines = Vec::new();
         lines.push(line![
-            "Couldn't set up your sandbox with Administrator permissions".bold()
+            tr(
+                current(),
+                "Couldn't set up your sandbox with Administrator permissions"
+            )
+            .bold()
         ]);
         lines.push(line![""]);
         if allow_unelevated {
             lines.push(line![
-                "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected."
+                tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.")
             ]);
         } else {
-            lines.push(line![
+            lines.push(line![tr(
+                current(),
                 "Your organization requires the default sandbox before Codex can continue."
-            ]);
+            )]);
         }
-        lines.push(line![
+        lines.push(line![tr(
+            current(),
             "Learn more <https://developers.openai.com/codex/windows>"
-        ]);
+        )]);
 
         let mut header = ColumnRenderable::new();
         header.push(*Box::new(Paragraph::new(lines).wrap(Wrap { trim: false })));
@@ -407,7 +417,7 @@ impl ChatWidget {
         let legacy_profile_selection = profile_selection;
         let quit_otel = self.session_telemetry.clone();
         let mut items = vec![SelectionItem {
-            name: "Try setting up admin sandbox again".to_string(),
+            name: tr(current(), "Try setting up admin sandbox again").to_string(),
             description: None,
             actions: vec![Box::new({
                 let otel = self.session_telemetry.clone();
@@ -429,7 +439,7 @@ impl ChatWidget {
         }];
         if allow_unelevated {
             items.push(SelectionItem {
-                name: "Use Codex with non-admin sandbox".to_string(),
+                name: tr(current(), "Use Codex with non-admin sandbox").to_string(),
                 description: None,
                 actions: vec![Box::new({
                     let otel = self.session_telemetry.clone();
@@ -515,15 +525,15 @@ impl ChatWidget {
         // accidentally queue messages that will run under an unexpected mode.
         self.bottom_pane.set_composer_input_enabled(
             /*enabled*/ false,
-            Some("Input disabled until setup completes.".to_string()),
+            Some(tr(current(), "Input disabled until setup completes.").to_string()),
         );
         self.bottom_pane.reset_status_timer(Duration::ZERO);
         self.bottom_pane.ensure_status_indicator();
         self.bottom_pane
             .set_interrupt_hint_visible(/*visible*/ false);
         self.set_status(
-            "Setting up sandbox...".to_string(),
-            Some("Hang tight, this may take a few minutes".to_string()),
+            tr(current(), "Setting up sandbox...").to_string(),
+            Some(tr(current(), "Hang tight, this may take a few minutes").to_string()),
             StatusDetailsCapitalization::CapitalizeFirst,
             STATUS_DETAILS_DEFAULT_MAX_LINES,
         );

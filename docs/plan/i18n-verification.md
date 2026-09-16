@@ -288,6 +288,32 @@ clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `a
 `cli/src/snapshots/…exec_server_help_documents_remote_options.snap` 立刻抓到（old 无句点 / new 有句点）。
 处置：27 个 `about` 的英文键与字典键同时去掉句尾句点（值仍保留中文句号）。
 
+## 十一、短键复用审计（第 63 轮）
+
+**动机**：包装时的对抗自检指出一个风险 —— 同一个英文键可能出现在多个界面（如 `read {0}` 既是
+审批摘要里的动词，也是宠物资源错误上下文），单键多义会让一处译文在另一处变味。
+
+**方法（可复现）**：用正则收集全仓 `tr(current(), "…")` / `tr_with(current(), "…", …)` 的渲染点，
+按 key 聚合到「文件集合」，再与字典键求交，输出「长度 ≤ 12 且渲染于 ≥2 文件」的清单。
+
+**结果**：
+* 多文件渲染的键 **60** 个；其中 ≤8 字符 **18** 个，≤12 字符 **32** 个。
+* ≤8 字符的 18 个逐一复核（`read {0}`、`  Press `、` to save`、`Agents`、`Approval`、`Composer`、
+  `Editor`、`Cancel`、`Plugin`、`Reason: `、`Running`、`Server: `、`Source`、`Status: `、`Working`、
+  `disabled`、`item`、`items`）：**都是通用词，各处语义一致，无需拆分**。
+* 两处值得记录的判定：
+  * `read {0}` / `write {0}` → 「读取{0}」/「写入{0}」：在 `bottom_pane/approval_overlay.rs` 是
+    **审批摘要动词**，在 `pets/*` 是**错误上下文**（`read /path: No such file`）。两处都读作
+    「读取 X」，共用可接受。
+  * `item` / `items` → 「条目」：`external_agent_config_migration/render.rs` 与
+    `chatwidget/status_surfaces.rs` 共用；**刻意避开「项目」**，以免与 project 混淆。
+
+**诚实边界**：本轮判定依据是**渲染点所在文件名**，没有逐行读完 60 个站点；`Back` / `Open` 这类
+多义动词的残余风险仍在。要更严就得把 60 个站点做成表格逐条读——**未做**，登记为后续。
+
+**可复用规则**：写新短键前先 `grep '("KEY"'` 查字典；若条目已存在但语义不同，**不要复用**，
+改用更长、自带上下文的键（` to toggle; ` 这种带尾随分号的碎片键就是这么来的）。
+
 ## 九、翻译口径判据（"不译"的依据）
 
 判据是**文本流向**，不是「用哪个宏产生」：同一段文案经 `.context(…)` 走到 UI 就译，进日志 / 协议 /

@@ -205,7 +205,7 @@ impl ChatWidget {
         };
 
         let mut items = vec![SelectionItem {
-            name: "Action".to_string(),
+            name: tr(current(), "Action").to_string(),
             description: Some("Rationale".to_string()),
             is_disabled: true,
             search_value: Some(String::new()),
@@ -524,7 +524,7 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: "Cancel".to_string(),
+                name: tr(current(), "Cancel").to_string(),
                 description: Some(
                     tr(current(), "Go back without enabling full access").to_string(),
                 ),

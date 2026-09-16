@@ -312,7 +312,7 @@ impl ChatWidget {
             title: Some(tr(current(), "Usage limit resets").to_string()),
             subtitle: Some(message.to_string()),
             items: vec![SelectionItem {
-                name: "Close".to_string(),
+                name: tr(current(), "Close").to_string(),
                 dismiss_on_select: true,
                 ..Default::default()
             }],
@@ -335,7 +335,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Close".to_string(),
+                    name: tr(current(), "Close").to_string(),
                     dismiss_on_select: true,
                     ..Default::default()
                 },
@@ -436,7 +436,7 @@ impl ChatWidget {
                             ..Default::default()
                         },
                         SelectionItem {
-                            name: "Close".to_string(),
+                            name: tr(current(), "Close").to_string(),
                             dismiss_on_select: true,
                             ..Default::default()
                         },

@@ -1368,13 +1368,13 @@ impl ChatWidget {
             ..Default::default()
         });
         items.push(SelectionItem {
-            name: "Hooks".to_string(),
+            name: tr(current(), "Hooks").to_string(),
             description: Some(plugin_hook_summary(plugin)),
             is_disabled: true,
             ..Default::default()
         });
         items.push(SelectionItem {
-            name: "Apps".to_string(),
+            name: tr(current(), "Apps").to_string(),
             description: Some(plugin_app_summary(plugin)),
             is_disabled: true,
             ..Default::default()
@@ -1722,7 +1722,7 @@ fn plugin_metadata_items(plugin: &PluginDetail) -> Vec<SelectionItem> {
         ..Default::default()
     });
     items.push(SelectionItem {
-        name: "Auth".to_string(),
+        name: tr(current(), "Auth").to_string(),
         description: Some(plugin_auth_policy_summary(plugin.summary.auth_policy)),
         is_disabled: true,
         ..Default::default()

@@ -6518,6 +6518,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to initialize sqlite local db at {0}: {1}",
         "无法在{0}初始化sqlite本地数据库：{1}",
     ),
+    // Short labels (2-7 characters) that the shape-based scanner cannot flag:
+    // selection-row names, popup title and confirm buttons. `Cancel`/`Close`/`Retry`
+    // also appear elsewhere; the dictionary key is shared, so the value must stay
+    // consistent with those sites.
+    ("Retry", "重试"),
+    ("Back", "返回"),
+    ("Action", "操作"),
+    ("Hooks", "钩子"),
+    ("Apps", "应用"),
+    ("Auth", "认证"),
+    ("Quit", "退出"),
 ];
 
 /// English source text -> Simplified Chinese.

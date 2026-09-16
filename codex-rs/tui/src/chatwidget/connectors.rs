@@ -263,7 +263,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Retry".to_string(),
+                    name: tr(current(), "Retry").to_string(),
                     description: Some(
                         tr(current(), "Reload installed and available apps.").to_string(),
                     ),

@@ -216,7 +216,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Back".to_string(),
+                    name: tr(current(), "Back").to_string(),
                     actions: vec![Box::new(|tx| tx.send(AppEvent::CloseMisalignmentReview))],
                     ..Default::default()
                 },

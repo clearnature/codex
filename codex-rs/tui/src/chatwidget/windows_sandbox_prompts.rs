@@ -331,7 +331,7 @@ impl ChatWidget {
             });
         }
         items.push(SelectionItem {
-            name: "Quit".to_string(),
+            name: tr(current(), "Quit").to_string(),
             description: None,
             actions: vec![Box::new(move |tx| {
                 quit_otel.counter(
@@ -462,7 +462,7 @@ impl ChatWidget {
             });
         }
         items.push(SelectionItem {
-            name: "Quit".to_string(),
+            name: tr(current(), "Quit").to_string(),
             description: None,
             actions: vec![Box::new(move |tx| {
                 quit_otel.counter(

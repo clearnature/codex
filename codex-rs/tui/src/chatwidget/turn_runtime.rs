@@ -270,7 +270,7 @@ impl ChatWidget {
                 context_usage_label.as_deref(),
             ));
         self.notify(Notification::PlanModePrompt {
-            title: PLAN_IMPLEMENTATION_TITLE.to_string(),
+            title: plan_implementation::plan_implementation_title().to_string(),
         });
     }
 

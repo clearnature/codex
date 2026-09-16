@@ -184,7 +184,7 @@ async fn plan_implementation_clear_context_requires_default_mode_and_plan() {
     );
     assert_eq!(
         params.items[1].disabled_reason.as_deref(),
-        Some(plan_implementation::PLAN_IMPLEMENTATION_DEFAULT_UNAVAILABLE)
+        Some(plan_implementation::plan_implementation_default_unavailable())
     );
 
     let params = plan_implementation::selection_view_params(
@@ -194,7 +194,7 @@ async fn plan_implementation_clear_context_requires_default_mode_and_plan() {
     );
     assert_eq!(
         params.items[1].disabled_reason.as_deref(),
-        Some(plan_implementation::PLAN_IMPLEMENTATION_NO_APPROVED_PLAN)
+        Some(plan_implementation::plan_implementation_no_approved_plan())
     );
 
     let params = plan_implementation::selection_view_params(
@@ -204,7 +204,7 @@ async fn plan_implementation_clear_context_requires_default_mode_and_plan() {
     );
     assert_eq!(
         params.items[1].disabled_reason.as_deref(),
-        Some(plan_implementation::PLAN_IMPLEMENTATION_NO_APPROVED_PLAN)
+        Some(plan_implementation::plan_implementation_no_approved_plan())
     );
 
     let params = plan_implementation::selection_view_params(

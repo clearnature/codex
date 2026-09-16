@@ -3,6 +3,8 @@
 
 use super::*;
 use codex_app_server_protocol::McpServerStartupFailureReason;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Default)]
@@ -52,22 +54,41 @@ impl HistoryCell for StartupWarningsCell {
         let mcp_count = self.mcp_servers.len();
         let count = mcp_count + self.other_sources.len();
         let sign_in_count = self.sign_in_servers.len();
-        let plural = if count == 1 { "" } else { "s" };
-        let source = if mcp_count == count { "MCP " } else { "" };
-        let mut summary = format!("⚠ {count} {source}startup issue{plural}");
+        // The English line inflects `startup issue{plural}` and takes an "MCP "
+        // source marker; Chinese has no plural, so the four English shapes are four
+        // dictionary keys while the two Chinese values collapse to two. Word order
+        // and the `(a; b)` / " · … for details" scaffolding are layout: only the
+        // leaf phrases go through the dictionary, so the English rendering stays
+        // byte-identical to `app/tests/startup_warnings_tests.rs` snapshots.
+        let mut summary = if mcp_count == count {
+            if count == 1 {
+                tr_with(current(), "⚠ {0} MCP startup issue", &[&count.to_string()])
+            } else {
+                tr_with(current(), "⚠ {0} MCP startup issues", &[&count.to_string()])
+            }
+        } else if count == 1 {
+            tr_with(current(), "⚠ {0} startup issue", &[&count.to_string()])
+        } else {
+            tr_with(current(), "⚠ {0} startup issues", &[&count.to_string()])
+        }
+        .to_string();
         let mut breakdown = Vec::new();
         if mcp_count > 0 && mcp_count < count {
-            breakdown.push(format!("{mcp_count} MCP"));
+            breakdown.push(tr_with(current(), "{0} MCP", &[&mcp_count.to_string()]));
         }
         if sign_in_count > 0 {
-            let verb = if sign_in_count == 1 { "needs" } else { "need" };
-            breakdown.push(format!("{sign_in_count} {verb} sign-in"));
+            let sign_in_arg = sign_in_count.to_string();
+            breakdown.push(if sign_in_count == 1 {
+                tr_with(current(), "{0} needs sign-in", &[&sign_in_arg])
+            } else {
+                tr_with(current(), "{0} need sign-in", &[&sign_in_arg])
+            });
         }
         if !breakdown.is_empty() {
             summary.push_str(&format!(" ({})", breakdown.join("; ")));
         }
         if let Some(hint) = &self.transcript_hint {
-            summary.push_str(&format!(" · {hint} for details"));
+            summary.push_str(&tr_with(current(), " · {0} for details", &[hint.as_str()]));
         }
         vec![
             crate::line_truncation::truncate_line_with_ellipsis_if_overflow(

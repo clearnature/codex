@@ -7,7 +7,6 @@ use crate::app_server_session::ResumeModelSettings;
 use crate::dynamic_tools_mcp::ThreadToolTransport;
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum ReconnectPresentation {

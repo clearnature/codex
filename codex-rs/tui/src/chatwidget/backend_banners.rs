@@ -20,7 +20,6 @@ use crate::model_catalog::LUNA_RESERVE_MODEL;
 use codex_app_server_protocol::GetAccountRateLimitsResponse;
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::config_types::CollaborationMode;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::openai_models::ModelPreset;

@@ -6031,6 +6031,41 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "本地认证不是ChatGPT登录",
     ),
     ("no local auth available", "没有可用的本地认证"),
+    // Transient history cells: the update-available notice, the patch/image
+    // result headings, the plan cells, the web-search header and the startup
+    // warning summary. The startup summary interpolates an "MCP " source marker
+    // and inflects `issue{plural}` in English; Chinese needs no plural, so the
+    // four English shapes map onto the same two Chinese values. The `(a; b)`
+    // scaffolding and the trailing spaces in the fragment keys are layout and
+    // deliberately stay in Rust (`history_cell/startup_warnings.rs`).
+    ("Run ", "运行"),
+    (" to update.", "以完成更新。"),
+    ("See ", "参见"),
+    (" for installation options.", "，了解安装选项。"),
+    (
+        "See https://github.com/openai/codex for installation options.",
+        "参见https://github.com/openai/codex了解安装选项。",
+    ),
+    ("Generating conversation recap", "正在生成对话回顾"),
+    ("Generating conversation recap...", "正在生成对话回顾…"),
+    ("✘ Failed to apply patch", "✘ 应用补丁失败"),
+    ("Image generation failed", "图像生成失败"),
+    ("Generated Image:", "生成的图像："),
+    ("Saved to: ", "保存到："),
+    ("Proposed Plan", "建议计划"),
+    ("Updated Plan", "已更新计划"),
+    ("(no steps provided)", "（未提供步骤）"),
+    ("Searched the web", "已搜索网络"),
+    ("Searching the web", "正在搜索网络"),
+    ("⚠ {0} MCP startup issue", "⚠ {0} 个MCP启动问题"),
+    ("⚠ {0} MCP startup issues", "⚠ {0} 个MCP启动问题"),
+    ("⚠ {0} startup issue", "⚠ {0} 个启动问题"),
+    ("⚠ {0} startup issues", "⚠ {0} 个启动问题"),
+    ("{0} MCP", "{0} 个MCP"),
+    ("{0} needs sign-in", "{0} 个需要登录"),
+    ("{0} need sign-in", "{0} 个需要登录"),
+    (" · {0} for details", " · 详情见{0}"),
+    ("workspace with network access", "工作区并允许网络访问"),
 ];
 
 /// English source text -> Simplified Chinese.

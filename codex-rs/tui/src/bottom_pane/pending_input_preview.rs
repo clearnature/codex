@@ -1,6 +1,5 @@
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

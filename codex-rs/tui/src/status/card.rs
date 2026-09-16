@@ -626,7 +626,7 @@ fn status_permission_summary(
     }
     if let Some(details) = summary.strip_prefix("workspace-write") {
         if details.contains("(network access enabled)") {
-            return "workspace with network access".to_string();
+            return tr(current(), "workspace with network access").to_string();
         }
         return "workspace".to_string();
     }

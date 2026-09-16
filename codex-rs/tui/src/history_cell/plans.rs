@@ -2,6 +2,8 @@
 
 use super::markdown_render_cache::MarkdownRenderCache;
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Transient active-cell representation of the mutable tail of a proposed-plan stream.
 ///
@@ -108,7 +110,7 @@ impl HistoryCell for ProposedPlanCell {
     fn display_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
         self.rendered_lines.render(width, || {
             let mut lines = vec![
-                HyperlinkLine::new(vec!["• ".dim(), "Proposed Plan".bold()].into()),
+                HyperlinkLine::new(vec!["• ".dim(), tr(current(), "Proposed Plan").bold()].into()),
                 HyperlinkLine::new(Line::from(" ")),
             ];
 
@@ -201,7 +203,7 @@ impl HistoryCell for PlanUpdateCell {
         };
 
         let mut lines: Vec<Line<'static>> = vec![];
-        lines.push(vec!["• ".dim(), "Updated Plan".bold()].into());
+        lines.push(vec!["• ".dim(), tr(current(), "Updated Plan").bold()].into());
 
         let mut indented_lines = vec![];
         let note = self
@@ -214,7 +216,9 @@ impl HistoryCell for PlanUpdateCell {
         };
 
         if self.plan.is_empty() {
-            indented_lines.push(Line::from("(no steps provided)".dim().italic()));
+            indented_lines.push(Line::from(
+                tr(current(), "(no steps provided)").dim().italic(),
+            ));
         } else {
             for PlanItemArg { step, status } in self.plan.iter() {
                 indented_lines.extend(render_step(status, step));
@@ -226,7 +230,7 @@ impl HistoryCell for PlanUpdateCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        let mut lines = vec![Line::from("Updated Plan")];
+        let mut lines = vec![Line::from(tr(current(), "Updated Plan"))];
         if let Some(explanation) = self
             .explanation
             .as_ref()
@@ -236,7 +240,7 @@ impl HistoryCell for PlanUpdateCell {
             lines.extend(raw_lines_from_source(explanation));
         }
         if self.plan.is_empty() {
-            lines.push(Line::from("(no steps provided)"));
+            lines.push(Line::from(tr(current(), "(no steps provided)")));
         } else {
             for PlanItemArg { step, status } in &self.plan {
                 lines.push(Line::from(format!("{status:?}: {step}")));

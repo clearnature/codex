@@ -36,12 +36,16 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         use ratatui_macros::line;
         use ratatui_macros::text;
         let update_instruction = if let Some(update_action) = self.update_action {
-            line!["Run ", update_action.command_str().cyan(), " to update."]
+            line![
+                tr(current(), "Run "),
+                update_action.command_str().cyan(),
+                tr(current(), " to update.")
+            ]
         } else {
             line![
-                "See ",
+                tr(current(), "See "),
                 "https://github.com/openai/codex".cyan().underlined(),
-                " for installation options."
+                tr(current(), " for installation options.")
             ]
         };
 
@@ -78,7 +82,10 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         } else {
             tr(
                 current(),
-                "See https://github.com/openai/codex for installation options.",
+                tr(
+                    current(),
+                    "See https://github.com/openai/codex for installation options.",
+                ),
             )
             .to_string()
         };
@@ -316,7 +323,7 @@ impl HistoryCell for ThreadRecapLoadingCell {
                 )
                 .unwrap_or_else(|| "•".dim()),
                 " ".into(),
-                "Generating conversation recap".bold(),
+                tr(current(), "Generating conversation recap").bold(),
                 "…".dim(),
             ]
             .into(),
@@ -324,7 +331,10 @@ impl HistoryCell for ThreadRecapLoadingCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from("Generating conversation recap...")]
+        vec![Line::from(tr(
+            current(),
+            "Generating conversation recap...",
+        ))]
     }
 
     fn transcript_animation_tick(&self) -> Option<u64> {

@@ -8,7 +8,6 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::collections::BTreeSet;
 
 use codex_app_server_protocol::McpServerStartupFailureReason;

@@ -15,7 +15,6 @@ use codex_app_server_protocol::ThreadItem;
 use codex_app_server_protocol::ThreadStatus;
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use ratatui::style::Stylize;
 use ratatui::text::Line;

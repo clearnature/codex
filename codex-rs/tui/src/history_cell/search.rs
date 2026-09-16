@@ -1,12 +1,14 @@
 //! Web-search activity history cells.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 fn web_search_header(completed: bool) -> &'static str {
     if completed {
-        "Searched the web"
+        tr(current(), "Searched the web")
     } else {
-        "Searching the web"
+        tr(current(), "Searching the web")
     }
 }
 

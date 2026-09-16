@@ -43,6 +43,8 @@ use crate::markdown::render_markdown_agent_with_links_cwd_and_visualizations;
 use crate::style::proposed_plan_style;
 use crate::terminal_hyperlinks::HyperlinkLine;
 use crate::terminal_hyperlinks::prefix_hyperlink_lines;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::prelude::Stylize;
 use ratatui::text::Line;
 use std::path::Path;
@@ -732,7 +734,7 @@ impl PlanStreamController {
         let mut out_lines: Vec<HyperlinkLine> = Vec::with_capacity(/*capacity*/ 4);
         if !self.header_emitted {
             out_lines.push(HyperlinkLine::new(
-                vec!["• ".dim(), "Proposed Plan".bold()].into(),
+                vec!["• ".dim(), tr(current(), "Proposed Plan").bold()].into(),
             ));
             out_lines.push(HyperlinkLine::new(Line::from(" ")));
         }

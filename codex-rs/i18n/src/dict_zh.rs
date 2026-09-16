@@ -64,7 +64,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "  No experimental features available for now",
         "  目前没有可用的实验性特性",
     ),
+    ("  Billed tokens", "  计费Token"),
+    ("  Models", "  模型"),
     ("  No memory settings available", "  没有可用的记忆设置"),
+    ("  Reasoning", "  推理"),
     ("  Rename › ", "  重命名 › "),
     ("  Search › ", "  搜索 › "),
     (
@@ -157,6 +160,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "侧会话中不可用'/delete'。请先按Ctrl+C返回主线程。",
     ),
     (" {0}/{1} answered", " 已答 {0}/{1}"),
+    ("({0} cached)", "（{0} 已缓存）"),
     ("**Tip:** {0}", "**提示：** {0}"),
     ("1 MCP server", "1个MCP服务器"),
     ("1 action.", "1个操作。"),
@@ -367,6 +371,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无法以管理员权限完成沙箱设置",
     ),
     ("Current project", "当前项目"),
+    (
+        "Custom .tmTheme files can be added to the {0} directory.",
+        "可以把自定义 .tmTheme 文件放到{0}目录中。",
+    ),
     ("Custom permissions", "自定义权限"),
     ("Debugging tools", "调试工具。"),
     (
@@ -603,6 +611,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Message too long; limit {0} characters",
         "消息过长；上限{0}个字符",
     ),
+    (
+        "Move up/down to live preview themes",
+        "上下移动即可实时预览主题",
+    ),
     ("Needs input", "需要输入"),
     ("New task", "新建任务"),
     (
@@ -746,6 +758,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Search › ", "搜索 › "),
     ("Select Pet", "选择宠物"),
+    ("Select Syntax Theme", "选择语法主题"),
     ("Selected {0} of {1} {2}.", "已选择{0}/{1}个{2}。"),
     (
         "Selections retained. Save to retry, or cancel to close.",
@@ -852,6 +865,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Tip: Codex can only inspect keys your terminal sends.",
         "提示：Codex只能检查终端实际发送的按键。",
     ),
+    ("Thread usage", "线程用量"),
     ("To continue this session, run:", "要继续此会话，请运行："),
     ("Token usage so far:", "目前Token用量："),
     ("Token usage:", "Token用量："),
@@ -871,6 +885,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Tools & setup", "工具与配置"),
     ("Try setting up admin sandbox again", "重试管理员沙箱设置"),
     ("Type to filter pets...", "输入以筛选宠物…"),
+    ("Type to filter themes...", "输入以筛选主题…"),
     ("Type to search shortcuts", "输入以搜索快捷键"),
     (
         "Unarchive a saved session by id or session name",
@@ -1241,6 +1256,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0}   {1} working   {2} ready",
         "{0}   {1} 工作中   {2} 就绪",
     ),
+    ("{0} (custom)", "{0}（自定义）"),
     ("{0} (iapi)", "{0}（iapi）"),
     ("{0} (service)", "{0}（service）"),
     ("{0} ({1} unanswered)", "{0}（{1}个未回答）"),
@@ -1254,8 +1270,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0} hooks need review before they can run.",
         "有{0}个钩子在运行前需要审查。",
     ),
+    ("{0} input", "输入 {0}"),
     ("{0} need input", "{0} 需要输入"),
     ("{0} of {1}", "{0}/{1}"),
+    ("{0} output", "输出 {0}"),
     ("{0} questions requested", "请求了{0}个问题"),
     ("{0} to interrupt", "{0} 中断"),
     ("{0} unavailable", "{0}不可用"),

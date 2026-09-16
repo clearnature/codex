@@ -7,6 +7,9 @@ use crate::wrapping::RtOptions;
 use crate::wrapping::word_wrap_lines;
 use codex_app_server_protocol::ThreadUsage;
 use codex_app_server_protocol::ThreadUsageBreakdownGroup;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::prelude::Line;
 use ratatui::style::Stylize;
 use std::collections::BTreeMap;
@@ -26,11 +29,22 @@ const REASONING_ORDER: [&str; 8] = [
     "Max",
     "Ultra",
 ];
+/// 速度档位顺序。
+///
+/// 这张表被 `.position(|value| value == display_name)` 当键来查找，所以它的元素**必须与
+/// 显示值逐字一致**；一旦显示值走 `tr`，中文下查找就会失败。因此速度/推理档位的显示值
+/// 保持英文（见 `docs/plan/i18n-verification.md` §9.1.5 的匹配表规则）。
 const SPEED_ORDER: [&str; 3] = ["Fast mode", "Ultrafast", "Standard"];
-const MODELS_LABEL: &str = "  Models";
-const REASONING_LABEL: &str = "  Reasoning";
+fn models_label() -> &'static str {
+    tr(current(), "  Models")
+}
+fn reasoning_label() -> &'static str {
+    tr(current(), "  Reasoning")
+}
 const SPEED_LABEL: &str = "  Speed";
-const BILLED_TOKENS_LABEL: &str = "  Billed tokens";
+fn billed_tokens_label() -> &'static str {
+    tr(current(), "  Billed tokens")
+}
 
 /// Shared state updates a committed `/status` card when its asynchronous estimate arrives.
 #[derive(Clone, Debug, Default)]
@@ -58,7 +72,7 @@ impl StatusThreadUsage {
         // Keep existing card rows stable when asynchronous billing details arrive. Reserving a
         // formatter label does not emit a loading placeholder or an empty billing row.
         if self.reserve_label_width.load(Ordering::Relaxed) {
-            push_label(labels, seen, BILLED_TOKENS_LABEL);
+            push_label(labels, seen, billed_tokens_label());
         }
         #[expect(clippy::expect_used)]
         let stored_estimate = self
@@ -68,17 +82,17 @@ impl StatusThreadUsage {
         let Some(estimate) = stored_estimate.as_ref() else {
             return;
         };
-        push_label(labels, seen, "Thread usage");
+        push_label(labels, seen, tr(current(), "Thread usage"));
         if !estimate.groups.is_empty() {
-            push_label(labels, seen, MODELS_LABEL);
-            push_label(labels, seen, REASONING_LABEL);
+            push_label(labels, seen, models_label());
+            push_label(labels, seen, reasoning_label());
             push_label(labels, seen, SPEED_LABEL);
             if estimate
                 .groups
                 .iter()
                 .any(|group| group.input_tokens.is_some() || group.output_tokens.is_some())
             {
-                push_label(labels, seen, BILLED_TOKENS_LABEL);
+                push_label(labels, seen, billed_tokens_label());
             }
         }
     }
@@ -98,7 +112,14 @@ impl StatusThreadUsage {
         };
 
         let credits_micros = estimate.estimated_usage_credits_micros;
-        let mut usage = vec![format!("{} credits", format_credit_micros(credits_micros)).into()];
+        let mut usage = vec![
+            tr_with(
+                current(),
+                "{0} credits",
+                &[&format_credit_micros(credits_micros)],
+            )
+            .into(),
+        ];
         if let Some(cost) = estimate
             .estimated_usage_usd_micros
             .and_then(format_estimated_usd_micros)
@@ -106,11 +127,11 @@ impl StatusThreadUsage {
             usage.push(" · ".dim());
             usage.push(cost.into());
         }
-        let mut lines = vec![formatter.line("Thread usage", usage)];
+        let mut lines = vec![formatter.line(tr(current(), "Thread usage"), usage)];
 
         for (label, dimension) in [
-            (MODELS_LABEL, BreakdownDimension::Model),
-            (REASONING_LABEL, BreakdownDimension::Reasoning),
+            (models_label(), BreakdownDimension::Model),
+            (reasoning_label(), BreakdownDimension::Reasoning),
             (SPEED_LABEL, BreakdownDimension::Speed),
         ] {
             let Some(value) = grouped_usage(&estimate.groups, dimension) else {
@@ -141,18 +162,30 @@ impl StatusThreadUsage {
         if !estimate.groups.is_empty() && (input_tokens.is_some() || output_tokens.is_some()) {
             let mut tokens = Vec::new();
             if let Some(input_tokens) = input_tokens {
-                tokens.push(format!("{} input", format_tokens_compact(input_tokens)));
+                tokens.push(tr_with(
+                    current(),
+                    "{0} input",
+                    &[&format_tokens_compact(input_tokens)],
+                ));
                 if let Some(cached_tokens) = cached_tokens {
-                    tokens.push(format!("({} cached)", format_tokens_compact(cached_tokens)));
+                    tokens.push(tr_with(
+                        current(),
+                        "({0} cached)",
+                        &[&format_tokens_compact(cached_tokens)],
+                    ));
                 }
             }
             if let Some(output_tokens) = output_tokens {
                 if !tokens.is_empty() {
                     tokens.push("+".to_string());
                 }
-                tokens.push(format!("{} output", format_tokens_compact(output_tokens)));
+                tokens.push(tr_with(
+                    current(),
+                    "{0} output",
+                    &[&format_tokens_compact(output_tokens)],
+                ));
             }
-            lines.push(formatter.line(BILLED_TOKENS_LABEL, vec![tokens.join(" ").into()]));
+            lines.push(formatter.line(billed_tokens_label(), vec![tokens.join(" ").into()]));
         }
 
         lines

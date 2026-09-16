@@ -15,6 +15,7 @@ use codex_app_server_protocol::TurnInterruptParams;
 use codex_app_server_protocol::TurnInterruptResponse;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::ResponseItem;
 
@@ -277,9 +278,10 @@ impl App {
                 )
             {
                 self.chat_widget
-                    .set_side_conversation_context_label(Some(format!(
-                        "{} for side",
-                        binding.display_label()
+                    .set_side_conversation_context_label(Some(tr_with(
+                        current(),
+                        "{0} for side",
+                        &[&binding.display_label()],
                     )));
             }
             return;
@@ -294,10 +296,14 @@ impl App {
         let mut label_parts = Vec::new();
         let parent_is_main = self.primary_thread_id == Some(parent_thread_id);
         if parent_is_main {
-            label_parts.push("from main thread".to_string());
+            label_parts.push(tr(current(), "from main thread").to_string());
         } else {
             let parent_label = self.thread_label(parent_thread_id);
-            label_parts.push(format!("from parent thread ({parent_label})"));
+            label_parts.push(tr_with(
+                current(),
+                "from parent thread ({0})",
+                &[&parent_label],
+            ));
         }
         if let Some(parent_status) = parent_status {
             label_parts.push(parent_status.label(parent_is_main).to_string());
@@ -306,11 +312,19 @@ impl App {
             crate::keymap::KeymapContext::Global,
             "toggle_side_conversation",
         ) {
-            label_parts.push(format!("{} to switch", binding.display_label()));
+            label_parts.push(tr_with(
+                current(),
+                "{0} to switch",
+                &[&binding.display_label()],
+            ));
         }
-        label_parts.push("ctrl + c to close".to_string());
+        label_parts.push(tr(current(), "ctrl + c to close").to_string());
         self.chat_widget
-            .set_side_conversation_context_label(Some(format!("Side {}", label_parts.join(" · "))));
+            .set_side_conversation_context_label(Some(tr_with(
+                current(),
+                "Side {0}",
+                &[&label_parts.join(" · ")],
+            )));
     }
 
     pub(super) fn active_side_parent_thread_id(&self) -> Option<ThreadId> {
@@ -449,8 +463,11 @@ impl App {
             return false;
         }
         if let Err(err) = app_server.thread_unsubscribe(thread_id).await {
-            let message =
-                format!("Failed to close side conversation {thread_id}; it is still open: {err}");
+            let message = tr_with(
+                current(),
+                "Failed to close side conversation {0}; it is still open: {1}",
+                &[&thread_id.to_string(), &err.to_string()],
+            );
             tracing::warn!("{message}");
             self.chat_widget.add_error_message(message);
             return false;
@@ -566,7 +583,11 @@ impl App {
                 app_server.startup_interrupt(thread_id).await
             };
         interrupt_result.map_err(|err| {
-            format!("Failed to close side conversation {thread_id}; it is still open: {err}")
+            tr_with(
+                current(),
+                "Failed to close side conversation {0}; it is still open: {1}",
+                &[&thread_id.to_string(), &err.to_string()],
+            )
         })
     }
 
@@ -654,7 +675,11 @@ impl App {
         }) {
             side_no_started_conversation_message().to_string()
         } else {
-            format!("Failed to start side conversation: {err}")
+            tr_with(
+                current(),
+                "Failed to start side conversation: {0}",
+                &[&err.to_string()],
+            )
         }
     }
 
@@ -714,8 +739,9 @@ impl App {
         if self.pending_server_profiles.contains_key(&parent_thread_id) {
             self.restore_side_user_message(user_message.take());
             self.sync_side_thread_ui();
-            self.chat_widget
-                .add_error_message("Wait for permissions to update before forking.".into());
+            self.chat_widget.add_error_message(
+                tr(current(), "Wait for permissions to update before forking.").into(),
+            );
             return Ok(AppRunControl::Continue);
         }
 
@@ -765,8 +791,10 @@ impl App {
                     self.discard_side_thread_or_keep_visible(tui, app_server, child_thread_id)
                         .await;
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to prepare side conversation {child_thread_id}: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to prepare side conversation {0}: {1}",
+                        &[&child_thread_id.to_string(), &err.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
@@ -788,8 +816,10 @@ impl App {
                         );
                     }
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to switch into side conversation {child_thread_id}: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to switch into side conversation {0}: {1}",
+                        &[&child_thread_id.to_string(), &err.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
@@ -803,8 +833,10 @@ impl App {
                     self.discard_side_thread_or_keep_visible(tui, app_server, child_thread_id)
                         .await;
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to switch into side conversation {child_thread_id}."
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to switch into side conversation {0}.",
+                        &[&child_thread_id.to_string()],
                     ));
                 }
             }

@@ -3474,6 +3474,36 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Goal achieved ({0})", "目标已达成（{0}）"),
     ("Goal achieved", "目标已达成"),
     ("reverse-i-search: ", "反向增量搜索："),
+    ("{0} for side", "{0} 进入侧边会话"),
+    ("from main thread", "来自主线程"),
+    ("from parent thread ({0})", "来自父线程（{0}）"),
+    ("{0} to switch", "{0} 切换"),
+    ("ctrl + c to close", "ctrl + c关闭"),
+    ("Side {0}", "侧边会话 {0}"),
+    (
+        "Wait for permissions to update before forking.",
+        "请等待权限更新完成后再分叉。",
+    ),
+    (
+        "Failed to close side conversation {0}; it is still open: {1}",
+        "关闭侧边会话{0}失败；它仍处于打开状态：{1}",
+    ),
+    (
+        "Failed to start side conversation: {0}",
+        "启动侧边会话失败：{0}",
+    ),
+    (
+        "Failed to prepare side conversation {0}: {1}",
+        "准备侧边会话{0}失败：{1}",
+    ),
+    (
+        "Failed to switch into side conversation {0}: {1}",
+        "切换到侧边会话{0}失败：{1}",
+    ),
+    (
+        "Failed to switch into side conversation {0}.",
+        "切换到侧边会话{0}失败。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

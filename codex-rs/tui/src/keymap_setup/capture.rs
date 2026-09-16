@@ -8,6 +8,9 @@ use crate::app_event_sender::AppEventSender;
 use crate::bottom_pane::BottomPaneView;
 use crate::bottom_pane::CancellationEvent;
 use crate::render::renderable::Renderable;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -64,24 +67,33 @@ impl KeymapCaptureView {
     fn lines(&self, width: u16) -> Vec<Line<'static>> {
         let wrap_width = usize::from(width.max(1));
         let mut lines = vec![
-            Line::from("Remap Shortcut".bold()),
+            Line::from(tr(current(), "Remap Shortcut").bold()),
             Line::from(vec![
-                "Action: ".dim(),
+                tr(current(), "Action: ").dim(),
                 self.label.clone().into(),
                 "  ".into(),
                 format!("{}.{}", self.context, self.action).dim(),
             ]),
-            Line::from(vec!["Current: ".dim(), self.current_binding.clone().cyan()]),
+            Line::from(vec![
+                tr(current(), "Current: ").dim(),
+                self.current_binding.clone().cyan(),
+            ]),
         ];
 
         let instructions = match (self.capture_mode, self.first_stroke.as_deref()) {
-            (KeymapCaptureMode::SingleKey, _) => "Press the new key now. Esc cancels.".to_string(),
-            (KeymapCaptureMode::Chord, None) => {
-                "Press the first key, then the second. Esc cancels.".to_string()
+            (KeymapCaptureMode::SingleKey, _) => {
+                tr(current(), "Press the new key now. Esc cancels.").to_string()
             }
-            (KeymapCaptureMode::Chord, Some(first)) => {
-                format!("First key: {first}. Press the second key. Esc cancels.")
-            }
+            (KeymapCaptureMode::Chord, None) => tr(
+                current(),
+                "Press the first key, then the second. Esc cancels.",
+            )
+            .to_string(),
+            (KeymapCaptureMode::Chord, Some(first)) => tr_with(
+                current(),
+                "First key: {0}. Press the second key. Esc cancels.",
+                &[first],
+            ),
         };
         lines.extend(
             textwrap::wrap(&instructions, wrap_width)

@@ -343,12 +343,21 @@ impl App {
             ServerRequest::PermissionsRequestApproval { params, .. } => {
                 // TODO(anp): Remove this native-path localization error path once core permission
                 // paths remain PathUri after crossing the app-server boundary.
-                let permissions = params.permissions.clone().try_into().map_err(|err| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        format!("failed to localize requested filesystem paths: {err}"),
+                let permissions =
+                    codex_protocol::request_permissions::RequestPermissionProfile::try_from(
+                        params.permissions.clone(),
                     )
-                })?;
+                    .map_err(|err| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            tr_with(
+                                current(),
+                                "failed to localize requested filesystem paths: {0}",
+                                &[&err.to_string()],
+                            )
+                            .to_string(),
+                        )
+                    })?;
                 Some(ThreadInteractiveRequest::Approval(
                     ApprovalRequest::Permissions(PermissionsApprovalRequest {
                         thread_id,
@@ -666,7 +675,11 @@ impl App {
                                 let notification =
                                     ServerNotification::Warning(WarningNotification {
                                         thread_id: Some(thread_id.to_string()),
-                                        message: format!("Failed to interrupt turn: {error}"),
+                                        message: tr_with(
+                                            current(),
+                                            "Failed to interrupt turn: {0}",
+                                            &[&error.to_string()],
+                                        ),
                                     });
                                 let should_send = {
                                     let mut store = thread_event_store.lock().await;
@@ -852,7 +865,7 @@ impl App {
                             force_reload: *force_reload,
                         })
                         .await,
-                    "failed to refresh skills",
+                    tr(current(), "failed to refresh skills"),
                 );
                 Ok(true)
             }
@@ -976,8 +989,10 @@ impl App {
                 Ok(true)
             }
             Err(err) => {
-                self.chat_widget.add_error_message(format!(
-                    "Failed to resolve app-server request for thread {thread_id}: {err}"
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to resolve app-server request for thread {0}: {1}",
+                    &[&thread_id.to_string(), &err.to_string()],
                 ));
                 Ok(false)
             }
@@ -1947,15 +1962,22 @@ impl App {
             }
             if self.active_thread_id == Some(primary_thread_id) {
                 self.chat_widget.add_info_message(
-                    format!(
-                        "Agent thread {closed_thread_id} closed. Switched back to main thread."
+                    tr_with(
+                        current(),
+                        "Agent thread {0} closed. Switched back to main thread.",
+                        &[&closed_thread_id.to_string()],
                     ),
                     /*hint*/ None,
                 );
             } else {
                 self.clear_active_thread().await;
-                self.chat_widget.add_error_message(format!(
-                    "Agent thread {closed_thread_id} closed. Failed to switch back to main thread {primary_thread_id}.",
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Agent thread {0} closed. Failed to switch back to main thread {1}.",
+                    &[
+                        &closed_thread_id.to_string(),
+                        &primary_thread_id.to_string(),
+                    ],
                 ));
             }
             return Ok(());

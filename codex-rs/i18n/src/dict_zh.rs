@@ -5978,6 +5978,59 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ",
         "提交反馈即表示你同意OpenAI将你的反馈用于安全目的和内部模型训练，详见",
     ),
+    // Thread routing / key capture / local ChatGPT auth: the thread-switch status
+    // lines (`tui/src/app/thread_routing.rs`), the key-capture prompts
+    // (`tui/src/keymap_setup/capture.rs`) and the local auth diagnostics that
+    // surface in the login flow (`tui/src/local_chatgpt_auth.rs`). Layout prefixes
+    // such as "Action: " keep their trailing space in the key; the translation
+    // drops it because CJK punctuation carries the separation.
+    ("Action: ", "操作："),
+    (
+        "Agent thread {0} closed. Failed to switch back to main thread {1}.",
+        "智能体线程{0}已关闭。无法切回主线程{1}。",
+    ),
+    (
+        "Agent thread {0} closed. Switched back to main thread.",
+        "智能体线程{0}已关闭。已切回主线程。",
+    ),
+    ("Current: ", "当前："),
+    ("Failed to interrupt turn: {0}", "无法中断该轮次：{0}"),
+    (
+        "Failed to resolve app-server request for thread {0}: {1}",
+        "无法处理线程{0}的app-server请求：{1}",
+    ),
+    (
+        "First key: {0}. Press the second key. Esc cancels.",
+        "第一个键：{0}。请按第二个键。按Esc取消。",
+    ),
+    (
+        "Press the first key, then the second. Esc cancels.",
+        "请依次按第一个键和第二个键。按Esc取消。",
+    ),
+    (
+        "Press the new key now. Esc cancels.",
+        "请现在按下新键。按Esc取消。",
+    ),
+    ("Remap Shortcut", "重新映射快捷键"),
+    ("failed to load local auth: {0}", "加载本地认证失败：{0}"),
+    ("failed to refresh skills", "刷新技能失败"),
+    (
+        "local ChatGPT auth is missing chatgpt account id",
+        "本地ChatGPT认证缺少chatgpt账户ID",
+    ),
+    (
+        "local ChatGPT auth is missing token data",
+        "本地ChatGPT认证缺少令牌数据",
+    ),
+    (
+        "local ChatGPT auth must use one of workspace(s) {0}, but found {1}",
+        "本地ChatGPT认证必须使用工作区{0}中的一个，但发现{1}",
+    ),
+    (
+        "local auth is not a ChatGPT login",
+        "本地认证不是ChatGPT登录",
+    ),
+    ("no local auth available", "没有可用的本地认证"),
 ];
 
 /// English source text -> Simplified Chinese.

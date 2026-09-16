@@ -1,5 +1,8 @@
 #![cfg(test)]
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::Path;
 
 use codex_config::types::AuthCredentialsStoreMode;
@@ -24,25 +27,42 @@ pub(crate) fn load_local_chatgpt_auth(
         auth_credentials_store_mode,
         AuthKeyringBackendKind::default(),
     )
-    .map_err(|err| format!("failed to load local auth: {err}"))?
-    .ok_or_else(|| "no local auth available".to_string())?;
+    .map_err(|err| {
+        tr_with(
+            current(),
+            "failed to load local auth: {0}",
+            &[&err.to_string()],
+        )
+    })?
+    .ok_or_else(|| tr(current(), "no local auth available").to_string())?;
     if matches!(auth.auth_mode, Some(AuthMode::ApiKey)) || auth.openai_api_key.is_some() {
-        return Err("local auth is not a ChatGPT login".to_string());
+        return Err(tr(current(), "local auth is not a ChatGPT login").to_string());
     }
 
     let tokens = auth
         .tokens
-        .ok_or_else(|| "local ChatGPT auth is missing token data".to_string())?;
+        .ok_or_else(|| tr(current(), "local ChatGPT auth is missing token data").to_string())?;
     let access_token = tokens.access_token;
     let chatgpt_account_id = tokens
         .account_id
         .or(tokens.id_token.chatgpt_account_id.clone())
-        .ok_or_else(|| "local ChatGPT auth is missing chatgpt account id".to_string())?;
+        .ok_or_else(|| {
+            tr(
+                current(),
+                "local ChatGPT auth is missing chatgpt account id",
+            )
+            .to_string()
+        })?;
     if let Some(expected_workspaces) = forced_chatgpt_workspace_id
         && !expected_workspaces.contains(&chatgpt_account_id)
     {
-        return Err(format!(
-            "local ChatGPT auth must use one of workspace(s) {expected_workspaces:?}, but found {chatgpt_account_id:?}",
+        return Err(tr_with(
+            current(),
+            "local ChatGPT auth must use one of workspace(s) {0}, but found {1}",
+            &[
+                &format!("{expected_workspaces:?}"),
+                &format!("{chatgpt_account_id:?}"),
+            ],
         ));
     }
 

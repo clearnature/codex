@@ -1157,8 +1157,35 @@ fn stage_str(stage: Stage) -> &'static str {
     }
 }
 
+/// The `--lang` value, read from the raw arguments.
+///
+/// Deliberately read without clap: clap renders help text while parsing, so the
+/// language has to be known before the parser runs. Both spellings the flag
+/// accepts are handled (`--lang zh` and `--lang=zh`).
+fn scanned_lang() -> Option<String> {
+    let mut args = std::env::args();
+    while let Some(arg) = args.next() {
+        if let Some(value) = arg.strip_prefix("--lang=") {
+            return Some(value.to_string());
+        }
+        if arg == "--lang" {
+            return args.next();
+        }
+    }
+    None
+}
+
 fn main() -> anyhow::Result<()> {
     codex_build_info::initialize!();
+    // Publish the UI language *before* clap parses. Help text is built while
+    // parsing, so publishing afterwards is always one step too late and every
+    // `help = tr(..)` string would render English no matter what `--lang` says.
+    // `config.toml` is not readable yet; the front ends re-publish with the
+    // whole chain (`--lang` > `locale` > environment > system) once it is.
+    codex_i18n::set_current(codex_i18n::resolve_from_process(
+        scanned_lang().as_deref(),
+        None,
+    ));
     let remote_control_disabled = codex_app_server::take_remote_control_disabled_env();
     arg0_dispatch_or_else(move |arg0_paths: Arg0DispatchPaths| async move {
         cli_main(arg0_paths, remote_control_disabled).await?;

@@ -252,6 +252,22 @@
    app-server sandbox policy; …")]`。`#[error(..)]` 里放不下 `tr()` 调用（属性宏要求字面量），
    要译只能把该 variant 改成手写 `Display`。**当前未译，登记为待办**，不要当成已排除。
 
+## 十、locale 入口的两个真实缺陷（第 58 轮实测）
+
+1. **启动顺序：`help = tr(..)` 永远是英文（已修）**。`--lang` 只有 clap 解析完之后才知道，而 clap 的
+   `help = tr(current(), "…")` 是**解析期**求值的 —— 于是「解析后发布语言」这条路对 help 文案永远晚一步。
+   修法：在 `cli/src/main.rs::main()` 里先预扫描 `std::env::args()`（`--lang zh` 与 `--lang=zh` 两种拼法），
+   把语言发布一次，再做 `MultitoolCli::parse()`。
+   *证据*：修复并重建后 `./target/debug/codex --lang zh login --with-api-key --help` 输出
+   `从标准输入读取访问令牌（例如 \`printenv CODEX_ACCESS_TOKEN | codex login --with-access-token\`）`
+   （CJK 行数 2）；同一命令不带 `--lang` 仍为英文。
+   *诚实边界*：没有做「回退后重建再对比」的 A/B（一次重建约 4 分钟），「修复前是英文」由代码路径
+   （`set_current` 在 `parse()` 之后、`current()` 默认 `En`）支持，不是实测对照。
+2. **集成测试必须钉 locale（已处理）**。发布提前之后，OS locale 为中文的机器上跑 `cargo test -p codex-cli`
+   会失败：CLI 自己渲染成 `错误：stdin不是终端`，而测试断言英文。按 `core/tests/common/test_codex_exec.rs`
+   的既有先例，在 `cli/tests/*.rs` 的 spawn 辅助函数里钉 `.env("LC_ALL", "C")`（17 个文件）。
+   *证据*：`cargo test -p codex-cli` 全部套件通过（13/275/5/4/1/3/2/2/1/2/3/7 …，0 failed）。
+
 ## 九、翻译口径判据（"不译"的依据）
 
 判据是**文本流向**，不是「用哪个宏产生」：同一段文案经 `.context(…)` 走到 UI 就译，进日志 / 协议 /

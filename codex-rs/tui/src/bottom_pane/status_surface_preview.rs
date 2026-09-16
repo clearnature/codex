@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
-use codex_i18n::{current, tr};
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::text::Line;
 
 use super::status_line_from_segments;

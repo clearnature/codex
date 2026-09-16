@@ -1,5 +1,8 @@
 use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItemType;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeSet;
 
 #[derive(Clone, Debug)]
@@ -39,8 +42,11 @@ pub(crate) fn external_agent_config_migration_groups(
     let mut groups = Vec::new();
     if !tools_and_setup.is_empty() {
         groups.push(ExternalAgentConfigMigrationGroupModel {
-            label: "Tools & setup".to_string(),
-            description: "Settings, instructions, integrations, agents, commands, and skills",
+            label: tr(current(), "Tools & setup").to_string(),
+            description: tr(
+                current(),
+                "Settings, instructions, integrations, agents, commands, and skills",
+            ),
             item_indices: tools_and_setup,
         });
     }
@@ -52,11 +58,14 @@ pub(crate) fn external_agent_config_migration_groups(
             .len();
         groups.push(ExternalAgentConfigMigrationGroupModel {
             label: if project_count == 1 {
-                "Current project".to_string()
+                tr(current(), "Current project").to_string()
             } else {
-                format!("Projects ({project_count})")
+                tr_with(current(), "Projects ({0})", &[&project_count.to_string()])
             },
-            description: "Add Codex files alongside your existing project files",
+            description: tr(
+                current(),
+                "Add Codex files alongside your existing project files",
+            ),
             item_indices: projects,
         });
     }
@@ -67,8 +76,12 @@ pub(crate) fn external_agent_config_migration_groups(
             .map(|details| details.sessions.len())
             .sum::<usize>();
         groups.push(ExternalAgentConfigMigrationGroupModel {
-            label: format!("Chat sessions ({session_count})"),
-            description: "Last 30 days of chats",
+            label: tr_with(
+                current(),
+                "Chat sessions ({0})",
+                &[&session_count.to_string()],
+            ),
+            description: tr(current(), "Last 30 days of chats"),
             item_indices: chat_sessions,
         });
     }
@@ -83,12 +96,12 @@ pub(crate) fn external_agent_config_migration_item_label(
         ExternalAgentConfigMigrationItemType::Config => "Settings",
         ExternalAgentConfigMigrationItemType::Skills => "Skills",
         ExternalAgentConfigMigrationItemType::Plugins => "Plugins",
-        ExternalAgentConfigMigrationItemType::McpServerConfig => "MCP servers",
+        ExternalAgentConfigMigrationItemType::McpServerConfig => tr(current(), "MCP servers"),
         ExternalAgentConfigMigrationItemType::Subagents => "Agents",
         ExternalAgentConfigMigrationItemType::Hooks => "Hooks",
-        ExternalAgentConfigMigrationItemType::Commands => "Slash commands",
+        ExternalAgentConfigMigrationItemType::Commands => tr(current(), "Slash commands"),
         ExternalAgentConfigMigrationItemType::Memory => "Memory",
-        ExternalAgentConfigMigrationItemType::Sessions => "Recent chat sessions",
+        ExternalAgentConfigMigrationItemType::Sessions => tr(current(), "Recent chat sessions"),
     }
 }
 
@@ -100,12 +113,12 @@ pub(crate) fn external_agent_config_migration_type_label(
         ExternalAgentConfigMigrationItemType::Config => "Settings",
         ExternalAgentConfigMigrationItemType::Skills => "Skills",
         ExternalAgentConfigMigrationItemType::Plugins => "Plugins",
-        ExternalAgentConfigMigrationItemType::McpServerConfig => "MCP servers",
+        ExternalAgentConfigMigrationItemType::McpServerConfig => tr(current(), "MCP servers"),
         ExternalAgentConfigMigrationItemType::Subagents => "Agents",
         ExternalAgentConfigMigrationItemType::Hooks => "Hooks",
-        ExternalAgentConfigMigrationItemType::Commands => "Slash commands",
+        ExternalAgentConfigMigrationItemType::Commands => tr(current(), "Slash commands"),
         ExternalAgentConfigMigrationItemType::Memory => "Memory",
-        ExternalAgentConfigMigrationItemType::Sessions => "Chat sessions",
+        ExternalAgentConfigMigrationItemType::Sessions => tr(current(), "Chat sessions"),
     }
 }
 
@@ -199,7 +212,7 @@ pub(crate) fn external_agent_config_migration_item_detail(
             details.skills.iter().map(|skill| skill.name.as_str()),
         )),
         ExternalAgentConfigMigrationItemType::McpServerConfig => Some(format_counted_details(
-            "MCP server",
+            tr(current(), "MCP server"),
             details.mcp_servers.len(),
             details
                 .mcp_servers
@@ -217,7 +230,7 @@ pub(crate) fn external_agent_config_migration_item_detail(
             details.hooks.iter().map(|hook| hook.name.as_str()),
         )),
         ExternalAgentConfigMigrationItemType::Commands => Some(format_counted_details(
-            "slash command",
+            tr(current(), "slash command"),
             details.commands.len(),
             details.commands.iter().map(|command| command.name.as_str()),
         )),
@@ -237,7 +250,7 @@ pub(crate) fn external_agent_config_migration_item_detail(
             })
         }
         ExternalAgentConfigMigrationItemType::Sessions => Some(format_counted_details(
-            "chat session",
+            tr(current(), "chat session"),
             details.sessions.len(),
             details
                 .sessions

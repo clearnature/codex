@@ -3703,6 +3703,55 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Confirm", "确认"),
     ("True", "真"),
     ("False", "假"),
+    ("Apps are disabled.", "应用已禁用。"),
+    (
+        "Enable the apps feature to use $ or /apps.",
+        "请启用应用特性以使用 $ 或 /apps。",
+    ),
+    ("No apps available.", "没有可用的应用。"),
+    (
+        "Loading installed and available apps...",
+        "正在加载已安装和可用的应用…",
+    ),
+    ("Loading apps...", "正在加载应用…"),
+    (
+        "This updates when the full list is ready.",
+        "完整列表就绪后会更新。",
+    ),
+    ("Failed to load apps.", "加载应用失败。"),
+    ("App directory unavailable", "应用目录不可用"),
+    (
+        "The app directory request failed. Retry, or press Esc to continue.",
+        "应用目录请求失败。请重试，或按Esc继续。",
+    ),
+    (
+        "Reload installed and available apps.",
+        "重新加载已安装和可用的应用。",
+    ),
+    (
+        "Use $ to insert an installed app into your prompt.",
+        "使用 $ 把已安装的应用插入提示词。",
+    ),
+    ("Manage this app in your browser.", "在浏览器中管理此应用。"),
+    (
+        "Install this app in your browser, then reload Codex.",
+        "在浏览器中安装此应用，然后重新加载Codex。",
+    ),
+    ("Type to search apps", "输入以搜索应用"),
+    ("Installed · Disabled", "已安装 · 已停用"),
+    (
+        "Installed {0} of {1} available apps.",
+        "已安装 {0}/{1} 个可用应用。",
+    ),
+    (
+        "{0}. Press Enter to open the app page to install, manage, or enable/disable this app.",
+        "{0}。按Enter打开应用页面以安装、管理或启用/停用此应用。",
+    ),
+    (
+        "{0}. Press Enter to open the app page to install this app.",
+        "{0}。按Enter打开应用页面以安装此应用。",
+    ),
+    ("{0}. App link unavailable.", "{0}。应用链接不可用。"),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -6,6 +6,8 @@
 
 mod palette;
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::BTreeMap;
 
 use chrono::Datelike;
@@ -68,8 +70,8 @@ pub(super) fn loaded_lines(
 ) -> Vec<Line<'static>> {
     let mut lines = vec![
         vec![
-            Span::from(" Token activity").bold(),
-            Span::styled("   last 12 months", label_style()),
+            Span::from(tr(current(), " Token activity")).bold(),
+            Span::styled(tr(current(), "   last 12 months"), label_style()),
         ]
         .into(),
     ];
@@ -77,7 +79,11 @@ pub(super) fn loaded_lines(
     // Separate the headline numbers from the calendar below.
     lines.push(Line::default());
     let Some(buckets) = response.daily_usage_buckets.as_ref() else {
-        lines.push("   Token activity history unavailable".dim().into());
+        lines.push(
+            tr(current(), "   Token activity history unavailable")
+                .dim()
+                .into(),
+        );
         return lines;
     };
 
@@ -95,7 +101,11 @@ fn chart_lines(
     let values = daily_values(buckets, today);
     let shown_columns = shown_columns(width);
     if shown_columns == 0 {
-        lines.push("   Widen terminal to show activity graph".dim().into());
+        lines.push(
+            tr(current(), "   Widen terminal to show activity graph")
+                .dim()
+                .into(),
+        );
         return lines;
     }
 
@@ -162,7 +172,7 @@ fn summary_lines(response: &GetAccountTokenUsageResponse, width: u16) -> Vec<Lin
             format_streak(summary.current_streak_days, summary.longest_streak_days),
         ),
         (
-            "Longest task",
+            tr(current(), "Longest task"),
             format_optional_duration(summary.longest_running_turn_sec),
         ),
     ];
@@ -291,7 +301,7 @@ fn weekday_label(view: TokenActivityView, row: usize) -> Span<'static> {
 }
 
 fn legend_line(palette: &TokenActivityPalette) -> Line<'static> {
-    let mut spans = vec![Span::styled("   Less ", label_style())];
+    let mut spans = vec![Span::styled(tr(current(), "   Less "), label_style())];
     for level in 0..=4 {
         if level > 0 {
             spans.push(" ".into());
@@ -311,14 +321,18 @@ fn bar_caption(view: TokenActivityView, values: &[i64]) -> Line<'static> {
     let weeks = weekly_totals(values);
     let (lead, peak) = match view {
         TokenActivityView::Weekly => (
-            "Each column = 1 week · tallest ",
+            tr(current(), "Each column = 1 week · tallest "),
             weeks.iter().copied().max().unwrap_or(/*default*/ 0),
         ),
         TokenActivityView::Cumulative => ("Running total · top ", weeks.iter().sum::<i64>()),
         TokenActivityView::Daily => ("", 0),
     };
     if peak <= 0 {
-        return Span::styled("   No token activity in the last 12 months", label_style()).into();
+        return Span::styled(
+            tr(current(), "   No token activity in the last 12 months"),
+            label_style(),
+        )
+        .into();
     }
     vec![
         Span::styled(format!("   {lead}"), label_style()),

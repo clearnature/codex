@@ -4,6 +4,8 @@ use crate::tui::Tui;
 use crate::tui::TuiEvent;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
 use codex_app_server_protocol::PluginsMigration;
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -46,10 +48,10 @@ enum ActionMenuOption {
 impl ActionMenuOption {
     fn label(self) -> &'static str {
         match self {
-            Self::Proceed => "Import selected",
-            Self::Customize => "Customize selection",
+            Self::Proceed => tr(current(), "Import selected"),
+            Self::Customize => tr(current(), "Customize selection"),
             Self::Skip => "Cancel",
-            Self::Back => "Review selection",
+            Self::Back => tr(current(), "Review selection"),
         }
     }
 }
@@ -227,9 +229,12 @@ impl ExternalAgentConfigMigrationScreen {
             return reformatted;
         }
 
-        if let Some(reformatted) =
-            reformat_description(&description, "Import skills from ", " to ", cwd)
-        {
+        if let Some(reformatted) = reformat_description(
+            &description,
+            tr(current(), "Import skills from "),
+            " to ",
+            cwd,
+        ) {
             return reformatted;
         }
 
@@ -590,7 +595,7 @@ impl ExternalAgentConfigMigrationScreen {
     fn section_title(cwd: Option<&std::path::Path>) -> Line<'static> {
         match cwd {
             Some(cwd) => Line::from(vec![
-                "Current project: ".bold(),
+                tr(current(), "Current project: ").bold(),
                 cwd.display().to_string().dim(),
             ]),
             None => Line::from("Home".bold()),
@@ -635,7 +640,7 @@ impl ExternalAgentConfigMigrationScreen {
                         item_idx: None,
                         kind: RenderLineKind::ItemDetail,
                         line: Line::from(if count_summary.is_empty() {
-                            "      Importing: none".to_string()
+                            tr(current(), "      Importing: none").to_string()
                         } else {
                             format!("      Importing: {count_summary}")
                         }),

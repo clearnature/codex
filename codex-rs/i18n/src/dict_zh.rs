@@ -37,6 +37,7 @@ use std::sync::LazyLock;
 pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // Footer hints (`tui/src/bottom_pane/footer.rs`). The leading space is part
     // of the key: it separates the hint from the key binding rendered before it.
+    ("      Importing: none", "      正在导入：无"),
     ("     - <none>", "     - <无>"),
     ("     reason: {0}", "     原因：{0}"),
     ("     {label}: <empty>", "     {0}: <空>"),
@@ -58,6 +59,20 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "  - max_depth = {0} (V1 only; ignored by V2)",
         "  - max_depth = {0}（仅V1；V2忽略）",
     ),
+    ("   Less ", "   较少 "),
+    (
+        "   No token activity in the last 12 months",
+        "   最近12个月没有Token活动",
+    ),
+    (
+        "   Token activity history unavailable",
+        "   Token活动历史不可用",
+    ),
+    (
+        "   Widen terminal to show activity graph",
+        "   拉宽终端以显示活动图",
+    ),
+    ("   last 12 months", "   最近12个月"),
     ("  - {0}: {1} (source: {2})", "  - {0}: {1}（来源：{2}）"),
     (
         "  1. Open this link in your browser and sign in",
@@ -129,6 +144,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         " - show current session configuration",
         " - 显示当前会话配置",
     ),
+    (" Token activity", " Token活动"),
     (" close", " 关闭"),
     (" custom · ", " 自定义 · "),
     (" edit shortcut · ", " 编辑快捷键 · "),
@@ -355,6 +371,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Changes were saved, but the configured values differ from your selections. A higher-priority setting may override them.",
         "更改已保存，但配置值与你的选择不一致。可能有更高优先级的设置覆盖了它们。",
     ),
+    (
+        "Cannot safely retry a turn whose input exceeds the bounded history page.",
+        "该轮次的输入超出有界历史页范围，无法安全重试。",
+    ),
     ("Chat sessions", "聊天会话"),
     ("Chat sessions ({0})", "聊天会话（{0}）"),
     ("Choose items to import.", "选择要导入的条目。"),
@@ -428,7 +448,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Custom .tmTheme files can be added to the {0} directory.",
         "可以把自定义.tmTheme文件放到{0}目录中。",
     ),
+    ("Current project: ", "当前项目："),
     ("Custom permissions", "自定义权限"),
+    ("Customize selection", "自定义选择"),
     ("Debugging tools", "调试工具。"),
     (
         "Diagnose local Codex installation, config, auth, and runtime health",
@@ -476,6 +498,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Do you trust the contents of this directory? Working with untrusted \n                 contents comes with higher risk of prompt injection. Trusting the \n                 directory allows project-local config, hooks, and exec policies to load.",
         "你信任此目录的内容吗？处理不受信任的内容会带来更高的提示词注入风险。信任该目录后，项目本地的配置、钩子与执行策略才会被加载。",
     ),
+    ("Each column = 1 week · tallest ", "每列 = 1 周 · 最高 "),
     ("Enable {0}?", "启用{0}？"),
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
@@ -569,6 +592,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to save experimental features. Reopen /experimental to check configured values before retrying.",
         "保存实验性特性失败。请重新打开/experimental确认已配置的值后再重试。",
     ),
+    (
+        "Failed to retry with a faster model: original turn is unavailable.",
+        "用更快的模型重试失败：原始轮次不可用。",
+    ),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
     ("Feature discovery was interrupted", "特性发现被中断"),
@@ -613,7 +640,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "如果你不想等待，可以用更快的模型重试。它处理复杂请求的能力可能较弱。",
     ),
     ("Implement this plan?", "要实施此计划吗？"),
+    ("Import selected", "导入所选项"),
     ("Import setup", "导入配置"),
+    ("Import skills from ", "从以下位置导入技能 "),
     ("Inference: {0} {1} ({2})", "推理：{0} {1}（{2}）"),
     (
         "Input disabled until setup completes.",
@@ -691,6 +720,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "本地Ollama服务器（Responses API，默认端口11434）",
     ),
     ("Local tools: {0} {1} ({2})", "本地工具：{0} {1}（{2}）"),
+    ("Longest task", "最长任务"),
     ("M Studio", "M Studio"),
     ("MCP Tools", "MCP工具"),
     ("MCP server", "MCP服务器"),
@@ -753,6 +783,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Ollama (Chat)", "Ollama（Chat）"),
     ("Ollama (Responses)", "Ollama（Responses）"),
+    (
+        "Opened this session in the Desktop app.",
+        "已在桌面应用中打开此会话。",
+    ),
     ("Option 1", "选项1"),
     ("Option 2", "选项2"),
     ("Option 3", "选项3"),
@@ -850,6 +884,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Retry with a faster model", "用更快的模型重试"),
     ("Return to memory settings.", "返回记忆设置。"),
     ("Review a diff", "审查diff"),
+    ("Review selection", "查看选择"),
     ("Review the diff", "审查该diff"),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
     (
@@ -970,6 +1005,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "The new worktree is not trusted; run Codex there.",
         "新的工作树尚未受信任；请在那里运行Codex。",
+    ),
+    (
+        "The Desktop app is only available on macOS and Windows",
+        "桌面应用仅在macOS和Windows上可用",
     ),
     ("The original Codex companion", "最初的Codex伙伴"),
     (

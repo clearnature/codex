@@ -5,7 +5,7 @@ use crate::history_cell::HistoryCell;
 #[test]
 fn desktop_thread_opened_history_snapshot() {
     let cell = history_cell::new_info_event(
-        DESKTOP_THREAD_OPENED_MESSAGE.to_string(),
+        desktop_thread_opened_message().to_string(),
         /*hint*/ None,
     );
 

@@ -11,6 +11,8 @@ use crate::chatwidget::UserMessage;
 use codex_app_server_protocol::ThreadHistoryMode;
 use codex_app_server_protocol::TurnItemsView;
 use codex_app_server_protocol::UserInput;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(super) struct SafetyBufferedRetry {
     pub(super) thread_id: ThreadId,
@@ -50,7 +52,10 @@ impl App {
             self.fail_safety_buffered_branch(
                 input_state,
                 prompt,
-                color_eyre::eyre::eyre!("Wait for permissions to update before forking."),
+                color_eyre::eyre::eyre!(tr(
+                    current(),
+                    "Wait for permissions to update before forking."
+                )),
             );
             return;
         }
@@ -66,7 +71,11 @@ impl App {
         } = &mut turn
         else {
             self.chat_widget.add_error_message(
-                "Failed to retry with a faster model: original turn is unavailable.".to_string(),
+                tr(
+                    current(),
+                    "Failed to retry with a faster model: original turn is unavailable.",
+                )
+                .to_string(),
             );
             return;
         };
@@ -129,7 +138,7 @@ impl App {
                         .await?;
                     if page.next_cursor.is_some() {
                         color_eyre::eyre::bail!(
-                            "Cannot safely retry a turn whose input exceeds the bounded history page."
+                            tr(current(), "Cannot safely retry a turn whose input exceeds the bounded history page.")
                         );
                     }
                     let turn = &mut thread.turns[turn_index];

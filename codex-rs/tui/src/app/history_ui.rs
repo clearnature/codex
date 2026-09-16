@@ -5,9 +5,16 @@
 
 use super::*;
 use crate::terminal_hyperlinks::HyperlinkLine;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::Weak;
 
-const DESKTOP_THREAD_OPENED_MESSAGE: &str = "Opened this session in the Desktop app.";
+/// 在桌面应用中打开会话后的提示。
+///
+/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`；引用点已 `grep -rn` 确认。
+fn desktop_thread_opened_message() -> &'static str {
+    tr(current(), "Opened this session in the Desktop app.")
+}
 
 pub(super) struct RenderedHistoryTail {
     pub(super) cell: Weak<dyn HistoryCell>,
@@ -239,7 +246,7 @@ impl App {
         }
 
         self.chat_widget.add_info_message(
-            DESKTOP_THREAD_OPENED_MESSAGE.to_string(),
+            desktop_thread_opened_message().to_string(),
             /*hint*/ None,
         );
     }
@@ -432,7 +439,11 @@ fn powershell_single_quoted_string(value: &str) -> String {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn open_desktop_thread_url(_url: &str) -> Result<(), String> {
-    Err("The Desktop app is only available on macOS and Windows".to_string())
+    Err(tr(
+        current(),
+        "The Desktop app is only available on macOS and Windows",
+    )
+    .to_string())
 }
 
 #[cfg(test)]

@@ -1,6 +1,9 @@
 //! Determines when an unfocused conversation is ready for an automatic recap.
 //! The TUI opt-out suppresses automatic scheduling and requests, but not manual `/recap`.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -37,9 +40,20 @@ pub(super) const RECAP_DELAY: Duration = Duration::from_secs(/*secs*/ 3 * 60);
 const RECAP_HISTORY_MAX_TURNS: usize = 8;
 const RECAP_MAX_CHARS: usize = 320;
 const RECAP_RETRY_DELAY: Duration = Duration::from_secs(/*secs*/ 30);
-const MANUAL_RECAP_FAILURE_MESSAGE: &str = "Could not generate a recap. Please try again.";
-const MANUAL_RECAP_IN_PROGRESS_MESSAGE: &str = "A recap is already being generated.";
-const MANUAL_RECAP_EMPTY_HISTORY_MESSAGE: &str = "There is no conversation history to recap.";
+/// 手动 recap 的三种用户可见反馈。
+///
+/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+fn manual_recap_failure_message() -> &'static str {
+    tr(current(), "Could not generate a recap. Please try again.")
+}
+
+fn manual_recap_in_progress_message() -> &'static str {
+    tr(current(), "A recap is already being generated.")
+}
+
+fn manual_recap_empty_history_message() -> &'static str {
+    tr(current(), "There is no conversation history to recap.")
+}
 const RECAP_PROMPT_PREFIX: &str = concat!(
     "Write a brief catch-up for a user returning to this Codex task. ",
     "In at most 40 words and one or two plain-text sentences, explain the ",
@@ -239,7 +253,7 @@ impl App {
             ),
             RecapTrigger::Manual => self
                 .chat_widget
-                .add_error_message(MANUAL_RECAP_FAILURE_MESSAGE.to_string()),
+                .add_error_message(manual_recap_failure_message().to_string()),
         }
     }
 
@@ -255,7 +269,7 @@ impl App {
         if self.recap.in_flight_request.is_some() {
             if matches!(trigger, RecapTrigger::Manual) {
                 self.chat_widget
-                    .add_error_message(MANUAL_RECAP_IN_PROGRESS_MESSAGE.to_string());
+                    .add_error_message(manual_recap_in_progress_message().to_string());
             }
             return;
         }
@@ -264,7 +278,7 @@ impl App {
         if history.is_empty() {
             if matches!(trigger, RecapTrigger::Manual) {
                 self.chat_widget
-                    .add_error_message(MANUAL_RECAP_EMPTY_HISTORY_MESSAGE.to_string());
+                    .add_error_message(manual_recap_empty_history_message().to_string());
             }
             return;
         }

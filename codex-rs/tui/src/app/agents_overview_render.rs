@@ -2,15 +2,21 @@
 //! The prompt and its cursor reserve the same height for wrapped footer hints.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::cursor::SetCursorStyle;
 
 impl AgentsOverviewView {
     pub(super) fn footer_lines(&self, width: u16) -> Vec<Line<'static>> {
         if self.state().connection_notice.is_some() {
             return vec![
-                "ctrl+c clear input, then quit · actions paused until the list is refreshed"
-                    .dim()
-                    .into(),
+                tr(
+                    current(),
+                    "ctrl+c clear input, then quit · actions paused until the list is refreshed",
+                )
+                .dim()
+                .into(),
             ];
         }
         let list_hint = |action| {
@@ -48,7 +54,7 @@ impl AgentsOverviewView {
         );
         let mut footer_spans = Vec::new();
         if !navigation_hint.is_empty() {
-            footer_spans.extend([navigation_hint.bold(), " navigate  ".dim()]);
+            footer_spans.extend([navigation_hint.bold(), tr(current(), " navigate  ").dim()]);
         }
         let mut add_hint = |hint: Option<ShortcutHint>, label: &'static str, enabled: bool| {
             if let Some(hint) = hint {
@@ -60,42 +66,42 @@ impl AgentsOverviewView {
         add_hint(
             self.agents_keymap
                 .primary_hint("resume", &self.agents_keymap.resume),
-            "resume",
+            tr(current(), "resume"),
             true,
         );
-        add_hint(list_hint(ListAction::Accept), "open", true);
+        add_hint(list_hint(ListAction::Accept), tr(current(), "open"), true);
         add_hint(
             self.agents_keymap
                 .primary_hint("new_task", &self.agents_keymap.new_task),
-            "new task",
+            tr(current(), "new task"),
             true,
         );
         add_hint(
             self.agents_keymap
                 .primary_hint("search", &self.agents_keymap.search),
-            "search",
+            tr(current(), "search"),
             true,
         );
         add_hint(
             self.agents_keymap
                 .primary_hint("toggle_grouping", &self.agents_keymap.toggle_grouping),
-            "group",
+            tr(current(), "group"),
             true,
         );
         add_hint(
             self.agents_keymap
                 .primary_hint("rename", &self.agents_keymap.rename),
-            "rename",
+            tr(current(), "rename"),
             true,
         );
         add_hint(
             self.agents_keymap
                 .primary_hint("stop", &self.agents_keymap.stop),
-            "stop",
+            tr(current(), "stop"),
             self.selected_row()
                 .is_some_and(|row| matches!(row.thread.status, ThreadStatus::Active { .. })),
         );
-        add_hint(list_hint(ListAction::Cancel), "back", true);
+        add_hint(list_hint(ListAction::Cancel), tr(current(), "back"), true);
         let mut footer_line: Line = footer_spans.into();
         if footer_line.width() > usize::from(width) {
             for span in &mut footer_line.spans {
@@ -137,9 +143,9 @@ impl Renderable for AgentsOverviewView {
             return None;
         }
         let (label, input) = if state.searching {
-            ("  Search › ", &state.search)
+            (tr(current(), "  Search › "), &state.search)
         } else {
-            ("  Rename › ", &state.input)
+            (tr(current(), "  Rename › "), &state.input)
         };
         let x = area
             .x
@@ -156,7 +162,7 @@ impl Renderable for AgentsOverviewView {
         let [header, summary, divider, body, title, prompt, footer] = self.layout_areas(area);
         let inset =
             |rect: Rect| rect.inner(Margin::new(/*horizontal*/ 2, /*vertical*/ 0));
-        Line::from("Agent command center".bold()).render(inset(header), buf);
+        Line::from(tr(current(), "Agent command center").bold()).render(inset(header), buf);
         let (needs_you, working, ready) = self.rows.iter().fold((0, 0, 0), |counts, row| {
             let (needs_you, working, ready) = counts;
             match row.group {
@@ -166,12 +172,19 @@ impl Renderable for AgentsOverviewView {
                 AgentsOverviewGroup::Finished => counts,
             }
         });
-        let attention = format!("{needs_you} need input");
+        let attention = tr_with(current(), "{0} need input", &[&needs_you.to_string()]);
         if let Some(notice) = self.state().connection_notice {
             Line::from(notice.cyan()).render(inset(summary), buf);
         } else {
-            Line::from(format!("{attention}   {working} working   {ready} ready").dim())
-                .render(inset(summary), buf);
+            Line::from(
+                tr_with(
+                    current(),
+                    "{0}   {1} working   {2} ready",
+                    &[attention.as_str(), &working.to_string(), &ready.to_string()],
+                )
+                .dim(),
+            )
+            .render(inset(summary), buf);
         }
         Line::from("─".repeat(usize::from(area.width.saturating_sub(4))).dim())
             .render(inset(divider), buf);
@@ -195,9 +208,9 @@ impl Renderable for AgentsOverviewView {
         }
         let state = self.state();
         let (label, input) = if state.searching {
-            ("Search › ", &state.search)
+            (tr(current(), "Search › "), &state.search)
         } else {
-            ("Rename › ", &state.input)
+            (tr(current(), "Rename › "), &state.input)
         };
         let available_width = usize::from(inset(prompt).width)
             .saturating_sub(label.width())
@@ -216,7 +229,7 @@ impl Renderable for AgentsOverviewView {
             Line::from(vec![label.cyan().bold(), input[visible_start..].into()])
                 .render(inset(prompt), buf);
         } else {
-            Line::from("New task".dim()).render(inset(title), buf);
+            Line::from(tr(current(), "New task").dim()).render(inset(title), buf);
             if let Some(composer) = &state.composer {
                 composer.render(prompt, buf);
             }

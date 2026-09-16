@@ -218,9 +218,10 @@ impl App {
             && state.renaming
         {
             self.chat_widget.add_info_message(
-                format!(
-                    "The rename target disappeared. Unsubmitted title: {}",
-                    state.input
+                tr_with(
+                    current(),
+                    "The rename target disappeared. Unsubmitted title: {0}",
+                    &[&state.input],
                 ),
                 /*hint*/ None,
             );
@@ -361,8 +362,10 @@ impl App {
             {
                 Ok(thread) => thread,
                 Err(error) => {
-                    self.chat_widget.add_error_message(format!(
-                        "Agent session {root_thread_id} is unavailable: {error}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Agent session {0} is unavailable: {1}",
+                        &[&root_thread_id.to_string(), &error.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
@@ -635,8 +638,11 @@ impl App {
         prompt: String,
         cwd: Option<AbsolutePathBuf>,
     ) {
-        self.refresh_in_memory_config_from_disk_best_effort("starting a background task")
-            .await;
+        self.refresh_in_memory_config_from_disk_best_effort(tr(
+            current(),
+            "starting a background task",
+        ))
+        .await;
         let remote_cwd = cwd
             .as_ref()
             .filter(|_| app_server.uses_remote_workspace())
@@ -714,8 +720,10 @@ impl App {
             Ok(None) => {}
             Err(error) => {
                 self.restore_agents_overview_prompt(prompt);
-                return self.chat_widget.add_error_message(format!(
-                    "Failed to load background task settings: {error}"
+                return self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to load background task settings: {0}",
+                    &[&error.to_string()],
                 ));
             }
         }

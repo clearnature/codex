@@ -18,6 +18,8 @@ use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::ServerNotification;
 use codex_exec_server::LOCAL_FS;
 use codex_git_utils::resolve_root_git_project_for_trust;
+use codex_i18n::current;
+use codex_i18n::tr;
 #[cfg(target_os = "windows")]
 use codex_protocol::config_types::WindowsSandboxLevel;
 use crossterm::event::KeyCode;
@@ -688,7 +690,10 @@ async fn persist_selected_trust(
         (Some(request_handle), None) => write_trusted_project(request_handle, &trust_target)
             .await
             .map(|_| ()),
-        (None, _) => Err(color_eyre::eyre::eyre!("app server unavailable")),
+        (None, _) => Err(color_eyre::eyre::eyre!(tr(
+            current(),
+            "app server unavailable"
+        ))),
     };
 
     match result {

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::PathBuf;
 
 use crossterm::event::KeyEvent;
@@ -43,16 +46,17 @@ impl WidgetRef for &TrustDirectoryWidget {
 
         column.push(Line::from(vec![
             "> ".into(),
-            "You are in ".bold(),
+            tr(current(), "You are in ").bold(),
             self.cwd.to_string_lossy().to_string().into(),
         ]));
         column.push("");
 
         if self.cwd != self.trust_target {
             #[allow(clippy::disallowed_methods)]
-            let git_root_warning = Paragraph::new(format!(
-                "Note: You’re in a subdirectory of a Git project. Trusting will apply to the repository root: {}",
-                self.trust_target.display()
+            let git_root_warning = Paragraph::new(tr_with(
+                current(),
+                "Note: You’re in a subdirectory of a Git project. Trusting will apply to the repository root: {0}",
+                &[&self.trust_target.display().to_string()],
             ))
             .yellow();
             column.push(
@@ -67,10 +71,13 @@ impl WidgetRef for &TrustDirectoryWidget {
 
         column.push(
             Paragraph::new(
-                "Do you trust the contents of this directory? Working with untrusted \
+                tr(
+                    current(),
+                    "Do you trust the contents of this directory? Working with untrusted \
                  contents comes with higher risk of prompt injection. Trusting the \
-                 directory allows project-local config, hooks, and exec policies to load."
-                    .to_string(),
+                 directory allows project-local config, hooks, and exec policies to load.",
+                )
+                .to_string(),
             )
             .wrap(Wrap { trim: true })
             .inset(Insets::tlbr(
@@ -80,8 +87,11 @@ impl WidgetRef for &TrustDirectoryWidget {
         column.push("");
 
         let options: Vec<(&str, TrustDirectorySelection)> = vec![
-            ("Yes, continue", TrustDirectorySelection::Trust),
-            ("No, quit", TrustDirectorySelection::Quit),
+            (
+                tr(current(), "Yes, continue"),
+                TrustDirectorySelection::Trust,
+            ),
+            (tr(current(), "No, quit"), TrustDirectorySelection::Quit),
         ];
 
         for (idx, (text, selection)) in options.iter().enumerate() {
@@ -111,9 +121,9 @@ impl WidgetRef for &TrustDirectoryWidget {
                 "Press ".dim(),
                 keys::CONFIRM[0].into(),
                 if self.show_windows_create_sandbox_hint {
-                    " to continue and create a sandbox...".dim()
+                    tr(current(), " to continue and create a sandbox...").dim()
                 } else {
-                    " to continue".dim()
+                    tr(current(), " to continue").dim()
                 },
             ])
             .inset(Insets::tlbr(

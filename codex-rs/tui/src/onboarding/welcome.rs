@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 use ratatui::buffer::Buffer;
@@ -93,9 +95,9 @@ impl WidgetRef for &WelcomeWidget {
         }
         lines.push(Line::from(vec![
             "  ".into(),
-            "Welcome to ".into(),
+            tr(current(), "Welcome to ").into(),
             "Codex".bold(),
-            ", OpenAI's command-line coding agent".into(),
+            tr(current(), ", OpenAI's command-line coding agent").into(),
         ]));
 
         Paragraph::new(lines)

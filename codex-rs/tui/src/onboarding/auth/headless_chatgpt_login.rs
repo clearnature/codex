@@ -1,6 +1,9 @@
 use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::LoginAccountParams;
 use codex_app_server_protocol::LoginAccountResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::Widget;
@@ -66,7 +69,11 @@ pub(super) fn start_headless_chatgpt_login(widget: &mut AuthModeWidget) {
                     &request_frame,
                     &error,
                     &request_id,
-                    format!("Unexpected account/login/start response: {other:?}"),
+                    tr_with(
+                        current(),
+                        "Unexpected account/login/start response: {0}",
+                        &[&format!("{other:?}")],
+                    ),
                 );
             }
             Err(err) => {
@@ -89,9 +96,9 @@ pub(super) fn render_device_code_login(
     state: &ContinueWithDeviceCodeState,
 ) {
     let banner = if state.is_showing_copyable_auth() {
-        "Finish signing in via your browser"
+        tr(current(), "Finish signing in via your browser")
     } else {
-        "Preparing device code login"
+        tr(current(), "Preparing device code login")
     };
 
     let mut spans = vec!["  ".into()];
@@ -109,7 +116,7 @@ pub(super) fn render_device_code_login(
     let verification_url = if let (Some(verification_url), Some(user_code)) =
         (&state.verification_url, &state.user_code)
     {
-        lines.push("  1. Open this link in your browser and sign in".into());
+        lines.push(tr(current(), "  1. Open this link in your browser and sign in").into());
         lines.push("".into());
         lines.push(Line::from(vec![
             "  ".into(),
@@ -117,7 +124,11 @@ pub(super) fn render_device_code_login(
         ]));
         lines.push("".into());
         lines.push(
-            "  2. Enter this one-time code after you are signed in (expires in 15 minutes)".into(),
+            tr(
+                current(),
+                "  2. Enter this one-time code after you are signed in (expires in 15 minutes)",
+            )
+            .into(),
         );
         lines.push("".into());
         lines.push(Line::from(vec![
@@ -126,22 +137,26 @@ pub(super) fn render_device_code_login(
         ]));
         lines.push("".into());
         lines.push(
-            "  Continue only if you started this login in Codex. If a website or another person gave you this code, cancel."
+            tr(current(), "  Continue only if you started this login in Codex. If a website or another person gave you this code, cancel.")
                 .dim()
                 .into(),
         );
         lines.push("".into());
         Some(verification_url.clone())
     } else {
-        lines.push("  Requesting a one-time code...".dim().into());
+        lines.push(
+            tr(current(), "  Requesting a one-time code...")
+                .dim()
+                .into(),
+        );
         lines.push("".into());
         None
     };
 
     lines.push(Line::from(vec![
-        "  Press ".dim(),
+        tr(current(), "  Press ").dim(),
         widget.cancel_binding().into(),
-        " to cancel".dim(),
+        tr(current(), " to cancel").dim(),
     ]));
     Paragraph::new(lines)
         .wrap(Wrap { trim: false })

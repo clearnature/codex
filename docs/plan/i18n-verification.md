@@ -262,6 +262,28 @@
    `StartupCancelled` —— 该类型只通过 `StartupCancelled::matches()` 的 `is::<Self>()` 类型判定
    使用（`tui/src/lib.rs:1041`），其 Display 文本从不渲染。
 
+## 十二·附 短标签盲区（第 86 轮实测）
+
+`scripts/i18n_scan.py` 的 docstring 明确承认：`internal:short` 是可依赖度最低的规则，
+「长度阈值看不见短标签（`Cancel`/`Plugins`/`Ready`/`files`/`Global`），它们需要一份显式清单，
+而不是形状启发式」。本附节就是那份清单的做法与结果。
+
+**做法**：用 UI 位置正则匹配 2–7 字符字面量 ——
+`name:` / `title:` / `subtitle:` / `description:` / `label:` / `placeholder_text:` / `footer_hint` / `hint:` /
+`.plain(` —— 并且**只统计生产代码**（排除 `*_tests.rs`、`/tests/` 目录、以及文件内 `#[cfg(test)]` 之后的行）。
+
+**实测（2026 年，rust-v0.154.0）**：78 个原始候选，其中 44 条落在测试代码里（多为夹具名
+`Item A`/`desc`/`Item 1`），**生产代码 18 处 / 14 个不同标签**，已全部包装：
+`connectors.rs` Retry；`misalignment_policy.rs` Back；`permission_popups.rs` Action + Cancel；
+`plugin_catalog.rs` Hooks + Apps + Auth；`rate_limits.rs` Yes + No；`skills.rs` Skills；
+`usage.rs` Close（3 处）；`windows_sandbox_prompts.rs` Quit（2 处）。
+其中 `Cancel`/`Yes`/`No`/`Close`/`Skills` 五个键字典里已存在，直接复用（并逐个复核取值在新语境下成立）。
+
+**残余局限（必须写清，不要当成已覆盖）**：
+1. 正则只覆盖上面那批位置；`SelectionItem` 分行书写、`.into()` 拼接、数组字面量里的短标签仍可能漏；
+2. 长度阈值 ≥8 的主扫描与这份清单是两套口径，二者的并集才是「已判定」集合；
+3. 判定的依据仍是「文本流向」（§9.1），不是长度——短不等于该译（产品名、配置键、搜索关键词照样不译）。
+
 ## 十、locale 入口的两个真实缺陷（第 58 轮实测）
 
 1. **启动顺序：`help = tr(..)` 永远是英文（已修）**。`--lang` 只有 clap 解析完之后才知道，而 clap 的

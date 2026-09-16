@@ -3417,6 +3417,48 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Completed app setup flow for {0} plugin.",
         "已完成插件{0}的应用设置流程。",
     ),
+    (
+        "  Checking for existing AWS credentials...",
+        "  正在检查现有的AWS凭据…",
+    ),
+    (
+        "  Setting up Amazon Bedrock...",
+        "  正在设置Amazon Bedrock…",
+    ),
+    ("  Choose an AWS profile.", "  请选择AWS配置档。"),
+    (
+        "  AWS credentials detected in your environment.",
+        "  在你的环境中检测到AWS凭据。",
+    ),
+    ("  No AWS credentials found.", "  未找到AWS凭据。"),
+    (
+        "  Choose how you authenticate with AWS.",
+        "  请选择你与AWS的认证方式。",
+    ),
+    (
+        "  Enter the name of your AWS profile.",
+        "  请输入AWS配置档名称。",
+    ),
+    ("  AWS profile: ", "  AWS配置档："),
+    (
+        "  Enter your Amazon Bedrock API key.",
+        "  请输入你的Amazon Bedrock API key。",
+    ),
+    ("  Bedrock API key: ", "  Bedrock API key："),
+    (
+        "  Enter the AWS Region to use with Amazon Bedrock.",
+        "  请输入与Amazon Bedrock一起使用的AWS区域。",
+    ),
+    ("  AWS Region: ", "  AWS区域："),
+    ("  Enter your AWS access keys.", "  请输入你的AWS访问密钥。"),
+    (
+        "  Configure AWS credentials in your environment, then restart Codex.",
+        "  请在你的环境中配置AWS凭据，然后重启Codex。",
+    ),
+    ("  Setup guide: ", "  设置指南："),
+    ("Enter a Bedrock API key", "输入Bedrock API key"),
+    ("  AWS profile detected: {0}", "  检测到AWS配置档：{0}"),
+    ("  Region: {0}", "  区域：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

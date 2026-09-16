@@ -351,58 +351,72 @@ impl BedrockState {
         ];
         match &self.view {
             BedrockView::Discovering(_) => {
-                lines.push("  Checking for existing AWS credentials...".dim().into());
+                lines.push(
+                    tr(current(), "  Checking for existing AWS credentials...")
+                        .dim()
+                        .into(),
+                );
             }
             BedrockView::Configuring(_) => {
-                lines.push("  Setting up Amazon Bedrock...".dim().into());
+                lines.push(tr(current(), "  Setting up Amazon Bedrock...").dim().into());
             }
             BedrockView::Methods(list) => {
                 if *list == BedrockMethodList::Detected && self.profiles.len() == 1 {
                     let profile = &self.profiles[0];
-                    lines.push(format!("  AWS profile detected: {}", profile.name).into());
+                    lines.push(
+                        tr_with(current(), "  AWS profile detected: {0}", &[&profile.name]).into(),
+                    );
                     if let Some(region) = &profile.region {
-                        lines.push(format!("  Region: {region}").dim().into());
+                        lines.push(tr_with(current(), "  Region: {0}", &[&region]).dim().into());
                     }
                 } else if *list == BedrockMethodList::Detected && self.profiles.len() > 1 {
-                    lines.push("  Choose an AWS profile.".into());
+                    lines.push(tr(current(), "  Choose an AWS profile.").into());
                 } else if *list == BedrockMethodList::Detected
                     && !self.environment_credentials.is_empty()
                 {
-                    lines.push("  AWS credentials detected in your environment.".into());
+                    lines.push(
+                        tr(current(), "  AWS credentials detected in your environment.").into(),
+                    );
                 } else {
                     if *list == BedrockMethodList::Detected {
-                        lines.push("  No AWS credentials found.".into());
+                        lines.push(tr(current(), "  No AWS credentials found.").into());
                     }
-                    lines.push("  Choose how you authenticate with AWS.".into());
+                    lines.push(tr(current(), "  Choose how you authenticate with AWS.").into());
                 }
                 lines.push("".into());
                 self.render_methods(&mut lines);
             }
             BedrockView::ProfileEntry(value) => {
-                lines.push("  Enter the name of your AWS profile.".into());
+                lines.push(tr(current(), "  Enter the name of your AWS profile.").into());
                 lines.push("".into());
                 lines.push(Line::from(vec![
-                    "  AWS profile: ".into(),
+                    tr(current(), "  AWS profile: ").into(),
                     value.clone().cyan(),
                 ]));
             }
             BedrockView::ApiKeyEntry(value) => {
-                lines.push("  Enter your Amazon Bedrock API key.".into());
+                lines.push(tr(current(), "  Enter your Amazon Bedrock API key.").into());
                 lines.push("".into());
                 let mut masked_value = "•".repeat(value.chars().count().saturating_sub(1));
                 if let Some(character) = value.chars().last() {
                     masked_value.push(character);
                 }
                 lines.push(Line::from(vec![
-                    "  Bedrock API key: ".into(),
+                    tr(current(), "  Bedrock API key: ").into(),
                     masked_value.cyan(),
                 ]));
             }
             BedrockView::RegionEntry { value, .. } => {
-                lines.push("  Enter the AWS Region to use with Amazon Bedrock.".into());
+                lines.push(
+                    tr(
+                        current(),
+                        "  Enter the AWS Region to use with Amazon Bedrock.",
+                    )
+                    .into(),
+                );
                 lines.push("".into());
                 lines.push(Line::from(vec![
-                    "  AWS Region: ".into(),
+                    tr(current(), "  AWS Region: ").into(),
                     value.clone().cyan(),
                 ]));
             }
@@ -410,7 +424,7 @@ impl BedrockState {
                 values,
                 selected_field,
             } => {
-                lines.push("  Enter your AWS access keys.".into());
+                lines.push(tr(current(), "  Enter your AWS access keys.").into());
                 lines.push("".into());
                 for (index, label) in [
                     tr(current(), "AWS access key ID"),
@@ -443,11 +457,15 @@ impl BedrockState {
             }
             BedrockView::EnvironmentInstructions => {
                 lines.push(
-                    "  Configure AWS credentials in your environment, then restart Codex.".into(),
+                    tr(
+                        current(),
+                        "  Configure AWS credentials in your environment, then restart Codex.",
+                    )
+                    .into(),
                 );
                 lines.push("".into());
                 lines.push(Line::from(vec![
-                    "  Setup guide: ".into(),
+                    tr(current(), "  Setup guide: ").into(),
                     "https://learn.chatgpt.com/docs/amazon-bedrock"
                         .cyan()
                         .underlined(),
@@ -461,15 +479,15 @@ impl BedrockState {
             footer.push("".into());
             if !matches!(self.view, BedrockView::Configuring(_)) {
                 footer.push(Line::from(vec![
-                    "  Press ".dim(),
+                    tr(current(), "  Press ").dim(),
                     keys::CONFIRM[0].into(),
-                    " to continue".dim(),
+                    tr(current(), " to continue").dim(),
                 ]));
             }
             footer.push(Line::from(vec![
-                "  Press ".dim(),
+                tr(current(), "  Press ").dim(),
                 keys::CANCEL[0].into(),
-                " to go back".dim(),
+                tr(current(), " to go back").dim(),
             ]));
         }
         if let Some(error) = error {
@@ -579,7 +597,7 @@ impl BedrockState {
                 ),
                 BedrockMethod::ApiKey => (
                     "Bedrock API key".to_string(),
-                    "Enter a Bedrock API key".to_string(),
+                    tr(current(), "Enter a Bedrock API key").to_string(),
                 ),
             };
             let selected = index == self.highlighted;
@@ -736,8 +754,10 @@ impl AuthModeWidget {
                     .map_err(|error| error.to_string())
                     .and_then(|response| match response {
                         LoginAccountResponse::AmazonBedrock {} => Ok(()),
-                        response => Err(format!(
-                            "Unexpected account/login/start response: {response:?}"
+                        response => Err(tr_with(
+                            current(),
+                            "Unexpected account/login/start response: {0}",
+                            &[&format!("{response:?}")],
                         )),
                     }),
                 BedrockCredential::Profile(profile) => request_handle
@@ -774,8 +794,10 @@ impl AuthModeWidget {
                     .map_err(|error| error.to_string())
                     .and_then(|response| match response {
                         LoginAccountResponse::AmazonBedrock {} => Ok(()),
-                        response => Err(format!(
-                            "Unexpected account/login/start response: {response:?}"
+                        response => Err(tr_with(
+                            current(),
+                            "Unexpected account/login/start response: {0}",
+                            &[&format!("{response:?}")],
                         )),
                     }),
             };

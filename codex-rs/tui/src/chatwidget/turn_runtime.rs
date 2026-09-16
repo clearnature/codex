@@ -4,7 +4,13 @@
 //! and final-message separator handling.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
+// These two prefixes are matched against the server's English error text in
+// `is_safety_access_block_message`, so they must stay English: translating them
+// would silently disable the detection (see i18n-verification.md §9.1.5).
 const LEGACY_SAFETY_ACCESS_BLOCK_PREFIX: &str =
     "Invalid prompt: we've limited access to this content for safety reasons.";
 const BIO_POLICY_SAFETY_ACCESS_BLOCK_PREFIX: &str =
@@ -62,7 +68,11 @@ impl ChatWidget {
     pub(super) fn log_websocket_timing_totals(&mut self, delta: RuntimeMetricsSummary) {
         if let Some(label) = history_cell::runtime_metrics_label(delta.responses_api_summary()) {
             self.add_plain_history_lines(vec![
-                vec!["• ".dim(), format!("WebSocket timing: {label}").dark_gray()].into(),
+                vec![
+                    "• ".dim(),
+                    tr_with(current(), "WebSocket timing: {0}", &[&label]).dark_gray(),
+                ]
+                .into(),
             ]);
         }
     }
@@ -291,7 +301,11 @@ impl ChatWidget {
             if used_percent <= 0 {
                 return None;
             }
-            return Some(format!("{used_percent}% used"));
+            return Some(tr_with(
+                current(),
+                "{0}% used",
+                &[&used_percent.to_string()],
+            ));
         }
 
         if let Some(tokens) = used_tokens
@@ -359,7 +373,7 @@ impl ChatWidget {
         self.finalize_turn();
 
         let message = if message.trim().is_empty() {
-            "Codex is currently experiencing high load.".to_string()
+            tr(current(), "Codex is currently experiencing high load.").to_string()
         } else {
             message
         };
@@ -546,7 +560,7 @@ impl ChatWidget {
 
     pub(super) fn interrupted_turn_message(&self, reason: TurnAbortReason) -> String {
         if reason == TurnAbortReason::BudgetLimited {
-            return "Goal budget reached - the turn was stopped.".to_string();
+            return tr(current(), "Goal budget reached - the turn was stopped.").to_string();
         }
 
         "Conversation interrupted - tell the model what to do differently. Something went wrong? Hit `/feedback` to report the issue.".to_string()

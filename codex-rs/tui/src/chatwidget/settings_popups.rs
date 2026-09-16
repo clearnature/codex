@@ -4,6 +4,8 @@
 //! orchestration module without changing their event wiring.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(super) fn open_theme_picker(&mut self) {
@@ -19,7 +21,11 @@ impl ChatWidget {
     pub(crate) fn open_personality_popup(&mut self) {
         if !self.is_session_configured() {
             self.add_info_message(
-                "Personality selection is disabled until startup completes.".to_string(),
+                tr(
+                    current(),
+                    "Personality selection is disabled until startup completes.",
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return;
@@ -75,8 +81,10 @@ impl ChatWidget {
             .collect();
 
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Select Personality".bold()));
-        header.push(Line::from("Choose a communication style for Codex.".dim()));
+        header.push(Line::from(tr(current(), "Select Personality").bold()));
+        header.push(Line::from(
+            tr(current(), "Choose a communication style for Codex.").dim(),
+        ));
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(header),
@@ -89,7 +97,11 @@ impl ChatWidget {
     pub(crate) fn open_experimental_popup(&mut self) {
         let Some(thread_id) = self.thread_id() else {
             self.add_info_message(
-                "Experimental features are unavailable until startup completes.".to_string(),
+                tr(
+                    current(),
+                    "Experimental features are unavailable until startup completes.",
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return;
@@ -119,9 +131,9 @@ impl ChatWidget {
 
     fn personality_description(personality: Personality) -> &'static str {
         match personality {
-            Personality::None => "No personality instructions.",
-            Personality::Friendly => "Warm, collaborative, and helpful.",
-            Personality::Pragmatic => "Concise, task-focused, and direct.",
+            Personality::None => tr(current(), "No personality instructions."),
+            Personality::Friendly => tr(current(), "Warm, collaborative, and helpful."),
+            Personality::Pragmatic => tr(current(), "Concise, task-focused, and direct."),
         }
     }
 }

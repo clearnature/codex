@@ -41,7 +41,6 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_utils_fuzzy_match::fuzzy_match;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;

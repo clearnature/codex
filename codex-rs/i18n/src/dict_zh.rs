@@ -433,6 +433,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Chat sessions", "聊天会话"),
     ("Chat sessions ({0})", "聊天会话（{0}）"),
     ("Chat stopped as a precaution", "聊天已出于安全考虑停止"),
+    (
+        "Choose a communication style for Codex.",
+        "选择Codex的沟通风格。",
+    ),
+    ("Choose an action", "选择操作"),
     ("Choose items to import.", "选择要导入的条目。"),
     (
         "Choose what happens to the current task.",
@@ -454,6 +459,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Codex CLI\n\nIf no subcommand is specified, options will be forwarded to the interactive CLI",
         "Codex CLI\n\n未指定子命令时，选项会被转发给交互式CLI。",
     ),
+    (
+        "Codex is currently experiencing high load.",
+        "Codex当前负载较高。",
+    ),
     ("Compacted context", "已压缩上下文"),
     ("Completed", "已完成"),
     ("Completed ", "已完成 "),
@@ -461,6 +470,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Config layer stack (lowest precedence first):",
         "配置层栈（优先级从低到高）：",
+    ),
+    (
+        "Concise, task-focused, and direct.",
+        "简洁、聚焦任务、直接。",
     ),
     ("Config key: ", "配置键："),
     ("Connected to your IDE.", "已连接到你的IDE。"),
@@ -561,6 +574,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "你信任此目录的内容吗？处理不受信任的内容会带来更高的提示词注入风险。信任该目录后，项目本地的配置、钩子与执行策略才会被加载。",
     ),
     ("Each column = 1 week · tallest ", "每列=1周 · 最高 "),
+    ("Enable or disable skills.", "启用或禁用技能。"),
     ("Enable {0}?", "启用{0}？"),
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
@@ -602,6 +616,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Experimental feature request failed", "实验性特性请求失败"),
     ("Experimental features", "实验性特性"),
+    (
+        "Experimental features are unavailable until startup completes.",
+        "启动完成前无法使用实验性特性。",
+    ),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
         "Failed to name the worktree session: {0}",
@@ -704,6 +722,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Giving this request a little extra thought",
         "正在为这个请求多想一会儿",
+    ),
+    (
+        "Goal budget reached - the turn was stopped.",
+        "已达目标预算 — 本轮已停止。",
     ),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
     (
@@ -815,6 +837,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "了解更多 <https://developers.openai.com/codex/windows>",
     ),
     ("Learn more: ", "了解更多： "),
+    ("List skills", "列出技能"),
     ("Loading MCP inventory", "正在加载MCP清单"),
     ("Loading MCP inventory...", "正在加载MCP清单…"),
     ("Loading earlier messages...", "正在加载更早的消息…"),
@@ -866,6 +889,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("No agents completed yet", "还没有代理完成"),
     ("No approved plan available", "没有已批准的计划"),
     ("No changes", "无变更"),
+    ("No personality instructions.", "无个性指令。"),
     ("No pet will be shown.", "不会显示宠物。"),
     ("No questions", "没有问题"),
     ("No recent activity yet.", "还没有最近活动。"),
@@ -875,6 +899,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("No server experiments available.", "没有可用的服务器实验。"),
     ("No shortcuts in this group", "此分组没有快捷键"),
+    ("No skills available.", "没有可用的技能。"),
     ("No transcript content available", "没有可显示的转录内容"),
     ("No unbound shortcuts", "没有未绑定的快捷键"),
     (
@@ -937,6 +962,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Permanently delete a saved session by id or session name",
         "按id或会话名永久删除已保存的会话。",
+    ),
+    (
+        "Personality selection is disabled until startup completes.",
+        "启动完成前无法选择个性。",
     ),
     ("Plugin · {0}", "插件 · {0}"),
     (
@@ -1036,6 +1065,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "正在保存…关闭此弹窗不会取消写入。",
     ),
     ("Search › ", "搜索 › "),
+    ("Select Personality", "选择个性"),
     ("Select Pet", "选择宠物"),
     ("Select Syntax Theme", "选择语法主题"),
     ("Select an open-source provider", "选择开源提供方"),
@@ -1168,6 +1198,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "该线程正在其他地方打开。请先在那里关闭，再重试恢复以继续。",
     ),
     ("Thread usage", "线程用量"),
+    (
+        "Tip: press $ to open this list directly.",
+        "提示：按$直接打开此列表。",
+    ),
     ("To continue this session, run:", "要继续此会话，请运行："),
     ("Token usage so far:", "目前Token用量："),
     ("Token usage:", "Token用量："),
@@ -1255,11 +1289,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "We couldn’t confirm the agent was interpreting your instructions correctly. Review what we detected before deciding to continue.",
         "我们无法确认代理是否正确理解了你的指令。请先查看我们检测到的内容，再决定是否继续。",
     ),
+    (
+        "Warm, collaborative, and helpful.",
+        "温和、乐于协作、有帮助。",
+    ),
     ("Web search: {0}", "网络搜索：{0}"),
     (
         "WebSocket: {0} events send ({1})",
         "WebSocket：发送{0}个事件（{1}）",
     ),
+    ("WebSocket timing: {0}", "WebSocket计时：{0}"),
     ("Welcome to ", "欢迎使用 "),
     ("Worked for {0}", "耗时 {0}"),
     ("Working directory changed to: {0}", "工作目录已切换到：{0}"),
@@ -1717,6 +1756,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "{0} setting was saved but is overridden: {1}",
         "{0}设置已保存但被覆盖：{1}",
+    ),
+    (
+        "{0} skills enabled, {1} skills disabled",
+        "已启用{0}个技能，已禁用{1}个技能",
     ),
     ("{0} to interrupt", "{0} 中断"),
     ("{0} unavailable", "{0}不可用"),
@@ -2981,6 +3024,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // 钩子; the provenance prefix keeps its arrow and separator spacing.
     ("Running hooks", "正在运行钩子"),
     ("Running hook", "正在运行钩子"),
+    ("{0}% used", "已用{0}%"),
     ("{0}d (best {1}d)", "{0}天（最长{1}天）"),
     ("{0}h", "{0}小时"),
     ("{0}h {1}m", "{0}小时{1}分"),

@@ -3308,6 +3308,54 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Go back without enabling full access",
         "返回且不启用完全访问",
     ),
+    ("Shared agents unavailable", "共享代理不可用"),
+    (
+        "The agents dashboard is unavailable while workload identity is active.",
+        "工作负载身份启用时，代理面板不可用。",
+    ),
+    (
+        "This session isn’t connected to a shared background server.",
+        "本会话未连接到共享后台服务。",
+    ),
+    (
+        "Connect to a remote background server to use the agents dashboard.",
+        "请连接到远程后台服务以使用代理面板。",
+    ),
+    (
+        "Starting a background server will not interrupt or move this session.",
+        "启动后台服务不会中断或迁移本会话。",
+    ),
+    ("Start background server", "启动后台服务"),
+    (
+        "Open `codex agents` in another terminal afterward.",
+        "之后在另一个终端中运行`codex agents`。",
+    ),
+    ("Return to this session", "返回本会话"),
+    (
+        "Cannot resume task without preserving the selected permissions.",
+        "不能在未保留所选权限的情况下恢复任务。",
+    ),
+    (
+        "Permission profile has different settings.",
+        "权限配置档的设置不同。",
+    ),
+    ("Failed to load shared agents: {0}", "加载共享代理失败：{0}"),
+    ("Failed to load task settings: {0}", "加载任务设置失败：{0}"),
+    ("Failed to attach to task: {0}", "附加到任务失败：{0}"),
+    (
+        "Failed to load project settings: {0}",
+        "加载项目设置失败：{0}",
+    ),
+    (
+        "Failed to start background task: {0}",
+        "启动后台任务失败：{0}",
+    ),
+    ("Failed to send task message: {0}", "发送任务消息失败：{0}"),
+    (
+        "Failed to stop background task: {0}",
+        "停止后台任务失败：{0}",
+    ),
+    ("daemon process exited with {0}", "守护进程退出，状态{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

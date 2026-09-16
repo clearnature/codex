@@ -20,6 +20,9 @@ use codex_app_server_protocol::ThreadHistoryMode;
 use codex_app_server_protocol::TurnStartParams;
 use codex_app_server_protocol::TurnStartResponse;
 use codex_app_server_protocol::UserInput;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::SubAgentSource;
 
 pub(crate) const AGENTS_OVERVIEW_VIEW_ID: &str = "agents-overview";
@@ -57,20 +60,20 @@ impl App {
         if matches!(self.app_server_target, AppServerTarget::Embedded) {
             let workload_identity_selected = codex_login::is_workload_identity_selected();
             self.chat_widget.show_selection_view(SelectionViewParams {
-                title: Some("Shared agents unavailable".to_string()),
+                title: Some(tr(current(), "Shared agents unavailable").to_string()),
                 subtitle: Some(
                     if workload_identity_selected {
-                        "The agents dashboard is unavailable while workload identity is active."
+                        tr(current(), "The agents dashboard is unavailable while workload identity is active.")
                     } else if cfg!(any(unix, windows)) {
-                        "This session isn’t connected to a shared background server."
+                        tr(current(), "This session isn’t connected to a shared background server.")
                     } else {
-                        "Connect to a remote background server to use the agents dashboard."
+                        tr(current(), "Connect to a remote background server to use the agents dashboard.")
                     }
                     .to_string(),
                 ),
                 footer_note: (cfg!(any(unix, windows)) && !workload_identity_selected).then(|| {
                     Line::from(
-                        "Starting a background server will not interrupt or move this session."
+                        tr(current(), "Starting a background server will not interrupt or move this session.")
                             .dim(),
                     )
                 }),
@@ -78,16 +81,16 @@ impl App {
                 items: [
                     #[cfg(any(unix, windows))]
                     (!workload_identity_selected).then(|| SelectionItem {
-                        name: "Start background server".to_string(),
+                        name: tr(current(), "Start background server").to_string(),
                         description: Some(
-                            "Open `codex agents` in another terminal afterward.".to_string(),
+                            tr(current(), "Open `codex agents` in another terminal afterward.").to_string(),
                         ),
                         actions: vec![Box::new(|tx| tx.send(AppEvent::StartAgentsDaemon))],
                         dismiss_on_select: true,
                         ..Default::default()
                     }),
                     Some(SelectionItem {
-                        name: "Return to this session".to_string(),
+                        name: tr(current(), "Return to this session").to_string(),
                         dismiss_on_select: true,
                         ..Default::default()
                     }),
@@ -160,8 +163,11 @@ impl App {
                     .selected_index_for_present_view(AGENTS_OVERVIEW_VIEW_ID)
                     .is_some()
                 {
-                    self.chat_widget
-                        .add_error_message(format!("Failed to load shared agents: {error}"));
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to load shared agents: {0}",
+                        &[&error.to_string()],
+                    ));
                 }
             }
         }
@@ -392,8 +398,11 @@ impl App {
                 {
                     Ok(config) => config,
                     Err(error) => {
-                        self.chat_widget
-                            .add_error_message(format!("Failed to load task settings: {error}"));
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Failed to load task settings: {0}",
+                            &[&error.to_string()],
+                        ));
                         return Ok(AppRunControl::Continue);
                     }
                 }
@@ -423,8 +432,11 @@ impl App {
                             })
                     {
                         self.chat_widget.add_error_message(
-                            "Cannot resume task without preserving the selected permissions."
-                                .to_string(),
+                            tr(
+                                current(),
+                                "Cannot resume task without preserving the selected permissions.",
+                            )
+                            .to_string(),
                         );
                         return Ok(AppRunControl::Continue);
                     }
@@ -447,8 +459,11 @@ impl App {
             {
                 Ok(resumed) => resumed,
                 Err(error) => {
-                    self.chat_widget
-                        .add_error_message(format!("Failed to attach to task: {error}"));
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to attach to task: {0}",
+                        &[&error.to_string()],
+                    ));
                     return Ok(AppRunControl::Continue);
                 }
             };
@@ -510,8 +525,11 @@ impl App {
                 )
                 .await
             {
-                self.chat_widget
-                    .add_error_message(format!("Failed to attach to task: {error}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to attach to task: {0}",
+                    &[&error.to_string()],
+                ));
                 return Ok(AppRunControl::Continue);
             }
             let mut destination_config = self.chat_widget.config_ref().clone();
@@ -633,9 +651,11 @@ impl App {
                 Ok(config) => config,
                 Err(error) => {
                     self.restore_agents_overview_prompt(prompt);
-                    return self
-                        .chat_widget
-                        .add_error_message(format!("Failed to load project settings: {error}"));
+                    return self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to load project settings: {0}",
+                        &[&error.to_string()],
+                    ));
                 }
             },
             None => self.fresh_session_config(),
@@ -647,9 +667,9 @@ impl App {
                     != self.config.permissions.profile_workspace_roots())
         {
             self.restore_agents_overview_prompt(prompt);
-            return self
-                .chat_widget
-                .add_error_message("Permission profile has different settings.".to_string());
+            return self.chat_widget.add_error_message(
+                tr(current(), "Permission profile has different settings.").to_string(),
+            );
         }
         self.apply_runtime_policy_overrides(&mut config, RuntimePolicyOverrideScope::All);
         let defaults_cwd = match app_server.thread_params_mode() {
@@ -739,8 +759,11 @@ impl App {
             }
             Err(error) => {
                 self.restore_agents_overview_prompt(prompt);
-                self.chat_widget
-                    .add_error_message(format!("Failed to start background task: {error}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to start background task: {0}",
+                    &[&error.to_string()],
+                ));
             }
         }
     }
@@ -767,8 +790,11 @@ impl App {
             .await;
         if let Err(error) = result {
             self.restore_agents_overview_prompt(prompt);
-            self.chat_widget
-                .add_error_message(format!("Failed to send task message: {error}"));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to send task message: {0}",
+                &[&error.to_string()],
+            ));
         }
     }
 
@@ -808,8 +834,11 @@ impl App {
             {
                 Ok(turn_id) => turn_id,
                 Err(error) => {
-                    self.chat_widget
-                        .add_error_message(format!("Failed to stop background task: {error}"));
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to stop background task: {0}",
+                        &[&error.to_string()],
+                    ));
                     self.refresh_agents_overview_threads(app_server);
                     return;
                 }
@@ -819,8 +848,11 @@ impl App {
             return;
         };
         if let Err(error) = app_server.turn_interrupt(thread_id, turn_id).await {
-            self.chat_widget
-                .add_error_message(format!("Failed to stop background task: {error}"));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to stop background task: {0}",
+                &[&error.to_string()],
+            ));
             self.refresh_agents_overview_threads(app_server);
         }
     }
@@ -860,7 +892,11 @@ impl App {
                 } else {
                     let message = String::from_utf8_lossy(&output.stderr).trim().to_string();
                     Err(if message.is_empty() {
-                        format!("daemon process exited with {}", output.status)
+                        tr_with(
+                            current(),
+                            "daemon process exited with {0}",
+                            &[&output.status.to_string()],
+                        )
                     } else {
                         message
                     })

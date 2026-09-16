@@ -6493,6 +6493,31 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Go back", "返回"),
     ("Failed to set trust for {0}: {1}", "无法为{0}设置信任：{1}"),
     ("Compose new task", "撰写新任务"),
+    // Errors that used to be thiserror `#[error("...")]` attributes. The attribute
+    // only accepts literals, so these three types implement Display by hand
+    // (`external_editor.rs`, `named_session_lookup.rs`, `app_server_session.rs`).
+    // English output is unchanged: tr(En, key) returns the key verbatim.
+    ("neither VISUAL nor EDITOR is set", "未设置VISUAL或EDITOR"),
+    ("failed to parse editor command", "解析编辑器命令失败"),
+    (
+        "Multiple sessions match '{0}' (including {1} and {2}); use a session UUID to disambiguate.",
+        "有多个会话匹配{0}（包括{1}和{2}）；请使用会话UUID以消除歧义。",
+    ),
+    (
+        "Cannot verify a unique session label across server pages; matching session UUID: {0}. Use it only if this is the session you want.",
+        "无法跨服务器分页确认唯一的会话标签；匹配的会话UUID：{0}。仅当你确实想要该会话时才使用它。",
+    ),
+    (
+        "the selected permission profile cannot be safely represented by the legacy app-server sandbox policy; select a named or legacy-compatible permission profile",
+        "所选权限配置无法由旧的app-server沙箱策略安全表示；请选择具名或兼容旧版的权限配置",
+    ),
+    // Startup failure message (`tui/src/startup_error.rs`): the type used to
+    // carry a thiserror `#[error("...")]` attribute, now a hand-written Display so
+    // it can be translated. It reaches the user through lib.rs's io::Error::other.
+    (
+        "failed to initialize sqlite local db at {0}: {1}",
+        "无法在{0}初始化sqlite本地数据库：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

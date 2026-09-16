@@ -15,19 +15,31 @@ use codex_protocol::permissions::FileSystemSpecialPath;
 use color_eyre::eyre::Report;
 use color_eyre::eyre::Result;
 use tempfile::Builder;
-use thiserror::Error;
 use tokio::process::Command;
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub(crate) enum EditorError {
-    #[error("neither VISUAL nor EDITOR is set")]
     MissingEditor,
     #[cfg(not(windows))]
-    #[error("failed to parse editor command")]
     ParseFailed,
-    #[error("editor command is empty")]
     EmptyCommand,
 }
+
+/// thiserror's `#[error("...")]` only accepts literals, so the variants are
+/// rendered by hand and routed through the dictionary instead.
+impl std::fmt::Display for EditorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = match self {
+            Self::MissingEditor => tr(current(), "neither VISUAL nor EDITOR is set"),
+            #[cfg(not(windows))]
+            Self::ParseFailed => tr(current(), "failed to parse editor command"),
+            Self::EmptyCommand => tr(current(), "editor command is empty"),
+        };
+        f.write_str(message)
+    }
+}
+
+impl std::error::Error for EditorError {}
 
 /// Tries to resolve the full path to a Windows program, respecting PATH + PATHEXT.
 /// Falls back to the original program name if resolution fails.

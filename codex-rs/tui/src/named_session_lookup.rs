@@ -1,5 +1,7 @@
 //! Resolve a displayed session label through the app server before acting on its thread ID.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::path::Path;
 
 use crate::app_server_session::AppServerSession;
@@ -19,21 +21,48 @@ pub(super) enum SessionCollection {
     Archived,
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub(crate) enum AmbiguousSessionName {
-    #[error(
-        "Multiple sessions match '{name}' (including {first_id} and {second_id}); use a session UUID to disambiguate."
-    )]
     Multiple {
         name: String,
         first_id: String,
         second_id: String,
     },
-    #[error(
-        "Cannot verify a unique session label across server pages; matching session UUID: {0}. Use it only if this is the session you want."
-    )]
     Paginated(String),
 }
+
+/// thiserror's `#[error("...")]` only accepts literals, so the two variants are
+/// rendered by hand and routed through the dictionary instead.
+impl std::fmt::Display for AmbiguousSessionName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Multiple {
+                name,
+                first_id,
+                second_id,
+            } => write!(
+                f,
+                "{}",
+                tr_with(
+                    current(),
+                    "Multiple sessions match '{0}' (including {1} and {2}); use a session UUID to disambiguate.",
+                    &[name, first_id, second_id],
+                )
+            ),
+            Self::Paginated(uuid) => write!(
+                f,
+                "{}",
+                tr_with(
+                    current(),
+                    "Cannot verify a unique session label across server pages; matching session UUID: {0}. Use it only if this is the session you want.",
+                    &[uuid],
+                )
+            ),
+        }
+    }
+}
+
+impl std::error::Error for AmbiguousSessionName {}
 
 pub(super) fn display_label(thread: &Thread) -> &str {
     thread

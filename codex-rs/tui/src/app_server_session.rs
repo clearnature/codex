@@ -392,11 +392,21 @@ pub(crate) enum TurnPermissionsOverride {
     LegacySandbox(PermissionProfile),
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error(
-    "the selected permission profile cannot be safely represented by the legacy app-server sandbox policy; select a named or legacy-compatible permission profile"
-)]
+#[derive(Debug)]
 pub(crate) struct UnsupportedLegacyPermissionProfile;
+
+/// thiserror's `#[error("...")]` only accepts literals, so this type is rendered
+/// by hand and routed through the dictionary instead.
+impl std::fmt::Display for UnsupportedLegacyPermissionProfile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(tr(
+            current(),
+            "the selected permission profile cannot be safely represented by the legacy app-server sandbox policy; select a named or legacy-compatible permission profile",
+        ))
+    }
+}
+
+impl std::error::Error for UnsupportedLegacyPermissionProfile {}
 
 impl AppServerSession {
     /// Platform of the app-server process, not necessarily its executor.

@@ -4,6 +4,9 @@ use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::render::Insets;
 use crate::render::RectExt as _;
 use crate::selection_list::selection_option_row_with_dim;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::layout::Layout;
@@ -78,14 +81,23 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         let error_height = u16::from(self.error.is_some());
         let intro_lines = match self.view {
             MigrationView::Summary => vec![
-                Line::from("Bring over supported setup from another coding agent."),
-                Line::from("Codex may add files to your current project folder."),
-                Line::from("Your existing setup will not be changed."),
+                Line::from(tr(
+                    current(),
+                    "Bring over supported setup from another coding agent.",
+                )),
+                Line::from(tr(
+                    current(),
+                    "Codex may add files to your current project folder.",
+                )),
+                Line::from(tr(current(), "Your existing setup will not be changed.")),
             ],
             MigrationView::Customize => vec![
-                Line::from("Choose items to import."),
-                Line::from("Codex may add files to your current project folder."),
-                Line::from("Your existing setup will not be changed."),
+                Line::from(tr(current(), "Choose items to import.")),
+                Line::from(tr(
+                    current(),
+                    "Codex may add files to your current project folder.",
+                )),
+                Line::from(tr(current(), "Your existing setup will not be changed.")),
             ],
         };
         let intro_height = intro_lines.len() as u16;
@@ -118,8 +130,8 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         .areas(inner_area);
 
         let title = match self.view {
-            MigrationView::Summary => "Import setup",
-            MigrationView::Customize => "Choose what to import",
+            MigrationView::Summary => tr(current(), "Import setup"),
+            MigrationView::Customize => tr(current(), "Choose what to import"),
         };
         let heading = Line::from(vec!["> ".into(), title.bold()]);
         heading.render(header_area, buf);
@@ -143,14 +155,18 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         ))
         .split(actions_area);
         let item_label = if self.items.len() == 1 {
-            "item"
+            tr(current(), "item")
         } else {
-            "items"
+            tr(current(), "items")
         };
-        let actions_intro = format!(
-            "Selected {} of {} {item_label}.",
-            self.selected_count(),
-            self.items.len()
+        let actions_intro = tr_with(
+            current(),
+            "Selected {0} of {1} {2}.",
+            &[
+                &self.selected_count().to_string(),
+                &self.items.len().to_string(),
+                item_label,
+            ],
         );
         Paragraph::new(actions_intro)
             .wrap(Wrap { trim: false })
@@ -167,37 +183,37 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
 
         let footer = match self.view {
             MigrationView::Summary => Line::from(vec![
-                "Use ".dim(),
+                tr(current(), "Use ").dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                " to move, ".dim(),
+                tr(current(), " to move, ").dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to select, ".dim(),
+                tr(current(), " to select, ").dim(),
                 "c".cyan(),
-                " to customize".dim(),
+                tr(current(), " to customize").dim(),
             ]),
             MigrationView::Customize if self.focus == FocusArea::Actions => Line::from(vec![
                 "Press ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to continue, ".dim(),
+                tr(current(), " to continue, ").dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                " to move, ".dim(),
+                tr(current(), " to move, ").dim(),
                 "b".cyan(),
-                " to go back".dim(),
+                tr(current(), " to go back").dim(),
             ]),
             MigrationView::Customize => Line::from(vec![
-                "Use ".dim(),
+                tr(current(), "Use ").dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                " to move, ".dim(),
+                tr(current(), " to move, ").dim(),
                 key_hint::plain(KeyCode::Char(' ')).into(),
-                " to toggle, ".dim(),
+                tr(current(), " to toggle, ").dim(),
                 "b".cyan(),
-                " to go back".dim(),
+                tr(current(), " to go back").dim(),
             ]),
         };
         footer.render(footer_area, buf);

@@ -59,6 +59,7 @@ use ratatui::text::Line;
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Widget;
+use std::sync::OnceLock;
 
 /// The rendering inputs for the footer area under the composer.
 ///
@@ -965,7 +966,7 @@ fn shortcut_overlay_lines(state: ShortcutsState) -> Vec<Line<'static>> {
     let mut reasoning_down = Line::from("");
     let mut reasoning_up = Line::from("");
 
-    for descriptor in SHORTCUTS {
+    for descriptor in shortcuts() {
         if let Some(text) = descriptor.overlay_entry(state) {
             match descriptor.id {
                 ShortcutId::Commands => commands = text,
@@ -1140,13 +1141,13 @@ impl DisplayCondition {
 
 struct ShortcutDescriptor {
     id: ShortcutId,
-    bindings: &'static [ShortcutBinding],
+    bindings: Vec<ShortcutBinding>,
     prefix: &'static str,
     label: &'static str,
 }
 
 impl ShortcutDescriptor {
-    fn binding_for(&self, state: ShortcutsState) -> Option<&'static ShortcutBinding> {
+    fn binding_for(&self, state: ShortcutsState) -> Option<&ShortcutBinding> {
         self.bindings.iter().find(|binding| binding.matches(state))
     }
 
@@ -1206,148 +1207,156 @@ impl ShortcutDescriptor {
     }
 }
 
-const SHORTCUTS: &[ShortcutDescriptor] = &[
-    ShortcutDescriptor {
-        id: ShortcutId::Commands,
-        bindings: &[ShortcutBinding {
-            key: key_hint::plain(KeyCode::Char('/')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " for commands",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ShellCommands,
-        bindings: &[ShortcutBinding {
-            key: key_hint::plain(KeyCode::Char('!')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " for shell commands",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::InsertNewline,
-        bindings: &[
-            ShortcutBinding {
-                key: key_hint::shift(KeyCode::Enter),
-                condition: DisplayCondition::WhenShiftEnterHint,
+// Built lazily rather than as a `const`, per §3.6 of `docs/plan/i18n-design.md`:
+// the labels have to pass through `tr`, which a `const` initializer cannot call.
+static SHORTCUTS: OnceLock<Vec<ShortcutDescriptor>> = OnceLock::new();
+
+fn shortcuts() -> &'static [ShortcutDescriptor] {
+    SHORTCUTS.get_or_init(|| {
+        vec![
+            ShortcutDescriptor {
+                id: ShortcutId::Commands,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::plain(KeyCode::Char('/')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " for commands"),
             },
-            ShortcutBinding {
-                key: key_hint::ctrl(KeyCode::Char('j')),
-                condition: DisplayCondition::WhenNotShiftEnterHint,
+            ShortcutDescriptor {
+                id: ShortcutId::ShellCommands,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::plain(KeyCode::Char('!')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " for shell commands"),
             },
-        ],
-        prefix: "",
-        label: " for newline",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::QueueMessageTab,
-        bindings: &[ShortcutBinding {
-            key: key_hint::plain(KeyCode::Tab),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " to queue message",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::FilePaths,
-        bindings: &[ShortcutBinding {
-            key: key_hint::plain(KeyCode::Char('@')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " for file paths",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::PasteImage,
-        // Show Ctrl+Alt+V when running under WSL (terminals often intercept plain
-        // Ctrl+V); otherwise fall back to Ctrl+V.
-        bindings: &[
-            ShortcutBinding {
-                key: key_hint::ctrl_alt(KeyCode::Char('v')),
-                condition: DisplayCondition::WhenUnderWSL,
+            ShortcutDescriptor {
+                id: ShortcutId::InsertNewline,
+                bindings: vec![
+                    ShortcutBinding {
+                        key: key_hint::shift(KeyCode::Enter),
+                        condition: DisplayCondition::WhenShiftEnterHint,
+                    },
+                    ShortcutBinding {
+                        key: key_hint::ctrl(KeyCode::Char('j')),
+                        condition: DisplayCondition::WhenNotShiftEnterHint,
+                    },
+                ],
+                prefix: "",
+                label: tr(current(), " for newline"),
             },
-            ShortcutBinding {
-                key: key_hint::ctrl(KeyCode::Char('v')),
-                condition: DisplayCondition::Always,
+            ShortcutDescriptor {
+                id: ShortcutId::QueueMessageTab,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::plain(KeyCode::Tab),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " to queue message"),
             },
-        ],
-        prefix: "",
-        label: " to paste images",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ExternalEditor,
-        bindings: &[ShortcutBinding {
-            key: key_hint::ctrl(KeyCode::Char('g')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " to edit in external editor",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::EditPrevious,
-        bindings: &[ShortcutBinding {
-            key: key_hint::plain(KeyCode::Esc),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: "",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::HistorySearch,
-        bindings: &[ShortcutBinding {
-            key: key_hint::ctrl(KeyCode::Char('r')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " search history",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::Quit,
-        bindings: &[ShortcutBinding {
-            key: key_hint::ctrl(KeyCode::Char('c')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " to exit",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ShowTranscript,
-        bindings: &[ShortcutBinding {
-            key: key_hint::ctrl(KeyCode::Char('t')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " to view transcript",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ChangeMode,
-        bindings: &[ShortcutBinding {
-            key: key_hint::shift(KeyCode::Tab),
-            condition: DisplayCondition::WhenCollaborationModesEnabled,
-        }],
-        prefix: "",
-        label: " to change mode",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ReasoningDown,
-        bindings: &[ShortcutBinding {
-            key: key_hint::alt(KeyCode::Char(',')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " reasoning down",
-    },
-    ShortcutDescriptor {
-        id: ShortcutId::ReasoningUp,
-        bindings: &[ShortcutBinding {
-            key: key_hint::alt(KeyCode::Char('.')),
-            condition: DisplayCondition::Always,
-        }],
-        prefix: "",
-        label: " reasoning up",
-    },
-];
+            ShortcutDescriptor {
+                id: ShortcutId::FilePaths,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::plain(KeyCode::Char('@')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " for file paths"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::PasteImage,
+                // Show Ctrl+Alt+V when running under WSL (terminals often intercept plain
+                // Ctrl+V); otherwise fall back to Ctrl+V.
+                bindings: vec![
+                    ShortcutBinding {
+                        key: key_hint::ctrl_alt(KeyCode::Char('v')),
+                        condition: DisplayCondition::WhenUnderWSL,
+                    },
+                    ShortcutBinding {
+                        key: key_hint::ctrl(KeyCode::Char('v')),
+                        condition: DisplayCondition::Always,
+                    },
+                ],
+                prefix: "",
+                label: tr(current(), " to paste images"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::ExternalEditor,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::ctrl(KeyCode::Char('g')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " to edit in external editor"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::EditPrevious,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::plain(KeyCode::Esc),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: "",
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::HistorySearch,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::ctrl(KeyCode::Char('r')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " search history"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::Quit,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::ctrl(KeyCode::Char('c')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " to exit"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::ShowTranscript,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::ctrl(KeyCode::Char('t')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " to view transcript"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::ChangeMode,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::shift(KeyCode::Tab),
+                    condition: DisplayCondition::WhenCollaborationModesEnabled,
+                }],
+                prefix: "",
+                label: tr(current(), " to change mode"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::ReasoningDown,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::alt(KeyCode::Char(',')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " reasoning down"),
+            },
+            ShortcutDescriptor {
+                id: ShortcutId::ReasoningUp,
+                bindings: vec![ShortcutBinding {
+                    key: key_hint::alt(KeyCode::Char('.')),
+                    condition: DisplayCondition::Always,
+                }],
+                prefix: "",
+                label: tr(current(), " reasoning up"),
+            },
+        ]
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -2174,7 +2183,7 @@ mod tests {
 
     #[test]
     fn paste_image_shortcut_prefers_ctrl_alt_v_under_wsl() {
-        let descriptor = SHORTCUTS
+        let descriptor = shortcuts()
             .iter()
             .find(|descriptor| descriptor.id == ShortcutId::PasteImage)
             .expect("paste image shortcut");

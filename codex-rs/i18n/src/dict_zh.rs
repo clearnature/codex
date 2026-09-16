@@ -3593,6 +3593,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Could not request a limit increase. Please try again.",
         "无法申请提高限额。请重试。",
     ),
+    ("Saved conversation to {0}", "会话已保存到{0}"),
+    ("could not load conversation: {0}", "无法加载会话：{0}"),
+    (
+        "could not load conversation history: {0}",
+        "无法加载会话历史：{0}",
+    ),
+    ("could not create {0}: {1}", "无法创建{0}：{1}"),
+    (
+        "No active conversation to export.",
+        "没有可导出的活动会话。",
+    ),
+    (
+        "No conversation content to export.",
+        "没有可导出的会话内容。",
+    ),
+    ("could not determine the home directory", "无法确定主目录"),
 ];
 
 /// English source text -> Simplified Chinese.

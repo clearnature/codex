@@ -13,6 +13,9 @@ use codex_app_server_protocol::Thread;
 use codex_app_server_protocol::ThreadActiveFlag;
 use codex_app_server_protocol::ThreadItem;
 use codex_app_server_protocol::ThreadStatus;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
@@ -158,22 +161,27 @@ impl App {
         }
         if AgentsOverviewGroup::for_status(&source.status) == AgentsOverviewGroup::NeedsYou {
             if !is_child {
-                lines.extend([Line::default(), "Needs attention".red().into()]);
+                lines.extend([
+                    Line::default(),
+                    tr(current(), "Needs attention").red().into(),
+                ]);
             }
             if let Some(request) = self.agents_overview_request_preview(thread_id) {
                 lines.push(request.into());
             }
-            lines.push("Open task to review.".dim().into());
+            lines.push(tr(current(), "Open task to review.").dim().into());
             match &source.status {
                 ThreadStatus::Active { active_flags } => {
                     if active_flags.contains(&ThreadActiveFlag::WaitingOnApproval) {
-                        lines.push("Waiting for approval.".into());
+                        lines.push(tr(current(), "Waiting for approval.").into());
                     }
                     if active_flags.contains(&ThreadActiveFlag::WaitingOnUserInput) {
-                        lines.push("Waiting for your response.".into());
+                        lines.push(tr(current(), "Waiting for your response.").into());
                     }
                 }
-                ThreadStatus::SystemError => lines.push("Task encountered an error.".into()),
+                ThreadStatus::SystemError => {
+                    lines.push(tr(current(), "Task encountered an error.").into())
+                }
                 ThreadStatus::NotLoaded | ThreadStatus::Idle => {}
             }
         }
@@ -188,7 +196,10 @@ impl App {
             if !is_child {
                 lines.push(Line::default());
             }
-            lines.extend(["Latest activity".dim().into(), header.clone().into()]);
+            lines.extend([
+                tr(current(), "Latest activity").dim().into(),
+                header.clone().into(),
+            ]);
         }
         if let Some(message) = activity
             .and_then(|activity| activity.last_message.as_ref())
@@ -197,7 +208,7 @@ impl App {
         {
             lines.extend([
                 Line::default(),
-                "Last message".dim().into(),
+                tr(current(), "Last message").dim().into(),
                 message.clone().into(),
             ]);
         }

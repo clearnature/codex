@@ -5,6 +5,9 @@ use crate::text_formatting;
 use crate::width::display_width;
 use chrono::DateTime;
 use chrono::Local;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::account::PlanType;
 use codex_utils_path_uri::PathConvention;
 use codex_utils_path_uri::PathUri;
@@ -20,14 +23,22 @@ pub(crate) fn compose_model_display(
 ) -> (String, Vec<String>) {
     let mut details: Vec<String> = Vec::new();
     if let Some((_, effort)) = entries.iter().find(|(k, _)| *k == "reasoning effort") {
-        details.push(format!("reasoning {}", effort.to_ascii_lowercase()));
+        details.push(tr_with(
+            current(),
+            "reasoning {0}",
+            &[&effort.to_ascii_lowercase()],
+        ));
     }
     if let Some((_, summary)) = entries.iter().find(|(k, _)| *k == "reasoning summaries") {
         let summary = summary.trim();
         if summary.eq_ignore_ascii_case("none") || summary.eq_ignore_ascii_case("off") {
-            details.push("summaries off".to_string());
+            details.push(tr(current(), "summaries off").to_string());
         } else if !summary.is_empty() {
-            details.push(format!("summaries {}", summary.to_ascii_lowercase()));
+            details.push(tr_with(
+                current(),
+                "summaries {0}",
+                &[&summary.to_ascii_lowercase()],
+            ));
         }
     }
 
@@ -185,7 +196,11 @@ pub(crate) fn format_reset_timestamp(dt: DateTime<Local>, captured_at: DateTime<
     if dt.date_naive() == captured_at.date_naive() {
         time
     } else {
-        format!("{time} on {}", dt.format("%-d %b"))
+        tr_with(
+            current(),
+            "{0} on {1}",
+            &[&time, &dt.format("%-d %b").to_string()],
+        )
     }
 }
 

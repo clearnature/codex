@@ -1,5 +1,8 @@
 //! Lay out question text, choices, inline editing, and key hints within the available rows.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
@@ -97,7 +100,7 @@ impl Renderable for AsyncQuestions {
                 &option_rows,
                 &options_state,
                 option_rows.len().max(1),
-                "No options",
+                tr(current(), "No options"),
             );
         }
 
@@ -190,7 +193,7 @@ impl AsyncQuestions {
         {
             tips.push(
                 Span::styled(
-                    format!("{} submit", key.display_label()),
+                    tr_with(current(), "{0} submit", &[&key.display_label().to_string()]),
                     crate::style::accent_style(),
                 )
                 .bold(),
@@ -202,16 +205,16 @@ impl AsyncQuestions {
         tips.extend(option_tip);
         if let Some(key) = chat_hint("prompt_stack_back") {
             let label = if self.state.current_idx > 0 {
-                "prev question"
+                tr(current(), "prev question")
             } else {
-                "main prompt"
+                tr(current(), "main prompt")
             };
             tips.push(format!("{} {label}", key.display_label()).dim());
         }
         let next = if self.state.current_idx + 1 < self.state.pending.len() {
-            Some("next question")
+            Some(tr(current(), "next question"))
         } else if self.has_queued_messages {
-            Some("queued messages")
+            Some(tr(current(), "queued messages"))
         } else {
             None
         };
@@ -237,10 +240,13 @@ impl AsyncQuestions {
     }
 
     pub(super) fn option_tip(&self) -> Span<'static> {
-        format!(
-            "option {}/{}",
-            self.selected_option_index().unwrap_or(0) + 1,
-            self.options_len()
+        tr_with(
+            current(),
+            "option {0}/{1}",
+            &[
+                &(self.selected_option_index().unwrap_or(0) + 1).to_string(),
+                &self.options_len().to_string(),
+            ],
         )
         .dim()
     }

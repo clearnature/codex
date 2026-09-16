@@ -15,6 +15,9 @@ use codex_config::ResidencyRequirement;
 use codex_config::SandboxModeRequirement;
 use codex_config::WebSearchModeRequirement;
 use codex_config::format_config_layer_source;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::permissions::NetworkSandboxPolicy;
 use ratatui::style::Stylize;
@@ -32,7 +35,7 @@ pub(crate) fn new_debug_config_output(
 
     if let Some(proxy) = session_network_proxy {
         lines.push("".into());
-        lines.push("Session runtime:".bold().into());
+        lines.push(tr(current(), "Session runtime:").bold().into());
         lines.push("  - network_proxy".into());
         let SessionNetworkProxyRuntime {
             http_addr,
@@ -64,9 +67,10 @@ fn render_agents_config_lines(config: &Config) -> Vec<Line<'static>> {
             format_optional(config.agent_max_threads)
         )
         .into(),
-        format!(
-            "  - max_depth = {} (V1 only; ignored by V2)",
-            config.agent_max_depth
+        tr_with(
+            current(),
+            "  - max_depth = {0} (V1 only; ignored by V2)",
+            &[&config.agent_max_depth.to_string()],
         )
         .into(),
         format!(
@@ -126,25 +130,37 @@ fn render_debug_config_lines(
     let mut lines = vec!["/debug-config".magenta().into(), "".into()];
 
     lines.push(
-        "Config layer stack (lowest precedence first):"
+        tr(current(), "Config layer stack (lowest precedence first):")
             .bold()
             .into(),
     );
     let mut layers = stack.all_layers_low_to_high().peekable();
     if layers.peek().is_none() {
-        lines.push("  <none>".dim().into());
+        lines.push(tr(current(), "  <none>").dim().into());
     } else {
         for (index, layer) in layers.enumerate() {
             let source = format_config_layer_source(&layer.name, CONFIG_TOML_FILE);
             let status = if layer.is_disabled() {
-                "disabled"
+                tr(current(), "disabled")
             } else {
-                "enabled"
+                tr(current(), "enabled")
             };
-            lines.push(format!("  {}. {source} ({status})", index + 1).into());
+            let index_label = (index + 1).to_string();
+            lines.push(
+                tr_with(
+                    current(),
+                    "  {0}. {1} ({2})",
+                    &[&index_label, source.as_str(), status],
+                )
+                .into(),
+            );
             lines.extend(render_non_file_layer_details(layer));
             if let Some(reason) = &layer.disabled_reason {
-                lines.push(format!("     reason: {reason}").dim().into());
+                lines.push(
+                    tr_with(current(), "     reason: {0}", &[reason.as_str()])
+                        .dim()
+                        .into(),
+                );
             }
         }
     }
@@ -390,7 +406,7 @@ fn render_debug_config_lines(
     }
 
     if requirement_lines.is_empty() {
-        lines.push("  <none>".dim().into());
+        lines.push(tr(current(), "  <none>").dim().into());
     } else {
         lines.extend(requirement_lines);
     }
@@ -417,7 +433,7 @@ fn render_session_flag_details(config: &TomlValue) -> Vec<Line<'static>> {
     flatten_toml_key_values(config, /*prefix*/ None, &mut pairs);
 
     if pairs.is_empty() {
-        return vec!["     - <none>".dim().into()];
+        return vec![tr(current(), "     - <none>").dim().into()];
     }
 
     pairs
@@ -450,7 +466,11 @@ fn render_non_file_layer_value(layer: &ConfigLayerEntry) -> Vec<Line<'static>> {
         .map(ToString::to_string)
         .unwrap_or_else(|| format_toml_value(&layer.config));
     if value.is_empty() {
-        return vec![format!("     {label}: <empty>").dim().into()];
+        return vec![
+            tr_with(current(), "     {label}: <empty>", &[label])
+                .dim()
+                .into(),
+        ];
     }
 
     if value.contains('\n') {
@@ -465,15 +485,17 @@ fn render_non_file_layer_value(layer: &ConfigLayerEntry) -> Vec<Line<'static>> {
 fn non_file_layer_value_label(source: &ConfigLayerSource) -> &'static str {
     match source {
         ConfigLayerSource::Mdm { .. } | ConfigLayerSource::LegacyManagedConfigTomlFromMdm => {
-            "MDM value"
+            tr(current(), "MDM value")
         }
-        ConfigLayerSource::EnterpriseManaged { .. } => "Enterprise-managed config value",
+        ConfigLayerSource::EnterpriseManaged { .. } => {
+            tr(current(), "Enterprise-managed config value")
+        }
         ConfigLayerSource::PackagedDefaults { .. }
         | ConfigLayerSource::SessionFlags
         | ConfigLayerSource::System { .. }
         | ConfigLayerSource::User { .. }
         | ConfigLayerSource::Project { .. }
-        | ConfigLayerSource::LegacyManagedConfigTomlFromFile { .. } => "Layer value",
+        | ConfigLayerSource::LegacyManagedConfigTomlFromFile { .. } => tr(current(), "Layer value"),
     }
 }
 
@@ -513,8 +535,13 @@ fn requirement_line(
 ) -> Line<'static> {
     let source = source
         .map(ToString::to_string)
-        .unwrap_or_else(|| "<unspecified>".to_string());
-    format!("  - {name}: {value} (source: {source})").into()
+        .unwrap_or_else(|| tr(current(), "<unspecified>").to_string());
+    tr_with(
+        current(),
+        "  - {0}: {1} (source: {2})",
+        &[name, value.as_str(), source.as_str()],
+    )
+    .into()
 }
 
 fn join_or_empty(values: Vec<String>) -> String {

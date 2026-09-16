@@ -24,6 +24,8 @@ use crate::multi_agents::SubAgentActivityDisplay;
 use crate::multi_agents::format_agent_picker_item_name;
 use crate::multi_agents::next_agent_shortcut;
 use crate::multi_agents::previous_agent_shortcut;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use ratatui::text::Span;
 use std::collections::HashMap;
@@ -368,10 +370,12 @@ impl AgentNavigationState {
     pub(crate) fn picker_subtitle() -> String {
         let previous: Span<'static> = previous_agent_shortcut().into();
         let next: Span<'static> = next_agent_shortcut().into();
-        format!(
-            "Select an agent to watch. {} previous, {} next.",
-            previous.content, next.content
+        tr_with(
+            current(),
+            "Select an agent to watch. {0} previous, {1} next.",
+            &[&previous.content, &next.content],
         )
+        .to_string()
     }
 
     #[cfg(test)]

@@ -3,6 +3,8 @@
 
 use super::*;
 use crate::bottom_pane::InputResult;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl AgentsOverviewView {
     pub(super) fn handle_composer_key(&mut self, key: KeyEvent) {
@@ -48,7 +50,10 @@ impl AgentsOverviewView {
         let mut state = self.state();
         let composing = state.composing();
         let mut hints = if state.connection_notice.is_some() && composing {
-            vec![("esc".to_string(), "tasks · dispatch paused".to_string())]
+            vec![(
+                "esc".to_string(),
+                tr(current(), "tasks · dispatch paused").to_string(),
+            )]
         } else if composing {
             self.composer_hints.clone()
         } else {

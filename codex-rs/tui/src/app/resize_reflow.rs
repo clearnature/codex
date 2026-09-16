@@ -14,6 +14,8 @@
 //! terminal. Initial resume replay uses the same display-line buffering contract so large sessions
 //! do not write more retained rows than resize replay would later be willing to rebuild.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::time::Instant;
@@ -655,10 +657,14 @@ impl App {
         let Some(binding) = crate::keymap::primary_binding(&self.keymap.app.open_transcript) else {
             return;
         };
-        let notice = Line::from(format!(
-            "Earlier messages are available — press {} to view the full transcript",
-            binding.display_label()
-        ))
+        let notice = Line::from(
+            tr_with(
+                current(),
+                "Earlier messages are available — press {0} to view the full transcript",
+                &[&binding.display_label()],
+            )
+            .to_string(),
+        )
         .dim();
         let notice_lines =
             crate::wrapping::word_wrap_lines([notice], usize::from(width.max(/*other*/ 1)));

@@ -828,7 +828,7 @@ impl App {
             if let Some(effective_config) = self
                 .read_effective_config_after_overridden_write(
                     app_server,
-                    "Experimental feature changes",
+                    tr(current(), "Experimental feature changes"),
                 )
                 .await
             {
@@ -990,7 +990,10 @@ impl App {
                 .to_string(),
             );
             let Some(effective_config) = self
-                .read_effective_config_after_overridden_write(app_server, "Memory setting changes")
+                .read_effective_config_after_overridden_write(
+                    app_server,
+                    tr(current(), "Memory setting changes"),
+                )
                 .await
             else {
                 return false;

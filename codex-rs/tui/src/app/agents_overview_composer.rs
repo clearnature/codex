@@ -4,6 +4,9 @@
 use super::*;
 use crate::bottom_pane::ChatComposer;
 use crate::bottom_pane::ChatComposerConfig;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) fn sync_agents_overview_composer(&self) {
@@ -17,7 +20,7 @@ impl App {
                 /*has_input_focus*/ true,
                 self.app_event_tx.clone(),
                 self.enhanced_keys_supported,
-                "Describe a new task".to_string(),
+                tr(current(), "Describe a new task").to_string(),
                 self.config.disable_paste_burst,
                 ChatComposerConfig {
                     trim_submission: false,
@@ -50,7 +53,9 @@ impl App {
             composer.move_cursor_to_end();
             return;
         }
-        self.chat_widget
-            .add_info_message(format!("Unsent task: {prompt}"), /*hint*/ None);
+        self.chat_widget.add_info_message(
+            tr_with(current(), "Unsent task: {0}", &[&prompt]).to_string(),
+            /*hint*/ None,
+        );
     }
 }

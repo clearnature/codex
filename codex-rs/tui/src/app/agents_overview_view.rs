@@ -1,6 +1,8 @@
 //! Dashboard for inspecting and managing the TUI's retained daemon tasks.
 //! The shared view state retains the new-task editor across metadata refreshes.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 #[path = "agents_overview_input.rs"]
 mod input;
 #[path = "agents_overview_render.rs"]
@@ -75,7 +77,7 @@ impl AgentsOverviewGroup {
 
     fn label(self) -> &'static str {
         match self {
-            Self::NeedsYou => "Needs input",
+            Self::NeedsYou => tr(current(), "Needs input"),
             Self::Working => "Working",
             Self::Ready => "Ready",
             Self::Finished => "Finished",
@@ -346,7 +348,7 @@ impl AgentsOverviewView {
 
     fn status(row: &AgentsOverviewRow) -> (&'static str, Span<'static>) {
         match row.group {
-            AgentsOverviewGroup::NeedsYou => ("Needs input", "●".red()),
+            AgentsOverviewGroup::NeedsYou => (tr(current(), "Needs input"), "●".red()),
             AgentsOverviewGroup::Working => ("Working", "●".green()),
             AgentsOverviewGroup::Ready => ("Ready", "○".cyan()),
             AgentsOverviewGroup::Finished => ("Finished", "✓".dim()),
@@ -433,7 +435,11 @@ impl AgentsOverviewView {
                 " ".into()
             };
             let (status, dot) = Self::status(row);
-            let current = if row.is_current { "  current" } else { "" };
+            let current = if row.is_current {
+                tr(current(), "  current")
+            } else {
+                ""
+            };
             let mut spans = vec![
                 marker,
                 " ".into(),
@@ -457,7 +463,7 @@ impl AgentsOverviewView {
         let (status, dot) = Self::status(row);
         let width = usize::from(area.width);
         let mut lines = vec![
-            Line::from("Task details".bold()),
+            Line::from(tr(current(), "Task details").bold()),
             Line::default(),
             crate::line_truncation::truncate_line_with_ellipsis_if_overflow(
                 display_title(&row.thread).to_owned().bold().into(),
@@ -482,7 +488,7 @@ impl AgentsOverviewView {
         lines.extend([Line::default(), Line::from("Prompt".dim())]);
         let mut prompt = crate::wrapping::word_wrap_lines(
             match preview.as_str() {
-                "" => "No prompt available.",
+                "" => tr(current(), "No prompt available."),
                 preview => preview,
             }
             .lines()

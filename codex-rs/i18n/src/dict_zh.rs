@@ -6307,6 +6307,48 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to localize guardian filesystem paths: {0}",
         "无法本地化guardian文件系统路径：{0}",
     ),
+    // App-level surfaces: the agent picker subtitle, the agents-overview composer
+    // and list, the transcript notice, session-picker errors and buttons, startup
+    // permission-override refusals, the stale-agent-list reconnect banner and the
+    // config-change notices. Keycap placeholders keep their position.
+    (
+        "Select an agent to watch. {0} previous, {1} next.",
+        "选择要查看的智能体。上一个：{0}，下一个：{1}。",
+    ),
+    ("Describe a new task", "描述一个新任务"),
+    ("Unsent task: {0}", "未发送的任务：{0}"),
+    ("tasks · dispatch paused", "任务 · 调度已暂停"),
+    ("  current", "  当前"),
+    ("Task details", "任务详情"),
+    ("No prompt available.", "没有可用的提示词。"),
+    (
+        "Earlier messages are available — press {0} to view the full transcript",
+        "更早的消息可用——按{0}查看完整记录",
+    ),
+    (
+        "Failed to start TUI session picker: {0}",
+        "启动TUI会话选择器失败：{0}",
+    ),
+    (
+        "Failed to open session picker: {0}",
+        "打开会话选择器失败：{0}",
+    ),
+    ("Unable to resume session", "无法恢复会话"),
+    ("Return to command center", "返回命令中心"),
+    (
+        "Permission overrides are not supported when resuming a remote task.",
+        "恢复远程任务时不支持权限覆盖。",
+    ),
+    (
+        "Permission overrides are not supported when forking a remote task.",
+        "分叉远程任务时不支持权限覆盖。",
+    ),
+    (
+        "Reconnect failed — agent list is stale; relaunch to retry",
+        "重新连接失败——智能体列表已过期；请重新启动后重试",
+    ),
+    ("Experimental feature changes", "实验性功能变更"),
+    ("Memory setting changes", "记忆设置变更"),
 ];
 
 /// English source text -> Simplified Chinese.

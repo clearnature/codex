@@ -8,6 +8,8 @@ use crate::session_start::SessionStartAction;
 use crate::session_start::cancel_session_start;
 use crate::session_start::complete_session_start;
 use crate::unarchive_prompt::run_unarchive_prompt;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 fn spawn_startup_thread_start(
     app_server: &AppServerSession,
@@ -435,9 +437,10 @@ impl App {
                 {
                     return shutdown_on_startup_error(
                         app_server,
-                        color_eyre::eyre::eyre!(
+                        color_eyre::eyre::eyre!(tr(
+                            current(),
                             "Permission overrides are not supported when resuming a remote task."
-                        ),
+                        )),
                     )
                     .await;
                 }
@@ -547,9 +550,10 @@ impl App {
                 {
                     return shutdown_on_startup_error(
                         app_server,
-                        color_eyre::eyre::eyre!(
+                        color_eyre::eyre::eyre!(tr(
+                            current(),
                             "Permission overrides are not supported when forking a remote task."
-                        ),
+                        )),
                     )
                     .await;
                 }
@@ -1092,7 +1096,7 @@ See the Codex keymap documentation for supported actions and examples."
                                 app.chat_widget.reconnect_failed();
                                 app.chat_widget.add_error_message(error.to_string());
                                 if let Ok(mut state) = app.agents_overview.view_state.lock() {
-                                    state.connection_notice = Some("Reconnect failed — agent list is stale; relaunch to retry");
+                                    state.connection_notice = Some(tr(current(), "Reconnect failed — agent list is stale; relaunch to retry"));
                                 }
                             }
                         }

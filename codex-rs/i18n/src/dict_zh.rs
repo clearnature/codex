@@ -453,6 +453,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Choose a communication style for Codex.",
         "选择Codex的沟通风格。",
     ),
+    ("Choose a Markdown filename", "选择Markdown文件名"),
     ("Choose an action", "选择操作"),
     (
         "Choose how you'd like Codex to proceed.",
@@ -519,6 +520,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Could not generate a recap. Please try again.",
         "无法生成回顾。请重试。",
+    ),
+    (
+        "Copy the complete Markdown transcript",
+        "复制完整的Markdown转录",
     ),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
     (
@@ -655,6 +660,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Experimental features are unavailable until startup completes.",
         "启动完成前无法使用实验性特性。",
     ),
+    ("Export conversation", "导出对话"),
     ("Extra high", "极高"),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
@@ -1148,6 +1154,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Saving experimental features timed out; the write may still finish. Reopen /experimental to check.",
         "保存实验性特性超时；写入可能仍会完成。请重新打开/experimental确认。",
     ),
+    ("Save conversation", "保存对话"),
+    (
+        "Save the complete conversation as Markdown",
+        "将完整对话保存为Markdown",
+    ),
+    ("Save to file", "保存到文件"),
     ("Saving experimental features…", "正在保存实验性特性…"),
     (
         "Saving was interrupted. Reopen /experimental to check configured values.",
@@ -1318,6 +1330,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Trusting hooks...", "正在信任钩子…"),
     ("Try new model", "试用新模型"),
     ("Try setting up admin sandbox again", "重试管理员沙箱设置"),
+    ("Type a filename and press Enter", "输入文件名后按Enter"),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to filter themes...", "输入以筛选主题…"),
     ("Type to search shortcuts", "输入以搜索快捷键"),
@@ -1518,6 +1531,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("canonicalize {0}", "规范化{0}"),
     ("chat session", "聊天会话"),
+    (
+        "clipboard image paste is unsupported on Android",
+        "Android上不支持从剪贴板粘贴图片",
+    ),
     ("codex could access {0}", "Codex可能会访问{0}"),
     (
         "codex could call MCP tool {0}.{1}",
@@ -1534,6 +1551,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("codex to {0}", "Codex将要{0}"),
     ("connected", "已连接"),
     ("context compacted", "上下文已压缩"),
+    ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),
     (
@@ -1570,6 +1588,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("directory: {0}", "目录：{0}"),
     ("disabled", "已禁用"),
     ("download pet asset from {0}", "从{0}下载宠物资源"),
+    ("editor command is empty", "编辑器命令为空"),
     ("editor directory has no parent", "编辑器目录没有父目录"),
     (
         "editor directory must not be writable",
@@ -1690,6 +1709,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("invalid keymap configuration: {0}", "快捷键配置无效：{0}"),
     ("invalid visualization fragment", "可视化片段无效"),
+    ("io error: {0}", "IO错误：{0}"),
     ("item", "条目"),
     ("items", "条目"),
     (
@@ -1715,6 +1735,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("network access to {0}", "对{0}的网络访问"),
     ("new task", "新建任务"),
     ("next question", "下一题"),
+    ("no image on clipboard: {0}", "剪贴板中没有图片：{0}"),
     ("no matches", "无匹配项"),
     ("not started", "未启动"),
     ("note: {0}", "备注：{0}"),

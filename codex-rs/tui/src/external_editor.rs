@@ -112,7 +112,7 @@ pub(super) fn editor_directory(
                     continue;
                 };
                 let Some(name) = candidate_home.file_name() else {
-                    error = Report::msg("editor directory has no parent");
+                    error = Report::msg(tr(current(), "editor directory has no parent"));
                     continue;
                 };
                 match dunce::canonicalize(parent) {
@@ -155,7 +155,7 @@ pub(super) fn editor_directory(
                     is_writable
                 })
         {
-            error = Report::msg("editor directory must not be writable");
+            error = Report::msg(tr(current(), "editor directory must not be writable"));
             rejected_writable = true;
             continue;
         }
@@ -179,7 +179,10 @@ pub(super) fn editor_directory(
     }
 
     if rejected_writable {
-        Err(Report::msg("editor directory must not be writable"))
+        Err(Report::msg(tr(
+            current(),
+            "editor directory must not be writable",
+        )))
     } else {
         Err(error)
     }
@@ -194,7 +197,7 @@ pub(crate) async fn run_editor(
     cwd: &Path,
 ) -> Result<String> {
     if editor_cmd.is_empty() {
-        return Err(Report::msg("editor command is empty"));
+        return Err(Report::msg(tr(current(), "editor command is empty")));
     }
 
     let default_codex_home = dirs::home_dir().map(|home| home.join(".codex"));

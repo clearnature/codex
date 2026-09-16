@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::Path;
 use std::path::PathBuf;
 use tempfile::Builder;
@@ -13,10 +16,24 @@ pub enum PasteImageError {
 impl std::fmt::Display for PasteImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PasteImageError::ClipboardUnavailable(msg) => write!(f, "clipboard unavailable: {msg}"),
-            PasteImageError::NoImage(msg) => write!(f, "no image on clipboard: {msg}"),
-            PasteImageError::EncodeFailed(msg) => write!(f, "could not encode image: {msg}"),
-            PasteImageError::IoError(msg) => write!(f, "io error: {msg}"),
+            PasteImageError::ClipboardUnavailable(msg) => write!(
+                f,
+                "{}",
+                tr_with(current(), "clipboard unavailable: {0}", &[msg])
+            ),
+            PasteImageError::NoImage(msg) => write!(
+                f,
+                "{}",
+                tr_with(current(), "no image on clipboard: {0}", &[msg])
+            ),
+            PasteImageError::EncodeFailed(msg) => write!(
+                f,
+                "{}",
+                tr_with(current(), "could not encode image: {0}", &[msg])
+            ),
+            PasteImageError::IoError(msg) => {
+                write!(f, "{}", tr_with(current(), "io error: {0}", &[msg]))
+            }
         }
     }
 }
@@ -112,7 +129,7 @@ pub fn paste_image_as_png() -> Result<(Vec<u8>, PastedImageInfo), PasteImageErro
 #[cfg(target_os = "android")]
 pub fn paste_image_as_png() -> Result<(Vec<u8>, PastedImageInfo), PasteImageError> {
     Err(PasteImageError::ClipboardUnavailable(
-        "clipboard image paste is unsupported on Android".into(),
+        tr(current(), "clipboard image paste is unsupported on Android").into(),
     ))
 }
 
@@ -232,7 +249,7 @@ fn try_dump_windows_clipboard_image() -> Option<String> {
 pub fn paste_image_to_temp_png() -> Result<(PathBuf, PastedImageInfo), PasteImageError> {
     // Keep error consistent with paste_image_as_png.
     Err(PasteImageError::ClipboardUnavailable(
-        "clipboard image paste is unsupported on Android".into(),
+        tr(current(), "clipboard image paste is unsupported on Android").into(),
     ))
 }
 

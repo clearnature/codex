@@ -29,13 +29,15 @@ impl ChatWidget {
 
     pub(super) fn show_transcript_export_popup(&mut self) {
         self.show_selection_view(SelectionViewParams {
-            title: Some("Export conversation".to_string()),
-            subtitle: Some("Save the complete conversation as Markdown".to_string()),
+            title: Some(tr(current(), "Export conversation").to_string()),
+            subtitle: Some(tr(current(), "Save the complete conversation as Markdown").to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items: vec![
                 SelectionItem {
-                    name: "Copy to clipboard".to_string(),
-                    description: Some("Copy the complete Markdown transcript".to_string()),
+                    name: tr(current(), "Copy to clipboard").to_string(),
+                    description: Some(
+                        tr(current(), "Copy the complete Markdown transcript").to_string(),
+                    ),
                     is_disabled: cfg!(target_os = "android"),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::ExportTranscript {
@@ -46,8 +48,8 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Save to file".to_string(),
-                    description: Some("Choose a Markdown filename".to_string()),
+                    name: tr(current(), "Save to file").to_string(),
+                    description: Some(tr(current(), "Choose a Markdown filename").to_string()),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::OpenTranscriptExportFilePrompt);
                     })],
@@ -68,8 +70,8 @@ impl ChatWidget {
             |thread_id| format!("codex-session-{thread_id}.md"),
         );
         let view = CustomPromptView::new(
-            "Save conversation".to_string(),
-            "Type a filename and press Enter".to_string(),
+            tr(current(), "Save conversation").to_string(),
+            tr(current(), "Type a filename and press Enter").to_string(),
             filename,
             /*context_label*/ None,
             Box::new(move |filename| {

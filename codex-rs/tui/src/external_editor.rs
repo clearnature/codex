@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -86,7 +88,13 @@ pub(super) fn editor_directory(
     } else {
         Vec::new()
     };
-    let mut error = Report::msg("editor directory must not be writable");
+    let mut error = Report::msg(tr(
+        current(),
+        tr(
+            current(),
+            tr(current(), "editor directory must not be writable"),
+        ),
+    ));
     let mut rejected_writable = false;
 
     for candidate_home in candidate_homes {
@@ -96,7 +104,10 @@ pub(super) fn editor_directory(
                 if canonicalize_error.kind() == std::io::ErrorKind::NotFound =>
             {
                 let Some(parent) = candidate_home.parent() else {
-                    error = Report::msg("editor directory has no parent");
+                    error = Report::msg(tr(
+                        current(),
+                        tr(current(), "editor directory has no parent"),
+                    ));
                     continue;
                 };
                 let Some(name) = candidate_home.file_name() else {
@@ -155,7 +166,10 @@ pub(super) fn editor_directory(
         match dunce::canonicalize(&editor_directory) {
             Ok(path) if path == editor_directory => return Ok(editor_directory),
             Ok(_) => {
-                error = Report::msg("editor directory must not contain symbolic links");
+                error = Report::msg(tr(
+                    current(),
+                    "editor directory must not contain symbolic links",
+                ));
             }
             Err(canonicalize_error) => {
                 error = canonicalize_error.into();

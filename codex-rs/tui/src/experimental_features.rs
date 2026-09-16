@@ -11,6 +11,8 @@ use codex_app_server_protocol::ExperimentalFeatureListParams;
 use codex_app_server_protocol::ExperimentalFeatureListResponse;
 use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::WriteStatus;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -43,9 +45,15 @@ pub(crate) fn fetch(
                         },
                     )
                     .await
-                    .map_err(|_| "Experimental feature request failed".to_string())?;
+                    .map_err(|_| {
+                        tr(current(), "Experimental feature request failed").to_string()
+                    })?;
                 if response.data.len() > 100 {
-                    return Err("Experimental feature page exceeds requested limit".to_string());
+                    return Err(tr(
+                        current(),
+                        "Experimental feature page exceeds requested limit",
+                    )
+                    .to_string());
                 }
                 features.extend(
                     response
@@ -58,10 +66,18 @@ pub(crate) fn fetch(
                     return Ok(features);
                 };
                 if !cursors.insert(next.clone()) {
-                    return Err("Experimental feature pagination repeated a cursor".to_string());
+                    return Err(tr(
+                        current(),
+                        "Experimental feature pagination repeated a cursor",
+                    )
+                    .to_string());
                 }
             }
-            Err("Experimental feature discovery exceeded 10 pages".to_string())
+            Err(tr(
+                current(),
+                "Experimental feature discovery exceeded 10 pages",
+            )
+            .to_string())
         };
         tokio::select! {
             _ = response_tx.closed() => {},
@@ -94,7 +110,7 @@ pub(crate) async fn write(
     );
     let features = rx
         .await
-        .map_err(|_| "Feature discovery was interrupted")??;
+        .map_err(|_| tr(current(), "Feature discovery was interrupted"))??;
     let edits = updates
         .iter()
         .map(|(name, enabled)| {
@@ -127,8 +143,8 @@ pub(crate) async fn write(
                 reload_user_config: true,
             },
         })).await
-        .map_err(|_| "Saving experimental features timed out; the write may still finish. Reopen /experimental to check.")?
-        .map_err(|_| "Failed to save experimental features. Reopen /experimental to check configured values before retrying.")?;
+        .map_err(|_| tr(current(), "Saving experimental features timed out; the write may still finish. Reopen /experimental to check."))?
+        .map_err(|_| tr(current(), "Failed to save experimental features. Reopen /experimental to check configured values before retrying."))?;
     let (tx, rx) = oneshot::channel();
     fetch(
         request_handle,
@@ -138,7 +154,12 @@ pub(crate) async fn write(
     );
     let features = rx
         .await
-        .map_err(|_| "Features were saved, but readback was interrupted")?
+        .map_err(|_| {
+            tr(
+                current(),
+                "Features were saved, but readback was interrupted",
+            )
+        })?
         .map_err(|error| {
             format!("Features were saved, but configured values could not be refreshed: {error}")
         })?;
@@ -150,7 +171,7 @@ pub(crate) async fn write(
         });
     Ok(FeatureWriteResult {
         features,
-        warning: overridden.then(|| "Changes were saved, but the configured values differ from your selections. A higher-priority setting may override them.".to_string()),
+        warning: overridden.then(|| tr(current(), "Changes were saved, but the configured values differ from your selections. A higher-priority setting may override them.").to_string()),
     })
 }
 

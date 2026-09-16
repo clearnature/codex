@@ -54,6 +54,8 @@ use codex_config::types::ResumeCwdMode;
 use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthConfig;
 use codex_login::default_client::originator;
 use codex_login::default_client::set_default_client_residency_requirement;
@@ -394,7 +396,8 @@ fn websocket_url_supports_auth_token(parsed: &Url) -> bool {
 pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndpoint> {
     if let Some(socket_path) = addr.strip_prefix("unix://") {
         let socket_path = if socket_path.is_empty() {
-            let codex_home = find_codex_home().wrap_err("failed to resolve CODEX_HOME")?;
+            let codex_home =
+                find_codex_home().wrap_err(tr(current(), "failed to resolve CODEX_HOME"))?;
             codex_app_server_client::app_server_control_socket_path(&codex_home)
                 .map_err(color_eyre::Report::new)?
         } else {
@@ -452,7 +455,7 @@ async fn connect_remote_app_server(
         channel_capacity: DEFAULT_IN_PROCESS_CHANNEL_CAPACITY,
     })
     .await
-    .wrap_err("failed to connect to remote app server")?;
+    .wrap_err(tr(current(), "failed to connect to remote app server"))?;
     Ok(AppServerClient::Remote(app_server))
 }
 
@@ -632,7 +635,7 @@ where
         channel_capacity: DEFAULT_IN_PROCESS_CHANNEL_CAPACITY,
     })
     .await
-    .wrap_err("failed to start embedded app server")?;
+    .wrap_err(tr(current(), "failed to start embedded app server"))?;
     Ok(client)
 }
 
@@ -868,9 +871,10 @@ async fn resolve_startup_resume_or_fork_cwd(
         && cwd_override.is_none()
         && matches!(resume_cwd_mode, Some(ResumeCwdMode::Current))
     {
-        color_eyre::eyre::bail!(
+        color_eyre::eyre::bail!(tr(
+            current(),
             "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace"
-        );
+        ));
     }
     if uses_remote_workspace {
         return Ok(ResolveCwdOutcome::Continue(Some(config.cwd.to_path_buf())));
@@ -935,7 +939,10 @@ fn app_server_target_for_launch(
         if explicit_remote_endpoint.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "workload identity must be configured on the remote app-server host",
+                tr(
+                    current(),
+                    "workload identity must be configured on the remote app-server host",
+                ),
             ));
         }
         return Ok(AppServerTarget::Embedded);

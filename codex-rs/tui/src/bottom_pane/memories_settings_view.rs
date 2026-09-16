@@ -99,7 +99,7 @@ impl MemoriesSettingsView {
                 },
                 MemoriesMenuItem::Action {
                     action: MemoriesAction::Reset,
-                    name: tr(current(), tr(current(), "Reset all memories")),
+                    name: tr(current(), "Reset all memories"),
                     description: tr(
                         current(),
                         "Clear local memory files and summaries. Existing threads stay intact.",

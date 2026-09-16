@@ -77,8 +77,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "  Continue only if you started this login in Codex. If a website or another person gave you this code, cancel.",
         "  只有当你自己在本机Codex中发起登录时才继续。如果是网站或他人给了你这个验证码，请取消。",
     ),
+    (
+        "  Choose which local AI server to use for your session.",
+        "  选择本次会话要使用的本地AI服务器。",
+    ),
     ("  Models", "  模型"),
     ("  No memory settings available", "  没有可用的记忆设置"),
+    (
+        "  Press Enter to select • Ctrl+C to exit",
+        "  按Enter选择 • 按Ctrl+C退出",
+    ),
     ("  Reasoning", "  推理"),
     ("  Rename › ", "  重命名 › "),
     ("  Requesting a one-time code...", "  正在请求一次性验证码…"),
@@ -95,6 +103,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "  • 没有正在运行的后台终端。",
     ),
     ("  • No sub-agents running.", "  • 没有运行中的子代理。"),
+    ("  ● Running  ○ Not Running", "  ● 运行中  ○ 未运行"),
     (" (+ {0} cached)", "（+{0}缓存）"),
     (" (interrupted)", "（已中断）"),
     (" (read-only)", "（只读）"),
@@ -271,6 +280,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Agent thread {0} is closed. Replaying saved transcript.",
         "代理线程{0}已关闭。正在回放已保存的记录。",
     ),
+    (
+        "An experimental feature save is still in progress. Retry after it finishes.",
+        "实验性特性保存仍在进行中。请在完成后重试。",
+    ),
     ("Answer the questions to continue.", "回答问题以继续。"),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
     (
@@ -337,6 +350,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Choose how Codex uses and creates memories. Changes are saved to config.toml",
         "选择Codex如何使用与创建记忆。更改会保存到config.toml",
+    ),
+    (
+        "Changes were saved, but the configured values differ from your selections. A higher-priority setting may override them.",
+        "更改已保存，但配置值与你的选择不一致。可能有更高优先级的设置覆盖了它们。",
     ),
     ("Chat sessions", "聊天会话"),
     ("Chat sessions ({0})", "聊天会话（{0}）"),
@@ -485,6 +502,19 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "External current time is not available in TUI.",
         "TUI中不支持外部当前时间。",
     ),
+    (
+        "Experimental feature discovery exceeded 10 pages",
+        "实验性特性发现超过10页",
+    ),
+    (
+        "Experimental feature page exceeds requested limit",
+        "实验性特性页面超过请求的上限",
+    ),
+    (
+        "Experimental feature pagination repeated a cursor",
+        "实验性特性分页重复了同一个游标",
+    ),
+    ("Experimental feature request failed", "实验性特性请求失败"),
     ("Experimental features", "实验性特性"),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
@@ -535,8 +565,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to view thread open elsewhere: {0}",
         "查看在其他位置打开的线程失败：{0}",
     ),
+    (
+        "Failed to save experimental features. Reopen /experimental to check configured values before retrying.",
+        "保存实验性特性失败。请重新打开/experimental确认已配置的值后再重试。",
+    ),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
+    ("Feature discovery was interrupted", "特性发现被中断"),
+    (
+        "Features were saved, but readback was interrupted",
+        "特性已保存，但回读被中断",
+    ),
     ("Finished waiting", "等待结束"),
     (
         "Fork a previous interactive session (picker by default; use --last to fork the most recent)",
@@ -620,6 +659,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "启动桌面应用（缺失时打开安装程序）。",
     ),
     ("Keypress Inspector", "按键检查器"),
+    ("LM Studio", "LM Studio"),
     ("Last 30 days of chats", "最近30天的聊天"),
     ("Layer value", "层值"),
     (
@@ -642,7 +682,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Loading server experiments…", "正在加载服务器实验…"),
     ("Loading {0} plugins.", "正在加载{0}插件。"),
     ("Loading {0} plugins...", "正在加载{0}插件…"),
+    (
+        "Local LM Studio server (default port 1234)",
+        "本地LM Studio服务器（默认端口1234）",
+    ),
+    (
+        "Local Ollama server (Responses API, default port 11434)",
+        "本地Ollama服务器（Responses API，默认端口11434）",
+    ),
     ("Local tools: {0} {1} ({2})", "本地工具：{0} {1}（{2}）"),
+    ("M Studio", "M Studio"),
     ("MCP Tools", "MCP工具"),
     ("MCP server", "MCP服务器"),
     ("MCP servers", "MCP服务器"),
@@ -702,6 +751,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Note: You’re in a subdirectory of a Git project. Trusting will apply to the repository root: {0}",
         "注意：你位于某个Git项目的子目录中。信任将应用到仓库根目录：{0}",
     ),
+    ("Ollama (Chat)", "Ollama（Chat）"),
+    ("Ollama (Responses)", "Ollama（Responses）"),
     ("Option 1", "选项1"),
     ("Option 2", "选项2"),
     ("Option 3", "选项3"),
@@ -817,6 +868,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Save on the server for new threads. This thread is unchanged.",
         "在服务器上保存以用于新线程。当前线程不受影响。",
     ),
+    (
+        "Saving experimental features timed out; the write may still finish. Reopen /experimental to check.",
+        "保存实验性特性超时；写入可能仍会完成。请重新打开/experimental确认。",
+    ),
     ("Saving experimental features…", "正在保存实验性特性…"),
     (
         "Saving was interrupted. Reopen /experimental to check configured values.",
@@ -829,6 +884,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Search › ", "搜索 › "),
     ("Select Pet", "选择宠物"),
     ("Select Syntax Theme", "选择语法主题"),
+    ("Select an open-source provider", "选择开源提供方"),
+    ("Select provider?", "选择提供方？"),
     ("Selected {0} of {1} {2}.", "已选择{0}/{1}个{2}。"),
     (
         "Selections retained. Save to retry, or cancel to close.",
@@ -1088,6 +1145,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("[{0}] {1} · modified", "[{0}] {1} · 已修改"),
     ("[{0}] {1} · new", "[{0}] {1} · 新增"),
     ("\n\nStartup warnings:\n{0}", "\n\n启动警告：\n{0}"),
+    (
+        "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace",
+        "在远程工作区中使用 `tui.resume_cwd = \"current\"` 需要 `--cd`",
+    ),
     ("a patch touching ", "涉及以下内容的补丁 "),
     ("agent tool: {0} · {1}", "代理工具：{0} · {1}"),
     ("answer: ******", "回答：******"),
@@ -1158,12 +1219,25 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("directory: {0}", "目录：{0}"),
     ("disabled", "已禁用"),
     ("download pet asset from {0}", "从{0}下载宠物资源"),
+    ("editor directory has no parent", "编辑器目录没有父目录"),
+    (
+        "editor directory must not be writable",
+        "编辑器目录必须不可写",
+    ),
+    (
+        "editor directory must not contain symbolic links",
+        "编辑器目录不能包含符号链接",
+    ),
     ("embedded resource: {0}", "嵌入式资源：{0}"),
     ("enabled", "已启用"),
     ("event", "事件"),
     ("events", "事件"),
     ("failed", "失败"),
     ("failed to archive session", "无法归档会话"),
+    (
+        "failed to connect to remote app server",
+        "无法连接到远程app-server",
+    ),
     ("failed to delete session", "无法删除会话"),
     (
         "failed to encode thread/inject_items payload",
@@ -1205,6 +1279,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "failed to serialize request_user_input response: {0}",
         "序列化request_user_input响应失败：{0}",
+    ),
+    ("failed to resolve CODEX_HOME", "无法解析CODEX_HOME"),
+    (
+        "failed to start embedded app server",
+        "无法启动嵌入式app-server",
     ),
     ("failed to unarchive session", "无法取消归档会话"),
     (
@@ -1353,6 +1432,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("use the configured stop shortcut", "使用已配置的停止快捷键"),
     ("waiting for next key", "等待下一个按键"),
     ("web search: ", "网络搜索："),
+    (
+        "workload identity must be configured on the remote app-server host",
+        "必须在远程app-server主机上配置工作负载身份",
+    ),
     ("write {0}", "写入{0}"),
     (
         "{0} A checkout was retained at {1}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",

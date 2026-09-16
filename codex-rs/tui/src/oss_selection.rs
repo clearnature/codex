@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::io;
 use std::sync::LazyLock;
 
@@ -68,14 +70,17 @@ struct SelectOption {
 static OSS_SELECT_OPTIONS: LazyLock<Vec<SelectOption>> = LazyLock::new(|| {
     vec![
         SelectOption {
-            label: Line::from(vec!["L".underlined(), "M Studio".into()]),
-            description: "Local LM Studio server (default port 1234)",
+            label: Line::from(vec!["L".underlined(), tr(current(), "M Studio").into()]),
+            description: tr(current(), "Local LM Studio server (default port 1234)"),
             key: KeyCode::Char('l'),
             provider_id: LMSTUDIO_OSS_PROVIDER_ID,
         },
         SelectOption {
             label: Line::from(vec!["O".underlined(), "llama".into()]),
-            description: "Local Ollama server (Responses API, default port 11434)",
+            description: tr(
+                current(),
+                "Local Ollama server (Responses API, default port 11434)",
+            ),
             key: KeyCode::Char('o'),
             provider_id: OLLAMA_OSS_PROVIDER_ID,
         },
@@ -112,15 +117,15 @@ impl OssSelectionWidget<'_> {
     fn new(lmstudio_status: ProviderStatus, ollama_status: ProviderStatus) -> io::Result<Self> {
         let providers = vec![
             ProviderOption {
-                name: "LM Studio".to_string(),
+                name: tr(current(), "LM Studio").to_string(),
                 status: lmstudio_status,
             },
             ProviderOption {
-                name: "Ollama (Responses)".to_string(),
+                name: tr(current(), "Ollama (Responses)").to_string(),
                 status: ollama_status.clone(),
             },
             ProviderOption {
-                name: "Ollama (Chat)".to_string(),
+                name: tr(current(), "Ollama (Chat)").to_string(),
                 status: ollama_status,
             },
         ];
@@ -128,10 +133,13 @@ impl OssSelectionWidget<'_> {
         let mut contents: Vec<Line> = vec![
             Line::from(vec![
                 "? ".fg(Color::Blue),
-                "Select an open-source provider".bold(),
+                tr(current(), "Select an open-source provider").bold(),
             ]),
             Line::from(""),
-            Line::from("  Choose which local AI server to use for your session."),
+            Line::from(tr(
+                current(),
+                "  Choose which local AI server to use for your session.",
+            )),
             Line::from(""),
         ];
 
@@ -145,11 +153,14 @@ impl OssSelectionWidget<'_> {
             ]));
         }
         contents.push(Line::from(""));
-        contents.push(Line::from("  ● Running  ○ Not Running").add_modifier(Modifier::DIM));
+        contents.push(
+            Line::from(tr(current(), "  ● Running  ○ Not Running")).add_modifier(Modifier::DIM),
+        );
 
         contents.push(Line::from(""));
         contents.push(
-            Line::from("  Press Enter to select • Ctrl+C to exit").add_modifier(Modifier::DIM),
+            Line::from(tr(current(), "  Press Enter to select • Ctrl+C to exit"))
+                .add_modifier(Modifier::DIM),
         );
 
         let confirmation_prompt = Paragraph::new(contents).wrap(Wrap { trim: false });
@@ -284,7 +295,7 @@ impl WidgetRef for &OssSelectionWidget<'_> {
         ])
         .areas(response_chunk.inner(Margin::new(1, 0)));
 
-        Line::from("Select provider?").render(title_area, buf);
+        Line::from(tr(current(), "Select provider?")).render(title_area, buf);
 
         self.confirmation_prompt.clone().render(prompt_chunk, buf);
         let areas = Layout::horizontal(

@@ -18,6 +18,9 @@ use codex_app_server_protocol::PermissionProfileListParams;
 use codex_app_server_protocol::PermissionProfileListResponse;
 use codex_app_server_protocol::PermissionProfileSummary;
 use codex_app_server_protocol::RequestId;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_utils_approval_presets::builtin_approval_presets;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -61,7 +64,7 @@ impl PermissionDiscovery {
         reviewer: Option<ApprovalsReviewer>,
     ) -> Option<String> {
         let Some(profile) = self.profiles.iter().find(|profile| profile.id == id) else {
-            return Some("Not available on this server.".to_string());
+            return Some(tr(current(), "Not available on this server.").to_string());
         };
         let requirements = self.requirements.as_ref();
         if !profile.allowed
@@ -75,7 +78,7 @@ impl PermissionDiscovery {
                 .and_then(|r| r.allowed_approvals_reviewers.as_ref())
                 .is_some_and(|allowed| reviewer.is_some_and(|value| !allowed.contains(&value)))
         {
-            return Some("Disabled by requirements.".to_string());
+            return Some(tr(current(), "Disabled by requirements.").to_string());
         }
         None
     }
@@ -167,9 +170,11 @@ pub(crate) fn fetch(
                 let Some(next) = cursor.as_ref() else {
                     let mut ids = HashSet::new();
                     if !profiles.iter().all(|profile| ids.insert(&profile.id)) {
-                        return Err(
-                            "The server returned duplicate permission profiles.".to_string()
-                        );
+                        return Err(tr(
+                            current(),
+                            "The server returned duplicate permission profiles.",
+                        )
+                        .to_string());
                     }
                     return Ok(PermissionDiscovery {
                         profiles,
@@ -181,15 +186,20 @@ pub(crate) fn fetch(
                     break;
                 }
             }
-            Err(
-                "Permission discovery exceeded its pagination limit. Try /permissions again."
-                    .to_string(),
+            Err(tr(
+                current(),
+                "Permission discovery exceeded its pagination limit. Try /permissions again.",
             )
+            .to_string())
         };
         let result = tokio::time::timeout(Duration::from_secs(10), request)
             .await
             .unwrap_or_else(|_| {
-                Err("Permission discovery timed out. Try /permissions again.".to_string())
+                Err(tr(
+                    current(),
+                    "Permission discovery timed out. Try /permissions again.",
+                )
+                .to_string())
             });
         tx.send(AppEvent::PermissionProfilesLoaded { request_id, result });
     });
@@ -203,9 +213,14 @@ fn discovery_error(error: TypedRequestError) -> String {
                     || source.message.contains("configRequirements/read")
                     || source.message.contains("config/read"))))
     {
-        return "This server does not support permission discovery. Upgrade the Codex server to use this menu.".to_string();
+        return tr(current(), "This server does not support permission discovery. Upgrade the Codex server to use this menu.").to_string();
     }
-    format!("Failed to load permissions: {error}")
+    tr_with(
+        current(),
+        "Failed to load permissions: {0}",
+        &[&error.to_string()],
+    )
+    .to_string()
 }
 
 #[cfg(test)]

@@ -6361,6 +6361,33 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
         "在项目被信任之前，以下文件夹中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。",
     ),
+    // Permission discovery menu (`tui/src/permission_discovery.rs`), the update
+    // prompt (`tui/src/update_prompt.rs`) and the startup draft header
+    // (`tui/src/startup_draft.rs`). `/permissions` and the release-notes URL stay
+    // verbatim; the leading spaces in the session-action labels are layout.
+    (
+        "The server returned duplicate permission profiles.",
+        "服务器返回了重复的权限配置。",
+    ),
+    (
+        "Permission discovery exceeded its pagination limit. Try /permissions again.",
+        "权限发现超出分页上限。请重试/permissions。",
+    ),
+    (
+        "Permission discovery timed out. Try /permissions again.",
+        "权限发现超时。请重试/permissions。",
+    ),
+    (
+        "This server does not support permission discovery. Upgrade the Codex server to use this menu.",
+        "此服务器不支持权限发现。请升级Codex服务器以使用此菜单。",
+    ),
+    ("Failed to load permissions: {0}", "加载权限失败：{0}"),
+    ("Release notes: ", "版本说明："),
+    ("Update now (runs `{0}`)", "立即更新（运行`{0}`）"),
+    ("Skip until next version", "跳过直到下个版本"),
+    ("Skip", "跳过"),
+    ("  Resuming session…", "  正在恢复会话…"),
+    ("  Forking session…", "  正在分叉会话…"),
 ];
 
 /// English source text -> Simplified Chinese.

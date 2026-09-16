@@ -1,5 +1,9 @@
 #![cfg(not(debug_assertions))]
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
+
 use crate::key_hint;
 use crate::legacy_core::config::Config;
 use crate::render::Insets;
@@ -194,7 +198,7 @@ impl WidgetRef for &UpdatePromptScreen {
         column.push("");
         column.push(Line::from(vec![
             "  ✨\u{200A}".bold().cyan(),
-            "Update available!".bold(),
+            tr(current(), "Update available!").bold(),
             " ".into(),
             format!(
                 "{current} -> {latest}",
@@ -206,7 +210,7 @@ impl WidgetRef for &UpdatePromptScreen {
         column.push("");
         column.push(
             Line::from(vec![
-                "Release notes: ".dim(),
+                tr(current(), "Release notes: ").dim(),
                 RELEASE_NOTES_URL.dim().underlined(),
             ])
             .inset(Insets::tlbr(0, 2, 0, 0)),
@@ -214,25 +218,25 @@ impl WidgetRef for &UpdatePromptScreen {
         column.push("");
         column.push(selection_option_row(
             0,
-            format!("Update now (runs `{update_command}`)"),
+            tr_with(current(), "Update now (runs `{0}`)", &[&update_command]).to_string(),
             self.highlighted == UpdateSelection::UpdateNow,
         ));
         column.push(selection_option_row(
             1,
-            "Skip".to_string(),
+            tr(current(), "Skip").to_string(),
             self.highlighted == UpdateSelection::NotNow,
         ));
         column.push(selection_option_row(
             2,
-            "Skip until next version".to_string(),
+            tr(current(), "Skip until next version").to_string(),
             self.highlighted == UpdateSelection::DontRemind,
         ));
         column.push("");
         column.push(
             Line::from(vec![
-                "Press ".dim(),
+                tr(current(), "Press ").dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to continue".dim(),
+                tr(current(), " to continue").dim(),
             ])
             .inset(Insets::tlbr(0, 2, 0, 0)),
         );

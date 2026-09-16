@@ -227,3 +227,30 @@
 6. **日期更正** —— 本文早先多处写「2026-09-17」，而实际测量与提交都是 **2026-09-16**（`git log` 时间戳 +
    本机系统日期一致）。已更正；台账里更早的几条流水也写成了 09-15/09-17，那批是未经核对的估值，
    按纪律**不追改历史**，以本文与提交时间戳为准。
+
+## 九、翻译口径判据（"不译"的依据）
+
+判据是**文本流向**，不是「用哪个宏产生」：同一段文案经 `.context(…)` 走到 UI 就译，进日志 / 协议 /
+模型上下文就留英文。迄今结论分四类，逐类给锚点。
+
+1. **模型面向（model-visible）** —— 不译。译了会改变模型看到的输入，而英文原文是 key 的语义基准。
+   锚点：`tui/src/goal_files.rs` 的 `GOAL_FILE_PREFIX` / `GOAL_FILE_SUFFIX` / `pasted text file:` /
+   `- [Image #n]:` / `image file:` / `Referenced image files:` / `Referenced image URLs:`（本文件里
+   其余 8 条**用户可见**的错误文案已译，见同文件 `:43-249`）；`tui/src/app/side.rs` 的模型提示；
+   `dynamic_tools.rs` 的工具规格。
+2. **协议 / 机器契约** —— 不译。改字符串等于改对外契约。锚点：doctor 子系统的 `--json` 输出与
+   `tracing::*` 的 message 字段、app-server 响应载荷、`ide_context/ipc.rs` 的 `#[error]` 与诊断串、
+   `DEFAULT_TOKEN_BUDGET_REMINDER_MESSAGE_TEMPLATE`（被写进用户 config.toml）、子命令路径名。
+3. **预览占位符（假数据）** —— 不译。锚点：`tui/src/bottom_pane/status_surface_preview.rs:44-79`
+   的 `StatusSurfacePreviewItem::placeholder`，它返回的是**模拟真实值的样例**（`"Working"`、
+   `"thread name"`、`"Context 0% left"`、`"0 window"`、`"5.2 credits"`、`"gpt-5.2-codex medium"`、
+   `"Tasks 0/0"`）。这些不是给用户读的句子，而是让预览看起来像真数据的样本；译了会把「占位」变成
+   「文案」，并使预览与真实值形态不一致（真值随 locale 变化会与样例对不上）。
+   反例（**该译**）：同文件 `:255-292` 的 `rate_limit_preview_copy` 返回的是**说明文字**
+   （`Remaining usage on the … limit (omitted when unavailable)`，7 条），属用户可见文案，已译；
+   其中 primary / secondary 两条此前已由 `chatwidget/status_surfaces.rs` 覆盖，字典里已存在
+   （`dict_zh.rs` 的 `主用量限额的剩余额度（不可用时省略）` / `次用量…`）。
+4. **`unused 0` 与 `label:` 启发式** —— 口径见 §八.5；读该数字时必须知道里面有这层保守启发式。
+
+> 纪律：每一批的「不译」都要在这里留一行锚点（文件:行 + 为什么），否则下次扫描会把同一批候选
+> 重新捞出来，形成「反复判断同一件事」的噪音。

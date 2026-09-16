@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use codex_i18n::{current, tr};
 use ratatui::text::Line;
 
 use super::status_line_from_segments;
@@ -256,37 +257,58 @@ fn rate_limit_preview_copy(value: &str) -> Option<RateLimitPreviewCopy> {
     if value.starts_with("secondary usage ") {
         Some(RateLimitPreviewCopy {
             name: "secondary-usage-limit",
-            description: "Remaining usage on the secondary usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the secondary usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("usage ") {
         Some(RateLimitPreviewCopy {
             name: "usage-limit",
-            description: "Remaining usage on the primary usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the primary usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("5h ") {
         Some(RateLimitPreviewCopy {
             name: "five-hour-limit",
-            description: "Remaining usage on the 5-hour usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the 5-hour usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("daily ") {
         Some(RateLimitPreviewCopy {
             name: "daily-limit",
-            description: "Remaining usage on the daily usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the daily usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("weekly ") {
         Some(RateLimitPreviewCopy {
             name: "weekly-limit",
-            description: "Remaining usage on the weekly usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the weekly usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("monthly ") {
         Some(RateLimitPreviewCopy {
             name: "monthly-limit",
-            description: "Remaining usage on the monthly usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the monthly usage limit (omitted when unavailable)",
+            ),
         })
     } else if value.starts_with("annual ") {
         Some(RateLimitPreviewCopy {
             name: "annual-limit",
-            description: "Remaining usage on the annual usage limit (omitted when unavailable)",
+            description: tr(
+                current(),
+                "Remaining usage on the annual usage limit (omitted when unavailable)",
+            ),
         })
     } else {
         None

@@ -48,13 +48,28 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" again to edit previous message", " 再按一次编辑上一条消息"),
     (" to edit previous message", " 编辑上一条消息"),
     (" for agents (empty prompt)", " 切换智能体（空提示）"),
-    ("App server did not report $CODEX_HOME; cannot materialize goal files", "应用服务器未报告$CODEX_HOME；无法生成目标文件"),
-    ("Could not create goal attachment directory {0}", "无法创建目标附件目录{0}"),
+    (
+        "App server did not report $CODEX_HOME; cannot materialize goal files",
+        "应用服务器未报告$CODEX_HOME；无法生成目标文件",
+    ),
+    (
+        "Could not create goal attachment directory {0}",
+        "无法创建目标附件目录{0}",
+    ),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
-    ("Could not read goal objective file {0}", "无法读取目标内容文件{0}"),
+    (
+        "Could not read goal objective file {0}",
+        "无法读取目标内容文件{0}",
+    ),
     ("Could not write goal file {0}", "无法写入目标文件{0}"),
-    ("Goal objective file reference is too long: {0} characters. Limit: {1}", "目标内容文件引用过长：{0}个字符。上限：{1}"),
-    ("Goal objective file {0} is not valid UTF-8", "目标内容文件{0}不是有效的UTF-8"),
+    (
+        "Goal objective file reference is too long: {0} characters. Limit: {1}",
+        "目标内容文件引用过长：{0}个字符。上限：{1}",
+    ),
+    (
+        "Goal objective file {0} is not valid UTF-8",
+        "目标内容文件{0}不是有效的UTF-8",
+    ),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
@@ -126,6 +141,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Remaining usage on the secondary usage limit (omitted when unavailable)",
         "次用量限额的剩余额度（不可用时省略）",
+    ),
+    (
+        "Remaining usage on the 5-hour usage limit (omitted when unavailable)",
+        "5小时用量限额的剩余额度（不可用时省略）",
+    ),
+    (
+        "Remaining usage on the annual usage limit (omitted when unavailable)",
+        "每年用量限额的剩余额度（不可用时省略）",
+    ),
+    (
+        "Remaining usage on the daily usage limit (omitted when unavailable)",
+        "每日用量限额的剩余额度（不可用时省略）",
+    ),
+    (
+        "Remaining usage on the monthly usage limit (omitted when unavailable)",
+        "每月用量限额的剩余额度（不可用时省略）",
+    ),
+    (
+        "Remaining usage on the weekly usage limit (omitted when unavailable)",
+        "每周用量限额的剩余额度（不可用时省略）",
     ),
     ("Codex application version", "Codex应用版本"),
     (

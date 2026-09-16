@@ -340,3 +340,83 @@ clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `a
 
 > 纪律：每一批的「不译」都要在这里留一行锚点（文件:行 + 为什么），否则下次扫描会把同一批候选
 > 重新捞出来，形成「反复判断同一件事」的噪音。
+
+## 十二、"不译"锚点总表（第 78–84 轮判定）
+
+按 §九 的口径逐条判定后**保持英文**的位置，附 `文件:行` 与依据。这些行**不是漏做**：判据见 §9.1
+（按文本流向判定）、§9.1.5（匹配表 / 查找键）、glossary:37/39（不译清单）。任何一批新增判定必须
+续在本表末尾，否则下一轮扫描会把同一批候选重新捞出来。
+
+### 12.1 匹配 / 解析管线（译了会静默失效）
+
+| 位置 | 依据 |
+| --- | --- |
+| `tui/src/chatwidget/turn_runtime.rs:15,17` | 安全拦截前缀用 `starts_with` 匹配服务端英文报错；译了检测直接失效（源码内已有中文注释） |
+| `tui/src/chatwidget/warnings.rs:3,5` | `FALLBACK_MODEL_METADATA_WARNING_SUFFIX` 的后缀被 `fallback_model_metadata_slug()` 用反引号扫描 |
+| `tui/src/chatwidget/permission_popups.rs:83` / `permissions_menu.rs:110` | `preset.description.replace(" (Identical to Agent mode)", "")` 后缀剥离 |
+| `tui/src/app/session_start.rs:69` | `archived_prefix` 与 `archived_session_guidance()` 的 `starts_with` 配对 |
+| `tui/src/app/config_update.rs:221,223,257,301` | `split_once(", add ")` / `rsplit_once(" as a trusted project in ")` 解析服务端 `disabledReason` |
+| `tui/src/external_agent_config_migration/mod.rs:208,248` | `"Import …"` 归一化后又用 `strip_prefix("Import enabled plugins from ")` 二次匹配 |
+| `tui/src/status/thread_usage.rs:23-38,210-235` | 档位表被 `.position(|v| v == display_name)` 与分组 `entry(key)` 当键使用 |
+| `tui/src/markdown_render/local_links.rs:19` | 正则字面量 |
+| `tui/src/keymap_setup/actions.rs:462-466` | `const fn label()` 的静态标签，供调试表按来源分组 |
+
+### 12.2 喂给模型的文本（设计 §4 决策 3）
+
+| 位置 | 依据 |
+| --- | --- |
+| `tui/src/dynamic_tools.rs:156-232` | 工具描述与参数模式（模型读） |
+| `tui/src/dynamic_tools.rs:360-1178` | 工具参数校验/错误文案（回给模型）；`<codex_delegation>` 载荷 |
+| `tui/src/goal_files.rs:21-125` | 追加到提示词的 "Read the Codex goal objective file at …" |
+| `tui/src/task_mentions.rs:35,266` | `## My request for Codex:` / `## Referenced chats with Codex:` 提示词脚手架 |
+| `tui/src/terminal_visualization_instructions.rs:4` | 追加到提示词的可视化规则 |
+| `tui/src/git_action_directives.rs:109,127` | 指令文本 |
+| `tui/src/chatwidget/plan_implementation.rs:27-31` | `PLAN_IMPLEMENTATION_CLEAR_CONTEXT_PREFIX`；同一 const 里 `"Implement the plan."` 亦然 |
+| `tui/src/app/recap.rs:59-64` | 回顾生成提示词 |
+| `tui/src/app/side.rs:56,70` | 侧会话边界文本，注入模型上下文 |
+| `tui/src/app/thread_title.rs:246-362` | 标题生成提示词与 `<message role=…>` 模板 |
+| `tui/src/bottom_pane/request_user_input/mod.rs:942` | `user_note: …` 回填进 `ToolRequestUserInputAnswer` |
+
+### 12.3 诊断 / eyre 上下文 / 内部错误
+
+`tui/src/app/{safety_buffering.rs:303, event_dispatch.rs:494, history_pagination.rs:30, resize_reflow.rs:533,
+session_picker.rs:128, resume_config.rs:15, side.rs:762}`、`app/config_persistence.rs:28`（`{error_context} task failed`）、
+`tui/src/{get_git_diff.rs:137,157,180, npm_registry.rs:34-66, named_session_lookup.rs:33,89,110,123,133,
+terminal_probe.rs:101-124, windows_sandbox.rs:127,130,133, update_versions.rs:12, session_resume.rs:76,
+startup_error.rs:6, wrapping.rs:392, app_server_connection.rs:20, dynamic_tools_mcp.rs:137,264,
+session_queue_commands.rs:155}`、`tui/src/{notifications/bel.rs:29, notifications/osc9.rs:59, terminal_title.rs:96,
+tui.rs:261,282,424,427,455}`（WinAPI/stdio 内部消息）。
+
+### 12.4 `#[error(...)]`（thiserror 只接受字面量）
+
+`tui/src/app_server_session.rs:397`、`tui/src/named_session_lookup.rs:25`、`tui/src/external_editor.rs:23,26,28`。
+要翻译需先手写 `Display` 实现，属独立改动。
+
+### 12.5 代码样本 / 配置转储 / 数据格式
+
+`tui/src/theme_picker.rs:68-118`（Rust 代码样张）、`tui/src/debug_config.rs:53-655`（key=value 转储）、
+`tui/src/app/history_ui.rs:422` 与 `tui/src/{clipboard_copy.rs:338, clipboard_paste.rs:219}`（内嵌 PowerShell）、
+`tui/src/update_action.rs:56,65`（安装命令）、`tui/src/branch_summary.rs:378`（HTTP 头）、
+`tui/src/resume_picker.rs:3524`（strftime）、`tui/src/inline_visualization.rs:239` 与
+`tui/src/resume_picker_transcript_preview.rs:294,297`（重写后的 markdown 脚手架）、
+`tui/src/inline_visualization/viewer.rs:18-82`（CSP/CSS/HTML）、
+`tui/src/bottom_pane/multi_select_picker.rs:92`（分隔线）、`tui/src/status_indicator_widget.rs:78,83`（时长格式）、
+`tui/src/history_cell/notices.rs:54` 与 `tui/src/update_prompt.rs:196`（emoji + U+200A）。
+
+### 12.6 产品名 / 标识符（glossary:37,39）
+
+`tui/src/status/card.rs:760`（OpenAI Codex）、`tui/src/status/helpers.rs:112-122`（Enterprise (Automation) /
+Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.rs:12`（Luna Reserve）、
+`tui/src/pets/catalog.rs:80`（Null Signal）、`tui/src/external_agent_config_migration/source.rs:41`（Claude Code）、
+`tui/src/chatwidget/agent_status_feed.rs:161`（`MCP {server}/{tool}` 标识符）。
+
+### 12.7 关键词表 / 调试转储 / 其他
+
+`tui/src/pets/picker.rs:94`、`tui/src/keymap_setup/picker.rs:362`（搜索关键词 blob）、
+`tui/src/keymap_setup/debug.rs:238`（`code={:?} modifiers={} kind={:?}` 转储）、
+`tui/src/bottom_pane/status_surface_preview.rs:54-79`（预览样例值，见 §九.3）、
+`tui/src/app/{app.rs:770,789}`（断言片段）。
+
+### 12.8 待人类裁决
+
+`tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

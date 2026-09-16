@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -42,13 +44,13 @@ pub(super) fn render_footer(area: Rect, buf: &mut Buffer, search_mode: SearchMod
 fn footer_hint_line() -> Line<'static> {
     Line::from(vec![
         key_hint::plain(KeyCode::Enter).into(),
-        " insert · ".dim(),
+        tr(current(), " insert · ").dim(),
         key_hint::plain(KeyCode::Esc).into(),
-        " close · ".dim(),
+        tr(current(), " close · ").dim(),
         key_hint::plain(KeyCode::Left).into(),
         "/".dim(),
         key_hint::plain(KeyCode::Right).into(),
-        " switch search modes".dim(),
+        tr(current(), " switch search modes").dim(),
     ])
 }
 

@@ -281,12 +281,22 @@ pub(crate) fn feedback_upload_consent_params(
         .into(),
         Line::from(vec![
             "  • ".into(),
-            format!("{CODEX_APPS_TOOLS_CACHE_ATTACHMENT_FILENAME} (if available)").into(),
+            tr_with(
+                current(),
+                "{0} (if available)",
+                &[CODEX_APPS_TOOLS_CACHE_ATTACHMENT_FILENAME],
+            )
+            .into(),
         ])
         .into(),
         Line::from(vec![
             "  • ".into(),
-            format!("{CODEX_APP_DIRECTORY_CACHE_ATTACHMENT_FILENAME} (if available)").into(),
+            tr_with(
+                current(),
+                "{0} (if available)",
+                &[CODEX_APP_DIRECTORY_CACHE_ATTACHMENT_FILENAME],
+            )
+            .into(),
         ])
         .into(),
     ];

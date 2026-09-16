@@ -20,8 +20,8 @@ use strum_macros::EnumString;
 
 use crate::app_event::AppEvent;
 use crate::app_event_sender::AppEventSender;
-use crate::bottom_pane::ACTION_REQUIRED_PREVIEW_PREFIX;
 use crate::bottom_pane::CancellationEvent;
+use crate::bottom_pane::action_required_preview_prefix;
 use crate::bottom_pane::bottom_pane_view::BottomPaneView;
 use crate::bottom_pane::build_action_required_title_text;
 use crate::bottom_pane::multi_select_picker::MultiSelectItem;
@@ -236,7 +236,7 @@ pub(crate) fn preview_line_for_title_items(
 ) -> Option<Line<'static>> {
     if items.contains(&TerminalTitleItem::Spinner) {
         let preview = build_action_required_title_text(
-            ACTION_REQUIRED_PREVIEW_PREFIX,
+            action_required_preview_prefix(),
             items.iter().copied(),
             &[],
             |item| {

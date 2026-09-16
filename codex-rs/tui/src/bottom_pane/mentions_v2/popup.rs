@@ -1,4 +1,6 @@
 use codex_file_search::FileMatch;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::WidgetRef;
@@ -163,7 +165,7 @@ impl FileSearch {
         if self.waiting {
             "loading..."
         } else {
-            "no matches"
+            tr(current(), "no matches")
         }
     }
 }

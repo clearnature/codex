@@ -14,6 +14,8 @@ use crate::render::renderable::Renderable;
 use crate::terminal_palette::best_color;
 use crate::terminal_palette::default_fg;
 use crate::wrapping::word_wrap_lines;
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -175,12 +177,15 @@ impl BottomPane {
                 item.dismiss_on_select = false;
             }
             let hint = match (dismissal, has_actions) {
-                (BannerDismissal::Persistent, true) => "Press a number to choose",
+                (BannerDismissal::Persistent, true) => tr(current(), "Press a number to choose"),
                 (BannerDismissal::Persistent, false) => "",
-                (BannerDismissal::Dismissible, true) => {
-                    "Press a number to choose · esc to dismiss · type to continue"
+                (BannerDismissal::Dismissible, true) => tr(
+                    current(),
+                    "Press a number to choose · esc to dismiss · type to continue",
+                ),
+                (BannerDismissal::Dismissible, false) => {
+                    tr(current(), "esc to dismiss · type to continue")
                 }
-                (BannerDismissal::Dismissible, false) => "esc to dismiss · type to continue",
             };
             let hint: Line<'static> = hint.dim().into();
             params.footer_hint = Some(hint.clone());

@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::borrow::Cow;
 
 use ratatui::style::Stylize;
@@ -55,7 +57,9 @@ fn combined_description(
     description_layout: SelectionDescriptionLayout,
 ) -> Option<String> {
     match (&row.description, &row.disabled_reason) {
-        (Some(desc), Some(reason)) => Some(format!("{desc} (disabled: {reason})")),
+        (Some(desc), Some(reason)) => {
+            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]).to_string())
+        }
         (Some(desc), None) => Some(desc.clone()),
         (None, Some(reason))
             if matches!(
@@ -65,14 +69,16 @@ fn combined_description(
         {
             Some(reason.clone())
         }
-        (None, Some(reason)) => Some(format!("disabled: {reason}")),
+        (None, Some(reason)) => Some(tr_with(current(), "disabled: {0}", &[reason]).to_string()),
         (None, None) => None,
     }
 }
 
 fn stacked_description(row: &GenericDisplayRow) -> Option<String> {
     match (&row.description, &row.disabled_reason) {
-        (Some(desc), Some(reason)) => Some(format!("{desc} (disabled: {reason})")),
+        (Some(desc), Some(reason)) => {
+            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]).to_string())
+        }
         (Some(desc), None) => Some(desc.clone()),
         (None, Some(reason)) => Some(reason.clone()),
         (None, None) => None,

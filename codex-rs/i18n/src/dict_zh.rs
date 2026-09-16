@@ -6255,6 +6255,58 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "当前模型（{0}）不支持个性化。请尝试/model选择其他模型。",
     ),
     ("I've installed it", "我已安装"),
+    // Bottom-pane surfaces: terminal-title action banner, banner hints, patch
+    // approval headers, popup empty states, mentions footer/search modes, thread
+    // approval hints, question counters, disabled-row rendering, Vim mode
+    // indicator and the unified-exec background-terminal footer. Plural English
+    // shapes pair with a single Chinese value; `esc`, `/ps`, `/stop`, `Vim` and the
+    // ` - ` label join stay verbatim.
+    ("Press a number to choose", "按数字选择"),
+    (
+        "Press a number to choose · esc to dismiss · type to continue",
+        "按数字选择 · esc关闭 · 输入以继续",
+    ),
+    ("esc to dismiss · type to continue", "esc关闭 · 输入以继续"),
+    ("Destination: ", "目标位置："),
+    ("unavailable", "不可用"),
+    (" insert · ", " 插入 · "),
+    (" close · ", " 关闭 · "),
+    (" switch search modes", "切换搜索模式"),
+    ("All Results", "全部结果"),
+    ("Filesystem Only", "仅文件系统"),
+    (" (disabled)", "（已禁用）"),
+    (" to insert or ", "插入或"),
+    ("Vim: Normal", "Vim: 普通模式"),
+    ("Vim: Insert", "Vim: 插入模式"),
+    ("Vim: Replace", "Vim: 替换模式"),
+    (" to answer", "回答"),
+    (
+        "Answer too long; limit {0} characters",
+        "回答过长；上限{0}个字符",
+    ),
+    ("{0} (if available)", "{0}（如可用）"),
+    ("Approval needed in {0}", "线程{0}需要审批"),
+    (" to switch threads", "切换线程"),
+    ("{0} question", "{0} 个问题"),
+    ("{0} questions", "{0} 个问题"),
+    ("{0} (disabled: {1})", "{0}（已禁用：{1}）"),
+    ("disabled: {0}", "已禁用：{0}"),
+    (
+        "{0} background terminal running · /ps to view · /stop to close",
+        "{0} 个后台终端运行中 · /ps查看 · /stop关闭",
+    ),
+    (
+        "{0} background terminals running · /ps to view · /stop to close",
+        "{0} 个后台终端运行中 · /ps查看 · /stop关闭",
+    ),
+    ("skills", "技能"),
+    // Guardian path-localization error (`chatwidget/protocol_requests.rs`): the
+    // conversion target had to be named explicitly (`GuardianAssessmentAction`) for
+    // the `map_err` closure to keep a pinned type.
+    (
+        "failed to localize guardian filesystem paths: {0}",
+        "无法本地化guardian文件系统路径：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

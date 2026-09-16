@@ -1,6 +1,14 @@
 use super::TerminalTitleItem;
+use codex_i18n::current;
+use codex_i18n::tr;
 
-pub(crate) const ACTION_REQUIRED_PREVIEW_PREFIX: &str = "[ ! ] Action Required";
+/// Prefix for the "action required" terminal-title preview.
+///
+/// A function rather than a constant because `tr` resolves at render time: the
+/// published language can change while the TUI is open.
+pub(crate) fn action_required_preview_prefix() -> &'static str {
+    tr(current(), "[ ! ] Action Required")
+}
 
 pub(crate) fn build_action_required_title_text<I, F>(
     prefix: &str,

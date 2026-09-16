@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashSet;
 
 use codex_app_server_protocol::SkillMetadata;
@@ -191,9 +194,10 @@ fn plugin_description(plugin: &PluginCapabilitySummary) -> Option<String> {
     let capability_labels = plugin_capability_labels(plugin);
     plugin.description.clone().or_else(|| {
         Some(if capability_labels.is_empty() {
-            "Plugin".to_string()
+            tr(current(), "Plugin").to_string()
         } else {
-            format!("Plugin - {}", capability_labels.join(" - "))
+            // the " - " join is layout: the labels themselves are translated below.
+            tr_with(current(), "Plugin - {0}", &[&capability_labels.join(" - ")]).to_string()
         })
     })
 }
@@ -201,22 +205,27 @@ fn plugin_description(plugin: &PluginCapabilitySummary) -> Option<String> {
 fn plugin_capability_labels(plugin: &PluginCapabilitySummary) -> Vec<String> {
     let mut labels = Vec::new();
     if plugin.has_skills {
-        labels.push("skills".to_string());
+        labels.push(tr(current(), "skills").to_string());
     }
     if !plugin.mcp_server_names.is_empty() {
         let mcp_server_count = plugin.mcp_server_names.len();
         labels.push(if mcp_server_count == 1 {
-            "1 MCP server".to_string()
+            tr(current(), "1 MCP server").to_string()
         } else {
-            format!("{mcp_server_count} MCP servers")
+            tr_with(
+                current(),
+                "{0} MCP servers",
+                &[&mcp_server_count.to_string()],
+            )
+            .to_string()
         });
     }
     if !plugin.app_connector_ids.is_empty() {
         let app_count = plugin.app_connector_ids.len();
         labels.push(if app_count == 1 {
-            "1 app".to_string()
+            tr(current(), "1 app").to_string()
         } else {
-            format!("{app_count} apps")
+            tr_with(current(), "{0} apps", &[&app_count.to_string()]).to_string()
         });
     }
     labels

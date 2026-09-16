@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::path::PathBuf;
 
 use codex_file_search::FileMatch;
@@ -137,7 +139,7 @@ impl WidgetRef for &FileSearchPopup {
         let empty_message = if self.waiting {
             "loading..."
         } else {
-            "no matches"
+            tr(current(), "no matches")
         };
 
         render_rows(

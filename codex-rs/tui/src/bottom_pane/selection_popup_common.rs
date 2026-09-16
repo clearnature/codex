@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 // Note: Table-based layout previously used Constraint; the manual renderer
@@ -169,7 +171,7 @@ fn compute_desc_col(
                         let mut spans = row.name_prefix_spans.clone();
                         spans.push(row.name.clone().into());
                         if row.disabled_reason.is_some() {
-                            spans.push(" (disabled)".dim());
+                            spans.push(tr(current(), " (disabled)").dim());
                         }
                         line_width(&Line::from(spans))
                     })
@@ -181,7 +183,7 @@ fn compute_desc_col(
                         let mut spans = row.name_prefix_spans.clone();
                         spans.push(row.name.clone().into());
                         if row.disabled_reason.is_some() {
-                            spans.push(" (disabled)".dim());
+                            spans.push(tr(current(), " (disabled)").dim());
                         }
                         line_width(&Line::from(spans))
                     })

@@ -4,6 +4,8 @@
 //! either render a dedicated footer row or reuse the same text inline in the
 //! status row without duplicating copy/grammar logic.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
@@ -48,10 +50,22 @@ impl UnifiedExecFooter {
         }
 
         let count = self.processes.len();
-        let plural = if count == 1 { "" } else { "s" };
-        Some(format!(
-            "{count} background terminal{plural} running · /ps to view · /stop to close"
-        ))
+        Some(
+            if count == 1 {
+                tr_with(
+                    current(),
+                    "{0} background terminal running · /ps to view · /stop to close",
+                    &[&count.to_string()],
+                )
+            } else {
+                tr_with(
+                    current(),
+                    "{0} background terminals running · /ps to view · /stop to close",
+                    &[&count.to_string()],
+                )
+            }
+            .to_string(),
+        )
     }
 
     fn render_lines(&self, width: u16) -> Vec<Line<'static>> {

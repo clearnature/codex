@@ -85,12 +85,17 @@ impl ChatWidget {
     ) {
         // TODO(anp): Remove this native-path localization error path once core permission paths
         // remain PathUri after crossing the app-server boundary.
-        let action = match action.try_into() {
+        let action = match codex_protocol::approvals::GuardianAssessmentAction::try_from(action) {
             Ok(action) => action,
             Err(err) => {
-                self.add_error_message(format!(
-                    "failed to localize guardian filesystem paths: {err}"
-                ));
+                self.add_error_message(
+                    tr_with(
+                        current(),
+                        "failed to localize guardian filesystem paths: {0}",
+                        &[&err.to_string()],
+                    )
+                    .to_string(),
+                );
                 return;
             }
         };

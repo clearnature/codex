@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::WidgetRef;
@@ -274,7 +276,7 @@ impl WidgetRef for CommandPopup {
             &rows,
             &self.state,
             MAX_POPUP_ROWS,
-            "no matches",
+            tr(current(), "no matches"),
             COMMAND_COLUMN_WIDTH,
         );
     }

@@ -1,4 +1,6 @@
 use super::candidate::MentionType;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum SearchMode {
@@ -36,8 +38,8 @@ impl SearchMode {
 
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Results => "All Results",
-            Self::FilesystemOnly => "Filesystem Only",
+            Self::Results => tr(current(), "All Results"),
+            Self::FilesystemOnly => tr(current(), "Filesystem Only"),
             Self::Tools => "Plugins",
         }
     }

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
@@ -45,7 +48,9 @@ impl PendingThreadApprovals {
         let mut lines = Vec::new();
         for thread in self.threads.iter().take(3) {
             let wrapped = adaptive_wrap_lines(
-                std::iter::once(Line::from(format!("Approval needed in {thread}"))),
+                std::iter::once(Line::from(
+                    tr_with(current(), "Approval needed in {0}", &[&thread]).to_string(),
+                )),
                 RtOptions::new(width as usize)
                     .initial_indent(Line::from(vec!["  ".into(), "!".red().bold(), " ".into()]))
                     .subsequent_indent(Line::from("    ")),
@@ -61,7 +66,7 @@ impl PendingThreadApprovals {
             Line::from(vec![
                 "    ".into(),
                 "/subagents".cyan().bold(),
-                " to switch threads".dim(),
+                tr(current(), " to switch threads").dim(),
             ])
             .dim(),
         );

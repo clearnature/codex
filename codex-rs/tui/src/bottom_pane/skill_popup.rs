@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
@@ -220,7 +222,7 @@ impl WidgetRef for SkillPopup {
             &rows,
             &self.state,
             MAX_POPUP_ROWS,
-            "no matches",
+            tr(current(), "no matches"),
         );
         if let Some(hint_area) = hint_area {
             let hint_area = Rect {
@@ -238,9 +240,9 @@ fn skill_popup_hint_line() -> Line<'static> {
     Line::from(vec![
         "Press ".into(),
         key_hint::plain(KeyCode::Enter).into(),
-        " to insert or ".into(),
+        tr(current(), " to insert or ").into(),
         key_hint::plain(KeyCode::Esc).into(),
-        " to close".into(),
+        tr(current(), " to close").into(),
     ])
 }
 

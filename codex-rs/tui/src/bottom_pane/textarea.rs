@@ -26,6 +26,8 @@ use crate::keymap::VimOperatorKeymap;
 use crate::keymap::VimSearchKeymap;
 use crate::keymap::VimTextObjectKeymap;
 use crate::width::display_width;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::user_input::ByteRange;
 use codex_protocol::user_input::TextElement as UserTextElement;
 use crossterm::event::KeyCode;
@@ -415,9 +417,9 @@ impl TextArea {
             return None;
         }
         Some(match self.vim_mode {
-            VimMode::Normal => "Vim: Normal".magenta(),
-            VimMode::Insert => "Vim: Insert".green(),
-            VimMode::Replace => "Vim: Replace".cyan(),
+            VimMode::Normal => tr(current(), "Vim: Normal").magenta(),
+            VimMode::Insert => tr(current(), "Vim: Insert").green(),
+            VimMode::Replace => tr(current(), "Vim: Replace").cyan(),
         })
     }
 

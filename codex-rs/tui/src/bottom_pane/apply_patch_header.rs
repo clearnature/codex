@@ -3,6 +3,8 @@
 use super::approval_overlay::ApplyPatchApprovalRequest;
 use crate::diff_model::FileChange;
 use crate::render::renderable::Renderable;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_utils_path_uri::LegacyAppPathString;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
@@ -13,7 +15,7 @@ pub(super) fn build_header(request: &ApplyPatchApprovalRequest) -> Box<dyn Rende
     let mut header = Vec::new();
     if let Some(thread_label) = &request.thread_label {
         header.push(Line::from(vec![
-            "Thread: ".into(),
+            tr(current(), "Thread: ").into(),
             thread_label.clone().bold(),
         ]));
     }
@@ -60,13 +62,13 @@ pub(super) fn build_header(request: &ApplyPatchApprovalRequest) -> Box<dyn Rende
     destinations.dedup();
     if destinations.is_empty() {
         header.push(Line::from(vec![
-            "Destination: ".into(),
-            "unavailable".bold(),
+            tr(current(), "Destination: ").into(),
+            tr(current(), "unavailable").bold(),
         ]));
     }
     for destination in destinations {
         header.push(Line::from_iter([
-            "Destination: ".into(),
+            tr(current(), "Destination: ").into(),
             destination.bold(),
         ]));
     }

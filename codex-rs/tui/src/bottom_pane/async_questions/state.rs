@@ -4,6 +4,8 @@
 use super::*;
 use codex_context_fragments::AnsweredQuestion;
 use codex_context_fragments::ContextualUserFragment;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl AsyncQuestions {
     pub(crate) fn append(&mut self, message_id: &str, questions: &[AsyncUserInputQuestion]) {
@@ -124,7 +126,13 @@ impl AsyncQuestions {
         let limit = codex_protocol::user_input::MAX_USER_INPUT_TEXT_CHARS - framing.chars().count();
         if text.chars().count() > limit {
             self.composer.show_footer_flash(
-                format!("Answer too long; limit {limit} characters").into(),
+                tr_with(
+                    current(),
+                    "Answer too long; limit {0} characters",
+                    &[&limit.to_string()],
+                )
+                .to_string()
+                .into(),
                 Duration::from_secs(5),
             );
         } else if !text.is_empty() {

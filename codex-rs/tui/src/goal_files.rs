@@ -1,5 +1,8 @@
 //! Materializes oversized TUI goal objectives, pastes, and images as app-server-host files.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::fs;
 use std::path::Path;
 
@@ -37,7 +40,7 @@ pub(crate) async fn materialize_goal_draft(
 ) -> Result<(String, Option<GoalFilePath>)> {
     let mut objective = draft.objective;
     if objective.trim().is_empty() {
-        bail!("Goal objective must not be empty.");
+        bail!(tr(current(), "Goal objective must not be empty."));
     }
     let text_elements = draft.text_elements;
     if !draft.pending_pastes.is_empty() {
@@ -47,7 +50,7 @@ pub(crate) async fn materialize_goal_draft(
             &draft.pending_pastes,
         );
         if expanded_objective.trim().is_empty() {
-            bail!("Goal objective must not be empty.");
+            bail!(tr(current(), "Goal objective must not be empty."));
         }
     }
 
@@ -92,8 +95,13 @@ pub(crate) async fn materialize_goal_draft(
         let path = ensure_goal_output_dir(app_server, codex_home, &mut output_dir)
             .await?
             .join(format!("image-{}.{}", idx + 1, extension));
-        let bytes = fs::read(&image.path)
-            .with_context(|| format!("Could not read goal image {}", image.path.display()))?;
+        let bytes = fs::read(&image.path).with_context(|| {
+            tr_with(
+                current(),
+                "Could not read goal image {0}",
+                &[&image.path.display().to_string()],
+            )
+        })?;
         write_goal_file(app_server, path.clone(), bytes).await?;
         if image.placeholder.is_empty() {
             image_lines.push(format!("- [Image #{}]: {path}", idx + 1));
@@ -149,9 +157,20 @@ pub(crate) async fn objective_text_for_edit(
         .fs_read_file_path(&path)
         .await
         .map_err(|err| anyhow::anyhow!("{err}"))
-        .with_context(|| format!("Could not read goal objective file {path}"))?;
-    String::from_utf8(bytes)
-        .with_context(|| format!("Goal objective file {path} is not valid UTF-8"))
+        .with_context(|| {
+            tr_with(
+                current(),
+                "Could not read goal objective file {0}",
+                &[&path.to_string()],
+            )
+        })?;
+    String::from_utf8(bytes).with_context(|| {
+        tr_with(
+            current(),
+            "Goal objective file {0} is not valid UTF-8",
+            &[&path.to_string()],
+        )
+    })
 }
 
 pub(crate) fn objective_file_path(
@@ -175,9 +194,14 @@ pub(crate) fn objective_file_reference(path: &GoalFilePath) -> Result<String> {
     let reference = format!("{GOAL_FILE_PREFIX}{path}{GOAL_FILE_SUFFIX}");
     let actual_chars = reference.chars().count();
     if actual_chars > MAX_THREAD_GOAL_OBJECTIVE_CHARS {
-        bail!(
-            "Goal objective file reference is too long: {actual_chars} characters. Limit: {MAX_THREAD_GOAL_OBJECTIVE_CHARS} characters."
-        );
+        bail!(tr_with(
+            current(),
+            "Goal objective file reference is too long: {0} characters. Limit: {1}",
+            &[
+                &actual_chars.to_string(),
+                &MAX_THREAD_GOAL_OBJECTIVE_CHARS.to_string()
+            ],
+        ));
     }
     Ok(reference)
 }
@@ -190,8 +214,10 @@ async fn ensure_goal_output_dir(
     if let Some(output_dir) = output_dir {
         return Ok(output_dir.clone());
     }
-    let codex_home = codex_home
-        .context("App server did not report $CODEX_HOME; cannot materialize goal files")?;
+    let codex_home = codex_home.context(tr(
+        current(),
+        "App server did not report $CODEX_HOME; cannot materialize goal files",
+    ))?;
     let path = codex_home
         .join(GOAL_ATTACHMENT_DIR)
         .join(Uuid::new_v4().to_string());
@@ -199,7 +225,13 @@ async fn ensure_goal_output_dir(
         .fs_create_directory_all_path(&path)
         .await
         .map_err(|err| anyhow::anyhow!("{err}"))
-        .with_context(|| format!("Could not create goal attachment directory {path}"))?;
+        .with_context(|| {
+            tr_with(
+                current(),
+                "Could not create goal attachment directory {0}",
+                &[&path.to_string()],
+            )
+        })?;
     *output_dir = Some(path.clone());
     Ok(path)
 }
@@ -213,7 +245,13 @@ async fn write_goal_file(
         .fs_write_file_path(&path, bytes)
         .await
         .map_err(|err| anyhow::anyhow!("{err}"))
-        .with_context(|| format!("Could not write goal file {path}"))
+        .with_context(|| {
+            tr_with(
+                current(),
+                "Could not write goal file {0}",
+                &[&path.to_string()],
+            )
+        })
 }
 fn append_section(objective: &mut String, heading: &str, lines: Vec<String>) {
     if lines.is_empty() {

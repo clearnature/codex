@@ -1,6 +1,9 @@
 //! Rate-limit warning, prompt, and notice surfaces, plus quota-aware account refresh cadence.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 pub(super) const WORKSPACE_NUDGE_VIEW_ID: &str = "workspace-usage-nudge";
 use crate::bottom_pane::ActionableBanner;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
@@ -18,7 +21,11 @@ pub(super) const RATE_LIMIT_SWITCH_PROMPT_VIEW_ID: &str = "rate-limit-switch-pro
 
 const RATE_LIMIT_WARNING_THRESHOLDS: [f64; 4] = [50.0, 75.0, 90.0, 95.0];
 const PRIMARY_LIMIT_FALLBACK_LABEL: &str = "usage";
-const SECONDARY_LIMIT_FALLBACK_LABEL: &str = "secondary usage";
+// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`:
+// the text has to pass through `tr`, which a `const` cannot call.
+fn secondary_limit_fallback_label() -> &'static str {
+    tr(current(), "secondary usage")
+}
 
 #[derive(Default)]
 pub(super) struct RateLimitWarningState {
@@ -63,9 +70,7 @@ impl RateLimitWarningState {
                 let limit_label =
                     limit_label_for_window(secondary_window_minutes, /*is_secondary*/ true);
                 let remaining_percent = 100.0 - threshold;
-                warnings.push(format!(
-                    "Heads up, you have less than {remaining_percent:.0}% of your {limit_label} limit left. Run /status for a breakdown."
-                ));
+                warnings.push(tr_with(current(), "Heads up, you have less than {0}% of your {1} limit left. Run /status for a breakdown.", &[&format!("{remaining_percent:.0}"), &limit_label]));
             }
         }
 
@@ -88,9 +93,7 @@ impl RateLimitWarningState {
                 let limit_label =
                     limit_label_for_window(primary_window_minutes, /*is_secondary*/ false);
                 let remaining_percent = 100.0 - threshold;
-                warnings.push(format!(
-                    "Heads up, you have less than {remaining_percent:.0}% of your {limit_label} limit left. Run /status for a breakdown."
-                ));
+                warnings.push(tr_with(current(), "Heads up, you have less than {0}% of your {1} limit left. Run /status for a breakdown.", &[&format!("{remaining_percent:.0}"), &limit_label]));
             }
         }
 
@@ -131,7 +134,7 @@ pub(crate) fn get_limits_duration(windows_minutes: i64) -> Option<String> {
 
 pub(crate) fn fallback_limit_label(is_secondary: bool) -> &'static str {
     if is_secondary {
-        SECONDARY_LIMIT_FALLBACK_LABEL
+        secondary_limit_fallback_label()
     } else {
         PRIMARY_LIMIT_FALLBACK_LABEL
     }
@@ -470,14 +473,14 @@ impl ChatWidget {
             tx.send(AppEvent::PersistRateLimitSwitchPromptHidden);
         })];
         let description = if preset.description.is_empty() {
-            Some("Uses fewer credits for upcoming turns.".to_string())
+            Some(tr(current(), "Uses fewer credits for upcoming turns.").to_string())
         } else {
             Some(preset.description)
         };
 
         let items = vec![
             SelectionItem {
-                name: format!("Switch to {switch_model}"),
+                name: tr_with(current(), "Switch to {0}", &[&switch_model]),
                 description,
                 selected_description: None,
                 is_current: false,
@@ -486,7 +489,7 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: "Keep current model".to_string(),
+                name: tr(current(), "Keep current model").to_string(),
                 description: None,
                 selected_description: None,
                 is_current: false,
@@ -495,9 +498,13 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: "Keep current model (never show again)".to_string(),
+                name: tr(current(), "Keep current model (never show again)").to_string(),
                 description: Some(
-                    "Hide future rate limit reminders about switching models.".to_string(),
+                    tr(
+                        current(),
+                        "Hide future rate limit reminders about switching models.",
+                    )
+                    .to_string(),
                 ),
                 selected_description: None,
                 is_current: false,
@@ -509,8 +516,12 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_SWITCH_PROMPT_VIEW_ID),
-            title: Some("Approaching rate limits".to_string()),
-            subtitle: Some(format!("Switch to {switch_model} for lower credit usage?")),
+            title: Some(tr(current(), "Approaching rate limits").to_string()),
+            subtitle: Some(tr_with(
+                current(),
+                "Switch to {0} for lower credit usage?",
+                &[&switch_model],
+            )),
             footer_hint: Some(standard_popup_hint_line()),
             items,
             ..Default::default()
@@ -528,11 +539,17 @@ impl ChatWidget {
         let (title, prompt) = match credit_type {
             AddCreditsNudgeCreditType::Credits => (
                 "You've reached your workspace credit limit",
-                "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
+                tr(
+                    current(),
+                    "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
+                ),
             ),
             AddCreditsNudgeCreditType::UsageLimit => (
-                "Usage limit reached",
-                "Request a limit increase from your owner to continue using codex. Request increase?",
+                tr(current(), "Usage limit reached"),
+                tr(
+                    current(),
+                    "Request a limit increase from your owner to continue using codex. Request increase?",
+                ),
             ),
         };
         let send_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
@@ -596,25 +613,30 @@ impl ChatWidget {
         self.add_credits_nudge_email_in_flight = None;
         let message = match (credit_type, result) {
             (AddCreditsNudgeCreditType::Credits, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                "Workspace owner notified."
+                tr(current(), "Workspace owner notified.")
             }
             (
                 AddCreditsNudgeCreditType::Credits,
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive),
-            ) => "Workspace owner was already notified recently.",
-            (AddCreditsNudgeCreditType::Credits, Err(_)) => {
-                "Could not notify your workspace owner. Please try again."
-            }
+            ) => tr(current(), "Workspace owner was already notified recently."),
+            (AddCreditsNudgeCreditType::Credits, Err(_)) => tr(
+                current(),
+                "Could not notify your workspace owner. Please try again.",
+            ),
             (AddCreditsNudgeCreditType::UsageLimit, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                "Limit increase requested."
+                tr(current(), "Limit increase requested.")
             }
             (
                 AddCreditsNudgeCreditType::UsageLimit,
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive),
-            ) => "A limit increase was already requested recently.",
-            (AddCreditsNudgeCreditType::UsageLimit, Err(_)) => {
-                "Could not request a limit increase. Please try again."
-            }
+            ) => tr(
+                current(),
+                "A limit increase was already requested recently.",
+            ),
+            (AddCreditsNudgeCreditType::UsageLimit, Err(_)) => tr(
+                current(),
+                "Could not request a limit increase. Please try again.",
+            ),
         };
         self.add_to_history(history_cell::new_info_event(
             message.to_string(),

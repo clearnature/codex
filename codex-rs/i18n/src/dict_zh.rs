@@ -3542,6 +3542,57 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "animation {0} must include at least one frame",
         "动画{0}必须至少包含一帧",
     ),
+    ("secondary usage", "次级用量"),
+    (
+        "Heads up, you have less than {0}% of your {1} limit left. Run /status for a breakdown.",
+        "提醒：你的{1}限额仅剩不到{0}%。运行/status查看明细。",
+    ),
+    (
+        "Uses fewer credits for upcoming turns.",
+        "后续轮次消耗更少额度。",
+    ),
+    ("Switch to {0}", "切换到{0}"),
+    ("Keep current model", "保持当前模型"),
+    (
+        "Keep current model (never show again)",
+        "保持当前模型（不再提示）",
+    ),
+    (
+        "Hide future rate limit reminders about switching models.",
+        "不再显示关于切换模型的速率限制提醒。",
+    ),
+    ("Approaching rate limits", "接近速率限制"),
+    (
+        "Switch to {0} for lower credit usage?",
+        "切换到{0}以降低额度消耗？",
+    ),
+    (
+        "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
+        "你的工作区额度已用尽。请让工作区所有者补充额度。要通知所有者吗？",
+    ),
+    ("Usage limit reached", "已达用量上限"),
+    (
+        "Request a limit increase from your owner to continue using codex. Request increase?",
+        "请向所有者申请提高限额以继续使用codex。要申请提高吗？",
+    ),
+    ("Workspace owner notified.", "已通知工作区所有者。"),
+    (
+        "Workspace owner was already notified recently.",
+        "最近已通知过工作区所有者。",
+    ),
+    (
+        "Could not notify your workspace owner. Please try again.",
+        "无法通知工作区所有者。请重试。",
+    ),
+    ("Limit increase requested.", "已申请提高限额。"),
+    (
+        "A limit increase was already requested recently.",
+        "最近已申请过提高限额。",
+    ),
+    (
+        "Could not request a limit increase. Please try again.",
+        "无法申请提高限额。请重试。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

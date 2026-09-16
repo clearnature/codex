@@ -1,5 +1,8 @@
 //! Render persisted thread turns into history-cell building blocks.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 
 use crate::app_server_session::AppServerSession;
@@ -76,7 +79,10 @@ pub(crate) fn thread_to_transcript_cells(
     );
     if cells.is_empty() {
         cells.push(Arc::new(PlainHistoryCell::new(vec![
-            "No transcript content available".italic().dim().into(),
+            tr(current(), "No transcript content available")
+                .italic()
+                .dim()
+                .into(),
         ])));
     }
     cells
@@ -200,7 +206,7 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             .iter()
             .map(|fragment| {
                 vec![
-                    "hook prompt: ".dim(),
+                    tr(current(), "hook prompt: ").dim(),
                     fragment.text.trim().to_string().into(),
                 ]
                 .into()
@@ -216,11 +222,15 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             let mut lines: Vec<Line<'static>> =
                 vec![vec!["$ ".dim(), command.clone().into()].into()];
             lines.push(
-                format!(
-                    "status: {status:?}{}",
-                    exit_code
-                        .map(|code| format!(" · exit {code}"))
-                        .unwrap_or_default()
+                tr_with(
+                    current(),
+                    "status: {0}{1}",
+                    &[
+                        &format!("{status:?}"),
+                        &exit_code
+                            .map(|code| tr_with(current(), " · exit {0}", &[&code.to_string()]))
+                            .unwrap_or_default(),
+                    ],
                 )
                 .dim()
                 .into(),
@@ -239,9 +249,13 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         ThreadItem::FileChange {
             changes, status, ..
         } => vec![
-            format!("file changes: {status:?} · {} changes", changes.len())
-                .dim()
-                .into(),
+            tr_with(
+                current(),
+                "file changes: {0} · {1} changes",
+                &[&format!("{status:?}"), &changes.len().to_string()],
+            )
+            .dim()
+            .into(),
         ],
         ThreadItem::McpToolCall {
             server,
@@ -249,9 +263,17 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             status,
             ..
         } => vec![
-            format!("mcp tool: {server}/{tool} · {status:?}")
-                .dim()
-                .into(),
+            tr_with(
+                current(),
+                "mcp tool: {0}/{1} · {2}",
+                &[
+                    &server.to_string(),
+                    &tool.to_string(),
+                    &format!("{status:?}"),
+                ],
+            )
+            .dim()
+            .into(),
         ],
         ThreadItem::DynamicToolCall {
             namespace,
@@ -263,10 +285,26 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                 .as_ref()
                 .map(|namespace| format!("{namespace}/{tool}"))
                 .unwrap_or_else(|| tool.clone());
-            vec![format!("tool: {name} · {status:?}").dim().into()]
+            vec![
+                tr_with(
+                    current(),
+                    "tool: {0} · {1}",
+                    &[&name.to_string(), &format!("{status:?}")],
+                )
+                .dim()
+                .into(),
+            ]
         }
         ThreadItem::CollabAgentToolCall { tool, status, .. } => {
-            vec![format!("agent tool: {tool:?} · {status:?}").dim().into()]
+            vec![
+                tr_with(
+                    current(),
+                    "agent tool: {0} · {1}",
+                    &[&format!("{tool:?}"), &format!("{status:?}")],
+                )
+                .dim()
+                .into(),
+            ]
         }
         ThreadItem::SubAgentActivity {
             kind, agent_path, ..
@@ -274,11 +312,21 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             vec![sub_agent_activity_summary(*kind, agent_path).dim().into()]
         }
         ThreadItem::WebSearch(item) => {
-            vec![vec!["web search: ".dim(), item.query.clone().into()].into()]
+            vec![
+                vec![
+                    tr(current(), "web search: ").dim(),
+                    item.query.clone().into(),
+                ]
+                .into(),
+            ]
         }
         ThreadItem::ImageView { path, .. } => {
             let path = path.render_for_ui();
-            vec![format!("image: {path}").dim().into()]
+            vec![
+                tr_with(current(), "image: {0}", &[&path.to_string()])
+                    .dim()
+                    .into(),
+            ]
         }
         ThreadItem::ImageGeneration(item) => {
             let saved = item
@@ -293,13 +341,25 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             ]
         }
         ThreadItem::EnteredReviewMode { review, .. } => {
-            vec![vec!["review started: ".dim(), review.clone().into()].into()]
+            vec![
+                vec![
+                    tr(current(), "review started: ").dim(),
+                    review.clone().into(),
+                ]
+                .into(),
+            ]
         }
         ThreadItem::ExitedReviewMode { review, .. } => {
-            vec![vec!["review finished: ".dim(), review.clone().into()].into()]
+            vec![
+                vec![
+                    tr(current(), "review finished: ").dim(),
+                    review.clone().into(),
+                ]
+                .into(),
+            ]
         }
         ThreadItem::ContextCompaction { .. } => {
-            vec!["context compacted".dim().into()]
+            vec![tr(current(), "context compacted").dim().into()]
         }
         ThreadItem::UserMessage { .. }
         | ThreadItem::AgentMessage { .. }

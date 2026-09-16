@@ -21,6 +21,9 @@ mod scrolling;
 #[path = "pager_overlay/highlight_tests.rs"]
 mod highlight_tests;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io::Result;
 use std::sync::Arc;
 
@@ -136,7 +139,11 @@ fn render_navigation_hints(area: Rect, buf: &mut Buffer, keymap: &PagerKeymap) {
     ];
     let hints = actions
         .chunks_exact(2)
-        .zip(["to scroll", "to page", "to jump"])
+        .zip([
+            tr(current(), "to scroll"),
+            tr(current(), "to page"),
+            tr(current(), "to jump"),
+        ])
         .map(|(actions, description)| {
             (
                 actions
@@ -457,9 +464,17 @@ impl TranscriptHistoryState {
 
     fn session_header_placeholder(self) -> Option<&'static str> {
         match self {
-            Self::LoadingOlder | Self::LoadingBeginning => Some("Loading earlier messages..."),
-            Self::Partial => Some("Earlier messages are available — scroll up to load them"),
-            Self::Failed => Some("Earlier messages unavailable — scroll up to retry"),
+            Self::LoadingOlder | Self::LoadingBeginning => {
+                Some(tr(current(), "Loading earlier messages..."))
+            }
+            Self::Partial => Some(tr(
+                current(),
+                "Earlier messages are available — scroll up to load them",
+            )),
+            Self::Failed => Some(tr(
+                current(),
+                "Earlier messages unavailable — scroll up to retry",
+            )),
             Self::Idle | Self::Complete => None,
         }
     }
@@ -508,7 +523,7 @@ impl TranscriptOverlay {
                     /*highlight_cell*/ None,
                     TranscriptHistoryState::Idle,
                 ),
-                "T R A N S C R I P T".to_string(),
+                tr(current(), "T R A N S C R I P T").to_string(),
                 usize::MAX,
                 keymap,
             ),
@@ -882,15 +897,21 @@ impl TranscriptOverlay {
                     key_hint::plain(KeyCode::Esc).into(),
                     key_hint::plain(KeyCode::Left).into(),
                 ],
-                "to edit prev",
+                tr(current(), "to edit prev"),
             ));
-            pairs.push((vec![key_hint::plain(KeyCode::Right).into()], "to edit next"));
+            pairs.push((
+                vec![key_hint::plain(KeyCode::Right).into()],
+                tr(current(), "to edit next"),
+            ));
             pairs.push((
                 vec![key_hint::plain(KeyCode::Enter).into()],
-                "to edit message",
+                tr(current(), "to edit message"),
             ));
         } else {
-            pairs.push((vec![key_hint::plain(KeyCode::Esc).into()], "to edit prev"));
+            pairs.push((
+                vec![key_hint::plain(KeyCode::Esc).into()],
+                tr(current(), "to edit prev"),
+            ));
         }
         render_key_hints(line2, buf, &pairs);
     }
@@ -915,11 +936,15 @@ impl TranscriptOverlay {
         let label = match self.history_state {
             TranscriptHistoryState::Idle => return,
             TranscriptHistoryState::LoadingOlder | TranscriptHistoryState::LoadingBeginning => {
-                " loading older history... "
+                tr(current(), " loading older history... ")
             }
-            TranscriptHistoryState::Partial => " partial history | PgUp for earlier ",
-            TranscriptHistoryState::Failed => " history unavailable | PgUp to retry ",
-            TranscriptHistoryState::Complete => " start of history ",
+            TranscriptHistoryState::Partial => {
+                tr(current(), " partial history | PgUp for earlier ")
+            }
+            TranscriptHistoryState::Failed => {
+                tr(current(), " history unavailable | PgUp to retry ")
+            }
+            TranscriptHistoryState::Complete => tr(current(), " start of history "),
         };
         let width = (label.chars().count() as u16).min(area.width);
         let status_area = Rect::new(

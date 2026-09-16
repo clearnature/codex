@@ -3609,6 +3609,47 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "没有可导出的会话内容。",
     ),
     ("could not determine the home directory", "无法确定主目录"),
+    ("Archived", "已归档"),
+    ("Deleted", "已删除"),
+    ("Unarchived", "已取消归档"),
+    ("{0} session {1} ({2}).", "{0}会话 {1}（{2}）。"),
+    ("{0} session {1}.", "{0}会话 {1}。"),
+    ("Permanently delete session {0}?", "确定永久删除会话{0}？"),
+    ("Continue? [y/N]: ", "继续？[y/N]："),
+    ("failed to parse -c overrides: {0}", "解析-c覆盖项失败：{0}"),
+    (
+        "app server returned invalid session id `{0}`",
+        "app server返回了无效的会话id `{0}`",
+    ),
+    ("failed to find Codex home", "找不到Codex主目录"),
+    (
+        "failed to resolve local runtime paths",
+        "解析本地运行时路径失败",
+    ),
+    (
+        "failed to discover execution environments",
+        "发现执行环境失败",
+    ),
+    ("failed to resolve config cwd", "解析配置工作目录失败"),
+    ("failed to load config.toml", "加载config.toml失败"),
+    ("failed to load configuration", "加载配置失败"),
+    (
+        "failed to initialize environment manager",
+        "初始化环境管理器失败",
+    ),
+    (
+        "failed to initialize state database",
+        "初始化状态数据库失败",
+    ),
+    ("Delete cancelled.", "已取消删除。"),
+    (
+        "cannot confirm session deletion without an interactive terminal; rerun with --force and a session UUID",
+        "没有交互式终端时无法确认删除会话；请加--force并提供会话UUID重试",
+    ),
+    (
+        "This cannot be undone. Subagent threads will also be deleted.",
+        "此操作无法撤销。子代理线程也会被删除。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

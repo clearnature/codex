@@ -3,6 +3,9 @@
 //! The CLI commands are thin app-server clients: resolve a user-provided UUID or exact session
 //! name, then call the corresponding app-server RPC.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io::IsTerminal;
 use std::io::Write;
 use std::path::Path;
@@ -61,13 +64,23 @@ fn success_message(
     session_name: Option<&str>,
 ) -> String {
     let action = match action {
-        SessionArchiveAction::Archive => "Archived",
-        SessionArchiveAction::Delete(_) => "Deleted",
-        SessionArchiveAction::Unarchive => "Unarchived",
+        SessionArchiveAction::Archive => tr(current(), "Archived"),
+        SessionArchiveAction::Delete(_) => tr(current(), "Deleted"),
+        SessionArchiveAction::Unarchive => tr(current(), "Unarchived"),
     };
     match session_name {
-        Some(name) => format!("{action} session {name} ({session_id})."),
-        None => format!("{action} session {session_id}."),
+        Some(name) => tr_with(
+            current(),
+            "{0} session {1} ({2}).",
+            &[action, name, &session_id.to_string()],
+        )
+        .to_string(),
+        None => tr_with(
+            current(),
+            "{0} session {1}.",
+            &[action, &session_id.to_string()],
+        )
+        .to_string(),
     }
 }
 
@@ -81,7 +94,7 @@ pub async fn run_session_archive_command(
     target: String,
     options: SessionArchiveCommandOptions,
 ) -> Result<String> {
-    let codex_home = find_codex_home().wrap_err("failed to find Codex home")?;
+    let codex_home = find_codex_home().wrap_err(tr(current(), "failed to find Codex home"))?;
     let mut app_server =
         start_app_server_for_session_command(options, codex_home.to_path_buf()).await?;
     run_session_archive_action_with_app_server(
@@ -109,7 +122,7 @@ async fn run_session_archive_action_with_app_server(
             if matches!(confirmation, DeleteConfirmation::Prompt)
                 && !confirm_session_delete(&resolved)?
             {
-                return Ok("Delete cancelled.".to_string());
+                return Ok(tr(current(), "Delete cancelled.").to_string());
             }
             app_server.thread_delete(resolved.session_id).await?;
             resolved.session_name
@@ -182,8 +195,13 @@ async fn resolve_session_target(
 }
 
 fn session_target_from_app_server_thread(thread: AppServerThread) -> Result<ResolvedSessionTarget> {
-    let session_id = ThreadId::from_string(&thread.id)
-        .wrap_err_with(|| format!("app server returned invalid session id `{}`", thread.id))?;
+    let session_id = ThreadId::from_string(&thread.id).wrap_err_with(|| {
+        tr_with(
+            current(),
+            "app server returned invalid session id `{0}`",
+            &[&thread.id.to_string()],
+        )
+    })?;
     Ok(ResolvedSessionTarget {
         session_id,
         session_name: Some(display_label(&thread).to_string()),
@@ -192,9 +210,10 @@ fn session_target_from_app_server_thread(thread: AppServerThread) -> Result<Reso
 
 fn confirm_session_delete(target: &ResolvedSessionTarget) -> Result<bool> {
     if !(std::io::stdin().is_terminal() && std::io::stderr().is_terminal()) {
-        return Err(eyre!(
+        return Err(eyre!(tr(
+            current(),
             "cannot confirm session deletion without an interactive terminal; rerun with --force and a session UUID"
-        ));
+        )));
     }
 
     let mut stderr = std::io::stderr().lock();
@@ -204,13 +223,25 @@ fn confirm_session_delete(target: &ResolvedSessionTarget) -> Result<bool> {
             "Permanently delete session '{name}' ({})?",
             target.session_id
         ),
-        None => writeln!(stderr, "Permanently delete session {}?", target.session_id),
+        None => writeln!(
+            stderr,
+            "{}",
+            tr_with(
+                current(),
+                "Permanently delete session {0}?",
+                &[&target.session_id.to_string()]
+            )
+        ),
     }?;
     writeln!(
         stderr,
-        "This cannot be undone. Subagent threads will also be deleted."
+        "{}",
+        tr(
+            current(),
+            "This cannot be undone. Subagent threads will also be deleted."
+        )
     )?;
-    write!(stderr, "Continue? [y/N]: ")?;
+    write!(stderr, "{}", tr(current(), "Continue? [y/N]: "))?;
     stderr.flush()?;
 
     let mut input = String::new();
@@ -232,9 +263,13 @@ pub(super) async fn start_app_server_for_session_command(
     let strict_config = cli.strict_config;
     let raw_overrides = cli.config_overrides.raw_overrides.clone();
     let overrides_cli = CliConfigOverrides { raw_overrides };
-    let cli_kv_overrides = overrides_cli
-        .parse_overrides()
-        .map_err(|err| eyre!("failed to parse -c overrides: {err}"))?;
+    let cli_kv_overrides = overrides_cli.parse_overrides().map_err(|err| {
+        eyre!(tr_with(
+            current(),
+            "failed to parse -c overrides: {0}",
+            &[&err.to_string()]
+        ))
+    })?;
     let mut launch_loader_overrides = loader_overrides.clone();
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
         launch_loader_overrides.user_config_path = Some(resolve_profile_v2_config_path(
@@ -273,16 +308,16 @@ pub(super) async fn start_app_server_for_session_command(
         arg0_paths.codex_self_exe.clone(),
         arg0_paths.codex_linux_sandbox_exe.clone(),
     )
-    .wrap_err("failed to resolve local runtime paths")?;
+    .wrap_err(tr(current(), "failed to resolve local runtime paths"))?;
     let prepared_environment_manager = EnvironmentManager::prepare_from_env()
         .await
-        .wrap_err("failed to discover execution environments")?;
+        .wrap_err(tr(current(), "failed to discover execution environments"))?;
     let config_cwd = super::config_cwd_for_app_server_target(
         cli.cwd.as_deref(),
         &app_server_target,
         prepared_environment_manager.default_environment_is_remote(),
     )
-    .wrap_err("failed to resolve config cwd")?;
+    .wrap_err(tr(current(), "failed to resolve config cwd"))?;
 
     let mut loader_overrides = loader_overrides;
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
@@ -305,7 +340,7 @@ pub(super) async fn start_app_server_for_session_command(
         },
     )
     .await
-    .wrap_err("failed to load config.toml")?;
+    .wrap_err(tr(current(), "failed to load config.toml"))?;
     let config_toml = &bootstrap_config.config_toml;
     let cloud_config_bundle = super::cloud_config_bundle_for_app_server_target(
         &app_server_target,
@@ -348,15 +383,15 @@ pub(super) async fn start_app_server_for_session_command(
         .cloud_config_bundle(cloud_config_bundle.clone())
         .build()
         .await
-        .wrap_err("failed to load configuration")?;
+        .wrap_err(tr(current(), "failed to load configuration"))?;
     let environment_manager = Arc::new(
         prepared_environment_manager
             .build(Some(local_runtime_paths), config.http_client_factory())
-            .wrap_err("failed to initialize environment manager")?,
+            .wrap_err(tr(current(), "failed to initialize environment manager"))?,
     );
     let mut state_db = super::init_state_db_for_app_server_target(&config, &app_server_target)
         .await
-        .wrap_err("failed to initialize state database")?;
+        .wrap_err(tr(current(), "failed to initialize state database"))?;
     let app_server = super::start_app_server(
         &mut app_server_target,
         arg0_paths,

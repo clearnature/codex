@@ -3,6 +3,8 @@
 use super::*;
 use crate::app_event::AppEvent;
 use crate::chatwidget::rate_limits::RATE_LIMIT_SWITCH_PROMPT_VIEW_ID;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     /// Set the approval policy in the widget's config copy.
@@ -364,10 +366,12 @@ impl ChatWidget {
     }
 
     pub(super) fn image_inputs_not_supported_message(&self) -> String {
-        format!(
-            "Model {} does not support image inputs. Remove images or switch models.",
-            self.current_model()
+        tr_with(
+            current(),
+            "Model {0} does not support image inputs. Remove images or switch models.",
+            &[self.current_model()],
         )
+        .to_string()
     }
 
     pub(crate) fn current_collaboration_mode(&self) -> &CollaborationMode {
@@ -698,7 +702,7 @@ impl ChatWidget {
         if previous_mode != next_mode
             && (previous_model != next_model || previous_effort != next_effort)
         {
-            let mut message = format!("Model changed to {next_model}");
+            let mut message = tr_with(current(), "Model changed to {0}", &[next_model]).to_string();
             if !next_model.starts_with("codex-auto-") {
                 let reasoning_label = match next_effort.as_ref() {
                     None | Some(ReasoningEffortConfig::None) => "default",

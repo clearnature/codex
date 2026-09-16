@@ -3,6 +3,8 @@
 use super::*;
 use crate::model_catalog::LUNA_MODEL;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(super) fn open_luna_reserve_model_popup(
@@ -21,8 +23,11 @@ impl ChatWidget {
         let Some(mut preset) = preset.cloned() else {
             self.bottom_pane.dismiss_view_by_id(view_id);
             self.add_info_message(
-                "Luna model settings are unavailable; please try /model again in a moment."
-                    .to_string(),
+                tr(
+                    current(),
+                    "Luna model settings are unavailable; please try /model again in a moment.",
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return;
@@ -40,8 +45,11 @@ impl ChatWidget {
             });
         })];
         let header = self.model_menu_header(
-            "Select Model",
-            "Other models return when ordinary usage is available again.",
+            tr(current(), "Select Model"),
+            tr(
+                current(),
+                "Other models return when ordinary usage is available again.",
+            ),
         );
         self.show_model_selection_view(SelectionViewParams {
             view_id: Some(view_id),

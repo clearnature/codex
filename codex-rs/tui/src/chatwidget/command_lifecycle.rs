@@ -4,6 +4,8 @@
 //! exec-cell grouping and unified exec wait state.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(super) fn flush_unified_exec_wait_streak(&mut self) {
@@ -96,7 +98,7 @@ impl ChatWidget {
             self.status_state.terminal_title_status_kind =
                 TerminalTitleStatusKind::WaitingForBackgroundTerminal;
             self.set_status(
-                "Waiting for background terminal".to_string(),
+                tr(current(), "Waiting for background terminal").to_string(),
                 command_display.clone(),
                 StatusDetailsCapitalization::Preserve,
                 /*details_max_lines*/ 1,

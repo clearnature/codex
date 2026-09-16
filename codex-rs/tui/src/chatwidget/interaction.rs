@@ -464,9 +464,9 @@ impl ChatWidget {
         let tx = self.app_event_tx.clone();
         let existing_name = self.thread_name.as_deref().filter(|name| !name.is_empty());
         let title = if existing_name.is_some() {
-            "Rename thread"
+            tr(current(), "Rename thread")
         } else {
-            "Name thread"
+            tr(current(), "Name thread")
         };
         let suggestion_request = self
             .thread_id

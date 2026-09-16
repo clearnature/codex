@@ -1,6 +1,8 @@
 //! Session configuration and thread-header orchestration for `ChatWidget`.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     fn on_session_configured_with_display_and_fork_parent_title(
@@ -235,7 +237,7 @@ impl ChatWidget {
         {
             vec![
                 "• ".dim(),
-                "Thread forked from ".into(),
+                tr(current(), "Thread forked from ").into(),
                 name.cyan(),
                 " (".into(),
                 forked_from_id_text.cyan(),
@@ -245,7 +247,7 @@ impl ChatWidget {
         } else {
             vec![
                 "• ".dim(),
-                "Thread forked from ".into(),
+                tr(current(), "Thread forked from ").into(),
                 forked_from_id_text.cyan(),
             ]
             .into()
@@ -258,7 +260,11 @@ impl ChatWidget {
     pub(crate) fn emit_prompt_edit_thread_event(&mut self) {
         let line: Line<'static> = vec![
             "• ".dim(),
-            "You’re continuing from this point in a new conversation".into(),
+            tr(
+                current(),
+                "You’re continuing from this point in a new conversation",
+            )
+            .into(),
         ]
         .into();
         self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(

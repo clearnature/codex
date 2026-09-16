@@ -1,5 +1,7 @@
 //! Input queue restore and thread-input snapshot behavior for `ChatWidget`.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashSet;
 
 use crate::bottom_pane::ComposerDraftSnapshot;
@@ -245,7 +247,7 @@ impl ChatWidget {
         if self.interrupted_turn_notice_mode != InterruptedTurnNoticeMode::Suppress {
             if send_pending_steers_immediately {
                 self.add_to_history(history_cell::new_info_event(
-                    "Model interrupted to submit steer instructions.".to_owned(),
+                    tr(current(), "Model interrupted to submit steer instructions.").to_owned(),
                     /*hint*/ None,
                 ));
             } else {

@@ -689,33 +689,45 @@ impl ChatWidget {
                             "Upgraded {0} {1}.",
                             &[&upgraded_count.to_string(), noun],
                         ),
-                        Some(format!(
-                            "Updated roots: {}",
-                            response
-                                .upgraded_roots
-                                .iter()
-                                .map(|root| root.as_path().display().to_string())
-                                .collect::<Vec<_>>()
-                                .join(", ")
-                        )),
+                        Some(
+                            tr_with(
+                                current(),
+                                "Updated roots: {0}",
+                                &[&response
+                                    .upgraded_roots
+                                    .iter()
+                                    .map(|root| root.as_path().display().to_string())
+                                    .collect::<Vec<_>>()
+                                    .join(", ")],
+                            )
+                            .to_string(),
+                        ),
                     );
                 }
 
                 if error_count > 0 {
                     let noun = if error_count == 1 {
-                        "marketplace"
+                        tr(current(), "marketplace")
                     } else {
-                        "marketplaces"
+                        tr(current(), "marketplaces")
                     };
-                    self.add_error_message(format!(
-                        "Failed to upgrade {error_count} {noun}: {}",
-                        response
-                            .errors
-                            .iter()
-                            .map(|err| format!("{}: {}", err.marketplace_name, err.message))
-                            .collect::<Vec<_>>()
-                            .join("; ")
-                    ));
+                    self.add_error_message(
+                        tr_with(
+                            current(),
+                            "Failed to upgrade {0} {1}: {2}",
+                            &[
+                                &error_count.to_string(),
+                                noun,
+                                &response
+                                    .errors
+                                    .iter()
+                                    .map(|err| format!("{}: {}", err.marketplace_name, err.message))
+                                    .collect::<Vec<_>>()
+                                    .join("; "),
+                            ],
+                        )
+                        .to_string(),
+                    );
                 }
             }
             Err(err) => {
@@ -993,7 +1005,7 @@ impl ChatWidget {
             });
         } else {
             items.push(SelectionItem {
-                name: "I've installed it".to_string(),
+                name: tr(codex_i18n::current(), "I've installed it").to_string(),
                 description: Some(
                     tr(
                         codex_i18n::current(),

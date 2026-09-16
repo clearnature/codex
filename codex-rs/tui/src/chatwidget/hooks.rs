@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::path::PathBuf;
 
 use super::ChatWidget;
@@ -27,7 +29,9 @@ impl ChatWidget {
             Ok(response) => {
                 self.open_hooks_browser(hooks_list_entry_for_cwd(response, &cwd));
             }
-            Err(err) => self.add_error_message(format!("Failed to load hooks: {err}")),
+            Err(err) => self.add_error_message(
+                tr_with(current(), "Failed to load hooks: {0}", &[&err.to_string()]).to_string(),
+            ),
         }
     }
 

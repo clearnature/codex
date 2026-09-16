@@ -6165,6 +6165,96 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Could not check for importable setup: {0}",
         "无法检查可导入的配置：{0}",
     ),
+    // Chatwidget lifecycle surfaces: background-terminal status, external-writer
+    // guards, the interrupted-turn notice, the thread name/rename titles, the
+    // permission-discovery popup, hooks load errors and the reconnect banner.
+    // `app-server`, `Ctrl+C` and the `ctrl+c` keycap stay verbatim.
+    ("Waiting for background terminal", "正在等待后台终端"),
+    (
+        "This thread is open elsewhere. Close it there and retry resume to continue.",
+        "此线程已在别处打开。请在那里关闭它，然后重试恢复以继续。",
+    ),
+    (
+        "Cannot switch collaboration mode while a turn is running.",
+        "轮次运行期间无法切换协作模式。",
+    ),
+    (
+        "Model interrupted to submit steer instructions.",
+        "模型被中断以提交引导指令。",
+    ),
+    (
+        "Thread model is unavailable. Wait for the thread to finish syncing or choose a model before sending input.",
+        "线程模型不可用。请等待线程同步完成，或先选择模型再发送输入。",
+    ),
+    ("Rename thread", "重命名线程"),
+    ("Name thread", "命名线程"),
+    ("Loading permission profiles…", "正在加载权限配置…"),
+    ("Failed to load hooks: {0}", "加载钩子失败：{0}"),
+    ("quit", "退出"),
+    ("Reconnecting to app-server…", "正在重新连接app-server…"),
+    (
+        "Connection lost. Attempting to reconnect…",
+        "连接已断开。正在尝试重新连接…",
+    ),
+    (
+        "Reconnect failed — check the endpoint, then relaunch",
+        "重新连接失败——请检查端点，然后重新启动",
+    ),
+    (
+        "Automatic reconnect could not restore this session. Your draft is still editable. Copy it before quitting with Ctrl+C, then reconnect with the same command.",
+        "自动重连无法恢复此会话。你的草稿仍可编辑。请在按Ctrl+C退出前复制它，然后用同一条命令重新连接。",
+    ),
+    // Chatwidget reservemodel/limits/status surfaces: the Luna reserve-model
+    // notices, MCP startup warnings, permission-mode guard, plugin upgrade results,
+    // the strict-review warning, credit-limit nudges, the reset-credit entries,
+    // fork/continue history lines and the model-switch messages. English plural
+    // forms become separate keys with one Chinese value.
+    (
+        "Luna model settings are unavailable; please try /model again in a moment.",
+        "Luna模型设置不可用；请稍后重试/model。",
+    ),
+    (
+        "Other models return when ordinary usage is available again.",
+        "常规用量恢复后即可选择其他模型。",
+    ),
+    (
+        "MCP startup interrupted. The following servers were not initialized: {0}",
+        "MCP启动被中断。以下服务器未完成初始化：{0}",
+    ),
+    ("failed: {0}", "失败：{0}"),
+    ("MCP startup incomplete ({0})", "MCP启动未完成（{0}）"),
+    (
+        "No other permission modes are available.",
+        "没有其他可用的权限模式。",
+    ),
+    ("Updated roots: {0}", "已更新的根目录：{0}"),
+    ("Failed to upgrade {0} {1}: {2}", "升级{0}个{1}失败：{2}"),
+    (
+        "This request requires additional safety checks, some tool calls might take extra time",
+        "此请求需要额外的安全检查，部分工具调用可能耗时更长",
+    ),
+    (
+        "You've reached your workspace credit limit",
+        "你已达到工作区额度上限",
+    ),
+    ("Expires {0}", "有效期至{0}"),
+    ("Full reset", "完整重置"),
+    ("Reset your current usage limits.", "重置当前用量上限。"),
+    ("Thread forked from ", "线程分叉自 "),
+    (
+        "You’re continuing from this point in a new conversation",
+        "你将从新对话中的这一点继续",
+    ),
+    (
+        "Model {0} does not support image inputs. Remove images or switch models.",
+        "模型{0}不支持图像输入。请移除图像或切换模型。",
+    ),
+    ("Model changed to {0}", "模型已切换为{0}"),
+    (
+        "Current model ({0}) doesn't support personalities. Try /model to pick a different model.",
+        "当前模型（{0}）不支持个性化。请尝试/model选择其他模型。",
+    ),
+    ("I've installed it", "我已安装"),
 ];
 
 /// English source text -> Simplified Chinese.

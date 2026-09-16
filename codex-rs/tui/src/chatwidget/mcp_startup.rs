@@ -8,6 +8,7 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeSet;
 
 use codex_app_server_protocol::McpServerStartupFailureReason;
@@ -210,21 +211,32 @@ impl ChatWidget {
     pub(super) fn finish_mcp_startup(&mut self, failed: Vec<String>, cancelled: Vec<String>) {
         if !cancelled.is_empty() {
             self.add_mcp_startup_warning(
-                vec![format!(
-                    "MCP startup interrupted. The following servers were not initialized: {0}",
-                    cancelled.join(", ")
-                )],
+                vec![
+                    tr_with(
+                        current(),
+                        "MCP startup interrupted. The following servers were not initialized: {0}",
+                        &[&cancelled.join(", ")],
+                    )
+                    .to_string(),
+                ],
                 cancelled,
                 /*failure_reason*/ None,
             );
         }
         let mut parts = Vec::new();
         if !failed.is_empty() {
-            parts.push(format!("failed: {}", failed.join(", ")));
+            parts.push(tr_with(current(), "failed: {0}", &[&failed.join(", ")]).to_string());
         }
         if !parts.is_empty() {
             self.add_mcp_startup_warning(
-                vec![format!("MCP startup incomplete ({})", parts.join("; "))],
+                vec![
+                    tr_with(
+                        current(),
+                        "MCP startup incomplete ({0})",
+                        &[&parts.join("; ")],
+                    )
+                    .to_string(),
+                ],
                 failed,
                 /*failure_reason*/ None,
             );

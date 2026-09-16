@@ -538,7 +538,7 @@ impl ChatWidget {
 
         let (title, prompt) = match credit_type {
             AddCreditsNudgeCreditType::Credits => (
-                "You've reached your workspace credit limit",
+                tr(current(), "You've reached your workspace credit limit"),
                 tr(
                     current(),
                     "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",

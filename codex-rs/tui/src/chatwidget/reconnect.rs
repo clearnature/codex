@@ -1,6 +1,8 @@
 //! Disconnects preserve editable input but never automatically retry queued submissions.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn pause_for_disconnect(&mut self) {
@@ -16,9 +18,9 @@ impl ChatWidget {
         self.bottom_pane.ensure_status_indicator();
         self.bottom_pane
             .set_interrupt_hint_visible(/*visible*/ false);
-        self.set_status_header("Reconnecting to app-server…".to_string());
-        self.set_footer_hint_override(Some(vec![("ctrl+c".into(), "quit".into())]));
-        self.add_error_message("Connection lost. Attempting to reconnect…".into());
+        self.set_status_header(tr(current(), "Reconnecting to app-server…").to_string());
+        self.set_footer_hint_override(Some(vec![("ctrl+c".into(), tr(current(), "quit").into())]));
+        self.add_error_message(tr(current(), "Connection lost. Attempting to reconnect…").into());
     }
 
     /// Restore local input only after replay, which can otherwise move interrupted queues into the draft.
@@ -93,9 +95,15 @@ impl ChatWidget {
     }
 
     pub(crate) fn reconnect_failed(&mut self) {
-        self.set_status_header("Reconnect failed — check the endpoint, then relaunch".into());
+        self.set_status_header(
+            tr(
+                current(),
+                "Reconnect failed — check the endpoint, then relaunch",
+            )
+            .into(),
+        );
         self.add_error_message(
-            "Automatic reconnect could not restore this session. Your draft is still editable. Copy it before quitting with Ctrl+C, then reconnect with the same command.".into(),
+            tr(current(), "Automatic reconnect could not restore this session. Your draft is still editable. Copy it before quitting with Ctrl+C, then reconnect with the same command.").into(),
         );
     }
 }

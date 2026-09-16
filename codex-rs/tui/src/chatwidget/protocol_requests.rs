@@ -4,6 +4,8 @@
 //! that render approvals, permissions, tool input, and guardian reviews.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     pub(crate) fn handle_server_request(
@@ -39,9 +41,14 @@ impl ChatWidget {
                 match request_permissions_from_params(params) {
                     Ok(event) => self.on_request_permissions(event),
                     Err(err) => {
-                        self.add_error_message(format!(
-                            "failed to localize requested filesystem paths: {err}"
-                        ));
+                        self.add_error_message(
+                            tr_with(
+                                current(),
+                                "failed to localize requested filesystem paths: {0}",
+                                &[&err.to_string()],
+                            )
+                            .to_string(),
+                        );
                     }
                 }
             }

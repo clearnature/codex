@@ -1,6 +1,8 @@
 //! User-message and shell-prompt submission behavior for `ChatWidget`.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn set_task_mentions_enabled(&mut self, enabled: bool) {
@@ -322,7 +324,7 @@ impl ChatWidget {
         let effective_mode = self.effective_collaboration_mode();
         if effective_mode.model().trim().is_empty() {
             self.add_error_message(
-                "Thread model is unavailable. Wait for the thread to finish syncing or choose a model before sending input.".to_string(),
+                tr(current(), "Thread model is unavailable. Wait for the thread to finish syncing or choose a model before sending input.").to_string(),
             );
             self.restore_user_message_to_composer(user_message_for_restore(
                 UserMessage {

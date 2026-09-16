@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn handle_server_notification(
@@ -186,7 +188,7 @@ impl ChatWidget {
             ServerNotification::StrictReviewRequired(_) => {
                 self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
                     history_cell::new_warning_event(
-                        "This request requires additional safety checks, some tool calls might take extra time"
+                        tr(current(), "This request requires additional safety checks, some tool calls might take extra time")
                             .to_string(),
                     ),
                 )));

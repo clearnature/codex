@@ -3,6 +3,9 @@ use chrono::Local;
 use chrono::Utc;
 use codex_app_server_protocol::RateLimitResetCreditStatus;
 use codex_app_server_protocol::RateLimitResetCreditsSummary;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) struct ResetCreditOption {
@@ -33,12 +36,15 @@ pub(super) fn reset_credit_options(
             let expiration = match credit.expires_at {
                 Some(expires_at) => DateTime::<Utc>::from_timestamp(expires_at, 0)
                     .map(|expires_at| {
-                        format!(
-                            "Expires {}",
-                            expires_at
+                        tr_with(
+                            current(),
+                            "Expires {0}",
+                            &[&expires_at
                                 .with_timezone(&Local)
                                 .format("%H:%M on %-d %b %Y")
+                                .to_string()],
                         )
+                        .to_string()
                     })
                     .unwrap_or_else(|| "Expiration unavailable".to_string()),
                 None => "Does not expire".to_string(),
@@ -48,13 +54,13 @@ pub(super) fn reset_credit_options(
                 .as_deref()
                 .map(str::trim)
                 .filter(|title| !title.is_empty())
-                .unwrap_or("Full reset");
+                .unwrap_or(tr(current(), "Full reset"));
             let reset_description = credit
                 .description
                 .as_deref()
                 .map(str::trim)
                 .filter(|description| !description.is_empty())
-                .unwrap_or("Reset your current usage limits.");
+                .unwrap_or(tr(current(), "Reset your current usage limits."));
             ResetCreditOption {
                 credit_id: Some(credit.id.clone()),
                 name: reset_title.to_string(),
@@ -67,9 +73,9 @@ pub(super) fn reset_credit_options(
     if options.is_empty() {
         options.push(ResetCreditOption {
             credit_id: None,
-            name: "Full reset".to_string(),
+            name: tr(current(), "Full reset").to_string(),
             detail: None,
-            description: "Reset your current usage limits.".to_string(),
+            description: tr(current(), "Reset your current usage limits.").to_string(),
         });
     }
 

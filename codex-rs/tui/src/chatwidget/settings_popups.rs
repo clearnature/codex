@@ -32,9 +32,12 @@ impl ChatWidget {
         }
         if !self.current_model_supports_personality() {
             let current_model = self.current_model();
-            self.add_error_message(format!(
-                "Current model ({current_model}) doesn't support personalities. Try /model to pick a different model."
-            ));
+            self.add_error_message(tr_with(
+                current(),
+                "Current model ({0}) doesn't support personalities. Try /model to pick a different model.",
+                &[&current_model],
+            )
+            .to_string());
             return;
         }
         self.open_personality_popup_for_current_model();

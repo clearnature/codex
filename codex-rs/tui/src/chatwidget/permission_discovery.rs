@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::permission_discovery::PermissionDiscovery;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(super) const VIEW_ID: &str = "permission-profiles";
 
@@ -19,9 +21,9 @@ impl ChatWidget {
         self.permission_popup_request_id = Some(request_id);
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(VIEW_ID),
-            title: Some("Update Model Permissions".to_string()),
+            title: Some(tr(current(), "Update Model Permissions").to_string()),
             items: vec![SelectionItem {
-                name: "Loading permission profiles…".to_string(),
+                name: tr(current(), "Loading permission profiles…").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -66,7 +68,7 @@ impl ChatWidget {
             }
             Err(message) => self.bottom_pane.show_selection_view(SelectionViewParams {
                 view_id: Some(VIEW_ID),
-                title: Some("Update Model Permissions".to_string()),
+                title: Some(tr(current(), "Update Model Permissions").to_string()),
                 subtitle: Some(message),
                 items: vec![SelectionItem {
                     name: "Retry".to_string(),

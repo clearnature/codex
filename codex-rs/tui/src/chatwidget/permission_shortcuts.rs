@@ -1,6 +1,8 @@
 //! Session-scoped shortcuts for the ordinary built-in permission modes.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(super) fn handle_permission_shortcut(&mut self, key_event: KeyEvent) -> bool {
@@ -115,7 +117,7 @@ impl ChatWidget {
             });
         } else {
             self.add_info_message(
-                "No other permission modes are available.".to_string(),
+                tr(current(), "No other permission modes are available.").to_string(),
                 /*hint*/ None,
             );
         }

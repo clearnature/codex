@@ -5,6 +5,8 @@
 //! follow-ups, and restoring draft state across interrupts or thread switches.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn set_parent_owned_thread(&mut self) {
@@ -266,8 +268,11 @@ impl ChatWidget {
     ) {
         if self.blocks_direct_input {
             self.add_error_message(if self.external_writer_view {
-                "This thread is open elsewhere. Close it there and retry resume to continue."
-                    .to_string()
+                tr(
+                    current(),
+                    "This thread is open elsewhere. Close it there and retry resume to continue.",
+                )
+                .to_string()
             } else {
                 parent_owned_input_message().to_string()
             });
@@ -282,7 +287,11 @@ impl ChatWidget {
             && self.active_collaboration_mask.as_ref() != Some(&collaboration_mode)
         {
             self.add_error_message(
-                "Cannot switch collaboration mode while a turn is running.".to_string(),
+                tr(
+                    current(),
+                    "Cannot switch collaboration mode while a turn is running.",
+                )
+                .to_string(),
             );
             return;
         }

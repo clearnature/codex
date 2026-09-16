@@ -373,7 +373,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Current project", "当前项目"),
     (
         "Custom .tmTheme files can be added to the {0} directory.",
-        "可以把自定义 .tmTheme 文件放到{0}目录中。",
+        "可以把自定义.tmTheme文件放到{0}目录中。",
     ),
     ("Custom permissions", "自定义权限"),
     ("Debugging tools", "调试工具。"),

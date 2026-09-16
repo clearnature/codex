@@ -1,6 +1,9 @@
 //! Completed request-user-input transcript rendering.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 /// Renders a completed (or interrupted) request_user_input exchange in history.
 #[derive(Debug)]
@@ -26,9 +29,16 @@ impl HistoryCell for RequestUserInputResultCell {
         let unanswered = total.saturating_sub(answered);
 
         let mut header = vec!["•".dim(), " ".into(), "Questions".bold()];
-        header.push(format!(" {answered}/{total} answered").dim());
+        header.push(
+            tr_with(
+                current(),
+                " {0}/{1} answered",
+                &[&answered.to_string(), &total.to_string()],
+            )
+            .dim(),
+        );
         if self.interrupted {
-            header.push(" (interrupted)".cyan());
+            header.push(tr(current(), " (interrupted)").cyan());
         }
 
         let mut lines: Vec<Line<'static>> = vec![header.into()];
@@ -47,7 +57,7 @@ impl HistoryCell for RequestUserInputResultCell {
                 Style::default(),
             );
             if answer_missing && let Some(last) = question_lines.last_mut() {
-                last.spans.push(" (unanswered)".dim());
+                last.spans.push(tr(current(), " (unanswered)").dim());
             }
             lines.extend(question_lines);
 
@@ -58,7 +68,7 @@ impl HistoryCell for RequestUserInputResultCell {
                 lines.extend(wrap_with_prefix(
                     "••••••",
                     width,
-                    "    answer: ".dim(),
+                    tr(current(), "    answer: ").dim(),
                     "            ".dim(),
                     Style::default().fg(Color::Cyan),
                 ));
@@ -79,7 +89,7 @@ impl HistoryCell for RequestUserInputResultCell {
             if let Some(note) = note {
                 let (label, continuation, style) = if question.options.is_some() {
                     (
-                        "    note: ".dim(),
+                        tr(current(), "    note: ").dim(),
                         "          ".dim(),
                         Style::default().fg(Color::Cyan),
                     )
@@ -95,7 +105,11 @@ impl HistoryCell for RequestUserInputResultCell {
         }
 
         if self.interrupted && unanswered > 0 {
-            let summary = format!("interrupted with {unanswered} unanswered");
+            let summary = tr_with(
+                current(),
+                "interrupted with {0} unanswered",
+                &[&unanswered.to_string()],
+            );
             lines.extend(wrap_with_prefix(
                 &summary,
                 width,
@@ -119,7 +133,11 @@ impl HistoryCell for RequestUserInputResultCell {
                     .is_some_and(|answer| !answer.answers.is_empty())
             })
             .count();
-        let mut lines = vec![Line::from(format!("Questions {answered}/{total} answered"))];
+        let mut lines = vec![Line::from(tr_with(
+            current(),
+            "Questions {0}/{1} answered",
+            &[&answered.to_string(), &total.to_string()],
+        ))];
         if self.interrupted {
             lines.push(Line::from("(interrupted)"));
         }
@@ -131,16 +149,18 @@ impl HistoryCell for RequestUserInputResultCell {
                 .filter(|answer| !answer.answers.is_empty())
             {
                 if question.is_secret {
-                    lines.push(Line::from("answer: ******"));
+                    lines.push(Line::from(tr(current(), "answer: ******")));
                 } else {
                     let (options, note) = split_request_user_input_answer(answer);
-                    lines.extend(
-                        options
-                            .into_iter()
-                            .map(|option| Line::from(format!("answer: {option}"))),
-                    );
+                    lines.extend(options.into_iter().map(|option| {
+                        Line::from(tr_with(current(), "answer: {0}", &[&option.to_string()]))
+                    }));
                     if let Some(note) = note {
-                        lines.push(Line::from(format!("note: {note}")));
+                        lines.push(Line::from(tr_with(
+                            current(),
+                            "note: {0}",
+                            &[&note.to_string()],
+                        )));
                     }
                 }
             } else {

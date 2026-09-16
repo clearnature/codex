@@ -268,6 +268,26 @@
    的既有先例，在 `cli/tests/*.rs` 的 spawn 辅助函数里钉 `.env("LC_ALL", "C")`（17 个文件）。
    *证据*：`cargo test -p codex-cli` 全部套件通过（13/275/5/4/1/3/2/2/1/2/3/7 …，0 failed）。
 
+### 10.1 门禁：`just i18n-smoke`（第 59 轮）
+
+`i18n-check` 是**静态对账**（字典 ↔ 渲染点），它证明不了「语言真的到达渲染面」——§十 的启动顺序缺陷就是
+1800 条译文在生产路径上看不见的例子。补的门禁跑真实二进制：
+
+```
+just i18n-smoke      # cargo run -p codex-cli --bin codex -- --lang zh --help，断言 ≥5 行 CJK
+```
+
+*证据*：`just i18n-smoke` → `OK（26 行中文）`，EXIT=0；把阈值临时抬到 99999 用同一段代码 → 打印
+`期望至少 99999 行中文帮助，实际 26 行` 且 EXIT=1（门禁不是空转）。CI 里已加到 `repo-checks.yml`
+（`i18n-check` 之后）。
+
+### 10.2 clap 的 `about` 与 doc comment（第 59 轮踩到的坑）
+
+clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `about =` 不会。所以把 doc comment 换成
+`about = tr(current(), "…")` 时必须把键里的句尾句点一并去掉，否则英文帮助会多出一个 `.` ——
+`cli/src/snapshots/…exec_server_help_documents_remote_options.snap` 立刻抓到（old 无句点 / new 有句点）。
+处置：27 个 `about` 的英文键与字典键同时去掉句尾句点（值仍保留中文句号）。
+
 ## 九、翻译口径判据（"不译"的依据）
 
 判据是**文本流向**，不是「用哪个宏产生」：同一段文案经 `.context(…)` 走到 UI 就译，进日志 / 协议 /

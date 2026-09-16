@@ -67,6 +67,14 @@ jobs:
       - name: Check the zh dictionary against rendered strings
         run: just i18n-check
 
+      # `i18n-check` proves the dictionary and the rendering sites agree; it
+      # cannot prove the language reaches a rendered surface. This runs the real
+      # binary with `--lang zh` and fails if the help output is not Chinese --
+      # the bootstrap bug recorded in docs/plan/i18n-verification.md §十 shipped
+      # 1800 translated strings that a user would never see.
+      - name: Smoke-test that zh reaches rendered output
+        run: just i18n-smoke
+
       - name: Prettier (run `pnpm run format:fix` to fix)
         run: pnpm run format
 

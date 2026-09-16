@@ -188,6 +188,22 @@ i18n-check *args:
 i18n-scan *args:
     cd {{ justfile_directory() }}/codex-rs && python3 {{ justfile_directory() }}/scripts/i18n_scan.py {args}
 
+# End-to-end locale smoke test: the real binary must render Chinese when asked
+# for it. The static reconciliation in `i18n-check` proves the dictionary and
+# the rendering sites agree; it cannot prove the language ever reaches a
+# rendered surface, which is what this guards (docs/plan/i18n-verification.md
+# §十 records the bootstrap bug this would have caught).
+i18n-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="$(cd {{ justfile_directory() }}/codex-rs && cargo run --quiet -p codex-cli --bin codex -- --lang zh --help)"
+    n="$(printf '%s\n' "$out" | grep -cP '[\x{4e00}-\x{9fff}]' || true)"
+    if [ "${n:-0}" -lt 5 ]; then
+        echo "i18n-smoke: 期望至少 5 行中文帮助，实际 ${n:-0} 行" >&2
+        exit 1
+    fi
+    echo "i18n-smoke: OK（${n} 行中文）"
+
 [no-cd]
 write-hooks-schema:
     cargo run --manifest-path {{ justfile_directory() }}/codex-rs/Cargo.toml -p codex-hooks --bin write_hooks_schema_fixtures

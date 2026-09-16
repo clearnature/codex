@@ -134,7 +134,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Ask the sharer or a workspace admin to confirm plugin access.",
         "请联系共享者或工作区管理员确认插件访问权限。",
     ),
+    (
+        "Apply the latest diff produced by Codex agent as a `git apply` to your local working tree",
+        "把Codex代理生成的最新diff以 `git apply` 应用到本地工作树。",
+    ),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
+    (
+        "Archive a saved session by id or session name",
+        "按id或会话名归档已保存的会话。",
+    ),
     ("Blocked", "已阻塞"),
     (
         "Choose a pet to wake in the terminal.",
@@ -160,10 +168,20 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Check that you are signed in to the correct workspace and still have access.",
         "请确认你已登录正确的工作区且仍拥有访问权限。",
     ),
+    (
+        "Browse all agent sessions on the shared local app-server daemon",
+        "浏览共享本地app-server守护进程上的所有代理会话。",
+    ),
     ("Cannot change directories: {0}", "无法切换目录：{0}"),
-    ("Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.", "开发者指令不同，无法派生到该工作树。请改为开始新会话。已在{0}创建未使用的检出；请从源仓库运行 `git worktree remove <checkout-path>` 将其删除。"),
+    (
+        "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+        "开发者指令不同，无法派生到该工作树。请改为开始新会话。已在{0}创建未使用的检出；请从源仓库运行 `git worktree remove <checkout-path>` 将其删除。",
+    ),
     ("Cannot load {0}: {1}", "无法加载{0}：{1}"),
-    ("Cannot register managed worktree ownership: {0}", "无法注册托管工作树归属：{0}"),
+    (
+        "Cannot register managed worktree ownership: {0}",
+        "无法注册托管工作树归属：{0}",
+    ),
     ("Choose items to import.", "选择要导入的条目。"),
     ("Choose what to import", "选择要导入的内容"),
     (
@@ -172,6 +190,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Closed", "已关闭"),
     ("Closed an agent", "已关闭一个代理"),
+    (
+        "Codex CLI\n\nIf no subcommand is specified, options will be forwarded to the interactive CLI",
+        "Codex CLI\n\n未指定子命令时，选项会被转发给交互式CLI。",
+    ),
     ("Compacted context", "已压缩上下文"),
     ("Completed", "已完成"),
     ("Completed ", "已完成 "),
@@ -208,19 +230,42 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "创建工作树需要主会话空闲且没有排队输入。",
     ),
     ("Custom permissions", "自定义权限"),
+    ("Debugging tools", "调试工具。"),
+    (
+        "Diagnose local Codex installation, config, auth, and runtime health",
+        "诊断本地Codex安装、配置、认证与运行时健康状况。",
+    ),
     ("Disable terminal pets", "禁用终端宠物"),
-    ("Disconnected from this task. Any running work continues.", "已与此任务断开连接。正在运行的工作会继续。"),
-    ("Disconnected from this task. The current turn was stopped.", "已与此任务断开连接。当前轮次已停止。"),
-    ("Disconnected from this task. Work may still be running.", "已与此任务断开连接。工作可能仍在运行。"),
+    (
+        "Disconnected from this task. Any running work continues.",
+        "已与此任务断开连接。正在运行的工作会继续。",
+    ),
+    (
+        "Disconnected from this task. The current turn was stopped.",
+        "已与此任务断开连接。当前轮次已停止。",
+    ),
+    (
+        "Disconnected from this task. Work may still be running.",
+        "已与此任务断开连接。工作可能仍在运行。",
+    ),
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
     ("Error", "错误"),
+    ("Execpolicy tooling", "Execpolicy工具。"),
     ("Exited review mode", "已退出审查模式"),
     ("Failed to change: {0}", "切换失败：{0}"),
-    ("Failed to name the worktree session: {0}", "无法命名工作树会话：{0}"),
+    (
+        "Failed to name the worktree session: {0}",
+        "无法命名工作树会话：{0}",
+    ),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
     ("Finished waiting", "等待结束"),
+    (
+        "Fork a previous interactive session (picker by default; use --last to fork the most recent)",
+        "派生之前的交互会话（默认弹出选择器；用--last派生最近一个）。",
+    ),
+    ("Generate shell completion scripts", "生成shell补全脚本。"),
     ("Generated an image", "已生成图像"),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
     (
@@ -233,10 +278,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Hot path energy for fast iteration", "快速迭代的热路径能量"),
     ("Import setup", "导入配置"),
+    ("Inspect feature flags", "查看特性开关。"),
     ("Inspect keypresses", "检查按键"),
     (
         "Inspect keypresses from your terminal.",
         "检查终端发来的按键。",
+    ),
+    (
+        "Inspect or migrate legacy local sessions to paginated thread history",
+        "检查旧版本地会话，或将其迁移为分页线程历史。",
     ),
     ("Interacted with ", "已与 "),
     ("Interacted with `{0}`", "已与 `{0}` 交互"),
@@ -248,6 +298,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "No configurable actions are available in this group.",
         "此分组没有可配置的操作。",
     ),
+    (
+        "Launch the Desktop app (opens the app installer if missing)",
+        "启动桌面应用（缺失时打开安装程序）。",
+    ),
     ("Layer value", "层值"),
     ("Loading MCP inventory", "正在加载MCP清单"),
     ("Loading MCP inventory...", "正在加载MCP清单…"),
@@ -258,6 +312,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Managed worktrees are only supported for local sessions.",
         "托管工作树仅支持本地会话。",
     ),
+    ("Manage Codex plugins", "管理Codex插件。"),
+    (
+        "Manage external MCP servers for Codex",
+        "管理Codex的外部MCP服务器。",
+    ),
+    ("Manage login", "管理登录。"),
     ("Needs input", "需要输入"),
     ("No agents completed yet", "还没有代理完成"),
     ("No changes", "无变更"),
@@ -300,13 +360,44 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.",
         "本次Codex会话已禁用插件共享。请启用插件共享以加载共享插件。",
     ),
-    ("Permission profile cannot be preserved by /cd.", "/cd无法保留权限配置文件。"),
+    (
+        "Permission profile cannot be preserved by /cd.",
+        "/cd无法保留权限配置文件。",
+    ),
+    (
+        "Permanently delete a saved session by id or session name",
+        "按id或会话名永久删除已保存的会话。",
+    ),
     ("Preview unavailable", "预览不可用"),
+    (
+        "Queue a message for an existing session",
+        "为现有会话排队一条消息。",
+    ),
     ("Quiet signal from the void", "来自虚空的安静信号"),
     ("Ready", "就绪"),
     ("Reconnect: {0}", "重新连接：{0}"),
-    ("Requested directory or permissions not applied.", "请求的目录或权限未应用。"),
+    (
+        "Requested directory or permissions not applied.",
+        "请求的目录或权限未应用。",
+    ),
+    (
+        "Remove stored authentication credentials",
+        "删除已存储的认证凭据。",
+    ),
+    (
+        "Resume a previous interactive session (picker by default; use --last to continue the most recent)",
+        "恢复之前的交互会话（默认弹出选择器；用--last继续最近一个）。",
+    ),
     ("Resumed an agent", "已恢复一个代理"),
+    ("Run Codex non-interactively", "以非交互方式运行Codex。"),
+    (
+        "Run a code review non-interactively",
+        "以非交互方式运行代码审查。",
+    ),
+    (
+        "Run commands within a Codex-provided sandbox",
+        "在Codex提供的沙箱中运行命令。",
+    ),
     ("Running", "运行中"),
     ("Select Pet", "选择宠物"),
     ("Selected {0} of {1} {2}.", "已选择{0}/{1}个{2}。"),
@@ -330,7 +421,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Started", "已启动"),
     ("Started ", "已启动 "),
     ("Started `{0}`", "已启动 `{0}`"),
-    ("Stop the current turn: run {0}, select this task, and {1}.", "停止当前轮次：运行{0}，选择此任务，然后{1}。"),
+    (
+        "Stop the current turn: run {0}, select this task, and {1}.",
+        "停止当前轮次：运行{0}，选择此任务，然后{1}。",
+    ),
     ("Sub-agents running", "运行中的子代理"),
     (
         "Switch to the matching workspace or ask the sharer for access.",
@@ -344,11 +438,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("The original Codex companion", "最初的Codex伙伴"),
     ("Thinking", "思考中"),
-    ("This directory is not trusted; run Codex there.", "此目录尚未受信任；请在那里运行Codex。"),
+    (
+        "This directory is not trusted; run Codex there.",
+        "此目录尚未受信任；请在那里运行Codex。",
+    ),
     ("To continue this session, run:", "要继续此会话，请运行："),
     ("Token usage so far:", "目前Token用量："),
     ("Token usage:", "Token用量："),
-    ("Token usage: total={0} input={1}{2} output={3}{4}", "Token用量：总计={0} 输入={1}{2} 输出={3}{4}"),
+    (
+        "Token usage: total={0} input={1}{2} output={3}{4}",
+        "Token用量：总计={0} 输入={1}{2} 输出={3}{4}",
+    ),
     ("Tool {0}", "工具{0}"),
     (
         "Try again later; local plugin functionality is still available.",
@@ -356,10 +456,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to search shortcuts", "输入以搜索快捷键"),
+    (
+        "Unarchive a saved session by id or session name",
+        "按id或会话名取消归档已保存的会话。",
+    ),
     ("Unbound ({0})", "未绑定（{0}）"),
     (
         "Update Codex, then try opening the shared plugin again.",
         "请更新Codex，然后重试打开该共享插件。",
+    ),
+    (
+        "Update Codex to the latest version",
+        "把Codex更新到最新版本。",
     ),
     ("Updated {0} file(s)", "已更新{0}个文件"),
     ("Use ", "用 "),
@@ -391,6 +499,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "animation {0} references sprite index {1}, but pet has {2} frames",
         "动画{0}引用了精灵索引{1}，但宠物只有{2}帧",
+    ),
+    (
+        "[EXPERIMENTAL] Browse tasks from Codex Cloud and apply changes locally",
+        "[实验性]浏览Codex Cloud的任务并在本地应用更改。",
+    ),
+    (
+        "[EXPERIMENTAL] Run the standalone exec-server service",
+        "[实验性]运行独立的exec-server服务。",
+    ),
+    (
+        "[experimental] Manage the app-server daemon with remote control enabled",
+        "[实验性]在启用远程控制的情况下管理app-server守护进程。",
+    ),
+    (
+        "[experimental] Run the app server or related tooling",
+        "[实验性]运行app server或相关工具。",
     ),
     ("authentication required", "需要认证"),
     (

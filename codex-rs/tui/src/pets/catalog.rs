@@ -2,7 +2,7 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
+#[cfg(test)]
 use std::fs;
 #[cfg(test)]
 use std::io::Cursor;

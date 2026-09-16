@@ -10,7 +10,6 @@ use anyhow::Result;
 use anyhow::bail;
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 const ST: &[u8] = b"\x1b\\";
 const SIXEL_BAND_HEIGHT: u32 = 6;

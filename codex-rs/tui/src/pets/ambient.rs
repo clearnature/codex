@@ -13,6 +13,7 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
+#[cfg(test)]
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;

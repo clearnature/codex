@@ -1135,6 +1135,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Removed custom shortcut for `{0}.{1}`.",
         "已删除 `{0}.{1}` 的自定义快捷键。",
     ),
+    (
+        "Reconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused.",
+        "已重新连接。没有重发任何输入。重试前请先检查不确定的提交；恢复的队列仍处于暂停状态。",
+    ),
+    (
+        "Reconnecting — agent list is stale",
+        "正在重新连接 — 代理列表可能已过期",
+    ),
     ("Refactor", "重构"),
     ("Remote ID {0}", "远端ID {0}"),
     ("Rename › ", "重命名 › "),
@@ -1320,6 +1328,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "The Desktop app is only available on macOS and Windows",
         "桌面应用仅在macOS和Windows上可用",
     ),
+    (
+        "The initial thread may have been created, but its ID was not received. Nothing was retried. Your prompt is editable; inspect your tasks before relaunching.",
+        "初始线程可能已创建，但没有收到它的ID。没有重试任何操作。你的提示词仍可编辑；重新启动前请先检查任务。",
+    ),
     ("The original Codex companion", "最初的Codex伙伴"),
     (
         "The rename target disappeared. Unsubmitted title: {0}",
@@ -1353,6 +1365,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "This thread is open elsewhere. Close it there and retry resume to continue.",
         "该线程正在其他地方打开。请先在那里关闭，再重试恢复以继续。",
+    ),
+    (
+        "This conversation is unavailable. Its cached transcript and draft remain here; input is paused. Open the agent picker or return to the parent to continue.",
+        "此对话当前不可用。缓存的转录与草稿仍保留在此；输入已暂停。请打开代理选择器或返回父级以继续。",
     ),
     ("Thread usage", "线程用量"),
     (
@@ -1661,6 +1677,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("answer: ******", "回答：******"),
     ("answer: {0}", "回答：{0}"),
     ("app server unavailable", "app-server不可用"),
+    (
+        "app-server session could not be restored",
+        "无法恢复app-server会话",
+    ),
     ("apply_patch touching {0}", "apply_patch涉及{0}"),
     ("apply_patch touching {0} files", "apply_patch涉及{0}个文件"),
     ("authentication required", "需要认证"),
@@ -1841,6 +1861,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("hook prompt: ", "钩子提示："),
     ("hour", "小时"),
     ("image: {0}", "图像：{0}"),
+    (
+        "in-process sessions have no connection to restore",
+        "进程内会话没有可恢复的连接",
+    ),
     ("install {0}", "安装{0}"),
     (
         "interrupted turn {0} is missing from the source thread",
@@ -1975,6 +1999,34 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("summaries {0}", "摘要 {0}"),
     ("tab or esc to clear notes", "tab或esc清除备注"),
     ("tab to add notes", "tab添加备注"),
+    (
+        "temporary structured response exceeds {0} bytes",
+        "临时结构化响应超过{0}字节",
+    ),
+    (
+        "temporary structured thread did not preserve permission profile {0}",
+        "临时结构化线程未保留权限配置文件{0}",
+    ),
+    (
+        "temporary structured thread did not start with read-only permissions",
+        "临时结构化线程未以只读权限启动",
+    ),
+    (
+        "temporary structured thread start timed out",
+        "临时结构化线程启动超时",
+    ),
+    (
+        "temporary structured turn completed without a response",
+        "临时结构化轮次未返回响应即完成",
+    ),
+    (
+        "temporary structured turn ended with status {0}",
+        "临时结构化轮次以状态{0}结束",
+    ),
+    (
+        "temporary structured turn notification channel closed",
+        "临时结构化轮次的通知通道已关闭",
+    ),
     ("terminal image write failed: {0}", "终端图像写入失败：{0}"),
     (
         "the selected thread is no longer available for prompt editing",

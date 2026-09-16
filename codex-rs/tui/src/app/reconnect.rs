@@ -5,6 +5,9 @@
 use super::*;
 use crate::app_server_session::ResumeModelSettings;
 use crate::dynamic_tools_mcp::ThreadToolTransport;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum ReconnectPresentation {
@@ -37,15 +40,19 @@ pub(super) async fn reconnect(
 ) -> Result<Reconnected> {
     let mode = target.thread_params_mode();
     if matches!(target, AppServerTarget::Embedded) {
-        color_eyre::eyre::bail!("in-process sessions have no connection to restore");
+        color_eyre::eyre::bail!(tr(
+            current(),
+            "in-process sessions have no connection to restore"
+        ));
     }
     if let ThreadToolTransport::Mcp(server) = &task_tools {
         server.suspend();
     }
     if presentation == ReconnectPresentation::Conversation && thread_id.is_none() {
-        color_eyre::eyre::bail!(
-            "The initial thread may have been created, but its ID was not received. Nothing was retried. Your prompt is editable; inspect your tasks before relaunching."
-        );
+        color_eyre::eyre::bail!(tr(
+            current(),
+            "The initial thread may have been created, but its ID was not received. Nothing was retried. Your prompt is editable; inspect your tasks before relaunching.",
+        ));
     }
     // Connecting already has transport deadlines. Give healthy history/inventory hydration one
     // shared budget instead of repeatedly discarding its progress on a short per-attempt timer.
@@ -117,7 +124,7 @@ pub(super) async fn reconnect(
         }
         // Transport errors can contain endpoint credentials. Do not render or log them.
     }
-    color_eyre::eyre::bail!("app-server session could not be restored")
+    color_eyre::eyre::bail!(tr(current(), "app-server session could not be restored"))
 }
 
 impl App {
@@ -194,7 +201,8 @@ impl App {
                 .is_some()
             {
                 if let Ok(mut state) = self.agents_overview.view_state.lock() {
-                    state.connection_notice = Some("Reconnecting — agent list is stale");
+                    state.connection_notice =
+                        Some(tr(current(), "Reconnecting — agent list is stale"));
                 }
                 ReconnectPresentation::Overview
             } else {
@@ -368,7 +376,14 @@ impl App {
             if self.thread_unavailable(id) && !self.chat_widget.is_external_writer_view() {
                 self.agent_navigation.mark_stopped(id);
                 self.chat_widget.pause_unavailable_thread();
-                self.chat_widget.add_info_message("This conversation is unavailable. Its cached transcript and draft remain here; input is paused. Open the agent picker or return to the parent to continue.".into(), /*hint*/ None);
+                self.chat_widget.add_info_message(
+                    tr(
+                        current(),
+                        "This conversation is unavailable. Its cached transcript and draft remain here; input is paused. Open the agent picker or return to the parent to continue.",
+                    )
+                    .into(),
+                    /*hint*/ None,
+                );
             } else {
                 self.schedule_recap_check(id, Instant::now());
             }
@@ -423,7 +438,12 @@ impl App {
         }
         self.feedback_audience = bootstrap.feedback_audience;
         self.chat_widget.add_info_message(
-            "Reconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused.".into(), /*hint*/ None,
+            tr(
+                current(),
+                "Reconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused.",
+            )
+            .into(),
+            /*hint*/ None,
         );
         Ok(())
     }

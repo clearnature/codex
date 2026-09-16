@@ -20,6 +20,9 @@ use codex_app_server_protocol::TurnStartParams;
 use codex_app_server_protocol::TurnStartResponse;
 use codex_app_server_protocol::TurnStatus;
 use codex_app_server_protocol::UserInput;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::openai_models::ReasoningEffort;
 use color_eyre::eyre::eyre;
 use serde_json::Value;
@@ -152,7 +155,7 @@ pub(crate) async fn start_temporary_thread(
             .await
     })
     .await
-    .map_err(|_| eyre!("temporary structured thread start timed out"))??;
+    .map_err(|_| eyre!(tr(current(), "temporary structured thread start timed out")))??;
 
     if let Some(expected_profile) = custom_permission_profile {
         if response
@@ -160,14 +163,17 @@ pub(crate) async fn start_temporary_thread(
             .as_ref()
             .is_none_or(|profile| profile.id != expected_profile)
         {
-            return Err(eyre!(
-                "temporary structured thread did not preserve permission profile {expected_profile}"
-            ));
+            return Err(eyre!(tr_with(
+                current(),
+                "temporary structured thread did not preserve permission profile {0}",
+                &[expected_profile.as_str()],
+            )));
         }
     } else if !matches!(response.sandbox, SandboxPolicy::ReadOnly { .. }) {
-        return Err(eyre!(
-            "temporary structured thread did not start with read-only permissions"
-        ));
+        return Err(eyre!(tr(
+            current(),
+            "temporary structured thread did not start with read-only permissions",
+        )));
     }
 
     Ok(response)
@@ -210,32 +216,39 @@ pub(crate) async fn collect_structured_response(
             ServerNotification::ItemCompleted(completed) if completed.turn_id == turn_id => {
                 if let ThreadItem::AgentMessage { text, .. } = completed.item {
                     if text.len() > STRUCTURED_RESPONSE_MAX_BYTES {
-                        return Err(eyre!(
-                            "temporary structured response exceeds {STRUCTURED_RESPONSE_MAX_BYTES} bytes"
-                        ));
+                        return Err(eyre!(tr_with(
+                            current(),
+                            "temporary structured response exceeds {0} bytes",
+                            &[&STRUCTURED_RESPONSE_MAX_BYTES.to_string()],
+                        )));
                     }
                     response = Some(text);
                 }
             }
             ServerNotification::TurnCompleted(completed) if completed.turn.id == turn_id => {
                 if completed.turn.status != TurnStatus::Completed {
-                    return Err(eyre!(
-                        "temporary structured turn ended with status {:?}",
-                        completed.turn.status,
-                    ));
+                    return Err(eyre!(tr_with(
+                        current(),
+                        "temporary structured turn ended with status {0}",
+                        &[&format!("{:?}", completed.turn.status)],
+                    )));
                 }
 
                 return response.ok_or_else(|| {
-                    eyre!("temporary structured turn completed without a response")
+                    eyre!(tr(
+                        current(),
+                        "temporary structured turn completed without a response",
+                    ))
                 });
             }
             _ => {}
         }
     }
 
-    Err(eyre!(
-        "temporary structured turn notification channel closed"
-    ))
+    Err(eyre!(tr(
+        current(),
+        "temporary structured turn notification channel closed",
+    )))
 }
 
 /// Make a bounded best-effort attempt to detach an ephemeral thread.

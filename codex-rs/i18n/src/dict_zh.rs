@@ -3459,6 +3459,21 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Enter a Bedrock API key", "输入Bedrock API key"),
     ("  AWS profile detected: {0}", "  检测到AWS配置档：{0}"),
     ("  Region: {0}", "  区域：{0}"),
+    ("shift+tab to cycle", "shift+tab切换"),
+    ("Plan mode{0}", "Plan模式{0}"),
+    ("Pursuing goal ({0})", "正在推进目标（{0}）"),
+    ("Pursuing goal", "正在推进目标"),
+    ("Goal paused (/goal resume)", "目标已暂停（/goal resume）"),
+    ("Goal stalled (/goal resume)", "目标已停滞（/goal resume）"),
+    (
+        "Goal hit usage limits (/goal resume)",
+        "目标已达用量上限（/goal resume）",
+    ),
+    ("Goal unmet ({0})", "目标未满足（{0}）"),
+    ("Goal abandoned", "目标已放弃"),
+    ("Goal achieved ({0})", "目标已达成（{0}）"),
+    ("Goal achieved", "目标已达成"),
+    ("reverse-i-search: ", "反向增量搜索："),
 ];
 
 /// English source text -> Simplified Chinese.

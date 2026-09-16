@@ -106,7 +106,11 @@ pub(crate) enum GoalStatusIndicator {
     Complete { usage: Option<String> },
 }
 
-const MODE_CYCLE_HINT: &str = "shift+tab to cycle";
+// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`:
+// the text has to pass through `tr`, which a `const` cannot call.
+fn mode_cycle_hint() -> &'static str {
+    tr(current(), "shift+tab to cycle")
+}
 const FOOTER_CONTEXT_GAP_COLS: u16 = 1;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -144,12 +148,12 @@ impl FooterKeyHints {
 impl CollaborationModeIndicator {
     fn label(self, show_cycle_hint: bool) -> String {
         let suffix = if show_cycle_hint {
-            format!(" ({MODE_CYCLE_HINT})")
+            format!(" ({})", mode_cycle_hint())
         } else {
             String::new()
         };
         match self {
-            CollaborationModeIndicator::Plan => format!("Plan mode{suffix}"),
+            CollaborationModeIndicator::Plan => tr_with(current(), "Plan mode{0}", &[&suffix]),
         }
     }
 
@@ -578,26 +582,28 @@ pub(crate) fn goal_status_indicator_line(
     let label = match indicator {
         GoalStatusIndicator::Active { usage } => {
             if let Some(usage) = usage {
-                format!("Pursuing goal ({usage})")
+                tr_with(current(), "Pursuing goal ({0})", &[&usage])
             } else {
-                "Pursuing goal".to_string()
+                tr(current(), "Pursuing goal").to_string()
             }
         }
-        GoalStatusIndicator::Paused => "Goal paused (/goal resume)".to_string(),
-        GoalStatusIndicator::Blocked => "Goal stalled (/goal resume)".to_string(),
-        GoalStatusIndicator::UsageLimited => "Goal hit usage limits (/goal resume)".to_string(),
+        GoalStatusIndicator::Paused => tr(current(), "Goal paused (/goal resume)").to_string(),
+        GoalStatusIndicator::Blocked => tr(current(), "Goal stalled (/goal resume)").to_string(),
+        GoalStatusIndicator::UsageLimited => {
+            tr(current(), "Goal hit usage limits (/goal resume)").to_string()
+        }
         GoalStatusIndicator::BudgetLimited { usage } => {
             if let Some(usage) = usage {
-                format!("Goal unmet ({usage})")
+                tr_with(current(), "Goal unmet ({0})", &[&usage])
             } else {
-                "Goal abandoned".to_string()
+                tr(current(), "Goal abandoned").to_string()
             }
         }
         GoalStatusIndicator::Complete { usage } => {
             if let Some(usage) = usage {
-                format!("Goal achieved ({usage})")
+                tr_with(current(), "Goal achieved ({0})", &[&usage])
             } else {
-                "Goal achieved".to_string()
+                tr(current(), "Goal achieved").to_string()
             }
         }
     };
@@ -758,7 +764,7 @@ fn footer_from_props_lines(
         FooterMode::QuitShortcutReminder => {
             vec![quit_shortcut_reminder_line(props.quit_shortcut_key)]
         }
-        FooterMode::HistorySearch => vec![Line::from("reverse-i-search: ").dim()],
+        FooterMode::HistorySearch => vec![Line::from(tr(current(), "reverse-i-search: ")).dim()],
         FooterMode::ComposerEmpty => {
             let state = LeftSideState {
                 hint: if show_shortcuts_hint {

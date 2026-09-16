@@ -2266,9 +2266,12 @@ fn validate_no_reserved<'a, const A: usize>(
                 ) {
                     continue;
                 }
-                return Err(format!(
-                    "Ambiguous `tui.keymap.{context}` bindings: `{action}` uses a key reserved by `{reserved_action}`. Set a different key in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples."
-                ));
+                return Err(tr_with(
+                    current(),
+                    "Ambiguous `tui.keymap.{0}` bindings: `{1}` uses a key reserved by `{2}`. Set a different key in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+                    &[context, action, reserved_action],
+                )
+                .to_string());
             }
         }
     }

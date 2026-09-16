@@ -12,6 +12,8 @@
 //! appear to accept a remap while some handlers still respond to the old keys.
 
 use codex_config::types::TuiKeymap;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_terminal_detection::terminal_info;
 
 use super::ChatWidget;
@@ -39,7 +41,14 @@ impl ChatWidget {
                 self.bottom_pane.show_selection_view(params);
             }
             Err(err) => {
-                self.add_error_message(format!("Invalid `tui.keymap` configuration: {err}"));
+                self.add_error_message(
+                    tr_with(
+                        current(),
+                        "Invalid `tui.keymap` configuration: {0}",
+                        &[&err.to_string()],
+                    )
+                    .to_string(),
+                );
             }
         }
     }

@@ -6137,6 +6137,34 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to restore archived session: {0}",
         "恢复已归档会话失败：{0}",
     ),
+    // Keymap validation messages (`tui/src/keymap.rs`, `keymap/vim_search.rs`,
+    // `keymap_setup.rs`, `chatwidget/keymap_picker.rs`) and the external-agent
+    // config import screen (`external_agent_config_migration/*`). Config paths,
+    // action ids and the `Press <Enter>` keycap keep their spelling; `Import ...`
+    // strings in `external_agent_config_migration/mod.rs` are deliberately NOT
+    // here: they normalize then re-match app-server descriptions.
+    (
+        "Ambiguous `tui.keymap.{0}` bindings: `{1}` uses a key reserved by `{2}`. Set a different key in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
+        "`tui.keymap.{0}` 的绑定有歧义：`{1}` 使用了由 `{2}` 保留的按键。请在 `~/.codex/config.toml` 中设置其他按键后重试。支持的按键与示例见Codex键位文档。",
+    ),
+    (
+        "Conflicting `{0}` and `{1}` bindings",
+        "`{0}` 与 `{1}` 的绑定冲突",
+    ),
+    ("Changes write the root ", "更改会写入根"),
+    (
+        "Invalid `tui.keymap` configuration: {0}",
+        "`tui.keymap` 配置无效：{0}",
+    ),
+    ("Choose an import source", "选择导入来源"),
+    (
+        "Select the app whose setup you want to import.",
+        "选择要导入其配置的应用。",
+    ),
+    (
+        "Could not check for importable setup: {0}",
+        "无法检查可导入的配置：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

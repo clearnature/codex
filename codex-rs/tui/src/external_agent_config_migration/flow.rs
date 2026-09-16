@@ -85,10 +85,14 @@ impl ExternalAgentConfigDetection {
         } else if self.errors.is_empty() {
             ExternalAgentConfigDetectionOutcome::NoItems
         } else {
-            ExternalAgentConfigDetectionOutcome::Failed(format!(
-                "Could not check for importable setup: {}",
-                self.errors.join("; ")
-            ))
+            ExternalAgentConfigDetectionOutcome::Failed(
+                tr_with(
+                    current(),
+                    "Could not check for importable setup: {0}",
+                    &[&self.errors.join("; ")],
+                )
+                .to_string(),
+            )
         }
     }
 }

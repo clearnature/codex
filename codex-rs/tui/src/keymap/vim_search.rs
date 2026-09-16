@@ -3,6 +3,8 @@
 
 use super::bindings::configured_binding_for_action;
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 #[derive(Clone, Debug)]
 pub(crate) struct VimSearchKeymap {
@@ -61,10 +63,13 @@ impl RuntimeKeymap {
                 .iter()
                 .find(|other| other.bindings.iter().any(|key| bindings.contains(key)))
             {
-                return Err(format!(
-                    "Conflicting `{path}` and `{}` bindings",
-                    other.id.config_path()
-                ));
+                let other_path = other.id.config_path();
+                return Err(tr_with(
+                    current(),
+                    "Conflicting `{0}` and `{1}` bindings",
+                    &[path.as_str(), other_path.as_str()],
+                )
+                .to_string());
             }
         }
         validate_unique(

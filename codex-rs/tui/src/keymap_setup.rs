@@ -339,7 +339,7 @@ pub(crate) fn build_keymap_action_menu_params(
         view_id: Some(KEYMAP_ACTION_MENU_VIEW_ID),
         header: Box::new(header),
         footer_note: Some(Line::from(vec![
-            "Changes write the root ".dim(),
+            tr(current(), "Changes write the root ").dim(),
             "`tui.keymap.*`".cyan(),
             tr(current(), " override.").dim(),
         ])),

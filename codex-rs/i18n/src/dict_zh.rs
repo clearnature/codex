@@ -79,7 +79,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Agent errored", "代理出错"),
     ("Agent resume failed", "代理恢复失败"),
     ("Agent spawn failed", "代理启动失败"),
-    ("Choose items to import.", "选择要导入的项目。"),
+    ("Choose items to import.", "选择要导入的条目。"),
     ("Choose what to import", "选择要导入的内容"),
     (
         "Codex may add files to your current project folder.",
@@ -89,6 +89,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Completed", "已完成"),
     ("Completed ", "已完成 "),
     ("Completed `{0}`", "已完成 `{0}`"),
+    ("Context {0}% left", "剩余上下文 {0}%"),
+    ("Context {0}% used", "已用上下文 {0}%"),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
     (
         "Could not read goal objective file {0}",
@@ -107,9 +109,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Every configurable action currently has a shortcut.",
         "当前每个可配置操作都已绑定快捷键。",
     ),
+    ("Custom permissions", "自定义权限"),
     ("Error", "错误"),
+    ("Fast off", "Fast关"),
+    ("Fast on", "Fast开"),
     ("Finished waiting", "等待结束"),
     ("Goal objective must not be empty.", "目标内容不能为空。"),
+    ("Ignored invalid status line {0}: {1}.", "已忽略无效的状态行{0}：{1}。"),
+    ("Ignored invalid terminal title {0}: {1}.", "已忽略无效的终端标题{0}：{1}。"),
     ("Import setup", "导入配置"),
     ("Inspect keypresses", "检查按键"),
     (
@@ -127,6 +134,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "此分组没有可配置的操作。",
     ),
     ("No agents completed yet", "还没有代理完成"),
+    ("No changes", "无变更"),
     ("No shortcuts in this group", "此分组没有快捷键"),
     ("No unbound shortcuts", "没有未绑定的快捷键"),
     (
@@ -150,6 +158,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Spawned", "已启动"),
     ("Started ", "已启动 "),
     ("Started `{0}`", "已启动 `{0}`"),
+    ("Tasks {0}/{1}", "任务 {0}/{1}"),
     ("Type to search shortcuts", "输入以搜索快捷键"),
     ("Unbound ({0})", "未绑定（{0}）"),
     ("Use ", "用 "),
@@ -160,6 +169,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Waiting for", "正在等待"),
     ("Waiting for agents", "正在等待代理"),
     ("Waiting for {0} agents", "正在等待{0}个代理"),
+    ("[ ! ] Action Required", "[ ! ] 需要操作"),
+    ("[ . ] Action Required", "[ . ] 需要操作"),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
     // Shortcut descriptors. These are the labels the `_` arm of the matcher in
@@ -177,9 +188,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" reasoning up", " 提高推理强度"),
     // Context-window line. Templates: the placeholders are substituted after
     // the lookup, so the translation may move them but not drop them.
-    ("item", "项目"),
-    ("items", "项目"),
+    ("item", "条目"),
+    ("items", "条目"),
+    ("raw output", "原始输出"),
     ("{0} actions.", "{0}个操作。"),
+    ("{0} credits", "{0} 额度"),
+    ("{0} window", "{0} 窗口"),
     ("{0}% context left", "剩余上下文 {0}%"),
     ("{0} used", "已用 {0}"),
     ("100% context left", "剩余上下文100%"),

@@ -1779,14 +1779,14 @@ fn plugin_auth_policy_summary(auth_policy: PluginAuthPolicy) -> String {
 fn plugin_version_summary(plugin: &PluginSummary) -> Option<String> {
     let mut parts = Vec::new();
     if let Some(local_version) = plugin.local_version.as_deref() {
-        parts.push(format!("local {local_version}"));
+        parts.push(tr_with(current(), "local {0}", &[local_version]));
     }
     if let Some(remote_version) = plugin
         .share_context
         .as_ref()
         .and_then(|context| context.remote_version.as_deref())
     {
-        parts.push(format!("remote {remote_version}"));
+        parts.push(tr_with(current(), "remote {0}", &[remote_version]));
     }
     (!parts.is_empty()).then(|| parts.join(" · "))
 }
@@ -1810,7 +1810,7 @@ fn plugin_share_context_summary(context: &PluginShareContext) -> String {
         parts.push(share_url.to_string());
     }
     if parts.is_empty() {
-        format!("Remote ID {}", context.remote_plugin_id)
+        tr_with(current(), "Remote ID {0}", &[&context.remote_plugin_id])
     } else {
         parts.join(" · ")
     }
@@ -1829,9 +1829,11 @@ fn plugin_share_creator_summary(context: &PluginShareContext) -> Option<String> 
         context.creator_name.as_deref(),
         context.creator_account_user_id.as_deref(),
     ) {
-        (Some(name), Some(account_id)) => Some(format!("creator {name} ({account_id})")),
-        (Some(name), None) => Some(format!("creator {name}")),
-        (None, Some(account_id)) => Some(format!("creator account {account_id}")),
+        (Some(name), Some(account_id)) => {
+            Some(tr_with(current(), "creator {0} ({1})", &[name, account_id]))
+        }
+        (Some(name), None) => Some(tr_with(current(), "creator {0}", &[name])),
+        (None, Some(account_id)) => Some(tr_with(current(), "creator account {0}", &[account_id])),
         (None, None) => None,
     }
 }
@@ -1989,7 +1991,7 @@ fn is_personal_marketplace_path(marketplace_path: &AbsolutePathBuf) -> bool {
 
 fn remote_section_loading_item(label: &str, description: &str) -> SelectionItem {
     SelectionItem {
-        name: format!("Loading {label} plugins..."),
+        name: tr_with(current(), "Loading {0} plugins...", &[label]),
         description: Some(description.to_string()),
         is_disabled: true,
         ..Default::default()
@@ -1998,7 +2000,7 @@ fn remote_section_loading_item(label: &str, description: &str) -> SelectionItem 
 
 fn remote_section_error_item(label: &str, message: &str) -> SelectionItem {
     SelectionItem {
-        name: format!("{label} unavailable"),
+        name: tr_with(current(), "{0} unavailable", &[label]),
         description: Some(message.to_string()),
         is_disabled: true,
         ..Default::default()
@@ -2019,7 +2021,7 @@ fn remote_section_loading_tab(id: &str, label: &str, item_description: &str) -> 
         id: format!("{REMOTE_LOADING_TAB_ID_PREFIX}{id}"),
         label: label.to_string(),
         header: plugins_header(
-            format!("Loading {label} plugins."),
+            tr_with(current(), "Loading {0} plugins.", &[label]),
             tr(
                 current(),
                 "Local plugin functionality is already available.",

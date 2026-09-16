@@ -4,13 +4,34 @@
 use super::*;
 use crate::wrapping::word_wrap_lines;
 use codex_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const SAFETY_BUFFERING_PROMPT_VIEW_ID: &str = "safety-buffering-prompt";
 const SAFETY_BUFFERING_LEARN_MORE_URL: &str = "https://help.openai.com/en/articles/20001326";
 
-const SAFETY_BUFFERING_HEADER: &str = "Giving this request a little extra thought";
-const SAFETY_BUFFERING_MESSAGE_WITH_RETRY: &str = "If you'd rather not wait, retry with a faster model. It may be less capable of handling complex requests.";
-const SAFETY_BUFFERING_FOOTER: &str = "No action is required. Codex will keep waiting, and this menu will close when the response is ready.";
+/// 安全缓冲提示的三段文案。
+///
+/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。引用点只用在本文件内
+/// （改名时已 `grep -rn` 确认过，测试里的同名常量是它自己的副本）。
+fn safety_buffering_header() -> &'static str {
+    tr(current(), "Giving this request a little extra thought")
+}
+
+fn safety_buffering_message_with_retry() -> &'static str {
+    tr(
+        current(),
+        "If you'd rather not wait, retry with a faster model. It may be less capable of handling complex requests.",
+    )
+}
+
+fn safety_buffering_footer() -> &'static str {
+    tr(
+        current(),
+        "No action is required. Codex will keep waiting, and this menu will close when the response is ready.",
+    )
+}
 
 struct SafetyBufferingHeader(Vec<Line<'static>>);
 
@@ -169,9 +190,13 @@ impl ChatWidget {
         });
 
         let status_details = if can_offer_retry {
-            format!("{SAFETY_BUFFERING_HEADER} {SAFETY_BUFFERING_MESSAGE_WITH_RETRY}")
+            format!(
+                "{} {}",
+                safety_buffering_header(),
+                safety_buffering_message_with_retry()
+            )
         } else {
-            SAFETY_BUFFERING_HEADER.to_string()
+            safety_buffering_header().to_string()
         };
         self.bottom_pane.ensure_status_indicator();
         self.set_status(
@@ -187,16 +212,16 @@ impl ChatWidget {
         self.bottom_pane
             .dismiss_view_by_id(SAFETY_BUFFERING_PROMPT_VIEW_ID);
 
-        let mut header = vec![Line::from(SAFETY_BUFFERING_HEADER).bold()];
+        let mut header = vec![Line::from(safety_buffering_header()).bold()];
         if can_offer_retry {
-            header.push(Line::from(SAFETY_BUFFERING_MESSAGE_WITH_RETRY).dim());
+            header.push(Line::from(safety_buffering_message_with_retry()).dim());
         }
         let mut items = Vec::new();
         if let (Some(faster_model), Some(turn), Some(prompt), Some(thread_id)) =
             (faster_model, retry_turn, retry_prompt, thread_id)
         {
             items.push(SelectionItem {
-                name: "Retry with a faster model".to_string(),
+                name: tr(current(), "Retry with a faster model").to_string(),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::ConfirmSafetyBufferedRetry {
                         thread_id,
@@ -212,12 +237,12 @@ impl ChatWidget {
         }
         items.extend([
             SelectionItem {
-                name: "Dismiss and keep waiting".to_string(),
+                name: tr(current(), "Dismiss and keep waiting").to_string(),
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Learn more".to_string(),
+                name: tr(current(), "Learn more").to_string(),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::OpenUrlInBrowser {
                         url: SAFETY_BUFFERING_LEARN_MORE_URL.to_string(),
@@ -229,7 +254,7 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(SAFETY_BUFFERING_PROMPT_VIEW_ID),
             header: Box::new(SafetyBufferingHeader(header)),
-            footer_note: Some(Line::from(SAFETY_BUFFERING_FOOTER).dim()),
+            footer_note: Some(Line::from(safety_buffering_footer()).dim()),
             footer_hint: Some(Line::default()),
             items,
             ..Default::default()
@@ -260,21 +285,32 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(SAFETY_BUFFERING_PROMPT_VIEW_ID),
             header: Box::new(SafetyBufferingHeader(vec![
-                    "Stop this attempt and retry?".bold().into(),
+                    tr(current(), "Stop this attempt and retry?").bold().into(),
                     Line::default(),
-                    "This will stop the current attempt and retry in a new thread. Any file changes or other actions already taken will remain.".dim().into(),
+                    tr(
+                        current(),
+                        "This will stop the current attempt and retry in a new thread. Any file changes or other actions already taken will remain.",
+                    )
+                    .dim()
+                    .into(),
                     Line::default(),
-                    format!("Your message will be sent again using {model_name}, which may be less capable on complex tasks.").dim().into(),
+                    tr_with(
+                        current(),
+                        "Your message will be sent again using {0}, which may be less capable on complex tasks.",
+                        &[model_name.as_str()],
+                    )
+                    .dim()
+                    .into(),
                 ])),
             footer_hint: Some(Line::default()),
             items: vec![
                 SelectionItem {
-                    name: "Keep waiting".to_string(),
+                    name: tr(current(), "Keep waiting").to_string(),
                     dismiss_on_select: true,
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Stop and retry".to_string(),
+                    name: tr(current(), "Stop and retry").to_string(),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::RetrySafetyBufferedTurn {
                             thread_id,

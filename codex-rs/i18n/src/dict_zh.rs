@@ -503,6 +503,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
     ("Error", "错误"),
+    ("Error loading configuration: {0}", "加载配置出错：{0}"),
     ("Execpolicy tooling", "Execpolicy工具。"),
     (
         "Exit Codex and leave the task running",
@@ -769,6 +770,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("No pet will be shown.", "不会显示宠物。"),
     ("No questions", "没有问题"),
     ("No recent activity yet.", "还没有最近活动。"),
+    (
+        "No saved session found with ID {0}. Run `codex {1}` without an ID to choose from existing sessions.",
+        "找不到ID为{0}的已保存会话。可运行 `codex {1}`（不带ID）从现有会话中选择。",
+    ),
     ("No server experiments available.", "没有可用的服务器实验。"),
     ("No shortcuts in this group", "此分组没有快捷键"),
     ("No transcript content available", "没有可显示的转录内容"),
@@ -1347,6 +1352,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to start embedded app server",
         "无法启动嵌入式app-server",
     ),
+    (
+        "failed to restore terminal. Run `reset` or restart your terminal to recover: {0}",
+        "恢复终端失败。请运行 `reset` 或重启终端以恢复：{0}",
+    ),
     ("failed to unarchive session", "无法取消归档会话"),
     (
         "file changes: {0} · {1} changes",
@@ -1375,6 +1384,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "被中断的轮次{0}仍在进行中",
     ),
     ("interrupted with {0} unanswered", "已中断，还有{0}个未回答"),
+    (
+        "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
+        "远程地址 `{0}` 无效；应为 `ws://host:port`、`wss://host:port`、`unix://` 或 `unix://PATH`",
+    ),
     ("item", "条目"),
     ("items", "条目"),
     (

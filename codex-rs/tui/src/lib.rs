@@ -56,6 +56,7 @@ use codex_exec_server::ExecServerRuntimePaths;
 use codex_features::Feature;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::AuthConfig;
 use codex_login::default_client::originator;
 use codex_login::default_client::set_default_client_residency_requirement;
@@ -410,9 +411,11 @@ pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndp
     let parsed = match Url::parse(addr) {
         Ok(parsed) => parsed,
         Err(_) => {
-            color_eyre::eyre::bail!(
-                "invalid remote address `{addr}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`"
-            );
+            color_eyre::eyre::bail!(tr_with(
+                current(),
+                "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
+                &[&addr.to_string()],
+            ));
         }
     };
     if matches!(parsed.scheme(), "ws" | "wss")
@@ -428,9 +431,11 @@ pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndp
         });
     }
 
-    color_eyre::eyre::bail!(
-        "invalid remote address `{addr}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`"
-    );
+    color_eyre::eyre::bail!(tr_with(
+        current(),
+        "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
+        &[&addr.to_string()],
+    ));
 }
 
 pub fn remote_addr_supports_auth_token(endpoint: &RemoteAppServerEndpoint) -> bool {
@@ -1370,8 +1375,10 @@ async fn run_ratatui_app(
                 resume_hint: None,
                 disconnect_info: None,
                 update_action: None,
-                exit_reason: ExitReason::Fatal(format!(
-                    "No saved session found with ID {id_str}. Run `codex {action}` without an ID to choose from existing sessions."
+                exit_reason: ExitReason::Fatal(tr_with(
+                    current(),
+                    "No saved session found with ID {0}. Run `codex {1}` without an ID to choose from existing sessions.",
+                    &[&id_str.to_string(), &action.to_string()],
                 )),
             })
         };
@@ -1876,7 +1883,12 @@ async fn run_ratatui_app(
 fn restore() {
     if let Err(err) = tui::restore_after_exit() {
         eprintln!(
-            "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"
+            "{}",
+            tr_with(
+                current(),
+                "failed to restore terminal. Run `reset` or restart your terminal to recover: {0}",
+                &[&err.to_string()],
+            )
         );
     }
 }
@@ -1991,7 +2003,14 @@ async fn load_config_or_exit_with_fallback_cwd(
         Ok(config) => config,
         Err(err) => {
             restore_terminal_before_fatal_exit();
-            eprintln!("Error loading configuration: {err}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error loading configuration: {0}",
+                    &[&err.to_string()]
+                )
+            );
             if let Some(worktree) = worktree {
                 worktree.report_startup_failure();
             }
@@ -2064,11 +2083,22 @@ async fn load_bootstrap_config_or_exit(
                 .map(ConfigLoadError::config_error);
             if let Some(config_error) = config_error {
                 eprintln!(
-                    "Error loading config.toml:\n{}",
-                    format_config_error_with_source(config_error)
+                    "{}",
+                    tr_with(
+                        current(),
+                        "Error loading config.toml:\n{0}",
+                        &[&format_config_error_with_source(config_error)],
+                    )
                 );
             } else {
-                eprintln!("Error loading config.toml: {err}");
+                eprintln!(
+                    "{}",
+                    tr_with(
+                        current(),
+                        "Error loading config.toml: {0}",
+                        &[&err.to_string()]
+                    )
+                );
             }
             std::process::exit(1);
         }

@@ -309,7 +309,7 @@ impl App {
                     }
                     Ok(ExternalAgentConfigMigrationFlowOutcome::NoItems) => {
                         self.chat_widget.add_info_message(
-                            crate::external_agent_config_migration::flow::EXTERNAL_AGENT_CONFIG_MIGRATION_NO_ITEMS_MESSAGE
+                            crate::external_agent_config_migration::flow::external_agent_config_migration_no_items_message()
                                 .to_string(),
                             /*hint*/ None,
                         );

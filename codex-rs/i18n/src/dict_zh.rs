@@ -3775,6 +3775,46 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "You have {0} {1} available. Run /usage to use one.",
         "你有{0}个{1}可用。运行/usage使用一个。",
     ),
+    (
+        "No compatible setup was found to import.",
+        "未找到可导入的兼容设置。",
+    ),
+    (
+        "Import from other apps is unavailable in remote sessions. Start Codex locally and run /import.",
+        "远程会话中不支持从其他应用导入。请在本地启动Codex并运行/import。",
+    ),
+    (
+        "Import from other apps is unavailable while Codex is connected to the local app-server daemon. Stop the daemon, restart Codex, and run /import.",
+        "当Codex连接到本地app-server守护进程时，不支持从其他应用导入。请停止守护进程、重启Codex并运行/import。",
+    ),
+    (", +{0} more", "，另有{0}项"),
+    ("{0} failed", "{0}项失败"),
+    ("{0} imported", "已导入{0}项"),
+    ("Import failed: {0}", "导入失败：{0}"),
+    (
+        "{0} additional items remain. After it finishes, run /import again to review them.",
+        "还剩{0}个额外项目。完成后请再次运行/import查看。",
+    ),
+    ("Import started.", "导入已开始。"),
+    (
+        " You can keep working while it finishes.",
+        " 期间可继续工作。",
+    ),
+    (
+        "Imported setup will apply to new chats.",
+        "导入的设置将应用于新会话。",
+    ),
+    ("Import finished: ", "导入完成："),
+    ("Results by type:", "按类型统计："),
+    (
+        "Run /import again to check for additional items.",
+        "再次运行/import以检查更多项目。",
+    ),
+    (
+        "1 additional item remains. After it finishes, run /import again to review it.",
+        "还剩1个额外项目。完成后请再次运行/import查看。",
+    ),
+    ("Selected import source is no longer available.", "所选导入来源已不可用。"),
 ];
 
 /// English source text -> Simplified Chinese.

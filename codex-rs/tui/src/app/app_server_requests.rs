@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
@@ -31,7 +34,13 @@ impl App {
                 },
             )
             .await
-            .map_err(|err| format!("failed to reject app-server request: {err}"))
+            .map_err(|err| {
+                tr_with(
+                    current(),
+                    "failed to reject app-server request: {0}",
+                    &[&err.to_string()],
+                )
+            })
     }
 }
 
@@ -130,7 +139,11 @@ impl PendingAppServerRequests {
                 {
                     return Some(UnsupportedAppServerRequest {
                         request_id: request_id.clone(),
-                        message: format!("failed to localize requested filesystem paths: {err}"),
+                        message: tr_with(
+                            current(),
+                            "failed to localize requested filesystem paths: {0}",
+                            &[&err.to_string()],
+                        ),
                     });
                 }
                 self.permissions_approvals.insert(
@@ -167,27 +180,35 @@ impl PendingAppServerRequests {
             ServerRequest::AttestationGenerate { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Attestation generation is not available in TUI.".to_string(),
+                    message: tr(current(), "Attestation generation is not available in TUI.")
+                        .to_string(),
                 })
             }
             ServerRequest::CurrentTimeRead { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "External current time is not available in TUI.".to_string(),
+                    message: tr(current(), "External current time is not available in TUI.")
+                        .to_string(),
                 })
             }
             ServerRequest::ApplyPatchApproval { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Legacy patch approval requests are not available in TUI yet."
-                        .to_string(),
+                    message: tr(
+                        current(),
+                        "Legacy patch approval requests are not available in TUI yet.",
+                    )
+                    .to_string(),
                 })
             }
             ServerRequest::ExecCommandApproval { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Legacy command approval requests are not available in TUI yet."
-                        .to_string(),
+                    message: tr(
+                        current(),
+                        "Legacy command approval requests are not available in TUI yet.",
+                    )
+                    .to_string(),
                 })
             }
         }
@@ -214,8 +235,10 @@ impl PendingAppServerRequests {
                             decision: decision.clone(),
                         })
                         .map_err(|err| {
-                            format!(
-                                "failed to serialize command execution approval response: {err}"
+                            tr_with(
+                                current(),
+                                "failed to serialize command execution approval response: {0}",
+                                &[&err.to_string()],
                             )
                         })?,
                     })
@@ -231,7 +254,11 @@ impl PendingAppServerRequests {
                             decision: decision.clone(),
                         })
                         .map_err(|err| {
-                            format!("failed to serialize file change approval response: {err}")
+                            tr_with(
+                                current(),
+                                "failed to serialize file change approval response: {0}",
+                                &[&err.to_string()],
+                            )
                         })?,
                     })
                 })
@@ -250,7 +277,11 @@ impl PendingAppServerRequests {
                             strict_auto_review: response.strict_auto_review.then_some(true),
                         })
                         .map_err(|err| {
-                            format!("failed to serialize permissions approval response: {err}")
+                            tr_with(
+                                current(),
+                                "failed to serialize permissions approval response: {0}",
+                                &[&err.to_string()],
+                            )
                         })?,
                     })
                 })
@@ -261,7 +292,11 @@ impl PendingAppServerRequests {
                     Ok::<AppServerRequestResolution, String>(AppServerRequestResolution {
                         request_id: pending.request_id,
                         result: serde_json::to_value(response).map_err(|err| {
-                            format!("failed to serialize request_user_input response: {err}")
+                            tr_with(
+                                current(),
+                                "failed to serialize request_user_input response: {0}",
+                                &[&err.to_string()],
+                            )
                         })?,
                     })
                 })
@@ -287,7 +322,11 @@ impl PendingAppServerRequests {
                             meta: meta.clone(),
                         })
                         .map_err(|err| {
-                            format!("failed to serialize MCP elicitation response: {err}")
+                            tr_with(
+                                current(),
+                                "failed to serialize MCP elicitation response: {0}",
+                                &[&err.to_string()],
+                            )
                         })?,
                     })
                 })

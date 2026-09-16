@@ -3,7 +3,6 @@
 
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;

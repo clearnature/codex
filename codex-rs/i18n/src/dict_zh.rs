@@ -134,7 +134,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Agent command center", "代理指挥中心"),
     ("Agent errored", "代理出错"),
     ("Agent resume failed", "代理恢复失败"),
-    ("Agent session {0} is unavailable: {1}", "代理会话{0}不可用：{1}"),
+    (
+        "Agent session {0} is unavailable: {1}",
+        "代理会话{0}不可用：{1}",
+    ),
     ("Agent spawn failed", "代理启动失败"),
     (
         "Ask a workspace admin to confirm plugin access.",
@@ -168,6 +171,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Archive a saved session by id or session name",
         "按id或会话名归档已保存的会话。",
+    ),
+    (
+        "Attestation generation is not available in TUI.",
+        "TUI中不支持生成证明。",
     ),
     ("Blocked", "已阻塞"),
     (
@@ -242,7 +249,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Context {0}% used", "已用上下文 {0}%"),
     ("Conversation history is not saved.", "会话历史未保存。"),
     ("Copied conversation to clipboard", "已复制会话到剪贴板"),
-    ("Could not generate a recap. Please try again.", "无法生成回顾。请重试。"),
+    (
+        "Could not generate a recap. Please try again.",
+        "无法生成回顾。请重试。",
+    ),
     ("Could not read goal image {0}", "无法读取目标图片{0}"),
     (
         "Could not read goal objective file {0}",
@@ -306,6 +316,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to attach to resumed app-server thread: {0}",
         "附加到已恢复的app-server线程失败：{0}",
     ),
+    (
+        "External current time is not available in TUI.",
+        "TUI中不支持外部当前时间。",
+    ),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
         "Failed to name the worktree session: {0}",
@@ -315,7 +329,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to delete current thread: {0}",
         "删除当前线程失败：{0}",
     ),
-    ("Failed to load background task settings: {0}", "加载后台任务设置失败：{0}"),
+    (
+        "Failed to load background task settings: {0}",
+        "加载后台任务设置失败：{0}",
+    ),
     ("Failed to name the new session: {0}", "命名新会话失败：{0}"),
     ("Failed to open editor: {0}", "打开编辑器失败：{0}"),
     (
@@ -397,6 +414,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "启动桌面应用（缺失时打开安装程序）。",
     ),
     ("Layer value", "层值"),
+    (
+        "Legacy command approval requests are not available in TUI yet.",
+        "TUI中尚不支持旧版命令审批请求。",
+    ),
+    (
+        "Legacy patch approval requests are not available in TUI yet.",
+        "TUI中尚不支持旧版补丁审批请求。",
+    ),
     ("Loading MCP inventory", "正在加载MCP清单"),
     ("Loading MCP inventory...", "正在加载MCP清单…"),
     ("Loading preview...", "正在加载预览…"),
@@ -548,8 +573,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "新的工作树尚未受信任；请在那里运行Codex。",
     ),
     ("The original Codex companion", "最初的Codex伙伴"),
-    ("The rename target disappeared. Unsubmitted title: {0}", "重命名目标已消失。未提交的标题：{0}"),
-    ("There is no conversation history to recap.", "没有可供回顾的会话历史。"),
+    (
+        "The rename target disappeared. Unsubmitted title: {0}",
+        "重命名目标已消失。未提交的标题：{0}",
+    ),
+    (
+        "There is no conversation history to recap.",
+        "没有可供回顾的会话历史。",
+    ),
     ("Thinking", "思考中"),
     (
         "This directory is not trusted; run Codex there.",
@@ -641,7 +672,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("connected", "已连接"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),
-    ("ctrl+c clear input, then quit · actions paused until the list is refreshed", "ctrl+c清空输入后再退出 · 列表刷新前操作暂停"),
+    (
+        "ctrl+c clear input, then quit · actions paused until the list is refreshed",
+        "ctrl+c清空输入后再退出 · 列表刷新前操作暂停",
+    ),
     ("customize shortcuts with ", "自定义快捷键："),
     ("IDE context", "IDE上下文"),
     // Shortcut descriptors. These are the labels the `_` arm of the matcher in
@@ -678,6 +712,34 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无法序列化Auto Review拒绝事件",
     ),
     ("failed to load skills on startup", "启动时加载技能失败"),
+    (
+        "failed to localize requested filesystem paths: {0}",
+        "本地化所请求的文件系统路径失败：{0}",
+    ),
+    (
+        "failed to reject app-server request: {0}",
+        "拒绝应用服务器请求失败：{0}",
+    ),
+    (
+        "failed to serialize MCP elicitation response: {0}",
+        "序列化MCP elicitation响应失败：{0}",
+    ),
+    (
+        "failed to serialize command execution approval response: {0}",
+        "序列化命令执行审批响应失败：{0}",
+    ),
+    (
+        "failed to serialize file change approval response: {0}",
+        "序列化文件变更审批响应失败：{0}",
+    ),
+    (
+        "failed to serialize permissions approval response: {0}",
+        "序列化权限审批响应失败：{0}",
+    ),
+    (
+        "failed to serialize request_user_input response: {0}",
+        "序列化request_user_input响应失败：{0}",
+    ),
     ("failed to unarchive session", "无法取消归档会话"),
     ("forked_from_id is invalid: {0}", "forked_from_id无效：{0}"),
     (
@@ -793,7 +855,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0} A checkout was retained at {1}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
         "{0}已在{1}保留一份检出；如不再需要，请在源仓库中运行 `git worktree remove <checkout-path>` 将其删除。",
     ),
-    ("{0}   {1} working   {2} ready", "{0}   {1} 工作中   {2} 就绪"),
+    (
+        "{0}   {1} working   {2} ready",
+        "{0}   {1} 工作中   {2} 就绪",
+    ),
     ("{0} actions.", "{0}个操作。"),
     ("{0} credits", "{0} 额度"),
     ("{0} need input", "{0} 需要输入"),

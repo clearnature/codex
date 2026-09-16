@@ -1805,7 +1805,7 @@ impl RuntimeKeymap {
             }) {
                 return Err(tr_with(
                     current(),
-                    "tui.keymap.chat.{action}: printable keys are reserved for text input",
+                    "tui.keymap.chat.{0}: printable keys are reserved for text input",
                     &[&action.to_string()],
                 ));
             }
@@ -2128,7 +2128,7 @@ impl RuntimeKeymap {
             if bindings.contains(&key_hint::ctrl(KeyCode::Char('z'))) {
                 return Err(tr_with(
                     current(),
-                    "tui.keymap.agents.{action}: ctrl-z is reserved for suspend",
+                    "tui.keymap.agents.{0}: ctrl-z is reserved for suspend",
                     &[&action.to_string()],
                 ));
             }
@@ -2141,7 +2141,7 @@ impl RuntimeKeymap {
             }) {
                 return Err(tr_with(
                     current(),
-                    "tui.keymap.agents.{action}: printable keys and backspace are reserved for task input",
+                    "tui.keymap.agents.{0}: printable keys and backspace are reserved for task input",
                     &[&action.to_string()],
                 ));
             }

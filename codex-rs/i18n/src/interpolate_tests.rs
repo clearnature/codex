@@ -10,6 +10,7 @@ use super::substitute;
 use super::tr_with;
 use crate::Lang;
 use crate::dict_zh::ENTRIES;
+use crate::tr;
 
 #[test]
 fn english_substitutes_into_the_english_original() {
@@ -27,7 +28,15 @@ fn english_substitutes_into_the_english_original() {
 #[test]
 fn a_template_without_placeholders_ignores_its_arguments() {
     assert_eq!(tr_with(Lang::En, "Ready", &["unused"]), "Ready");
-    assert_eq!(tr_with(Lang::Zh, "Ready", &["unused"]), "Ready");
+    // `Ready` is a dictionary entry now (see `dict_zh.rs`), so the zh half
+    // asserts the property instead of a spelling: an argument that no
+    // placeholder consumes must not leak into the rendered text. Comparing
+    // against `tr` keeps the expectation from pinning whatever wording the
+    // entry happens to carry today.
+    assert_eq!(
+        tr_with(Lang::Zh, "Ready", &["unused"]),
+        tr(Lang::Zh, "Ready")
+    );
 }
 
 #[test]

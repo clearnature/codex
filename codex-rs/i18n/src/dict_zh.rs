@@ -41,9 +41,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("      • +{0} more marketplaces", "      • 还有{0}个市场"),
     ("     - <none>", "     - <无>"),
     ("     reason: {0}", "     原因：{0}"),
-    ("     {label}: <empty>", "     {0}: <空>"),
+    ("     {0}: <empty>", "     {0}: <空>"),
     ("    See the ", "    参见 "),
-    ("    answer: ", "    回答："),
     ("    note: ", "    备注："),
     ("    • Auth: ", "    • 认证："),
     ("    • Resource templates: ", "    • 资源模板："),
@@ -1363,10 +1362,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "提示：Codex只能检查终端实际发送的按键。",
     ),
     (
-        "This thread is open elsewhere. Close it there and retry resume to continue.",
-        "该线程正在其他地方打开。请先在那里关闭，再重试恢复以继续。",
-    ),
-    (
         "This conversation is unavailable. Its cached transcript and draft remain here; input is paused. Open the agent picker or return to the parent to continue.",
         "此对话当前不可用。缓存的转录与草稿仍保留在此；输入已暂停。请打开代理选择器或返回父级以继续。",
     ),
@@ -2053,16 +2048,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("tool: {0} · {1}", "工具：{0} · {1}"),
     ("tools", "工具"),
     (
-        "tui.keymap.agents.{action}: ctrl-z is reserved for suspend",
-        "tui.keymap.agents.{action}：ctrl-z保留用于挂起",
+        "tui.keymap.agents.{0}: ctrl-z is reserved for suspend",
+        "tui.keymap.agents.{0}：ctrl-z保留用于挂起",
     ),
     (
-        "tui.keymap.agents.{action}: printable keys and backspace are reserved for task input",
-        "tui.keymap.agents.{action}：可打印字符键与backspace保留用于任务输入",
+        "tui.keymap.agents.{0}: printable keys and backspace are reserved for task input",
+        "tui.keymap.agents.{0}：可打印字符键与backspace保留用于任务输入",
     ),
     (
-        "tui.keymap.chat.{action}: printable keys are reserved for text input",
-        "tui.keymap.chat.{action}：可打印字符键保留用于文本输入",
+        "tui.keymap.chat.{0}: printable keys are reserved for text input",
+        "tui.keymap.chat.{0}：可打印字符键保留用于文本输入",
     ),
     (
         "tui.keymap.global.open_agents: AltGr characters are reserved for text input",
@@ -2693,18 +2688,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Shared with me", "与我共享"),
     ("Shared with me (link)", "与我共享（链接）"),
     ("Local", "本地"),
-    (
-        "This updates when workspace plugins finish loading.",
-        "工作区插件加载完成后会更新。",
-    ),
     ("No workspace plugins available", "没有可用的工作区插件"),
     (
         "No workspace directory plugins are available.",
         "没有可用的工作区目录插件。",
-    ),
-    (
-        "This updates when shared plugins finish loading.",
-        "共享插件加载完成后会更新。",
     ),
     ("No shared plugins available", "没有可用的共享插件"),
     (
@@ -2712,28 +2699,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "还没有人向你共享插件。",
     ),
     ("Loading available plugins...", "正在加载可用插件…"),
-    (
-        "This updates when the marketplace list is ready.",
-        "市场源列表就绪后会更新。",
-    ),
     ("Loading plugins...", "正在加载插件…"),
     ("Adding marketplace...", "正在添加市场源…"),
-    (
-        "This updates when marketplace installation completes.",
-        "市场源安装完成后会更新。",
-    ),
     ("Remove {0} marketplace?", "要移除市场源 {0} 吗？"),
-    (
-        "This removes the configured marketplace from Codex.",
-        "这会从Codex中移除已配置的市场源。",
-    ),
     (" select", " 选择"),
     ("esc close", "Esc关闭"),
     ("Remove marketplace", "移除市场源"),
-    (
-        "Remove this marketplace from the available plugin list.",
-        "从可用插件列表中移除该市场源。",
-    ),
     ("Back to plugins", "返回插件"),
     ("Keep this marketplace installed.", "保留已安装的市场源。"),
     ("Removing {0}...", "正在移除 {0}…"),
@@ -2837,10 +2808,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Internal error: missing the 'read-only' approval preset.",
         "内部错误：缺少 'read-only' 审批预设。",
-    ),
-    (
-        "Internal error: missing the 'auto' approval preset.",
-        "内部错误：缺少 'auto' 审批预设。",
     ),
     (
         "Internal error: missing the 'full-access' approval preset.",
@@ -2955,10 +2922,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // the same file stay English (see §3.6 of the design doc).
     ("A worktree is already being created.", "已在创建工作树。"),
     (
-        "Changing directories requires an idle primary session without queued input.",
-        "切换目录需要主会话处于空闲状态且没有排队输入。",
-    ),
-    (
         "Changing directories is not supported for remote workspaces or remote execution environments.",
         "远程工作区或远程执行环境不支持切换目录。",
     ),
@@ -2983,10 +2946,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "A thread must contain at least one turn before it can be forked.",
         "线程至少要包含一个回合才能分叉。",
-    ),
-    (
-        "Wait for permissions to update before forking.",
-        "请等待权限更新后再分叉。",
     ),
     (
         "Wait for permissions to update before editing this prompt.",
@@ -3449,10 +3408,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Update available!", "有可用更新！"),
     ("See full release notes:", "查看完整发布说明："),
     ("Run {0} to update.", "运行 {0} 进行更新。"),
-    (
-        "See https://github.com/openai/codex for installation options.",
-        "安装选项见https://github.com/openai/codex。",
-    ),
     ("This content can't be shown", "此内容无法显示"),
     ("This content can’t be shown", "此内容无法显示"),
     ("Trusted Access", "受信任访问"),
@@ -3809,29 +3764,13 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // Plugins catalogue, second batch (`tui/src/chatwidget/plugin_catalog.rs`):
     // the loading/empty/error copy of the marketplace and tab views. The
     // `OPENAI_CURATED_LOADING_DESCRIPTION` const became a function (§3.6).
-    (
-        "This updates when OpenAI Curated plugins finish loading.",
-        "OpenAI精选插件加载完成后会更新。",
-    ),
     ("Removing marketplace...", "正在移除市场源…"),
-    (
-        "This updates when marketplace removal completes.",
-        "市场源移除完成后会更新。",
-    ),
-    (
-        "This updates when marketplace upgrade completes.",
-        "市场源升级完成后会更新。",
-    ),
     ("Loading plugin details...", "正在加载插件详情…"),
     (
         "This updates when plugin details load.",
         "插件详情加载后会更新。",
     ),
     ("Installing plugin...", "正在安装插件…"),
-    (
-        "This updates when plugin installation completes.",
-        "插件安装完成后会更新。",
-    ),
     ("Uninstalling plugin...", "正在卸载插件…"),
     (
         "This updates when the plugin removal completes.",
@@ -3841,20 +3780,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Plugin marketplace unavailable", "插件市场源不可用"),
     ("Failed to add marketplace.", "添加市场源失败。"),
     ("Marketplace add failed", "市场源添加失败"),
-    (
-        "Failed to add marketplace from the provided source.",
-        "从提供的来源添加市场源失败。",
-    ),
     ("Try again", "重试"),
     (
         "Review the confirmation prompt again.",
         "请重新查看确认提示。",
     ),
     ("No marketplace plugins available", "没有可用的市场源插件"),
-    (
-        "No plugins are available in the discovered marketplaces.",
-        "在发现的市场源中没有可用插件。",
-    ),
     (
         "Browse plugins from available marketplaces.",
         "从可用市场源浏览插件。",
@@ -3890,18 +3821,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Type to search plugins", "输入以搜索插件"),
     (
-        "Add a marketplace from a Git repo or local root.",
-        "从Git仓库或本地根目录添加市场源。",
-    ),
-    (
-        "Enter a source to make its plugins available in this menu.",
-        "输入来源，使其插件出现在本菜单中。",
-    ),
-    (
-        "Enter owner/repo, a Git URL, or a local marketplace path.",
-        "输入owner/repo、Git URL或本地市场源路径。",
-    ),
-    (
         "Press Enter to enter a marketplace source.",
         "按Enter输入市场源。",
     ),
@@ -3913,7 +3832,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // value order happens to match Chinese.
     (
         "Data shared with this app is subject to the app's ",
-        "与此应用共享的数据受该应用的 ",
+        "与此应用共享的数据受该应用的",
     ),
     ("terms of service", "服务条款"),
     (" and ", " 和 "),
@@ -3930,39 +3849,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Uninstall plugin", "卸载插件"),
     ("Remove this plugin now.", "立即移除此插件。"),
-    (
-        "This remote plugin did not provide an uninstall identity.",
-        "该远程插件未提供卸载标识。",
-    ),
     ("Install plugin", "安装插件"),
-    (
-        "This plugin is disabled by your workspace admin.",
-        "该插件已被工作区管理员禁用。",
-    ),
-    (
-        "This plugin is not installable from this marketplace.",
-        "无法从此市场源安装该插件。",
-    ),
     ("Install this plugin now.", "立即安装此插件。"),
-    (
-        "This plugin did not provide an install location.",
-        "该插件未提供安装位置。",
-    ),
     ("MCP Servers", "MCP服务器"),
     ("plugin details are unavailable", "插件详情不可用"),
     ("Upgrading marketplaces...", "正在升级市场源…"),
-    (
-        "ctrl + u upgrade · ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
-        "ctrl + u升级 · ctrl + r移除 · space切换 · ←/→ 标签页 · enter详情 · esc关闭",
-    ),
-    (
-        "ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
-        "ctrl + r移除 · space切换 · ←/→ 标签页 · enter详情 · esc关闭",
-    ),
-    (
-        "ctrl + u upgrade · space toggle · ←/→ tabs · enter details · esc close",
-        "ctrl + u升级 · space切换 · ←/→ 标签页 · enter详情 · esc关闭",
-    ),
     ("Upgrading {0} marketplace...", "正在升级市场源 {0}…"),
     ("Loading details for {0}...", "正在加载 {0} 的详情…"),
     ("Installed ({0})", "已安装（{0}）"),
@@ -4372,10 +4263,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "用法：/usage [daily|weekly|cumulative]",
     ),
     ("Usage: /mcp [verbose]", "用法：/mcp [verbose]"),
-    (
-        "Invalid `tui.keymap` configuration: {0}",
-        "无效的`tui.keymap`配置：{0}",
-    ),
     ("Usage: /keymap [debug]", "用法：/keymap [debug]"),
     (
         "The session must start before you can change a goal.",
@@ -4603,10 +4490,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Failed to reset memories: {0}", "重置记忆失败：{0}"),
     ("Reset local memories.", "已重置本地记忆。"),
     ("default", "默认"),
-    (
-        "Permission overrides are not supported when resuming a remote task.",
-        "恢复远程任务时不支持权限覆盖。",
-    ),
     ("None", "无"),
     ("Friendly", "友好"),
     ("Pragmatic", "务实"),
@@ -4809,10 +4692,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Enter owner/repo, a Git URL, or a local marketplace path.",
         "输入owner/repo、Git URL或本地市场源路径。",
-    ),
-    (
-        "Data shared with this app is subject to the app's ",
-        "与此应用共享的数据受该应用的",
     ),
     (
         "This plugin is installed by your workspace admin.",
@@ -5829,7 +5708,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} to submit", "{0} 提交"),
     ("{0} to submit answer", "{0} 提交答案"),
     ("{0} to submit all", "{0} 全部提交"),
-    ("Field {0}/{1}", "Field {0}/{1}"),
+    ("Field {0}/{1}", "字段 {0}/{1}"),
     ("{0} ({1} required unanswered)", "{0}（{1} 个必填项未填写）"),
     ("Allow", "允许"),
     ("Deny", "拒绝"),

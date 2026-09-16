@@ -467,7 +467,7 @@ fn render_non_file_layer_value(layer: &ConfigLayerEntry) -> Vec<Line<'static>> {
         .unwrap_or_else(|| format_toml_value(&layer.config));
     if value.is_empty() {
         return vec![
-            tr_with(current(), "     {label}: <empty>", &[label])
+            tr_with(current(), "     {0}: <empty>", &[label])
                 .dim()
                 .into(),
         ];

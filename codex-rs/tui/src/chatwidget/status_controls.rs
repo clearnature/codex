@@ -5,6 +5,9 @@
 //! history-facing `/status` surface.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     /// Update the status indicator header and details.
@@ -282,10 +285,13 @@ impl ChatWidget {
             ),
         ];
         if let Some(name) = self.thread_name.as_deref().filter(|name| !name.is_empty()) {
-            copy_targets.push(("Thread name".to_string(), Arc::from(name)));
+            copy_targets.push((tr(current(), "Thread name").to_string(), Arc::from(name)));
         }
         if let Some(thread_id) = self.thread_id {
-            copy_targets.push(("Session ID".to_string(), Arc::from(thread_id.to_string())));
+            copy_targets.push((
+                tr(current(), "Session ID").to_string(),
+                Arc::from(thread_id.to_string()),
+            ));
         }
         self.transcript.last_status_copy_targets = Some(super::transcript::StatusCopySource {
             handle,
@@ -447,7 +453,14 @@ impl ChatWidget {
     ) -> Option<String> {
         let window = window?;
         let remaining = (100.0f64 - window.used_percent).clamp(0.0f64, 100.0f64);
-        Some(format!("{label} {remaining:.0}% left"))
+        Some(
+            tr_with(
+                current(),
+                "{0} {1}% left",
+                &[label, &format!("{remaining:.0}")],
+            )
+            .to_string(),
+        )
     }
 
     pub(super) fn status_line_reasoning_effort_label(

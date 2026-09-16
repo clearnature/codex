@@ -44,7 +44,7 @@ impl App {
             Ok(response) => response,
             Err(err) => {
                 self.chat_widget
-                    .add_error_message(thread_goal_error_message("read", &err));
+                    .add_error_message(thread_goal_error_message(tr(current(), "read"), &err));
                 return;
             }
         };
@@ -113,7 +113,7 @@ impl App {
             Ok(response) => response,
             Err(err) => {
                 self.chat_widget
-                    .add_error_message(thread_goal_error_message("read", &err));
+                    .add_error_message(thread_goal_error_message(tr(current(), "read"), &err));
                 return;
             }
         };
@@ -163,7 +163,7 @@ impl App {
                 },
                 Err(err) => {
                     self.chat_widget
-                        .add_error_message(thread_goal_error_message("read", &err));
+                        .add_error_message(thread_goal_error_message(tr(current(), "read"), &err));
                     return;
                 }
             }
@@ -197,7 +197,7 @@ impl App {
                     return;
                 }
                 self.chat_widget
-                    .add_error_message(thread_goal_error_message("replace", &err));
+                    .add_error_message(thread_goal_error_message(tr(current(), "replace"), &err));
                 return;
             }
         }
@@ -272,7 +272,7 @@ impl App {
             ),
             Err(err) => self
                 .chat_widget
-                .add_error_message(thread_goal_error_message("update", &err)),
+                .add_error_message(thread_goal_error_message(tr(current(), "update"), &err)),
         }
     }
 
@@ -305,7 +305,7 @@ impl App {
             }
             Err(err) => self
                 .chat_widget
-                .add_error_message(thread_goal_error_message("clear", &err)),
+                .add_error_message(thread_goal_error_message(tr(current(), "clear"), &err)),
         }
     }
 
@@ -378,7 +378,12 @@ fn thread_goal_error_message(action: &str, err: &color_eyre::Report) -> String {
     if is_ephemeral_thread_goal_error(err) {
         ephemeral_thread_goal_error_message().to_string()
     } else {
-        format!("Failed to {action} thread goal: {err}")
+        tr_with(
+            current(),
+            "Failed to {0} thread goal: {1}",
+            &[action, &err.to_string()],
+        )
+        .to_string()
     }
 }
 
@@ -419,7 +424,7 @@ mod tests {
         .wrap_err("thread/goal/get failed in TUI");
 
         assert_eq!(
-            thread_goal_error_message("read", &err),
+            thread_goal_error_message(tr(current(), "read"), &err),
             ephemeral_thread_goal_error_message()
         );
     }
@@ -430,7 +435,10 @@ mod tests {
             "thread/goal/get failed: ephemeral thread does not support goals: thread-1"
         )
         .wrap_err("thread/goal/get failed in TUI");
-        let cell = crate::history_cell::new_error_event(thread_goal_error_message("read", &err));
+        let cell = crate::history_cell::new_error_event(thread_goal_error_message(
+            tr(current(), "read"),
+            &err,
+        ));
         let width = 72;
         let height = 6;
         let backend = crate::test_backend::VT100Backend::new(width, height);
@@ -453,7 +461,7 @@ mod tests {
             color_eyre::eyre::eyre!("server disappeared").wrap_err("thread/goal/get failed in TUI");
 
         assert_eq!(
-            thread_goal_error_message("read", &err),
+            thread_goal_error_message(tr(current(), "read"), &err),
             "Failed to read thread goal: thread/goal/get failed in TUI"
         );
     }

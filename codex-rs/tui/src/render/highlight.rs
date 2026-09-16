@@ -23,6 +23,8 @@
 //! prevent pathological CPU/memory usage.  Callers must fall back to plain
 //! unstyled text.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use ratatui::style::Color as RtColor;
 use ratatui::style::Modifier;
 use ratatui::style::Style;
@@ -129,17 +131,24 @@ pub(crate) fn validate_theme_name(name: Option<&str>, codex_home: Option<&Path>)
             if load_custom_theme(name, home).is_some() {
                 return None;
             }
-            return Some(format!(
-                "Custom theme \"{name}\" at {custom_theme_path_display} could not \
-                 be loaded (invalid .tmTheme format). Falling back to the default theme."
-            ));
+            return Some(
+                tr_with(
+                    current(),
+                    "Custom theme \"{0}\" at {1} could not be loaded (invalid .tmTheme format). Falling back to the default theme.",
+                    &[name, custom_theme_path_display.as_str()],
+                )
+                .to_string(),
+            );
         }
     }
-    Some(format!(
-        "Theme \"{name}\" not found. Using the default theme. \
-         To use a custom theme, place a .tmTheme file at \
-         {custom_theme_path_display}."
-    ))
+    Some(
+        tr_with(
+            current(),
+            "Theme \"{0}\" not found. Using the default theme. To use a custom theme, place a .tmTheme file at {1}.",
+            &[name, custom_theme_path_display.as_str()],
+        )
+        .to_string(),
+    )
 }
 
 /// Map a kebab-case theme name to the corresponding `EmbeddedThemeName`.

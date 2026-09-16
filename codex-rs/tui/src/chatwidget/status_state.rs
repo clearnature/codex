@@ -1,6 +1,9 @@
 //! Status indicator and terminal-title state for `ChatWidget`.
 
 use crate::status_indicator_widget::STATUS_DETAILS_DEFAULT_MAX_LINES;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct StatusIndicatorState {
@@ -19,7 +22,8 @@ impl StatusIndicatorState {
     }
 
     pub(super) fn is_guardian_review(&self) -> bool {
-        self.header == "Reviewing approval request" || self.header.starts_with("Reviewing ")
+        self.header == tr(current(), "Reviewing approval request")
+            || self.header.starts_with("Reviewing ")
     }
 }
 
@@ -89,15 +93,20 @@ impl PendingGuardianReviewStatus {
                 .collect::<Vec<_>>();
             let remaining = self.entries.len().saturating_sub(3);
             if remaining > 0 {
-                lines.push(format!("+{remaining} more"));
+                lines.push(tr_with(current(), "+{0} more", &[&remaining.to_string()]).to_string());
             }
             Some(lines.join("\n"))
         };
         let details = details?;
         let header = if self.entries.len() == 1 {
-            String::from("Reviewing approval request")
+            String::from(tr(current(), "Reviewing approval request"))
         } else {
-            format!("Reviewing {} approval requests", self.entries.len())
+            tr_with(
+                current(),
+                "Reviewing {0} approval requests",
+                &[&self.entries.len().to_string()],
+            )
+            .to_string()
         };
         let details_max_lines = if self.entries.len() == 1 { 1 } else { 4 };
         Some(StatusIndicatorState {

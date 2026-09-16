@@ -10,6 +10,7 @@ use crate::session_start::complete_session_start;
 use crate::unarchive_prompt::run_unarchive_prompt;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 fn spawn_startup_thread_start(
     app_server: &AppServerSession,
@@ -654,11 +655,11 @@ impl App {
         let file_search = FileSearchManager::new(config.cwd.to_path_buf(), app_event_tx.clone());
         let runtime_keymap =
             RuntimeKeymap::from_config(&local_settings.tui.keymap).map_err(|err| {
-                color_eyre::eyre::eyre!(
-                    "Invalid `tui.keymap` configuration: {err}\n\
-Fix the config and retry.\n\
-See the Codex keymap documentation for supported actions and examples."
-                )
+                color_eyre::eyre::eyre!(tr_with(
+                    current(),
+                    "Invalid `tui.keymap` configuration: {0}\nFix the config and retry.\nSee the Codex keymap documentation for supported actions and examples.",
+                    &[&err.to_string()],
+                ))
             })?;
         #[cfg(not(debug_assertions))]
         let upgrade_version = crate::updates::get_upgrade_version(&config);

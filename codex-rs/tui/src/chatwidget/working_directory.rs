@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::history_cell::McpInventoryLoadingCell;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn can_change_working_directory(&self, thread_id: ThreadId) -> bool {
@@ -22,7 +24,11 @@ impl ChatWidget {
     pub(super) fn request_working_directory_change(&mut self, path: &str) {
         if !self.is_session_configured() {
             self.add_error_message(
-                "The session must start before you can change its working directory.".to_string(),
+                tr(
+                    current(),
+                    "The session must start before you can change its working directory.",
+                )
+                .to_string(),
             );
             return;
         }
@@ -31,8 +37,10 @@ impl ChatWidget {
             return;
         };
         if !self.can_change_working_directory(thread_id) {
-            let message =
-                "Changing directories requires an idle primary session without queued input.";
+            let message = tr(
+                current(),
+                "Changing directories requires an idle primary session without queued input.",
+            );
             self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
                 history_cell::new_error_event(message.to_string()),
             )));

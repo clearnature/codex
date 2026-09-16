@@ -13,6 +13,8 @@
 //! request correlation, transient/completed card state, and integration with
 //! `ChatWidget` history insertion.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 mod chart;
 
 use std::sync::Arc;
@@ -128,13 +130,13 @@ impl HistoryCell for TokenActivityHistoryCell {
         match &*state {
             TokenActivityState::Loading => {
                 vec![
-                    " Token activity".bold().into(),
-                    "   Loading...".dim().into(),
+                    tr(current(), " Token activity").bold().into(),
+                    tr(current(), "   Loading...").dim().into(),
                 ]
             }
             TokenActivityState::Error => vec![
-                " Token activity".bold().into(),
-                "   Token activity unavailable".dim().into(),
+                tr(current(), " Token activity").bold().into(),
+                tr(current(), "   Token activity unavailable").dim().into(),
             ],
             TokenActivityState::Loaded { response, today } => {
                 chart::loaded_lines(self.view, response, *today, width)

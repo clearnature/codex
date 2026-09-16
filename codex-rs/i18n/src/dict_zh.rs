@@ -6453,6 +6453,41 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "此app server不支持经确认的权限变更；请使用/permissions",
     ),
     ("Failed to update permissions: {0}", "更新权限失败：{0}"),
+    // Token-activity panel, status copy targets, rate-limit lines, the review
+    // indicator, working-directory guards, theme fallback warnings, the startup
+    // keymap error and thread-goal failures. The thread-goal template takes the
+    // verb as {0}, so the callers pass tr(current(), "read"/"replace"/...) too.
+    ("   Loading...", "   正在加载…"),
+    ("   Token activity unavailable", "   Token活动不可用"),
+    ("Session ID", "会话ID"),
+    ("{0} {1}% left", "{0} 剩余{1}%"),
+    ("Reviewing approval request", "正在审核审批请求"),
+    ("Reviewing {0} approval requests", "正在审核{0}个审批请求"),
+    (
+        "The session must start before you can change its working directory.",
+        "会话必须先启动，才能更改其工作目录。",
+    ),
+    (
+        "Changing directories requires an idle primary session without queued input.",
+        "切换目录需要主会话空闲且没有排队的输入。",
+    ),
+    (
+        "Custom theme \"{0}\" at {1} could not be loaded (invalid .tmTheme format). Falling back to the default theme.",
+        "位于{1}的自定义主题“{0}”无法加载（.tmTheme格式无效）。已回退到默认主题。",
+    ),
+    (
+        "Theme \"{0}\" not found. Using the default theme. To use a custom theme, place a .tmTheme file at {1}.",
+        "未找到主题“{0}”。正在使用默认主题。若要使用自定义主题，请将.tmTheme文件放在{1}。",
+    ),
+    (
+        "Invalid `tui.keymap` configuration: {0}\nFix the config and retry.\nSee the Codex keymap documentation for supported actions and examples.",
+        "`tui.keymap`配置无效：{0}\n请修正配置后重试。\n支持的按键与示例见Codex键位文档。",
+    ),
+    ("Failed to {0} thread goal: {1}", "线程目标{0}失败：{1}"),
+    ("read", "读取"),
+    ("replace", "替换"),
+    ("update", "更新"),
+    ("clear", "清除"),
 ];
 
 /// English source text -> Simplified Chinese.

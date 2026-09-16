@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::Path;
 
 use crate::key_hint;
@@ -284,14 +287,16 @@ impl WidgetRef for &CwdPromptScreen {
 
         column.push("");
         column.push(Line::from(vec![
-            "Choose working directory to ".into(),
+            tr(current(), "Choose working directory to ").into(),
             action_verb.bold(),
-            " this session".into(),
+            tr(current(), " this session").into(),
         ]));
         column.push("");
         column.push(
-            Line::from(format!(
-                "Session = latest cwd recorded in the {action_past} session"
+            Line::from(tr_with(
+                current(),
+                "Session = latest cwd recorded in the {0} session",
+                &[&action_past.to_string()],
             ))
             .dim()
             .inset(Insets::tlbr(
@@ -299,33 +304,36 @@ impl WidgetRef for &CwdPromptScreen {
             )),
         );
         column.push(
-            Line::from("Current = your current working directory".dim()).inset(Insets::tlbr(
-                /*top*/ 0, /*left*/ 2, /*bottom*/ 0, /*right*/ 0,
-            )),
+            Line::from(tr(current(), "Current = your current working directory").dim()).inset(
+                Insets::tlbr(
+                    /*top*/ 0, /*left*/ 2, /*bottom*/ 0, /*right*/ 0,
+                ),
+            ),
         );
         column.push("");
         column.push(selection_option_row(
             /*index*/ 0,
-            format!("Use session directory ({session_cwd})"),
+            tr_with(current(), "Use session directory ({0})", &[&session_cwd]),
             self.highlighted == CwdSelection::Session,
         ));
         column.push(selection_option_row(
             /*index*/ 1,
-            format!("Use current directory ({current_cwd})"),
+            tr_with(current(), "Use current directory ({0})", &[&current_cwd]),
             self.highlighted == CwdSelection::Current,
         ));
         column.push(selection_option_row(
             /*index*/ 2,
-            "Always use session directory".to_string(),
+            tr(current(), "Always use session directory").to_string(),
             self.highlighted == CwdSelection::SessionAndRemember,
         ));
         if self.allow_remember_current {
             let label = if self.remembered_current_cwd == self.current_cwd {
-                "Always use current directory".to_string()
+                tr(current(), "Always use current directory").to_string()
             } else {
-                format!(
-                    "Always use current directory ({})",
-                    self.remembered_current_cwd
+                tr_with(
+                    current(),
+                    "Always use current directory ({0})",
+                    &[&self.remembered_current_cwd.to_string()],
                 )
             };
             column.push(selection_option_row(
@@ -339,7 +347,7 @@ impl WidgetRef for &CwdPromptScreen {
             Line::from(vec![
                 "Press ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to continue".dim(),
+                tr(current(), " to continue").dim(),
             ])
             .inset(Insets::tlbr(
                 /*top*/ 0, /*left*/ 2, /*bottom*/ 0, /*right*/ 0,

@@ -170,6 +170,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     (" start of history ", " 历史起点 "),
     (" the request to run ", " 请求运行以下内容的 "),
+    (" this session", " 本次会话"),
     (" to change", " 切换"),
     (" to configure them.", " 进行配置。"),
     (" to continue and create a sandbox...", " 以继续并创建沙箱…"),
@@ -323,6 +324,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Ambiguous `{0}` = `{1}`: the same chord is already assigned to `{2}`. Choose a unique chord and retry.",
         "`{0}` = `{1}` 有歧义：同一和弦已分配给 `{2}`。请使用不重复的和弦后重试。",
     ),
+    ("Always use current directory", "始终使用当前目录"),
+    (
+        "Always use current directory ({0})",
+        "始终使用当前目录（{0}）",
+    ),
+    ("Always use session directory", "始终使用会话目录"),
     ("Answer the questions to continue.", "回答问题以继续。"),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
     (
@@ -422,6 +429,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Clear local memory files and summaries. Existing threads stay intact.",
         "清除本地记忆文件与摘要。现有线程不受影响。",
     ),
+    ("Choose working directory to ", "选择工作目录以"),
     ("Closed", "已关闭"),
     ("Closed an agent", "已关闭一个代理"),
     (
@@ -473,6 +481,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Couldn't set up your sandbox with Administrator permissions",
         "无法以管理员权限完成沙箱设置",
+    ),
+    (
+        "Current = your current working directory",
+        "当前 = 你当前的工作目录",
     ),
     ("Current project", "当前项目"),
     (
@@ -998,6 +1010,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Sent input to", "已发送输入到"),
     ("Sent input to an agent", "已向代理发送输入"),
+    (
+        "Session = latest cwd recorded in the {0} session",
+        "会话 = 记录在{0}次会话中的最新cwd",
+    ),
     ("Session ID: {0}", "会话ID：{0}"),
     ("Session archived: {0}", "会话已归档：{0}"),
     ("Session runtime:", "会话运行时："),
@@ -1164,6 +1180,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Use Detailed Hint A (Recommended)", "使用详细提示A（推荐）"),
     ("Use Detailed Hint B", "使用详细提示B"),
     ("Use Detailed Hint C", "使用详细提示C"),
+    ("Use current directory ({0})", "使用当前目录（{0}）"),
     ("Use memories", "使用记忆"),
     (
         "Use memories in the following threads. Applied at next thread.",
@@ -1173,6 +1190,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Use non-admin sandbox (higher risk if prompt injected)",
         "使用非管理员沙箱（提示词注入时风险更高）",
     ),
+    ("Use session directory ({0})", "使用会话目录（{0}）"),
     ("Viewed {0}", "已查看{0}"),
     (
         "Viewing sub-agent — direct input is disabled",

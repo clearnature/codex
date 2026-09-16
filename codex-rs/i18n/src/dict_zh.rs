@@ -263,6 +263,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Add Codex files alongside your existing project files",
         "在你的现有项目文件旁添加Codex文件",
     ),
+    ("Acknowledge findings and continue", "确认发现并继续"),
     ("Add a short status model", "添加简短的状态模型"),
     ("Agent command center", "代理指挥中心"),
     ("Agent errored", "代理出错"),
@@ -413,8 +414,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Cannot safely retry a turn whose input exceeds the bounded history page.",
         "该轮次的输入超出有界历史页范围，无法安全重试。",
     ),
+    ("Chat paused as a precaution", "聊天已出于安全考虑暂停"),
     ("Chat sessions", "聊天会话"),
     ("Chat sessions ({0})", "聊天会话（{0}）"),
+    ("Chat stopped as a precaution", "聊天已出于安全考虑停止"),
     ("Choose items to import.", "选择要导入的条目。"),
     (
         "Choose what happens to the current task.",
@@ -445,6 +448,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "配置层栈（优先级从低到高）：",
     ),
     ("Config key: ", "配置键："),
+    ("Connected to your IDE.", "已连接到你的IDE。"),
     ("Contacted", "已联系"),
     ("Context {0}% left", "剩余上下文 {0}%"),
     ("Context {0}% used", "已用上下文 {0}%"),
@@ -671,6 +675,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Fresh thread with this plan.", "用此计划新建线程。"),
     ("Fresh thread. Context: {0}.", "新建线程。上下文：{0}。"),
+    (
+        "Future messages will include your current IDE selection and open tabs.",
+        "后续消息会包含你当前的IDE选中内容与打开的标签页。",
+    ),
     ("Generate memories", "生成记忆"),
     (
         "Generate memories from the following threads. Current thread included.",
@@ -699,6 +707,13 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "If you'd rather not wait, retry with a faster model. It may be less capable of handling complex requests.",
         "如果你不想等待，可以用更快的模型重试。它处理复杂请求的能力可能较弱。",
+    ),
+    ("IDE context could not be enabled.", "无法启用IDE上下文。"),
+    ("IDE context is off.", "IDE上下文已关闭。"),
+    ("IDE context is on.", "IDE上下文已开启。"),
+    (
+        "IDE context was skipped for this message.",
+        "本条消息已跳过IDE上下文。",
     ),
     ("Implement this plan?", "要实施此计划吗？"),
     ("Import selected", "导入所选项"),
@@ -823,6 +838,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "上下移动即可实时预览主题",
     ),
     ("Needs input", "需要输入"),
+    ("New chat", "新建聊天"),
     ("New task", "新建任务"),
     (
         "No action is required. Codex will keep waiting, and this menu will close when the response is ready.",
@@ -962,10 +978,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Responses API inference: {0}", "Responses API推理：{0}"),
     ("Responses API overhead: {0}", "Responses API开销：{0}"),
+    ("Resume another chat", "恢复另一个聊天"),
     ("Resumed an agent", "已恢复一个代理"),
     ("Retry with a faster model", "用更快的模型重试"),
     ("Return to memory settings.", "返回记忆设置。"),
     ("Review a diff", "审查diff"),
+    ("Review findings", "查看发现"),
     ("Review selection", "查看选择"),
     ("Review the diff", "审查该diff"),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
@@ -1168,6 +1186,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "把Codex更新到最新版本。",
     ),
     ("Updated {0} file(s)", "已更新{0}个文件"),
+    ("Usage: /ide [on|off|status]", "用法：/ide [on|off|status]"),
     ("Use ", "用 "),
     (
         "Your existing setup will not be changed.",
@@ -1208,6 +1227,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "We couldn't complete the world-writable scan, so protections cannot be verified. ",
         "无法完成全局可写扫描，因此无法验证防护。 ",
+    ),
+    (
+        "We couldn’t confirm the agent was acting safely and following your instructions. To continue working, start or resume another chat.",
+        "我们无法确认代理的行动是否安全、是否遵循你的指令。要继续工作，请新建或恢复另一个聊天。",
+    ),
+    (
+        "We couldn’t confirm the agent was interpreting your instructions correctly. Review what we detected before deciding to continue.",
+        "我们无法确认代理是否正确理解了你的指令。请先查看我们检测到的内容，再决定是否继续。",
     ),
     ("Web search: {0}", "网络搜索：{0}"),
     (

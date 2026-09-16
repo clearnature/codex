@@ -3,6 +3,8 @@
 
 use super::*;
 use codex_app_server_protocol::MisalignmentErrorDetails;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 const PRECAUTION_VIEW: &str = "misalignment_precaution";
 
@@ -28,8 +30,18 @@ pub(super) struct MisalignmentViolation {
     review: Option<Arc<MisalignmentReview>>,
 }
 
-const MISALIGNMENT_POLICY_TITLE: &str = "Chat stopped as a precaution";
-const MISALIGNMENT_POLICY_DESCRIPTION: &str = "We couldn’t confirm the agent was acting safely and following your instructions. To continue working, start or resume another chat.";
+/// 错位策略拦截提示。用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`；
+/// 引用点已 `grep -rn` 确认均在本文件内。
+fn misalignment_policy_title() -> &'static str {
+    tr(current(), "Chat stopped as a precaution")
+}
+
+fn misalignment_policy_description() -> &'static str {
+    tr(
+        current(),
+        "We couldn’t confirm the agent was acting safely and following your instructions. To continue working, start or resume another chat.",
+    )
+}
 
 impl ChatWidget {
     pub(crate) fn has_misalignment_policy_violation(&self) -> bool {
@@ -98,7 +110,7 @@ impl ChatWidget {
             .set_composer_text(String::new(), Vec::new(), Vec::new());
         self.bottom_pane.set_composer_input_enabled(
             /*enabled*/ false,
-            Some(MISALIGNMENT_POLICY_TITLE.to_string()),
+            Some(misalignment_policy_title().to_string()),
         );
 
         self.show_misalignment_policy_precaution();
@@ -111,13 +123,13 @@ impl ChatWidget {
         self.bottom_pane.dismiss_view_by_id(PRECAUTION_VIEW);
         let mut items = vec![
             SelectionItem {
-                name: "New chat".to_string(),
+                name: tr(current(), "New chat").to_string(),
                 actions: vec![Box::new(|tx| tx.send(AppEvent::NewSession { name: None }))],
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Resume another chat".to_string(),
+                name: tr(current(), "Resume another chat").to_string(),
                 actions: vec![Box::new(|tx| tx.send(AppEvent::OpenResumePicker))],
                 ..Default::default()
             },
@@ -131,7 +143,7 @@ impl ChatWidget {
             items.insert(
                 0,
                 SelectionItem {
-                    name: "Review findings".to_string(),
+                    name: tr(current(), "Review findings").to_string(),
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::ReviewMisalignment(Arc::clone(&review)));
                     })],
@@ -143,7 +155,7 @@ impl ChatWidget {
             items.insert(
                 1,
                 SelectionItem {
-                    name: "Agent command center".to_string(),
+                    name: tr(current(), "Agent command center").to_string(),
                     actions: vec![Box::new(|tx| tx.send(AppEvent::OpenAgentsOverview))],
                     ..Default::default()
                 },
@@ -153,10 +165,13 @@ impl ChatWidget {
             view_id: Some(PRECAUTION_VIEW),
             header: Box::new(
                 Paragraph::new(vec![
-                    Line::from(if review.is_some() { "Chat paused as a precaution" } else { MISALIGNMENT_POLICY_TITLE }).bold(),
+                    Line::from(if review.is_some() { tr(current(), "Chat paused as a precaution") } else { misalignment_policy_title() }).bold(),
                     Line::from(if review.is_some() {
-                        "We couldn’t confirm the agent was interpreting your instructions correctly. Review what we detected before deciding to continue."
-                    } else { MISALIGNMENT_POLICY_DESCRIPTION }).dim(),
+                        tr(
+                            current(),
+                            "We couldn’t confirm the agent was interpreting your instructions correctly. Review what we detected before deciding to continue.",
+                        )
+                    } else { misalignment_policy_description() }).dim(),
                 ])
                 .wrap(Wrap { trim: false }),
             ),
@@ -188,10 +203,10 @@ impl ChatWidget {
         self.bottom_pane.dismiss_view_by_id(PRECAUTION_VIEW);
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(PRECAUTION_VIEW),
-            title: Some("Chat paused as a precaution".to_string()),
+            title: Some(tr(current(), "Chat paused as a precaution").to_string()),
             items: vec![
                 SelectionItem {
-                    name: "Acknowledge findings and continue".to_string(),
+                    name: tr(current(), "Acknowledge findings and continue").to_string(),
                     is_disabled: !can_continue,
                     actions: vec![Box::new(move |tx| {
                         tx.send(AppEvent::ContinueMisalignment(Arc::clone(&review)));

@@ -553,10 +553,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "加载后台任务设置失败：{0}",
     ),
     ("Failed to name the new session: {0}", "命名新会话失败：{0}"),
+    (
+        "Failed to open browser for {0}: {1}",
+        "无法为{0}打开浏览器：{1}",
+    ),
     ("Failed to open editor: {0}", "打开编辑器失败：{0}"),
     (
         "Failed to read new session defaults: {0}",
         "读取新会话默认值失败：{0}",
+    ),
+    (
+        "Failed to open this session in the Desktop app: {0}. Install or launch the Desktop app and try again.",
+        "无法在桌面应用中打开此会话：{0}。请安装或启动桌面应用后重试。",
     ),
     ("Failed to refresh shortcuts: {0}", "刷新快捷键失败：{0}"),
     ("Failed to rename task: {0}", "重命名任务失败：{0}"),
@@ -595,6 +603,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Failed to retry with a faster model: original turn is unavailable.",
         "用更快的模型重试失败：原始轮次不可用。",
+    ),
+    (
+        "Failed to retry with a faster model: {0}",
+        "用更快的模型重试失败：{0}",
     ),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
@@ -787,6 +799,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Opened this session in the Desktop app.",
         "已在桌面应用中打开此会话。",
     ),
+    ("Opened {0} in your browser.", "已在浏览器中打开{0}。"),
     ("Option 1", "选项1"),
     ("Option 2", "选项2"),
     ("Option 3", "选项3"),
@@ -1188,6 +1201,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace",
         "在远程工作区中使用 `tui.resume_cwd = \"current\"` 需要 `--cd`",
     ),
+    ("`open {0}` exited with {1}", "`open {0}` 以{1}退出"),
     ("a patch touching ", "涉及以下内容的补丁 "),
     ("agent tool: {0} · {1}", "代理工具：{0} · {1}"),
     ("answer: ******", "回答：******"),
@@ -1290,6 +1304,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to serialize Auto Review denial event",
         "无法序列化Auto Review拒绝事件",
     ),
+    ("failed to invoke `open`: {0}", "调用 `open` 失败：{0}"),
+    (
+        "failed to launch the Desktop app through PowerShell with {0}",
+        "通过PowerShell启动桌面应用失败，返回{0}",
+    ),
+    (
+        "failed to launch the Desktop app through PowerShell: {0}",
+        "通过PowerShell启动桌面应用失败：{0}",
+    ),
     ("failed to load skills on startup", "启动时加载技能失败"),
     (
         "failed to localize requested filesystem paths: {0}",
@@ -1339,6 +1362,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("hook prompt: ", "钩子提示："),
     ("image: {0}", "图像：{0}"),
     ("install {0}", "安装{0}"),
+    (
+        "interrupted turn {0} is missing from the source thread",
+        "被中断的轮次{0}不在源线程中",
+    ),
+    (
+        "interrupted turn {0} is no longer the latest turn",
+        "被中断的轮次{0}已不是最新轮次",
+    ),
+    (
+        "interrupted turn {0} is still in progress",
+        "被中断的轮次{0}仍在进行中",
+    ),
     ("interrupted with {0} unanswered", "已中断，还有{0}个未回答"),
     ("item", "条目"),
     ("items", "条目"),

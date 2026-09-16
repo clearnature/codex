@@ -13,6 +13,7 @@ use codex_app_server_protocol::TurnItemsView;
 use codex_app_server_protocol::UserInput;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 pub(super) struct SafetyBufferedRetry {
     pub(super) thread_id: ThreadId,
@@ -87,8 +88,11 @@ impl App {
                 .and_then(RuntimePermissionProfileOverride::turn_permission_profile),
         );
         if let Err(err) = turn_permissions_overrides(permissions_override, cwd.as_path()) {
-            self.chat_widget
-                .add_error_message(format!("Failed to retry with a faster model: {err}"));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to retry with a faster model: {0}",
+                &[&err.to_string()],
+            ));
             return;
         }
         *turn_model = model.clone();
@@ -102,8 +106,11 @@ impl App {
         });
 
         if let Err(err) = app_server.turn_interrupt(thread_id, turn_id.clone()).await {
-            self.chat_widget
-                .add_error_message(format!("Failed to retry with a faster model: {err}"));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to retry with a faster model: {0}",
+                &[&err.to_string()],
+            ));
             return;
         }
 
@@ -257,26 +264,35 @@ impl App {
         );
         self.chat_widget.cancel_safety_buffered_retry_submission();
         self.chat_widget.restore_user_message_to_composer(prompt);
-        self.chat_widget
-            .add_error_message(format!("Failed to retry with a faster model: {err}"));
+        self.chat_widget.add_error_message(tr_with(
+            current(),
+            "Failed to retry with a faster model: {0}",
+            &[&err.to_string()],
+        ));
     }
 }
 
 fn safety_retry_fork_point(turns: &[Turn], turn_id: &str) -> Result<()> {
     let Some(turn_index) = turns.iter().position(|turn| turn.id == turn_id) else {
-        return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is missing from the source thread"
-        ));
+        return Err(color_eyre::eyre::eyre!(tr_with(
+            current(),
+            "interrupted turn {0} is missing from the source thread",
+            &[&turn_id.to_string()],
+        )));
     };
     if turn_index + 1 != turns.len() {
-        return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is no longer the latest turn"
-        ));
+        return Err(color_eyre::eyre::eyre!(tr_with(
+            current(),
+            "interrupted turn {0} is no longer the latest turn",
+            &[&turn_id.to_string()],
+        )));
     }
     if turns[turn_index].status == TurnStatus::InProgress {
-        return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is still in progress"
-        ));
+        return Err(color_eyre::eyre::eyre!(tr_with(
+            current(),
+            "interrupted turn {0} is still in progress",
+            &[&turn_id.to_string()],
+        )));
     }
 
     let Some(previous_turn) = turns[..turn_index].last() else {

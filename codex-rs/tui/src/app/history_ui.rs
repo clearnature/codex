@@ -7,6 +7,7 @@ use super::*;
 use crate::terminal_hyperlinks::HyperlinkLine;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Weak;
 
 /// 在桌面应用中打开会话后的提示。
@@ -228,13 +229,22 @@ impl App {
 
     pub(super) fn open_url_in_browser(&mut self, url: String) {
         if let Err(err) = webbrowser::open(&url) {
-            self.chat_widget
-                .add_error_message(format!("Failed to open browser for {url}: {err}"));
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to open browser for {0}: {1}",
+                &[&url.to_string(), &err.to_string()],
+            ));
             return;
         }
 
-        self.chat_widget
-            .add_info_message(format!("Opened {url} in your browser."), /*hint*/ None);
+        self.chat_widget.add_info_message(
+            tr_with(
+                current(),
+                "Opened {0} in your browser.",
+                &[&url.to_string()],
+            ),
+            /*hint*/ None,
+        );
     }
 
     pub(super) fn open_desktop_thread(&mut self, thread_id: ThreadId) {
@@ -342,8 +352,10 @@ impl App {
 }
 
 fn desktop_thread_open_error_message(err: &str) -> String {
-    format!(
-        "Failed to open this session in the Desktop app: {err}. Install or launch the Desktop app and try again."
+    tr_with(
+        current(),
+        "Failed to open this session in the Desktop app: {0}. Install or launch the Desktop app and try again.",
+        &[&err.to_string()],
     )
 }
 
@@ -352,12 +364,22 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
     let status = std::process::Command::new("open")
         .arg(url)
         .status()
-        .map_err(|err| format!("failed to invoke `open`: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to invoke `open`: {0}",
+                &[&err.to_string()],
+            )
+        })?;
 
     if status.success() {
         Ok(())
     } else {
-        Err(format!("`open {url}` exited with {status}"))
+        Err(tr_with(
+            current(),
+            "`open {0}` exited with {1}",
+            &[&url.to_string(), &status.to_string()],
+        ))
     }
 }
 
@@ -369,7 +391,13 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
         .arg("-Command")
         .arg(&script)
         .output()
-        .map_err(|err| format!("failed to launch the Desktop app through PowerShell: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to launch the Desktop app through PowerShell: {0}",
+                &[&err.to_string()],
+            )
+        })?;
 
     if output.status.success() {
         return Ok(());
@@ -377,9 +405,10 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
 
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     if stderr.is_empty() {
-        Err(format!(
-            "failed to launch the Desktop app through PowerShell with {}",
-            output.status
+        Err(tr_with(
+            current(),
+            "failed to launch the Desktop app through PowerShell with {0}",
+            &[&output.status.to_string()],
         ))
     } else {
         Err(stderr)

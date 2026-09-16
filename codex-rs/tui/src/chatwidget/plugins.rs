@@ -790,8 +790,10 @@ impl ChatWidget {
         }
 
         if let Err(err) = result {
-            self.add_error_message(format!(
-                "Failed to update plugin config for {plugin_id}: {err}"
+            self.add_error_message(tr_with(
+                codex_i18n::current(),
+                "Failed to update plugin config for {0}: {1}",
+                &[&plugin_id, &err.to_string()],
             ));
             if let PluginsCacheState::Ready(response) = self.plugins_cache_for_current_cwd() {
                 self.refresh_plugins_popup_if_open(&response);
@@ -836,8 +838,12 @@ impl ChatWidget {
                 self.plugin_install_apps_needing_auth.clear();
                 self.plugin_install_auth_flow = None;
                 self.add_info_message(
-                    format!("Uninstalled {plugin_display_name} plugin."),
-                    Some("Bundled apps remain installed.".to_string()),
+                    tr_with(
+                        current(),
+                        "Uninstalled {0} plugin.",
+                        &[&plugin_display_name],
+                    ),
+                    Some(tr(current(), "Bundled apps remain installed.").to_string()),
                 );
             }
             Err(err) => {
@@ -897,17 +903,30 @@ impl ChatWidget {
         let current = flow.next_app_index + 1;
         let is_installed = self.plugin_install_auth_app_is_installed(app.id.as_str());
         let status_label = if is_installed {
-            "Already installed in this session."
+            codex_i18n::tr(codex_i18n::current(), "Already installed in this session.")
         } else {
-            "Install the required Apps in ChatGPT to continue:"
+            tr(
+                codex_i18n::current(),
+                "Install the required Apps in ChatGPT to continue:",
+            )
         };
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Plugins".bold()));
         header.push(Line::from(
-            format!("{} plugin installed.", flow.plugin_display_name).bold(),
+            tr_with(
+                codex_i18n::current(),
+                "{0} plugin installed.",
+                &[&flow.plugin_display_name],
+            )
+            .bold(),
         ));
         header.push(Line::from(
-            format!("App setup {current}/{total}: {}", app.name).dim(),
+            tr_with(
+                codex_i18n::current(),
+                "App setup {0}/{1}: {2}",
+                &[&current.to_string(), &total.to_string(), &app.name],
+            )
+            .dim(),
         ));
         header.push(Line::from(status_label.dim()));
 
@@ -915,14 +934,23 @@ impl ChatWidget {
 
         if let Some(install_url) = app.install_url.clone() {
             let install_label = if is_installed {
-                "Manage on ChatGPT"
+                codex_i18n::tr(codex_i18n::current(), "Manage on ChatGPT")
             } else {
-                "Install on ChatGPT"
+                codex_i18n::tr(codex_i18n::current(), "Install on ChatGPT")
             };
             items.push(SelectionItem {
                 name: install_label.to_string(),
-                description: Some("Open the ChatGPT app management page".to_string()),
-                selected_description: Some("Open the app page in your browser.".to_string()),
+                description: Some(
+                    codex_i18n::tr(
+                        codex_i18n::current(),
+                        "Open the ChatGPT app management page",
+                    )
+                    .to_string(),
+                ),
+                selected_description: Some(
+                    codex_i18n::tr(codex_i18n::current(), "Open the app page in your browser.")
+                        .to_string(),
+                ),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenUrlInBrowser {
                         url: install_url.clone(),
@@ -932,8 +960,15 @@ impl ChatWidget {
             });
         } else {
             items.push(SelectionItem {
-                name: "ChatGPT apps link unavailable".to_string(),
-                description: Some("This app did not provide an install/manage URL.".to_string()),
+                name: codex_i18n::tr(codex_i18n::current(), "ChatGPT apps link unavailable")
+                    .to_string(),
+                description: Some(
+                    codex_i18n::tr(
+                        codex_i18n::current(),
+                        "This app did not provide an install/manage URL.",
+                    )
+                    .to_string(),
+                ),
                 is_disabled: true,
                 ..Default::default()
             });
@@ -942,8 +977,13 @@ impl ChatWidget {
         if is_installed {
             items.push(SelectionItem {
                 name: "Continue".to_string(),
-                description: Some("This app is already installed.".to_string()),
-                selected_description: Some("Advance to the next app.".to_string()),
+                description: Some(
+                    codex_i18n::tr(codex_i18n::current(), "This app is already installed.")
+                        .to_string(),
+                ),
+                selected_description: Some(
+                    codex_i18n::tr(codex_i18n::current(), "Advance to the next app.").to_string(),
+                ),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::PluginInstallAuthAdvance {
                         refresh_connectors: false,
@@ -955,10 +995,18 @@ impl ChatWidget {
             items.push(SelectionItem {
                 name: "I've installed it".to_string(),
                 description: Some(
-                    "Trust your confirmation and continue to the next app.".to_string(),
+                    tr(
+                        codex_i18n::current(),
+                        "Trust your confirmation and continue to the next app.",
+                    )
+                    .to_string(),
                 ),
                 selected_description: Some(
-                    "Continue without waiting for refresh to complete.".to_string(),
+                    tr(
+                        codex_i18n::current(),
+                        "Continue without waiting for refresh to complete.",
+                    )
+                    .to_string(),
                 ),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::PluginInstallAuthAdvance {
@@ -970,9 +1018,21 @@ impl ChatWidget {
         }
 
         items.push(SelectionItem {
-            name: "Skip remaining app setup".to_string(),
-            description: Some("Stop this follow-up flow for this plugin.".to_string()),
-            selected_description: Some("Abandon remaining required app setup.".to_string()),
+            name: codex_i18n::tr(codex_i18n::current(), "Skip remaining app setup").to_string(),
+            description: Some(
+                codex_i18n::tr(
+                    codex_i18n::current(),
+                    "Stop this follow-up flow for this plugin.",
+                )
+                .to_string(),
+            ),
+            selected_description: Some(
+                codex_i18n::tr(
+                    codex_i18n::current(),
+                    "Abandon remaining required app setup.",
+                )
+                .to_string(),
+            ),
             actions: vec![Box::new(|tx| {
                 tx.send(AppEvent::PluginInstallAuthAbandon);
             })],
@@ -1014,19 +1074,33 @@ impl ChatWidget {
         self.plugin_install_apps_needing_auth.clear();
         if abandoned {
             self.add_info_message(
-                format!(
-                    "Skipped remaining app setup for {} plugin.",
-                    flow.plugin_display_name
+                tr_with(
+                    codex_i18n::current(),
+                    "Skipped remaining app setup for {0} plugin.",
+                    &[&flow.plugin_display_name],
                 ),
-                Some("The plugin may not be usable until required apps are installed.".to_string()),
+                Some(
+                    tr(
+                        current(),
+                        "The plugin may not be usable until required apps are installed.",
+                    )
+                    .to_string(),
+                ),
             );
         } else {
             self.add_info_message(
-                format!(
-                    "Completed app setup flow for {} plugin.",
-                    flow.plugin_display_name
+                tr_with(
+                    codex_i18n::current(),
+                    "Completed app setup flow for {0} plugin.",
+                    &[&flow.plugin_display_name],
                 ),
-                Some("You can now continue managing plugins from /plugins.".to_string()),
+                Some(
+                    tr(
+                        current(),
+                        "You can now continue managing plugins from /plugins.",
+                    )
+                    .to_string(),
+                ),
             );
         }
 

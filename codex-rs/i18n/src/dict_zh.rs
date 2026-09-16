@@ -3356,6 +3356,67 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "停止后台任务失败：{0}",
     ),
     ("daemon process exited with {0}", "守护进程退出，状态{0}"),
+    ("Bundled apps remain installed.", "捆绑应用仍保持安装。"),
+    ("Already installed in this session.", "本次会话中已安装。"),
+    (
+        "Install the required Apps in ChatGPT to continue:",
+        "请先在ChatGPT中安装所需应用以继续：",
+    ),
+    (
+        "Open the ChatGPT app management page",
+        "打开ChatGPT应用管理页",
+    ),
+    (
+        "Open the app page in your browser.",
+        "在浏览器中打开该应用页面。",
+    ),
+    ("ChatGPT apps link unavailable", "ChatGPT应用链接不可用"),
+    (
+        "This app did not provide an install/manage URL.",
+        "该应用未提供安装/管理链接。",
+    ),
+    ("This app is already installed.", "该应用已安装。"),
+    ("Advance to the next app.", "继续到下一个应用。"),
+    (
+        "Trust your confirmation and continue to the next app.",
+        "信任你的确认并继续到下一个应用。",
+    ),
+    (
+        "Continue without waiting for refresh to complete.",
+        "不再等待刷新完成，直接继续。",
+    ),
+    ("Skip remaining app setup", "跳过剩余应用设置"),
+    (
+        "Stop this follow-up flow for this plugin.",
+        "停止此插件的后续流程。",
+    ),
+    (
+        "Abandon remaining required app setup.",
+        "放弃剩余必需的应用设置。",
+    ),
+    (
+        "The plugin may not be usable until required apps are installed.",
+        "在安装所需应用前，该插件可能无法使用。",
+    ),
+    (
+        "You can now continue managing plugins from /plugins.",
+        "现在可以继续通过/plugins管理插件。",
+    ),
+    ("Uninstalled {0} plugin.", "已卸载插件{0}。"),
+    ("{0} plugin installed.", "已安装插件{0}。"),
+    ("App setup {0}/{1}: {2}", "应用设置{0}/{1}：{2}"),
+    (
+        "Failed to update plugin config for {0}: {1}",
+        "更新插件配置失败（{0}）：{1}",
+    ),
+    (
+        "Skipped remaining app setup for {0} plugin.",
+        "已跳过插件{0}的剩余应用设置。",
+    ),
+    (
+        "Completed app setup flow for {0} plugin.",
+        "已完成插件{0}的应用设置流程。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

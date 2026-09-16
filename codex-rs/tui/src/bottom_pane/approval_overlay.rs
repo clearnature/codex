@@ -949,12 +949,12 @@ fn exec_options(
                 })
             }
             CommandExecutionApprovalDecision::Decline => Some(ApprovalOption {
-                label: "No, continue without running it".to_string(),
+                label: tr(current(), "No, continue without running it").to_string(),
                 decision: ApprovalDecision::Command(CommandExecutionApprovalDecision::Decline),
                 shortcuts: keymap.deny.clone(),
             }),
             CommandExecutionApprovalDecision::Cancel => Some(ApprovalOption {
-                label: "No, and tell Codex what to do differently".to_string(),
+                label: tr(current(), "No, and tell Codex what to do differently").to_string(),
                 decision: ApprovalDecision::Command(CommandExecutionApprovalDecision::Cancel),
                 shortcuts: keymap.decline.clone(),
             }),
@@ -983,7 +983,7 @@ pub(crate) fn format_additional_permissions_rule(
                 .filter(|entry| entry.access == FileSystemAccessMode::Read),
         );
         if !reads.is_empty() {
-            parts.push(format!("read {reads}"));
+            parts.push(tr_with(current(), "read {0}", &[reads.as_str()]));
         }
         let writes = format_file_system_entry_paths(
             file_system
@@ -993,7 +993,7 @@ pub(crate) fn format_additional_permissions_rule(
                 .filter(|entry| entry.access == FileSystemAccessMode::Write),
         );
         if !writes.is_empty() {
-            parts.push(format!("write {writes}"));
+            parts.push(tr_with(current(), "write {0}", &[writes.as_str()]));
         }
         let denied_reads = format_file_system_entry_paths(
             file_system
@@ -1003,7 +1003,11 @@ pub(crate) fn format_additional_permissions_rule(
                 .filter(|entry| entry.access == FileSystemAccessMode::Deny),
         );
         if !denied_reads.is_empty() {
-            parts.push(format!("deny read {denied_reads}"));
+            parts.push(tr_with(
+                current(),
+                "deny read {0}",
+                &[denied_reads.as_str()],
+            ));
         }
     }
     if parts.is_empty() {
@@ -1032,7 +1036,9 @@ fn format_file_system_entry_paths<'a>(
     entries
         .map(|entry| match &entry.path {
             FileSystemPath::Path { path } => format!("`{path}`"),
-            FileSystemPath::GlobPattern { pattern } => format!("glob `{pattern}`"),
+            FileSystemPath::GlobPattern { pattern } => {
+                tr_with(current(), "glob `{0}`", &[pattern.as_str()])
+            }
             FileSystemPath::Special { value } => format!("`{}`", special_path_label(value)),
         })
         .collect::<Vec<_>>()
@@ -1060,17 +1066,17 @@ fn path_label(base: &str, subpath: &Option<LegacyAppPathString>) -> String {
 fn patch_options(keymap: &ApprovalKeymap) -> Vec<ApprovalOption> {
     vec![
         ApprovalOption {
-            label: "Yes, proceed".to_string(),
+            label: tr(current(), "Yes, proceed").to_string(),
             decision: ApprovalDecision::FileChange(FileChangeApprovalDecision::Accept),
             shortcuts: keymap.approve.clone(),
         },
         ApprovalOption {
-            label: "Yes, and don't ask again for these files".to_string(),
+            label: tr(current(), "Yes, and don't ask again for these files").to_string(),
             decision: ApprovalDecision::FileChange(FileChangeApprovalDecision::AcceptForSession),
             shortcuts: keymap.approve_for_session.clone(),
         },
         ApprovalOption {
-            label: "No, and tell Codex what to do differently".to_string(),
+            label: tr(current(), "No, and tell Codex what to do differently").to_string(),
             decision: ApprovalDecision::FileChange(FileChangeApprovalDecision::Cancel),
             shortcuts: keymap.decline.clone(),
         },
@@ -1087,24 +1093,28 @@ fn permissions_options(keymap: &ApprovalKeymap) -> Vec<ApprovalOption> {
 
     vec![
         ApprovalOption {
-            label: "Yes, grant these permissions for this turn".to_string(),
+            label: tr(current(), "Yes, grant these permissions for this turn").to_string(),
             decision: ApprovalDecision::Permissions(PermissionsDecision::GrantForTurn),
             shortcuts: keymap.approve.clone(),
         },
         ApprovalOption {
-            label: "Yes, grant for this turn with strict auto review".to_string(),
+            label: tr(
+                current(),
+                "Yes, grant for this turn with strict auto review",
+            )
+            .to_string(),
             decision: ApprovalDecision::Permissions(
                 PermissionsDecision::GrantForTurnWithStrictAutoReview,
             ),
             shortcuts: vec![key_hint::plain(KeyCode::Char('r'))],
         },
         ApprovalOption {
-            label: "Yes, grant these permissions for this session".to_string(),
+            label: tr(current(), "Yes, grant these permissions for this session").to_string(),
             decision: ApprovalDecision::Permissions(PermissionsDecision::GrantForSession),
             shortcuts: keymap.approve_for_session.clone(),
         },
         ApprovalOption {
-            label: "No, continue without permissions".to_string(),
+            label: tr(current(), "No, continue without permissions").to_string(),
             decision: ApprovalDecision::Permissions(PermissionsDecision::Deny),
             shortcuts: deny_shortcuts,
         },
@@ -1135,17 +1145,17 @@ fn elicitation_options(keymap: &ApprovalKeymap) -> Vec<ApprovalOption> {
 
     vec![
         ApprovalOption {
-            label: "Yes, provide the requested info".to_string(),
+            label: tr(current(), "Yes, provide the requested info").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Accept),
             shortcuts: keymap.approve.clone(),
         },
         ApprovalOption {
-            label: "No, but continue without it".to_string(),
+            label: tr(current(), "No, but continue without it").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Decline),
             shortcuts: decline_shortcuts,
         },
         ApprovalOption {
-            label: "Cancel this request".to_string(),
+            label: tr(current(), "Cancel this request").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Cancel),
             shortcuts: cancel_shortcuts,
         },

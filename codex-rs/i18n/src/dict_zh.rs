@@ -693,6 +693,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" reasoning up", " 提高推理强度"),
     // Context-window line. Templates: the placeholders are substituted after
     // the lookup, so the translation may move them but not drop them.
+    ("deny read {0}", "禁止读取 {0}"),
     ("disabled", "已禁用"),
     ("download pet asset from {0}", "从{0}下载宠物资源"),
     ("enabled", "已启用"),
@@ -746,6 +747,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "frame path has no valid file stem",
         "帧路径没有有效的文件名主干",
     ),
+    ("glob `{0}`", "通配 `{0}`"),
     ("group", "分组"),
     ("install {0}", "安装{0}"),
     ("item", "条目"),

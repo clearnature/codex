@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -95,12 +98,13 @@ impl PendingInputPreview {
         let mut lines = vec![];
 
         if !self.pending_steers.is_empty() {
-            let mut header = vec!["Messages to be submitted after next tool call".into()];
+            let mut header =
+                vec![tr(current(), "Messages to be submitted after next tool call").into()];
             if let Some(interrupt_binding) = self.interrupt_binding {
                 header.extend(vec![
-                    " (press ".dim(),
+                    tr(current(), " (press ").dim(),
                     interrupt_binding.into(),
-                    " to interrupt and send immediately)".dim(),
+                    tr(current(), " to interrupt and send immediately)").dim(),
                 ]);
             }
             Self::push_section_header(&mut lines, width, Line::from(header));
@@ -126,7 +130,7 @@ impl PendingInputPreview {
             Self::push_section_header(
                 &mut lines,
                 width,
-                "Messages to be submitted at end of turn".into(),
+                tr(current(), "Messages to be submitted at end of turn").into(),
             );
 
             for steer in &self.rejected_steers {
@@ -147,7 +151,11 @@ impl PendingInputPreview {
             if !lines.is_empty() {
                 lines.push(Line::from(""));
             }
-            Self::push_section_header(&mut lines, width, "Queued follow-up inputs".into());
+            Self::push_section_header(
+                &mut lines,
+                width,
+                tr(current(), "Queued follow-up inputs").into(),
+            );
 
             for message in &self.queued_messages {
                 let wrapped = adaptive_wrap_lines(
@@ -175,7 +183,7 @@ impl PendingInputPreview {
                 Line::from(vec![
                     "    ".into(),
                     edit_binding.into(),
-                    " edit last queued message".into(),
+                    tr(current(), " edit last queued message").into(),
                 ])
                 .dim(),
             );

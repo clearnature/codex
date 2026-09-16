@@ -18,6 +18,9 @@
 //! preview as an editable draft, and `Esc` or Ctrl+C restores the exact draft that existed before
 //! search started.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::ops::Range;
 
 use crossterm::event::KeyCode;
@@ -373,12 +376,12 @@ impl ChatComposer {
     pub(super) fn history_search_footer_line(&self) -> Option<Line<'static>> {
         let search = self.history_search.as_ref()?;
         let mut line = Line::from(vec![
-            "reverse-i-search: ".dim(),
+            tr(current(), "reverse-i-search: ").dim(),
             search.query.clone().cyan(),
         ]);
         match search.status {
             HistorySearchStatus::Idle => {}
-            HistorySearchStatus::Searching => line.push_span("  searching".dim()),
+            HistorySearchStatus::Searching => line.push_span(tr(current(), "  searching").dim()),
             HistorySearchStatus::Match => {
                 line.push_span("  ".dim());
                 line.push_span(Self::history_search_action_key_span(KeyCode::Enter));
@@ -387,7 +390,7 @@ impl ChatComposer {
                 line.push_span(Self::history_search_action_key_span(KeyCode::Esc));
                 line.push_span(" cancel".dim());
             }
-            HistorySearchStatus::NoMatch => line.push_span("  no match".red()),
+            HistorySearchStatus::NoMatch => line.push_span(tr(current(), "  no match").red()),
         }
         Some(line)
     }
@@ -501,7 +504,7 @@ impl ChatComposer {
         if area.is_empty() {
             return None;
         }
-        let prompt_width = Line::from("reverse-i-search: ").width() as u16;
+        let prompt_width = Line::from(tr(current(), "reverse-i-search: ")).width() as u16;
         let query_width = Line::from(search.query.clone()).width() as u16;
         let desired_x = area
             .x

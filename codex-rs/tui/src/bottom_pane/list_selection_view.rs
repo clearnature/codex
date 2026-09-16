@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -586,9 +589,9 @@ impl ListSelectionView {
                     let prefix = if is_selected { '›' } else { ' ' };
                     let name = item.name.as_str();
                     let marker = if item.is_current {
-                        " (current)"
+                        tr(current(), " (current)")
                     } else if item.is_default {
-                        " (default)"
+                        tr(current(), " (default)")
                     } else {
                         ""
                     };
@@ -1286,7 +1289,12 @@ impl Renderable for ListSelectionView {
                 Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(header_area);
             header.render(header_area, buf);
             Paragraph::new(vec![
-                Line::from(format!("[… {header_height} lines] ctrl + a view all")).dim(),
+                Line::from(tr_with(
+                    current(),
+                    "[… {0} lines] ctrl + a view all",
+                    &[&header_height.to_string()],
+                ))
+                .dim(),
             ])
             .render(elision_area, buf);
         } else {
@@ -1331,7 +1339,7 @@ impl Renderable for ListSelectionView {
                     &rows,
                     &self.state,
                     render_area.height as usize,
-                    "no matches",
+                    tr(current(), "no matches"),
                     column_width,
                 ),
                 SelectionRowDisplay::SingleLine => render_rows_single_line_with_col_width_mode(
@@ -1340,7 +1348,7 @@ impl Renderable for ListSelectionView {
                     &rows,
                     &self.state,
                     render_area.height as usize,
-                    "no matches",
+                    tr(current(), "no matches"),
                     column_width,
                 ),
             };

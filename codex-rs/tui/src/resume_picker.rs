@@ -668,8 +668,13 @@ fn picker_provider_filter(config: &Config, uses_remote_workspace: bool) -> Provi
 }
 
 fn picker_runtime_keymap(config: &crate::local_settings::LocalSettings) -> Result<RuntimeKeymap> {
-    RuntimeKeymap::from_config(&config.tui.keymap)
-        .map_err(|err| color_eyre::eyre::eyre!("invalid keymap configuration: {err}"))
+    RuntimeKeymap::from_config(&config.tui.keymap).map_err(|err| {
+        color_eyre::eyre::eyre!(tr_with(
+            current(),
+            "invalid keymap configuration: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }
 
 fn picker_cwd_filter(
@@ -1910,7 +1915,13 @@ impl PickerState {
             .set_session_picker_view(SessionPickerViewMode::from(self.density))
             .apply()
             .await
-            .map_err(|err| color_eyre::eyre::eyre!("failed to write config.toml: {err}"))?;
+            .map_err(|err| {
+                color_eyre::eyre::eyre!(tr_with(
+                    current(),
+                    "failed to write config.toml: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
 
         Ok(())
     }
@@ -3461,47 +3472,51 @@ fn format_relative_time(reference: DateTime<Utc>, ts: Option<DateTime<Utc>>) -> 
     };
     let seconds = (reference - ts).num_seconds().max(0);
     if seconds == 0 {
-        return "now".to_string();
+        return tr(current(), "now").to_string();
     }
     if seconds < 60 {
-        return format!("{seconds}s ago");
+        return tr_with(current(), "{0}s ago", &[&seconds.to_string()]);
     }
     let minutes = seconds / 60;
     if minutes < 60 {
-        return format!("{minutes}m ago");
+        return tr_with(current(), "{0}m ago", &[&minutes.to_string()]);
     }
     let hours = minutes / 60;
     if hours < 24 {
-        return format!("{hours}h ago");
+        return tr_with(current(), "{0}h ago", &[&hours.to_string()]);
     }
     let days = hours / 24;
-    format!("{days}d ago")
+    tr_with(current(), "{0}d ago", &[&days.to_string()])
 }
 
 fn format_relative_time_long(reference: DateTime<Utc>, ts: DateTime<Utc>) -> String {
     let seconds = (reference - ts).num_seconds().max(0);
     if seconds == 0 {
-        return "now".to_string();
+        return tr(current(), "now").to_string();
     }
     if seconds < 60 {
-        return plural_time(seconds, "second");
+        return plural_time(seconds, tr(current(), "second"));
     }
     let minutes = seconds / 60;
     if minutes < 60 {
-        return plural_time(minutes, "minute");
+        return plural_time(minutes, tr(current(), "minute"));
     }
     let hours = minutes / 60;
     if hours < 24 {
-        return plural_time(hours, "hour");
+        return plural_time(hours, tr(current(), "hour"));
     }
-    plural_time(hours / 24, "day")
+    plural_time(hours / 24, tr(current(), "day"))
 }
 
-fn plural_time(value: i64, unit: &str) -> String {
+fn plural_time(value: i64, unit: &'static str) -> String {
     if value == 1 {
-        format!("1 {unit} ago")
+        tr_with(current(), "1 {0} ago", &[tr(current(), unit)])
     } else {
-        format!("{value} {unit}s ago")
+        tr_with(
+            current(),
+            "{0} {1}s ago",
+            &[&value.to_string(), tr(current(), unit)],
+        )
     }
 }
 

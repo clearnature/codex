@@ -179,6 +179,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" this session", " 本次会话"),
     (" to change", " 切换"),
     (" to configure them.", " 进行配置。"),
+    (" to confirm", " 确认"),
     (" to confirm and close", " 确认并关闭"),
     (" to confirm or ", " 确认，或"),
     (" to continue and create a sandbox...", " 以继续并创建沙箱…"),
@@ -186,6 +187,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" to customize", " 自定义"),
     (" to interrupt and send immediately)", " 可中断并立即发送）"),
     (" to move, ", " 移动，"),
+    (" to move, press ", " 移动，按 "),
     (" to queue message", " 排队发送消息"),
     (" to queue", " 排队"),
     (" to review hooks; ", " 审查钩子；"),
@@ -245,6 +247,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "1 hook needs review before it can run.",
         "有1个钩子在运行前需要审查。",
     ),
+    ("1 hook is new or changed.", "有1个钩子是新增或已变更。"),
+    ("1 {0} ago", "1{0}前"),
     ("<< Code review finished >>", "<< 代码审查已完成 >>"),
     ("<audio content>", "<音频内容>"),
     ("<image content>", "<图像内容>"),
@@ -450,6 +454,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "选择Codex的沟通风格。",
     ),
     ("Choose an action", "选择操作"),
+    (
+        "Choose how you'd like Codex to proceed.",
+        "选择你希望Codex如何进行。",
+    ),
     ("Choose items to import.", "选择要导入的条目。"),
     (
         "Choose what happens to the current task.",
@@ -475,6 +483,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Codex is currently experiencing high load.",
         "Codex当前负载较高。",
     ),
+    (
+        "Codex just got an upgrade. Introducing {0}.",
+        "Codex刚刚升级。隆重推出{0}。",
+    ),
     ("Compacted context", "已压缩上下文"),
     ("Completed", "已完成"),
     ("Completed ", "已完成 "),
@@ -494,6 +506,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Context {0}% used", "已用上下文 {0}%"),
     ("Continue planning with the model.", "继续与模型一起规划。"),
     ("Continue with Luna Reserve", "使用Luna Reserve继续"),
+    (
+        "Continue without trusting (hooks won't run)",
+        "不信任并继续（钩子不会运行）",
+    ),
     ("Conversation history is not saved.", "会话历史未保存。"),
     (
         "Conversation interrupted - tell the model what to do differently. Something went wrong? Hit `/feedback` to report the issue.",
@@ -766,6 +782,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Hang tight, this may take a few minutes",
         "请稍候，这可能需要几分钟",
     ),
+    (
+        "Hooks can run outside the sandbox after you trust them.",
+        "信任后，钩子可以在沙箱之外运行。",
+    ),
+    ("Hooks need review", "钩子需要审查"),
     ("Hot path energy for fast iteration", "快速迭代的热路径能量"),
     (
         "If you'd rather not wait, retry with a faster model. It may be less capable of handling complex requests.",
@@ -920,6 +941,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "No action is required. Codex will keep waiting, and this menu will close when the response is ready.",
         "无需任何操作。Codex会继续等待，响应就绪后此菜单会自动关闭。",
     ),
+    (
+        "No active session found matching '{0}'.",
+        "找不到与'{0}'匹配的活动会话。",
+    ),
     ("No agents completed yet", "还没有代理完成"),
     ("No approved plan available", "没有已批准的计划"),
     ("No changes", "无变更"),
@@ -1007,6 +1032,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "按任意键查看Codex收到的内容。Esc会被检查；Ctrl+C关闭。",
     ),
     ("Preparing device code login", "正在准备设备码登录"),
+    ("Press enter to continue", "按Enter继续"),
     ("Preview unavailable", "预览不可用"),
     (
         "Queue a message for an existing session",
@@ -1017,6 +1043,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Question {0}/{1}", "问题 {0}/{1}"),
     ("Questions {0}/{1} answered", "问题 已答 {0}/{1}"),
     ("Queued follow-up inputs", "排队中的后续输入"),
+    (
+        "Queued message {0} for thread {1}.",
+        "已为线程{1}排队消息{0}。",
+    ),
     ("Quiet signal from the void", "来自虚空的安静信号"),
     ("Raw event: ", "原始事件："),
     (
@@ -1083,6 +1113,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Return to memory settings.", "返回记忆设置。"),
     ("Review a diff", "审查diff"),
     ("Review findings", "查看发现"),
+    ("Review hooks", "查看钩子"),
     ("Review selection", "查看选择"),
     ("Review the diff", "审查该diff"),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
@@ -1271,6 +1302,9 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "开启或关闭技能。更改会自动保存。",
     ),
     ("Tools & setup", "工具与配置"),
+    ("Trust all and continue", "全部信任并继续"),
+    ("Trusting hooks...", "正在信任钩子…"),
+    ("Try new model", "试用新模型"),
     ("Try setting up admin sandbox again", "重试管理员沙箱设置"),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to filter themes...", "输入以筛选主题…"),
@@ -1309,6 +1343,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Use Detailed Hint B", "使用详细提示B"),
     ("Use Detailed Hint C", "使用详细提示C"),
     ("Use current directory ({0})", "使用当前目录（{0}）"),
+    ("Use existing model", "沿用现有模型"),
     ("Use memories", "使用记忆"),
     (
         "Use memories in the following threads. Applied at next thread.",
@@ -1349,6 +1384,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Warm, collaborative, and helpful.",
         "温和、乐于协作、有帮助。",
     ),
+    (
+        "We recommend switching from {0} to {1}.",
+        "我们建议从{0}切换到{1}。",
+    ),
     ("Web search: {0}", "网络搜索：{0}"),
     (
         "WebSocket: {0} events send ({1})",
@@ -1386,6 +1425,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "You're out of credits. Your workspace is out of credits. Add credits to continue using Codex.",
         "你的额度已用尽。你的工作区额度已用尽。请充值额度以继续使用Codex。",
+    ),
+    (
+        "You can continue using {0} if you prefer.",
+        "如果你愿意，也可以继续使用{0}。",
     ),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
@@ -1451,6 +1494,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("call", "次调用"),
     ("calls", "次调用"),
     ("cancelled", "已取消"),
+    (
+        "cannot queue through an embedded app server while a local app-server daemon is running; remove configuration overrides or use --remote",
+        "本地app-server守护进程运行时，无法通过嵌入式应用服务器排队；请移除配置覆盖，或使用--remote",
+    ),
     ("canonicalize {0}", "规范化{0}"),
     ("chat session", "聊天会话"),
     ("codex could access {0}", "Codex可能会访问{0}"),
@@ -1499,6 +1546,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" reasoning up", " 提高推理强度"),
     // Context-window line. Templates: the placeholders are substituted after
     // the lookup, so the translation may move them but not drop them.
+    ("day", "天"),
     ("deny read {0}", "禁止读取 {0}"),
     ("directory:", "目录："),
     ("directory: {0}", "目录：{0}"),
@@ -1575,6 +1623,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to serialize request_user_input response: {0}",
         "序列化request_user_input响应失败：{0}",
     ),
+    ("failed to queue session message", "无法排队会话消息"),
     ("failed to resolve CODEX_HOME", "无法解析CODEX_HOME"),
     (
         "failed to start embedded app server",
@@ -1589,6 +1638,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "file changes: {0} · {1} changes",
         "文件变更：{0} · {1} 处变更",
     ),
+    (
+        "failed to write config.toml: {0}",
+        "写入config.toml失败：{0}",
+    ),
     ("forked_from_id is invalid: {0}", "forked_from_id无效：{0}"),
     (
         "frame path has no valid file stem",
@@ -1597,6 +1650,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("glob `{0}`", "通配 `{0}`"),
     ("group", "分组"),
     ("hook prompt: ", "钩子提示："),
+    ("hour", "小时"),
     ("image: {0}", "图像：{0}"),
     ("install {0}", "安装{0}"),
     (
@@ -1616,6 +1670,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
         "远程地址 `{0}` 无效；应为 `ws://host:port`、`wss://host:port`、`unix://` 或 `unix://PATH`",
     ),
+    ("invalid keymap configuration: {0}", "快捷键配置无效：{0}"),
     ("invalid visualization fragment", "可视化片段无效"),
     ("item", "条目"),
     ("items", "条目"),
@@ -1633,14 +1688,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "等待宠物精灵表安装任务",
     ),
     ("link: {0}", "链接：{0}"),
+    ("local app-server daemon", "本地app-server守护进程"),
     ("local {0}", "本地 {0}"),
     ("mcp tool: {0}/{1} · {2}", "MCP工具：{0}/{1} · {2}"),
+    ("minute", "分"),
     ("model: {0}{1}", "模型：{0}{1}"),
     ("network access to {0}", "对{0}的网络访问"),
     ("new task", "新建任务"),
     ("no matches", "无匹配项"),
     ("not started", "未启动"),
     ("note: {0}", "备注：{0}"),
+    ("now", "刚刚"),
     ("open", "打开"),
     ("parse pet asset download URL {0}", "解析宠物资源下载URL{0}"),
     (
@@ -1682,6 +1740,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "读取从{0}下载的宠物资源",
     ),
     ("read {0}", "读取{0}"),
+    ("remote app server", "远端应用服务器"),
     ("remote {0}", "远端 {0}"),
     ("remove {0}", "删除{0}"),
     (
@@ -1697,6 +1756,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("review finished: ", "审查已完成："),
     ("review started: ", "审查已开始："),
     ("search", "搜索"),
+    ("second", "秒"),
     ("send input to terminal {0}: {1}", "向终端{0}发送输入：{1}"),
     ("sixel byte index overflow", "sixel字节索引溢出"),
     (
@@ -1720,6 +1780,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "the selected thread is no longer available for prompt editing",
         "所选线程已不可用于编辑提示词",
+    ),
+    (
+        "the {0} does not support thread/queue/add; update or restart the {0}",
+        "{0}不支持thread/queue/add；请更新或重启{0}",
     ),
     ("thread id `{0}` is invalid: {1}", "线程ID`{0}`无效：{1}"),
     (
@@ -1800,6 +1864,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} (service)", "{0}（service）"),
     ("{0} ({1} skill)", "{0}（{1}个技能）"),
     ("{0} ({1} unanswered)", "{0}（{1}个未回答）"),
+    (
+        "{0} Learn more about {1} at ",
+        "{0} 了解{1}的更多信息，请访问 ",
+    ),
     ("{0} MCP servers", "{0}个MCP服务器"),
     ("{0} actions.", "{0}个操作。"),
     ("{0} apps", "{0}个应用"),
@@ -1813,6 +1881,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "{0} hooks need review before they can run.",
         "有{0}个钩子在运行前需要审查。",
+    ),
+    (
+        "{0} hooks are new or changed.",
+        "有{0}个钩子是新增或已变更。",
     ),
     ("{0} input", "输入 {0}"),
     ("{0} need input", "{0} 需要输入"),
@@ -1834,6 +1906,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} to interrupt", "{0} 中断"),
     ("{0} unavailable", "{0}不可用"),
     ("{0} window", "{0} 窗口"),
+    ("{0} {1}s ago", "{0}{1}前"),
     ("{0}% context left", "剩余上下文 {0}%"),
     ("{0} used", "已用 {0}"),
     ("100% context left", "剩余上下文100%"),
@@ -3096,11 +3169,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Running hook", "正在运行钩子"),
     ("{0}% used", "已用{0}%"),
     ("{0}d (best {1}d)", "{0}天（最长{1}天）"),
+    ("{0}d ago", "{0}天前"),
     ("{0}h", "{0}小时"),
+    ("{0}h ago", "{0}小时前"),
     ("{0}h {1}m", "{0}小时{1}分"),
     ("{0}m", "{0}分"),
+    ("{0}m ago", "{0}分前"),
     ("{0}m {1}s", "{0}分{1}秒"),
     ("{0}s", "{0}秒"),
+    ("{0}s ago", "{0}秒前"),
     ("• Copied conversation to clipboard", "• 已复制会话到剪贴板"),
     ("• Saved conversation to ", "• 会话已保存到"),
     ("• Waited for background terminal", "• 已等待后台终端"),

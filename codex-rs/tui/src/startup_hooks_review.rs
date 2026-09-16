@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyEventKind;
 use ratatui::buffer::Buffer;
@@ -163,7 +166,11 @@ async fn run_startup_hooks_review_app(
                         .await
                         .map(|_| ())
                         .map_err(|err| {
-                            format!("Failed to trust hooks: {}", format_config_error(&err))
+                            tr_with(
+                                current(),
+                                "Failed to trust hooks: {0}",
+                                &[&format_config_error(&err)],
+                            )
                         });
                         match result {
                             Ok(()) => return Ok(StartupHooksReviewOutcome::Continue),
@@ -225,30 +232,41 @@ fn selection_view_params(
 ) -> SelectionViewParams {
     let count = review_needed_count(entry);
     let count_line = match count {
-        1 => "1 hook is new or changed.".to_string(),
-        count => format!("{count} hooks are new or changed."),
+        1 => tr(current(), "1 hook is new or changed.").to_string(),
+        count => tr_with(
+            current(),
+            "{0} hooks are new or changed.",
+            &[&count.to_string()],
+        ),
     };
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Hooks need review".bold()));
+    header.push(Line::from(tr(current(), "Hooks need review").bold()));
     header.push(Line::from(count_line).yellow());
     header.push(Line::from(
-        "Hooks can run outside the sandbox after you trust them.".dim(),
+        tr(
+            current(),
+            "Hooks can run outside the sandbox after you trust them.",
+        )
+        .dim(),
     ));
     if let Some(error) = trust_all_error {
         header.push(Paragraph::new(Line::from(error.to_string()).red()).wrap(Wrap { trim: false }));
     } else if trusting_all {
-        header.push(Line::from("Trusting hooks...".dim()));
+        header.push(Line::from(tr(current(), "Trusting hooks...").dim()));
     }
 
     SelectionViewParams {
         footer_hint: Some(standard_popup_hint_line_for_keymap(&keymap.list)),
         items: vec![
-            selection_item("Review hooks", trusting_all),
+            selection_item(tr(current(), "Review hooks"), trusting_all),
             SelectionItem {
                 require_explicit_confirmation: true,
-                ..selection_item("Trust all and continue", trusting_all)
+                ..selection_item(tr(current(), "Trust all and continue"), trusting_all)
             },
-            selection_item("Continue without trusting (hooks won't run)", trusting_all),
+            selection_item(
+                tr(current(), "Continue without trusting (hooks won't run)"),
+                trusting_all,
+            ),
         ],
         header: Box::new(header),
         ..Default::default()

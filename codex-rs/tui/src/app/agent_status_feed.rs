@@ -9,6 +9,9 @@ use codex_app_server_protocol::CollabAgentTool;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::SubAgentActivityKind;
 use codex_app_server_protocol::ThreadItem;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use std::collections::HashSet;
@@ -33,12 +36,12 @@ impl HistoryCell for AgentStatusHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = vec![
             "/subagents".magenta().into(),
-            "Sub-agents running".bold().into(),
+            tr(current(), "Sub-agents running").bold().into(),
             "".into(),
         ];
 
         if self.entries.is_empty() {
-            lines.push("  • No sub-agents running.".italic().into());
+            lines.push(tr(current(), "  • No sub-agents running.").italic().into());
             return lines;
         }
 
@@ -47,7 +50,13 @@ impl HistoryCell for AgentStatusHistoryCell {
             let preview_width = width.saturating_sub(AGENT_STATUS_PREVIEW_INDENT).max(1);
             let preview_lines = entry.preview_lines(preview_width);
             if preview_lines.is_empty() {
-                lines.push(vec!["    ".into(), "No recent activity yet.".dim().italic()].into());
+                lines.push(
+                    vec![
+                        "    ".into(),
+                        tr(current(), "No recent activity yet.").dim().italic(),
+                    ]
+                    .into(),
+                );
             } else {
                 lines.extend(preview_lines.into_iter().map(indent_preview_line));
             }
@@ -142,7 +151,11 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
             return bounded_summary(&format!("$ {command}"));
         }
         ThreadItem::FileChange { changes, .. } => {
-            return bounded_summary(&format!("Updated {} file(s)", changes.len()));
+            return bounded_summary(&tr_with(
+                current(),
+                "Updated {0} file(s)",
+                &[&changes.len().to_string()],
+            ));
         }
         ThreadItem::McpToolCall { server, tool, .. } => {
             return bounded_summary(&format!("MCP {server}/{tool}"));
@@ -154,7 +167,7 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
                 .as_ref()
                 .map(|namespace| format!("{namespace}/{tool}"))
                 .unwrap_or_else(|| tool.clone());
-            return bounded_summary(&format!("Tool {tool}"));
+            return bounded_summary(&tr_with(current(), "Tool {0}", &[&tool.to_string()]));
         }
         ThreadItem::CollabAgentToolCall { tool, .. } => {
             let action = match tool {
@@ -162,11 +175,11 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
                 | CollabAgentTool::FollowupTask
                 | CollabAgentTool::InterruptAgent
                 | CollabAgentTool::ListAgents => return None,
-                CollabAgentTool::SpawnAgent => "Spawned an agent",
-                CollabAgentTool::SendInput => "Sent input to an agent",
-                CollabAgentTool::ResumeAgent => "Resumed an agent",
-                CollabAgentTool::Wait => "Waited for an agent",
-                CollabAgentTool::CloseAgent => "Closed an agent",
+                CollabAgentTool::SpawnAgent => tr(current(), "Spawned an agent"),
+                CollabAgentTool::SendInput => tr(current(), "Sent input to an agent"),
+                CollabAgentTool::ResumeAgent => tr(current(), "Resumed an agent"),
+                CollabAgentTool::Wait => tr(current(), "Waited for an agent"),
+                CollabAgentTool::CloseAgent => tr(current(), "Closed an agent"),
             };
             return Some(action.to_string());
         }
@@ -174,24 +187,36 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
             kind, agent_path, ..
         } => {
             let action = match kind {
-                SubAgentActivityKind::Started => "Started",
-                SubAgentActivityKind::Interacted => "Contacted",
-                SubAgentActivityKind::Interrupted => "Interrupted",
-                SubAgentActivityKind::Completed => "Completed",
+                SubAgentActivityKind::Started => tr(current(), "Started"),
+                SubAgentActivityKind::Interacted => tr(current(), "Contacted"),
+                SubAgentActivityKind::Interrupted => tr(current(), "Interrupted"),
+                SubAgentActivityKind::Completed => tr(current(), "Completed"),
             };
             return bounded_summary(&format!("{action} {agent_path}"));
         }
         ThreadItem::WebSearch(item) => {
-            return bounded_summary(&format!("Web search: {}", item.query));
+            return bounded_summary(&tr_with(
+                current(),
+                "Web search: {0}",
+                &[&item.query.to_string()],
+            ));
         }
         ThreadItem::ImageView { path, .. } => {
             let path = path.render_for_ui();
-            return bounded_summary(&format!("Viewed {path}"));
+            return bounded_summary(&tr_with(current(), "Viewed {0}", &[&path.to_string()]));
         }
-        ThreadItem::ImageGeneration(_) => return Some("Generated an image".to_string()),
-        ThreadItem::EnteredReviewMode { .. } => return Some("Entered review mode".to_string()),
-        ThreadItem::ExitedReviewMode { .. } => return Some("Exited review mode".to_string()),
-        ThreadItem::ContextCompaction { .. } => return Some("Compacted context".to_string()),
+        ThreadItem::ImageGeneration(_) => {
+            return Some(tr(current(), "Generated an image").to_string());
+        }
+        ThreadItem::EnteredReviewMode { .. } => {
+            return Some(tr(current(), "Entered review mode").to_string());
+        }
+        ThreadItem::ExitedReviewMode { .. } => {
+            return Some(tr(current(), "Exited review mode").to_string());
+        }
+        ThreadItem::ContextCompaction { .. } => {
+            return Some(tr(current(), "Compacted context").to_string());
+        }
         ThreadItem::UserMessage { .. }
         | ThreadItem::HookPrompt { .. }
         | ThreadItem::FunctionCallOutput { .. }

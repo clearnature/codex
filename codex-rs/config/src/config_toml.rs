@@ -163,7 +163,7 @@ pub struct ConfigToml {
     /// locale, and is outranked by `--lang`. A value that names no language
     /// Codex has translations for resolves to English rather than failing.
     ///
-    /// This is the canonical name, decided 2026-09-17. The closed-source Codex
+    /// This is the canonical name, decided 2026-09-16. The closed-source Codex
     /// desktop spells its own knob `localeOverride`; we do not mirror that,
     /// because our desktop support is our own and will use this name too.
     pub locale: Option<String>,

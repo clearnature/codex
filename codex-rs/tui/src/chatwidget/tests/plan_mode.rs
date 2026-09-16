@@ -531,7 +531,7 @@ async fn plan_reasoning_scope_popup_all_modes_persists_global_and_plan_override(
 #[test]
 fn plan_mode_prompt_notification_uses_dedicated_type_name() {
     let notification = Notification::PlanModePrompt {
-        title: PLAN_IMPLEMENTATION_TITLE.to_string(),
+        title: plan_implementation::plan_implementation_title().to_string(),
     };
 
     assert!(notification.allowed_for(&Notifications::Custom(
@@ -542,7 +542,10 @@ fn plan_mode_prompt_notification_uses_dedicated_type_name() {
     ])));
     assert_eq!(
         notification.display(),
-        format!("Plan mode prompt: {PLAN_IMPLEMENTATION_TITLE}")
+        format!(
+            "Plan mode prompt: {}",
+            plan_implementation::plan_implementation_title()
+        )
     );
 }
 
@@ -556,7 +559,7 @@ async fn open_plan_implementation_prompt_sets_pending_notification() {
 
     assert_matches!(
         chat.pending_notification,
-        Some(Notification::PlanModePrompt { ref title }) if title == PLAN_IMPLEMENTATION_TITLE
+        Some(Notification::PlanModePrompt { ref title }) if title == plan_implementation::plan_implementation_title()
     );
 }
 
@@ -585,7 +588,7 @@ async fn agent_turn_complete_does_not_override_pending_plan_mode_prompt_notifica
 
     assert_matches!(
         chat.pending_notification,
-        Some(Notification::PlanModePrompt { ref title }) if title == PLAN_IMPLEMENTATION_TITLE
+        Some(Notification::PlanModePrompt { ref title }) if title == plan_implementation::plan_implementation_title()
     );
 }
 
@@ -845,7 +848,7 @@ async fn plan_implementation_popup_skips_replayed_turn_complete() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !popup.contains(plan_implementation::plan_implementation_title()),
         "expected no plan popup for replayed turn, got {popup:?}"
     );
 }
@@ -884,7 +887,7 @@ async fn plan_implementation_popup_shows_once_when_replay_precedes_live_turn_com
     );
     let replay_popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !replay_popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !replay_popup.contains(plan_implementation::plan_implementation_title()),
         "expected no prompt for replayed turn completion, got {replay_popup:?}"
     );
 
@@ -898,14 +901,14 @@ async fn plan_implementation_popup_shows_once_when_replay_precedes_live_turn_com
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        popup.contains(plan_implementation::plan_implementation_title()),
         "expected prompt for first live turn completion after replay, got {popup:?}"
     );
 
     chat.handle_key_event(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
     let dismissed_popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !dismissed_popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !dismissed_popup.contains(plan_implementation::plan_implementation_title()),
         "expected prompt to dismiss on Esc, got {dismissed_popup:?}"
     );
 
@@ -918,7 +921,7 @@ async fn plan_implementation_popup_shows_once_when_replay_precedes_live_turn_com
     handle_turn_completed(&mut chat, "live-turn-complete-2", /*duration_ms*/ None);
     let duplicate_popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !duplicate_popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !duplicate_popup.contains(plan_implementation::plan_implementation_title()),
         "expected no prompt for duplicate live completion, got {duplicate_popup:?}"
     );
 }
@@ -941,7 +944,7 @@ async fn plan_implementation_popup_skips_when_messages_queued() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !popup.contains(plan_implementation::plan_implementation_title()),
         "expected no plan popup with queued messages, got {popup:?}"
     );
 }
@@ -968,7 +971,7 @@ async fn plan_implementation_popup_skips_without_proposed_plan() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !popup.contains(plan_implementation::plan_implementation_title()),
         "expected no plan popup without proposed plan output, got {popup:?}"
     );
 }
@@ -990,7 +993,7 @@ async fn plan_implementation_popup_shows_after_proposed_plan_output() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        popup.contains(plan_implementation::plan_implementation_title()),
         "expected plan popup after proposed plan output, got {popup:?}"
     );
 }
@@ -1033,7 +1036,7 @@ async fn plan_implementation_popup_skips_when_steer_follows_proposed_plan() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        !popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !popup.contains(plan_implementation::plan_implementation_title()),
         "expected no plan popup after a steer follows the plan, got {popup:?}"
     );
 }
@@ -1080,7 +1083,7 @@ async fn plan_implementation_popup_shows_after_new_plan_follows_steer() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 80);
     assert!(
-        popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        popup.contains(plan_implementation::plan_implementation_title()),
         "expected plan popup after a newer plan follows the steer, got {popup:?}"
     );
 }
@@ -1113,7 +1116,7 @@ async fn plan_implementation_popup_skips_when_rate_limit_prompt_pending() {
         "expected rate limit popup, got {popup:?}"
     );
     assert!(
-        !popup.contains(PLAN_IMPLEMENTATION_TITLE),
+        !popup.contains(plan_implementation::plan_implementation_title()),
         "expected plan popup to be skipped, got {popup:?}"
     );
 }

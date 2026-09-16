@@ -437,6 +437,20 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 | `tui/src/startup_draft.rs:70,219` | 启动取消/输入流关闭的内部原因 |
 | `tui/src/bin/md-events.rs:7` | 调试用二进制（打印 markdown 事件）的诊断输出 |
 
+### 12.10 第 85 轮补录（最后 18 条开放候选）
+
+| 位置 | 依据 |
+| --- | --- |
+| `tui/src/app_server_session/fs.rs:119-131`（5 条） | TUI 侧 app-server 文件系统请求的 eyre 上下文（`{method} failed in TUI`） |
+| `tui/src/app_server_session/history.rs:130,151,208` | 分页历史加载的 eyre 上下文 |
+| `tui/src/tui.rs:261,282` | WinAPI 未实现提示（与 `terminal_title.rs` 同类） |
+| `tui/src/tui.rs:424,427,455` | `stdin/stdout is not a terminal` 诊断与 `tracing` 消息 |
+| `tui/src/chatwidget/tool_lifecycle.rs:227` | 工具结果缺失的内部 `Err(String)` |
+| `tui/src/chatwidget/user_messages.rs:304` | `[Pasted Content N chars]` 占位符进的是**发给模型的用户消息** |
+| `tui/src/external_agent_config_migration/flow.rs:335` | `tracing::warn!` 消息 |
+| `tui/src/chatwidget/reset_credits.rs:44` | strftime 格式 |
+| `tui/src/update_prompt.rs:200` | emoji + U+200A |
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

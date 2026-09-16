@@ -8,6 +8,9 @@
 use crate::chatwidget::fallback_limit_label;
 use crate::chatwidget::limit_label_for_window;
 use crate::text_formatting::capitalize_first;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 use super::helpers::format_reset_timestamp;
 use chrono::DateTime;
@@ -263,26 +266,30 @@ pub(crate) fn compose_rate_limit_data_many(
 
         if show_limit_prefix && !combine_non_codex_single_limit {
             rows.push(StatusRateLimitRow {
-                label: format!("{limit_bucket_label} limit"),
+                label: tr_with(current(), "{0} limit", &[limit_bucket_label]),
                 value: StatusRateLimitValue::Text(String::new()),
             });
         }
 
         if let Some(primary) = snapshot.primary.as_ref() {
             let label = if combine_non_codex_single_limit {
-                format!(
-                    "{} {} limit",
-                    limit_bucket_label,
-                    primary_label.clone().unwrap_or_else(|| capitalize_first(
-                        fallback_limit_label(/*is_secondary*/ false)
-                    ))
+                tr_with(
+                    current(),
+                    "{0} {1} limit",
+                    &[
+                        limit_bucket_label,
+                        &primary_label.clone().unwrap_or_else(|| {
+                            capitalize_first(fallback_limit_label(/*is_secondary*/ false))
+                        }),
+                    ],
                 )
             } else {
-                format!(
-                    "{} limit",
-                    primary_label.clone().unwrap_or_else(|| capitalize_first(
-                        fallback_limit_label(/*is_secondary*/ false)
-                    ))
+                tr_with(
+                    current(),
+                    "{0} limit",
+                    &[&primary_label.clone().unwrap_or_else(|| {
+                        capitalize_first(fallback_limit_label(/*is_secondary*/ false))
+                    })],
                 )
             };
             rows.push(StatusRateLimitRow {
@@ -297,19 +304,23 @@ pub(crate) fn compose_rate_limit_data_many(
 
         if let Some(secondary) = snapshot.secondary.as_ref() {
             let label = if combine_non_codex_single_limit {
-                format!(
-                    "{} {} limit",
-                    limit_bucket_label,
-                    secondary_label.clone().unwrap_or_else(|| capitalize_first(
-                        fallback_limit_label(/*is_secondary*/ true)
-                    ))
+                tr_with(
+                    current(),
+                    "{0} {1} limit",
+                    &[
+                        limit_bucket_label,
+                        &secondary_label.clone().unwrap_or_else(|| {
+                            capitalize_first(fallback_limit_label(/*is_secondary*/ true))
+                        }),
+                    ],
                 )
             } else {
-                format!(
-                    "{} limit",
-                    secondary_label.clone().unwrap_or_else(|| capitalize_first(
-                        fallback_limit_label(/*is_secondary*/ true)
-                    ))
+                tr_with(
+                    current(),
+                    "{0} limit",
+                    &[&secondary_label.clone().unwrap_or_else(|| {
+                        capitalize_first(fallback_limit_label(/*is_secondary*/ true))
+                    })],
                 )
             };
             rows.push(StatusRateLimitRow {
@@ -327,13 +338,17 @@ pub(crate) fn compose_rate_limit_data_many(
         }
         if let Some(individual_limit) = snapshot.individual_limit.as_ref() {
             rows.push(StatusRateLimitRow {
-                label: "Monthly credit limit".to_string(),
+                label: tr(current(), "Monthly credit limit").to_string(),
                 value: StatusRateLimitValue::Window {
                     percent_used: 100.0 - individual_limit.percent_remaining,
                     resets_at: individual_limit.resets_at.clone(),
-                    details: Some(format!(
-                        "{} of {} credits used",
-                        individual_limit.used, individual_limit.limit
+                    details: Some(tr_with(
+                        current(),
+                        "{0} of {1} credits used",
+                        &[
+                            &individual_limit.used.to_string(),
+                            &individual_limit.limit.to_string(),
+                        ],
                     )),
                 },
             });
@@ -372,7 +387,11 @@ pub(crate) fn render_limit_progress_bar(percent_remaining: f64, segments: usize)
 
 /// Formats a compact textual summary from remaining percentage.
 pub(crate) fn format_status_limit_summary(percent_remaining: f64) -> String {
-    format!("{percent_remaining:.0}% left")
+    tr_with(
+        current(),
+        "{0}% left",
+        &[&format!("{percent_remaining:.0}")],
+    )
 }
 
 /// Builds a single `StatusRateLimitRow` when workspace credits are available.
@@ -394,7 +413,7 @@ fn credit_status_row(credits: &CreditsSnapshotDisplay) -> Option<StatusRateLimit
         .and_then(format_credit_balance)
         .map_or_else(
             || "Available".to_string(),
-            |display_balance| format!("{display_balance} credits"),
+            |display_balance| tr_with(current(), "{0} credits", &[&display_balance]),
         );
     Some(StatusRateLimitRow {
         label: "Credits".to_string(),

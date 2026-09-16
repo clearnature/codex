@@ -551,6 +551,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Current = your current working directory",
         "当前 = 你当前的工作目录",
     ),
+    ("Credits", "额度"),
     ("Current project", "当前项目"),
     (
         "Custom .tmTheme files can be added to the {0} directory.",
@@ -612,6 +613,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Entered review mode", "已进入审查模式"),
     ("Enterprise-managed config value", "企业托管配置值"),
     ("Error", "错误"),
+    ("Error adding directories: {0}", "添加目录出错：{0}"),
     ("Error loading configuration: {0}", "加载配置出错：{0}"),
     ("Execpolicy tooling", "Execpolicy工具。"),
     (
@@ -934,6 +936,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Messages to be submitted at end of turn",
         "将在本轮结束时提交的消息",
     ),
+    ("Monthly credit limit", "每月额度限额"),
     ("Needs input", "需要输入"),
     ("New chat", "新建聊天"),
     ("New task", "新建任务"),
@@ -980,6 +983,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Note: You’re in a subdirectory of a Git project. Trusting will apply to the repository root: {0}",
         "注意：你位于某个Git项目的子目录中。信任将应用到仓库根目录：{0}",
+    ),
+    (
+        "OSS provider selection was cancelled by user",
+        "用户取消了开源提供方选择",
     ),
     ("Ollama (Chat)", "Ollama（Chat）"),
     ("Ollama (Responses)", "Ollama（Responses）"),
@@ -1476,6 +1483,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace",
         "在远程工作区中使用 `tui.resume_cwd = \"current\"` 需要 `--cd`",
     ),
+    (
+        "`--worktree` is only supported for local sessions",
+        "`--worktree`仅支持本地会话",
+    ),
     ("`open {0}` exited with {1}", "`open {0}` 以{1}退出"),
     ("a patch touching ", "涉及以下内容的补丁 "),
     ("agent tool: {0} · {1}", "代理工具：{0} · {1}"),
@@ -1887,8 +1898,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "有{0}个钩子是新增或已变更。",
     ),
     ("{0} input", "输入 {0}"),
+    ("{0} limit", "{0}限额"),
     ("{0} need input", "{0} 需要输入"),
     ("{0} of {1}", "{0}/{1}"),
+    ("{0} of {1} credits used", "已用{0}/{1}额度"),
     ("{0} output", "输出 {0}"),
     ("{0} questions requested", "请求了{0}个问题"),
     (
@@ -1906,6 +1919,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} to interrupt", "{0} 中断"),
     ("{0} unavailable", "{0}不可用"),
     ("{0} window", "{0} 窗口"),
+    ("{0} {1} limit", "{0} {1}限额"),
     ("{0} {1}s ago", "{0}{1}前"),
     ("{0}% context left", "剩余上下文 {0}%"),
     ("{0} used", "已用 {0}"),

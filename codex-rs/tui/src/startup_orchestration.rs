@@ -4,6 +4,9 @@
 //! configuration and app-server initialization remain responsive to safe local editing.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 pub(super) async fn run_main_inner(
     mut cli: Cli,
@@ -14,14 +17,16 @@ pub(super) async fn run_main_inner(
     let strict_config = cli.strict_config;
     if cli.shared.worktree {
         if explicit_remote_endpoint.is_some() {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`--worktree` is only supported for local sessions",
-            ));
+            )));
         }
         if cli.fork_picker || cli.fork_last {
-            return Err(std::io::Error::other(
+            return Err(std::io::Error::other(tr(
+                current(),
                 "`codex fork --worktree` requires an explicit session ID",
-            ));
+            )));
         }
     }
     let (sandbox_mode, approval_policy) = if cli.dangerously_bypass_approvals_and_sandbox {
@@ -56,7 +61,14 @@ pub(super) async fn run_main_inner(
         Ok(v) => v,
         #[allow(clippy::print_stderr)]
         Err(e) => {
-            eprintln!("Error parsing -c overrides: {e}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error parsing -c overrides: {0}",
+                    &[&e.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -66,7 +78,14 @@ pub(super) async fn run_main_inner(
     let codex_home = match find_codex_home() {
         Ok(codex_home) => codex_home.to_path_buf(),
         Err(err) => {
-            eprintln!("Error finding codex home: {err}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error finding codex home: {0}",
+                    &[&err.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -228,9 +247,10 @@ pub(super) async fn run_main_inner(
         && (app_server_target.uses_remote_workspace()
             || prepared_environment_manager.default_environment_is_remote())
     {
-        return Err(std::io::Error::other(
+        return Err(std::io::Error::other(tr(
+            current(),
             "`--worktree` is only supported for local sessions",
-        ));
+        )));
     }
     let cwd = cli.cwd.clone();
     let config_cwd = config_cwd_for_app_server_target(
@@ -318,9 +338,10 @@ pub(super) async fn run_main_inner(
             };
             let provider = selection.provider;
             if provider == "__CANCELLED__" {
-                return Err(std::io::Error::other(
+                return Err(std::io::Error::other(tr(
+                    current(),
                     "OSS provider selection was cancelled by user",
-                ));
+                )));
             }
             if selection.manually_selected {
                 manually_selected_oss_provider = Some(provider.clone());
@@ -433,7 +454,14 @@ pub(super) async fn run_main_inner(
                 .with_restored(|| async {
                     #[allow(clippy::print_stderr)]
                     {
-                        eprintln!("Could not create otel exporter: {e}");
+                        eprintln!(
+                            "{}",
+                            tr_with(
+                                current(),
+                                "Could not create otel exporter: {0}",
+                                &[&e.to_string()]
+                            )
+                        );
                     }
                 })
                 .await;
@@ -442,7 +470,13 @@ pub(super) async fn run_main_inner(
         Err(_) => {
             #[allow(clippy::print_stderr)]
             {
-                eprintln!("Could not create otel exporter: panicked during initialization");
+                eprintln!(
+                    "{}",
+                    tr(
+                        current(),
+                        "Could not create otel exporter: panicked during initialization"
+                    )
+                );
             }
             startup_draft.tui_mut().recover_after_caught_panic()?;
             None
@@ -492,7 +526,14 @@ pub(super) async fn run_main_inner(
         #[allow(clippy::print_stderr)]
         {
             restore_terminal_before_fatal_exit();
-            eprintln!("Error adding directories: {warning}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Error adding directories: {0}",
+                    &[&warning.to_string()]
+                )
+            );
             if let Some(worktree) = managed_worktree.as_ref() {
                 worktree.report_startup_failure();
             }

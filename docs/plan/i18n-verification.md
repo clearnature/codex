@@ -417,6 +417,26 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 `tui/src/bottom_pane/status_surface_preview.rs:54-79`（预览样例值，见 §九.3）、
 `tui/src/app/{app.rs:770,789}`（断言片段）。
 
+### 12.9 第 85 轮补录（此前分散在 §九 之外的口径）
+
+| 位置 | 依据 |
+| --- | --- |
+| `tui/src/ide_context/ipc.rs:49-393`（33 条） | IDE 上下文协议错误与 socket 诊断；IPC 层，不对用户渲染 |
+| `tui/src/ide_context/prompt.rs`（11 条） | 注入模型的 IDE 上下文提示词 |
+| `tui/src/ide_context/windows_pipe.rs:186-343` | Windows 命名管道内部错误（WinAPI） |
+| `tui/src/tui/terminal_stderr.rs:80-291`（9 条） | 终端 stderr 抑制状态机的内部断言/状态标签 |
+| `tui/src/tui/input_boundary.rs:38,92,109` | `io::Error` 诊断 |
+| `tui/src/tui/keyboard_modes.rs:110,262,284,306` | `cmd.exe /c set TERM_PROGRAM` 参数与「legacy Windows API 未实现」内部错误 |
+| `tui/src/streaming/controller.rs:411,444,463` | `tracing::trace!` 消息 |
+| `tui/src/chatwidget/plugin_catalog.rs:1753-1760` | `Git · url@ref` / `npm · pkg@ver`：坐标标识符（`Git`/`npm` 为产品名） |
+| `tui/src/chatwidget/goal_status.rs:87,100` | `N / M tokens`：唯一英文词 `tokens` 在 glossary:37 的不译清单内 |
+| `tui/src/app_backtrack.rs:495-515` | 分支失败内部原因（`Result` 控制流） |
+| `tui/src/app/app_server_events.rs:416,418,490` | app-server 工具错误文本与 eyre 上下文 |
+| `tui/src/app/startup_prompts.rs:94,95` | `    {display_index}. {folder}` / `       {reason}`：列表脚手架，数据原样渲染 |
+| `tui/src/app/agent_status_feed.rs:161` | `MCP {server}/{tool}` 标识符 |
+| `tui/src/startup_draft.rs:70,219` | 启动取消/输入流关闭的内部原因 |
+| `tui/src/bin/md-events.rs:7` | 调试用二进制（打印 markdown 事件）的诊断输出 |
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

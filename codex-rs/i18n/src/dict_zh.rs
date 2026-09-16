@@ -6066,6 +6066,30 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} need sign-in", "{0} 个需要登录"),
     (" · {0} for details", " · 详情见{0}"),
     ("workspace with network access", "工作区并允许网络访问"),
+    // Exec cell (`tui/src/exec_cell/{render,live_output}.rs`), the transcript
+    // shortcut hint (`tui/src/ui_consts.rs`, a function now: `tr` has to resolve at
+    // render time) and the inline-visualization fallbacks
+    // (`tui/src/inline_visualization.rs`). The `… +N lines` marker keeps its
+    // leading glyph; the `(no output)` wrapper and the two-space hard break in the
+    // rewritten markdown are scaffolding and stay in Rust.
+    ("… +{0} lines", "… 另有{0}行"),
+    ("… +{0} lines ({1})", "… 另有{0}行（{1}）"),
+    ("ctrl + t to view transcript", "按ctrl + t查看记录"),
+    (
+        "Interacted with `{0}`, sent `{1}`",
+        "与`{0}`交互，发送了`{1}`",
+    ),
+    ("Waited for `{0}`", "等待`{0}`"),
+    ("(no output)", "（无输出）"),
+    (
+        "Open {0} visualization in the browser",
+        "在浏览器中打开{0}可视化",
+    ),
+    (
+        "_Visualization unavailable on this device._",
+        "_此设备不支持可视化。_",
+    ),
+    ("    answer: ", "    回答："),
 ];
 
 /// English source text -> Simplified Chinese.

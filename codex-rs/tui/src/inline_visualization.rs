@@ -1,5 +1,8 @@
 //! Terminal fallback for assistant-authored inline visualization directives.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 mod viewer;
 
 use base64::Engine as _;
@@ -245,12 +248,12 @@ pub(crate) fn rewrite_inline_visualizations<'a>(
                     },
                 );
             } else {
-                rewritten.push_str("_Visualization unavailable on this device._");
+                rewritten.push_str(tr(current(), "_Visualization unavailable on this device._"));
             }
         } else if trimmed.ends_with(CONTENT_REFERENCE_SUFFIX)
             || (trimmed.starts_with(DIRECTIVE_PREFIX) && trimmed.ends_with('}'))
         {
-            rewritten.push_str("_Visualization unavailable on this device._");
+            rewritten.push_str(tr(current(), "_Visualization unavailable on this device._"));
         }
         rewritten.push_str(newline);
     }
@@ -268,8 +271,13 @@ fn visualization_link_labels(file: &str) -> (String, String) {
         .unwrap_or("generated");
     let escaped_name = escape_markdown_label(name);
     (
-        format!("Open {escaped_name} visualization in the browser"),
-        format!("Open {name} visualization in the browser"),
+        tr_with(
+            current(),
+            "Open {0} visualization in the browser",
+            &[&escaped_name],
+        )
+        .to_string(),
+        tr_with(current(), "Open {0} visualization in the browser", &[name]).to_string(),
     )
 }
 

@@ -81,7 +81,7 @@ impl HistoryCell for RequestUserInputResultCell {
                 lines.extend(wrap_with_prefix(
                     &option,
                     width,
-                    "    answer: ".dim(),
+                    tr(current(), "    answer: ").dim(),
                     "            ".dim(),
                     Style::default().fg(Color::Cyan),
                 ));
@@ -95,7 +95,7 @@ impl HistoryCell for RequestUserInputResultCell {
                     )
                 } else {
                     (
-                        "    answer: ".dim(),
+                        tr(current(), "    answer: ").dim(),
                         "            ".dim(),
                         Style::default().fg(Color::Cyan),
                     )

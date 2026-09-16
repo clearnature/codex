@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::time::Instant;
 
 use super::model::CommandOutput;
@@ -12,7 +15,7 @@ use crate::motion::activity_indicator;
 use crate::render::highlight::highlight_bash_to_lines;
 use crate::render::line_utils::prefix_lines;
 use crate::render::line_utils::push_owned_lines;
-use crate::ui_consts::TRANSCRIPT_HINT;
+use crate::ui_consts::transcript_hint;
 use crate::wrapping::RtOptions;
 use crate::wrapping::adaptive_wrap_line;
 use crate::wrapping::adaptive_wrap_lines;
@@ -73,9 +76,14 @@ fn format_unified_exec_interaction(command: &[String], input: Option<&str>) -> S
     match input {
         Some(data) if !data.is_empty() => {
             let preview = summarize_interaction_input(data);
-            format!("Interacted with `{command_display}`, sent `{preview}`")
+            tr_with(
+                current(),
+                "Interacted with `{0}`, sent `{1}`",
+                &[&command_display, &preview],
+            )
+            .to_string()
         }
-        _ => format!("Waited for `{command_display}`"),
+        _ => tr_with(current(), "Waited for `{0}`", &[&command_display]).to_string(),
     }
 }
 
@@ -245,7 +253,12 @@ impl HistoryCell for ExecCell {
 
 impl ExecCell {
     fn output_ellipsis_text(omitted: usize) -> String {
-        format!("… +{omitted} lines ({TRANSCRIPT_HINT})")
+        tr_with(
+            current(),
+            "… +{0} lines ({1})",
+            &[&omitted.to_string(), transcript_hint()],
+        )
+        .to_string()
     }
 
     fn output_ellipsis_line(omitted: usize) -> Line<'static> {
@@ -452,7 +465,7 @@ impl ExecCell {
             if raw_output.lines.is_empty() {
                 if !call.is_unified_exec_interaction() {
                     lines.extend(prefix_lines(
-                        vec![Line::from("(no output)".dim())],
+                        vec![Line::from(tr(current(), "(no output)").dim())],
                         Span::from(layout.output_block.initial_prefix).dim(),
                         Span::from(layout.output_block.subsequent_prefix),
                     ));
@@ -619,7 +632,9 @@ impl ExecCell {
     }
 
     fn ellipsis_line(omitted: usize) -> Line<'static> {
-        Line::from(vec![format!("… +{omitted} lines").dim()])
+        Line::from(vec![
+            tr_with(current(), "… +{0} lines", &[&omitted.to_string()]).dim(),
+        ])
     }
 
     fn output_ellipsis_row_count(
@@ -808,7 +823,7 @@ mod tests {
             .split_whitespace()
             .join(" ");
         assert!(
-            normalized.contains(TRANSCRIPT_HINT),
+            normalized.contains(transcript_hint()),
             "expected truncated output to advertise transcript shortcut, got {normalized}"
         );
     }

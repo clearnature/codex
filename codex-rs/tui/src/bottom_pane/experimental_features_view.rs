@@ -6,6 +6,8 @@ use codex_app_server_protocol::ExperimentalFeature;
 use codex_app_server_protocol::ExperimentalFeatureStage;
 use codex_features::FEATURES;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use std::time::Duration;
 use std::time::Instant;
@@ -76,7 +78,7 @@ impl ExperimentalFeaturesView {
     ) -> Self {
         let mut view = Self {
             discovery_status: if catalog_rx.is_some() {
-                "Loading server experiments…"
+                tr(current(), "Loading server experiments…")
             } else {
                 ""
             }
@@ -99,9 +101,9 @@ impl ExperimentalFeaturesView {
 
     fn header(&self, width: u16) -> impl Renderable {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Experimental features".bold()));
+        header.push(Line::from(tr(current(), "Experimental features").bold()));
         for text in [
-            "Checked features are configured on. Some experimental features take effect only in new tasks or after restarting the Codex server.",
+            tr(current(), "Checked features are configured on. Some experimental features take effect only in new tasks or after restarting the Codex server."),
             self.discovery_status.as_str(),
         ].into_iter().filter(|text| !text.is_empty()) {
             for line in textwrap::wrap(text, usize::from(width.max(1))) {
@@ -133,7 +135,11 @@ impl ExperimentalFeaturesView {
                 ' '
             };
             let marker = if item.enabled { 'x' } else { ' ' };
-            let read_only = if item.writable { "" } else { " (read-only)" };
+            let read_only = if item.writable {
+                ""
+            } else {
+                tr(current(), " (read-only)")
+            };
             let name = format!("{prefix} [{marker}] {}{read_only}", item.name);
             rows.push(GenericDisplayRow {
                 name,
@@ -243,7 +249,7 @@ impl ExperimentalFeaturesView {
             // A failed response can follow a committed write. Keep these keys dirty
             // so reverting to the old baseline still sends a corrective write.
             self.unconfirmed = updates.iter().map(|(key, _)| key.clone()).collect();
-            self.discovery_status = "Saving experimental features…".to_string();
+            self.discovery_status = tr(current(), "Saving experimental features…").to_string();
             self.app_event_tx.send(AppEvent::SaveExperimentalFeatures {
                 thread_id: self.thread_id,
                 updates,
@@ -265,10 +271,11 @@ impl BottomPaneView for ExperimentalFeaturesView {
             let result = match receiver.try_recv() {
                 Ok(result) => result,
                 Err(oneshot::error::TryRecvError::Empty) => return false,
-                Err(oneshot::error::TryRecvError::Closed) => Err(
-                    "Saving was interrupted. Reopen /experimental to check configured values."
-                        .to_string(),
-                ),
+                Err(oneshot::error::TryRecvError::Closed) => Err(tr(
+                    current(),
+                    "Saving was interrupted. Reopen /experimental to check configured values.",
+                )
+                .to_string()),
             };
             self.write_rx = None;
             match result {
@@ -304,7 +311,7 @@ impl BottomPaneView for ExperimentalFeaturesView {
             Ok(result) => result,
             Err(oneshot::error::TryRecvError::Empty) => return false,
             Err(oneshot::error::TryRecvError::Closed) => {
-                Err("Discovery was interrupted".to_string())
+                Err(tr(current(), "Discovery was interrupted").to_string())
             }
         };
         self.catalog_rx = None;
@@ -334,7 +341,7 @@ impl BottomPaneView for ExperimentalFeaturesView {
                     count += 1;
                 }
                 self.discovery_status = if count == 0 {
-                    "No server experiments available."
+                    tr(current(), "No server experiments available.")
                 } else {
                     ""
                 }
@@ -443,7 +450,7 @@ impl Renderable for ExperimentalFeaturesView {
                 &rows,
                 &self.state,
                 MAX_POPUP_ROWS,
-                "  No experimental features available for now",
+                tr(current(), "  No experimental features available for now"),
             );
         }
 
@@ -454,9 +461,15 @@ impl Renderable for ExperimentalFeaturesView {
             height: footer_area.height,
         };
         let hint = if self.write_rx.is_some() {
-            Line::from("Saving… Closing this popup will not cancel the write.")
+            Line::from(tr(
+                current(),
+                "Saving… Closing this popup will not cancel the write.",
+            ))
         } else if !self.unconfirmed.is_empty() {
-            Line::from("Selections retained. Save to retry, or cancel to close.")
+            Line::from(tr(
+                current(),
+                "Selections retained. Save to retry, or cancel to close.",
+            ))
         } else {
             self.footer_hint.clone()
         };
@@ -485,10 +498,14 @@ fn experimental_popup_hint_line(keymap: &ListKeymap) -> Line<'static> {
     let mut spans = vec![
         "Press ".into(),
         key_hint::plain(KeyCode::Char(' ')).into(),
-        " to select".into(),
+        tr(current(), " to select").into(),
     ];
     if let Some(accept) = keymap.primary_hint(ListAction::Accept) {
-        spans.extend([" or ".into(), accept.into(), " to save".into()]);
+        spans.extend([
+            " or ".into(),
+            accept.into(),
+            tr(current(), " to save").into(),
+        ]);
     }
     Line::from(spans)
 }

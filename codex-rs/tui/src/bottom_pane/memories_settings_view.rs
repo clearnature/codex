@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -79,20 +81,29 @@ impl MemoriesSettingsView {
             items: vec![
                 MemoriesMenuItem::Setting {
                     setting: MemoriesSetting::Use,
-                    name: "Use memories",
-                    description: "Use memories in the following threads. Applied at next thread.",
+                    name: tr(current(), "Use memories"),
+                    description: tr(
+                        current(),
+                        "Use memories in the following threads. Applied at next thread.",
+                    ),
                     enabled: use_memories,
                 },
                 MemoriesMenuItem::Setting {
                     setting: MemoriesSetting::Generate,
-                    name: "Generate memories",
-                    description: "Generate memories from the following threads. Current thread included.",
+                    name: tr(current(), "Generate memories"),
+                    description: tr(
+                        current(),
+                        "Generate memories from the following threads. Current thread included.",
+                    ),
                     enabled: generate_memories,
                 },
                 MemoriesMenuItem::Action {
                     action: MemoriesAction::Reset,
-                    name: "Reset all memories",
-                    description: "Clear local memory files and summaries. Existing threads stay intact.",
+                    name: tr(current(), tr(current(), "Reset all memories")),
+                    description: tr(
+                        current(),
+                        "Clear local memory files and summaries. Existing threads stay intact.",
+                    ),
                 },
             ],
             state: ScrollState::new(),
@@ -100,7 +111,7 @@ impl MemoriesSettingsView {
             complete: false,
             app_event_tx,
             docs_link: Line::from(vec![
-                "Learn more: ".dim(),
+                tr(current(), "Learn more: ").dim(),
                 MEMORIES_DOC_URL.cyan().underlined(),
             ]),
             keymap,
@@ -117,17 +128,24 @@ impl MemoriesSettingsView {
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Memories".bold()));
         header.push(Line::from(
-            "Choose how Codex uses and creates memories. Changes are saved to config.toml".dim(),
+            tr(
+                current(),
+                "Choose how Codex uses and creates memories. Changes are saved to config.toml",
+            )
+            .dim(),
         ));
         header
     }
 
     fn reset_confirmation_header(&self) -> ColumnRenderable<'_> {
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Reset all memories?".bold()));
+        header.push(Line::from(tr(current(), "Reset all memories?").bold()));
         header.push(Line::from(
-            "This clears local memory files and rollout summaries for the current Codex home."
-                .dim(),
+            tr(
+                current(),
+                "This clears local memory files and rollout summaries for the current Codex home.",
+            )
+            .dim(),
         ));
         header
     }
@@ -160,8 +178,12 @@ impl MemoriesSettingsView {
                         format!("  {name}")
                     },
                     description: Some(match idx {
-                        0 => "Delete local memory files and rollout summaries.".to_string(),
-                        1 => "Return to memory settings.".to_string(),
+                        0 => tr(
+                            current(),
+                            "Delete local memory files and rollout summaries.",
+                        )
+                        .to_string(),
+                        1 => tr(current(), "Return to memory settings.").to_string(),
                         _ => unreachable!("reset confirmation only renders two rows"),
                     }),
                     ..Default::default()
@@ -421,7 +443,7 @@ impl Renderable for MemoriesSettingsView {
                 &rows,
                 self.active_state(),
                 MAX_POPUP_ROWS,
-                "  No memory settings available",
+                tr(current(), "  No memory settings available"),
             );
         }
         if self.reset_confirmation.is_none() {
@@ -468,10 +490,14 @@ fn memories_settings_hint_line(keymap: &ListKeymap) -> Line<'static> {
     let mut spans = vec![
         "Press ".into(),
         key_hint::plain(KeyCode::Char(' ')).into(),
-        " to toggle".into(),
+        tr(current(), " to toggle").into(),
     ];
     if let Some(accept) = keymap.primary_hint(ListAction::Accept) {
-        spans.extend(["; ".into(), accept.into(), " to save or select".into()]);
+        spans.extend([
+            "; ".into(),
+            accept.into(),
+            tr(current(), " to save or select").into(),
+        ]);
     }
     Line::from(spans)
 }

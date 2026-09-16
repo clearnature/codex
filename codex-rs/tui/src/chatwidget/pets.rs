@@ -2,6 +2,8 @@
 
 use super::*;
 use codex_config::types::TuiPetAnchor;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(super) fn load_ambient_pet(
     config: &crate::local_settings::LocalSettings,
@@ -295,10 +297,10 @@ impl ChatWidget {
         self.pet_picker_preview_pet = None;
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(PET_SELECTION_LOADING_VIEW_ID),
-            title: Some("Loading Pet".to_string()),
-            subtitle: Some("Preparing the terminal pet.".to_string()),
+            title: Some(tr(current(), "Loading Pet").to_string()),
+            subtitle: Some(tr(current(), "Preparing the terminal pet.").to_string()),
             items: vec![SelectionItem {
-                name: "Loading selected pet...".to_string(),
+                name: tr(current(), "Loading selected pet...").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],

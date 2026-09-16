@@ -1,6 +1,9 @@
 //! Desktop notification coalescing for `ChatWidget`.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     pub(super) fn notify(&mut self, notification: Notification) {
@@ -37,30 +40,28 @@ impl Notification {
         match self {
             Notification::AgentTurnComplete { response } => {
                 Notification::agent_turn_preview(response)
-                    .unwrap_or_else(|| "Agent turn complete".to_string())
+                    .unwrap_or_else(|| tr(current(), "Agent turn complete").to_string())
             }
-            Notification::ExecApprovalRequested { command } => {
-                format!(
-                    "Approval requested: {}",
-                    truncate_text(command, /*max_graphemes*/ 30)
-                )
-            }
+            Notification::ExecApprovalRequested { command } => tr_with(
+                current(),
+                "Approval requested: {0}",
+                &[&truncate_text(command, /*max_graphemes*/ 30)],
+            )
+            .to_string(),
             Notification::EditApprovalRequested { cwd, changes } => {
-                format!(
-                    "Codex wants to edit {}",
-                    if changes.len() == 1 {
-                        #[allow(clippy::unwrap_used)]
-                        display_path_for(changes.first().unwrap(), cwd)
-                    } else {
-                        format!("{} files", changes.len())
-                    }
-                )
+                let target = if changes.len() == 1 {
+                    #[allow(clippy::unwrap_used)]
+                    display_path_for(changes.first().unwrap(), cwd)
+                } else {
+                    tr_with(current(), "{0} files", &[&changes.len().to_string()]).to_string()
+                };
+                tr_with(current(), "Codex wants to edit {0}", &[&target]).to_string()
             }
             Notification::ElicitationRequested { server_name } => {
-                format!("Approval requested by {server_name}")
+                tr_with(current(), "Approval requested by {0}", &[&server_name]).to_string()
             }
             Notification::PlanModePrompt { title } => {
-                format!("Plan mode prompt: {title}")
+                tr_with(current(), "Plan mode prompt: {0}", &[&title]).to_string()
             }
         }
     }

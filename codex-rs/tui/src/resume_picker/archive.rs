@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -52,7 +55,8 @@ impl PickerState {
             return;
         };
         let Some(thread_id) = row.thread_id else {
-            self.inline_error = Some(String::from("Selected session does not have a thread ID."));
+            self.inline_error =
+                Some(tr(current(), "Selected session does not have a thread ID.").to_string());
             self.request_frame();
             return;
         };
@@ -63,9 +67,13 @@ impl PickerState {
                 current_thread_id: Some(current_thread_id)
             } if current_thread_id == thread_id
         ) {
-            self.inline_error = Some(String::from(
-                "Use /archive to archive the current session and exit.",
-            ));
+            self.inline_error = Some(
+                tr(
+                    current(),
+                    "Use /archive to archive the current session and exit.",
+                )
+                .to_string(),
+            );
             self.request_frame();
             return;
         }
@@ -86,7 +94,14 @@ impl PickerState {
         self.archive_state = ArchiveState::Idle;
 
         if let Err(error) = result {
-            self.inline_error = Some(format!("Failed to archive session: {error}"));
+            self.inline_error = Some(
+                tr_with(
+                    current(),
+                    "Failed to archive session: {0}",
+                    &[&error.to_string()],
+                )
+                .to_string(),
+            );
             self.request_frame();
             return;
         }
@@ -159,7 +174,14 @@ impl PickerState {
         match result {
             Ok(target) => Some(SessionSelection::Resume(target)),
             Err(error) => {
-                self.inline_error = Some(format!("Failed to restore archived session: {error}"));
+                self.inline_error = Some(
+                    tr_with(
+                        current(),
+                        "Failed to restore archived session: {0}",
+                        &[&error.to_string()],
+                    )
+                    .to_string(),
+                );
                 self.request_frame();
                 None
             }

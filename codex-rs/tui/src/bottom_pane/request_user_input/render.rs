@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
@@ -118,10 +121,20 @@ impl Renderable for RequestUserInputOverlay {
 impl RequestUserInputOverlay {
     fn unanswered_confirmation_data(&self) -> UnansweredConfirmationData {
         let unanswered = self.unanswered_question_count();
-        let subtitle = format!(
-            "{unanswered} unanswered question{}",
-            if unanswered == 1 { "" } else { "s" }
-        );
+        let subtitle = if unanswered == 1 {
+            tr_with(
+                current(),
+                "{0} unanswered question",
+                &[&unanswered.to_string()],
+            )
+        } else {
+            tr_with(
+                current(),
+                "{0} unanswered questions",
+                &[&unanswered.to_string()],
+            )
+        }
+        .to_string();
         UnansweredConfirmationData {
             title_line: Line::from(super::UNANSWERED_CONFIRM_TITLE.bold()),
             subtitle_line: Line::from(subtitle.dim()),
@@ -222,7 +235,7 @@ impl RequestUserInputOverlay {
             &layout.rows,
             &layout.state,
             layout.rows.len().max(1),
-            "No choices",
+            tr(current(), "No choices"),
         );
 
         cursor_y = cursor_y.saturating_add(rows_height);
@@ -319,7 +332,7 @@ impl RequestUserInputOverlay {
                     &option_rows,
                     &options_state,
                     option_rows.len().max(1),
-                    "No options",
+                    tr(current(), "No options"),
                 );
             }
         }

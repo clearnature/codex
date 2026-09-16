@@ -6090,6 +6090,53 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "_此设备不支持可视化。_",
     ),
     ("    answer: ", "    回答："),
+    // Terminal pet picker + notifications + the external-writer notice + the
+    // request-user-input confirmation + the archive flow of the resume picker.
+    // `pet` is rendered as 桌宠 (the ASCII terminal pet); the `R` / `/archive` key
+    // and command names stay verbatim, and the plural forms collapse in Chinese.
+    // The OS-notification bodies (`chatwidget/notifications.rs::display`) are
+    // user-visible text, not protocol `type_name` strings.
+    ("Failed to disable pets: {0}", "禁用桌宠失败：{0}"),
+    ("Failed to save pet selection: {0}", "保存桌宠选择失败：{0}"),
+    ("Failed to load pet: {0}", "加载桌宠失败：{0}"),
+    (
+        "Failed to load configured pet: {0}",
+        "加载已配置的桌宠失败：{0}",
+    ),
+    ("Loading Pet", "正在加载桌宠"),
+    ("Preparing the terminal pet.", "正在准备终端桌宠。"),
+    ("Loading selected pet...", "正在加载所选桌宠…"),
+    ("Approval requested: {0}", "请求审批：{0}"),
+    ("Codex wants to edit {0}", "Codex想要编辑{0}"),
+    ("{0} files", "{0} 个文件"),
+    ("Approval requested by {0}", "由{0}请求审批"),
+    ("Plan mode prompt: {0}", "计划模式提示：{0}"),
+    ("Agent turn complete", "智能体轮次完成"),
+    (
+        "This conversation is open in another app",
+        "此对话已在另一个应用中打开",
+    ),
+    (" to Retry", "重试"),
+    (
+        "Close it there and press R to continue here.",
+        "在那里关闭它，然后按R在此继续。",
+    ),
+    ("{0} unanswered question", "{0} 个未回答的问题"),
+    ("{0} unanswered questions", "{0} 个未回答的问题"),
+    ("No choices", "无选项"),
+    (
+        "Selected session does not have a thread ID.",
+        "所选会话没有线程ID。",
+    ),
+    (
+        "Use /archive to archive the current session and exit.",
+        "使用/archive归档当前会话并退出。",
+    ),
+    ("Failed to archive session: {0}", "归档会话失败：{0}"),
+    (
+        "Failed to restore archived session: {0}",
+        "恢复已归档会话失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

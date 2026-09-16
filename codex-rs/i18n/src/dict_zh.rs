@@ -121,6 +121,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("  • No sub-agents running.", "  • 没有运行中的子代理。"),
     ("  ● Running  ○ Not Running", "  ● 运行中  ○ 未运行"),
     (" (+ {0} cached)", "（+{0}缓存）"),
+    (" (default)", "（默认）"),
     (" (interrupted)", "（已中断）"),
     (" (read-only)", "（只读）"),
     (" (reasoning {0})", "（推理{0}）"),
@@ -268,6 +269,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Acknowledge findings and continue", "确认发现并继续"),
     ("Add a short status model", "添加简短的状态模型"),
+    ("Advanced Reasoning", "高级推理"),
     ("Agent command center", "代理指挥中心"),
     ("Agent errored", "代理出错"),
     ("Agent resume failed", "代理恢复失败"),
@@ -328,6 +330,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Ambiguous `{0}` = `{1}`: the same chord is already assigned to `{2}`. Choose a unique chord and retry.",
         "`{0}` = `{1}` 有歧义：同一和弦已分配给 `{2}`。请使用不重复的和弦后重试。",
     ),
+    ("All models → {0}", "所有模型 → {0}"),
     ("Always use current directory", "始终使用当前目录"),
     (
         "Always use current directory ({0})",
@@ -390,6 +393,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Browse all agent sessions on the shared local app-server daemon",
         "浏览共享本地app-server守护进程上的所有代理会话。",
     ),
+    ("Booting MCP server:", "正在启动MCP服务器："),
     ("Cancel task", "取消任务"),
     ("Cannot change directories: {0}", "无法切换目录：{0}"),
     (
@@ -481,6 +485,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Context {0}% left", "剩余上下文 {0}%"),
     ("Context {0}% used", "已用上下文 {0}%"),
     ("Continue planning with the model.", "继续与模型一起规划。"),
+    ("Continue with Luna Reserve", "使用Luna Reserve继续"),
     ("Conversation history is not saved.", "会话历史未保存。"),
     ("Copied conversation to clipboard", "已复制会话到剪贴板"),
     (
@@ -620,6 +625,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Experimental features are unavailable until startup completes.",
         "启动完成前无法使用实验性特性。",
     ),
+    ("Extra high", "极高"),
     ("Failed to change: {0}", "切换失败：{0}"),
     (
         "Failed to name the worktree session: {0}",
@@ -705,6 +711,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Fork a previous interactive session (picker by default; use --last to fork the most recent)",
         "派生之前的交互会话（默认弹出选择器；用--last派生最近一个）。",
+    ),
+    (
+        "For demanding work using multiple agents · highest usage",
+        "适合使用多个代理的高强度工作 · 用量最高",
+    ),
+    (
+        "For difficult problems when quality matters more than speed · higher usage",
+        "适合质量优先于速度的难题 · 用量较高",
     ),
     ("Fresh thread with this plan.", "用此计划新建线程。"),
     ("Fresh thread. Context: {0}.", "新建线程。上下文：{0}。"),
@@ -993,6 +1007,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "原始输出模式已开启：显示纯文本转录，便于在终端中干净地选取。",
     ),
     ("Ready", "就绪"),
+    (
+        "Reasoning is already at the highest level ({0}).",
+        "推理强度已是最高档（{0}）。",
+    ),
+    (
+        "Reasoning is already at the lowest level ({0}).",
+        "推理强度已是最低档（{0}）。",
+    ),
+    (
+        "Reasoning shortcuts are disabled until startup completes.",
+        "启动完成前无法使用推理快捷键。",
+    ),
+    (
+        "Reasoning shortcuts are unavailable for {0}.",
+        "{0}不支持推理快捷键。",
+    ),
     ("Recent chat sessions", "最近的聊天会话"),
     ("Reconnect: {0}", "重新连接：{0}"),
     (
@@ -1128,6 +1158,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Still waiting? If nothing changes when you press a key, your terminal is not sending that key to Codex. Only received keys can be assigned as shortcuts.",
         "还在等待？如果按键后没有任何变化，说明你的终端没有把该按键发送给Codex。只有接收到的按键才能被指定为快捷键。",
     ),
+    ("Starting MCP servers", "正在启动MCP服务器"),
     ("Stop and retry", "停止并重试"),
     ("Stop this attempt and retry?", "停止本次尝试并重试？"),
     (
@@ -1323,6 +1354,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "你的消息将改用{0}重新发送，它在复杂任务上的能力可能较弱。",
     ),
     ("You are in ", "你当前位于 "),
+    (
+        "Your included usage is exhausted. Choose an option below to continue.",
+        "你的包含用量已用尽。请从下方选择一个选项继续。",
+    ),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
     (
@@ -1658,6 +1693,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "thread usage request timed out in TUI",
         "线程用量请求在TUI中超时",
     ),
+    ("to continue working", "继续工作"),
     ("to edit message", "编辑消息"),
     ("to edit next", "编辑下一条"),
     ("to edit prev", "编辑上一条"),
@@ -4271,6 +4307,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("■ Copy failed: ", "■ 复制失败"),
     ("■ Export failed: ", "■ 导出失败："),
+    ("⚠ Consumes usage limits faster", "⚠ 更快消耗用量限额"),
     ("✓ API key configured", "✓ API key已配置"),
     (
         "  Codex will use usage-based billing with your API key.",

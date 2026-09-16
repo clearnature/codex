@@ -18,6 +18,9 @@ use crate::bottom_pane::popup_consts::accept_cancel_hint_line;
 use crate::keymap::ListAction;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
 use codex_app_server_protocol::GetAccountRateLimitsResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::CollaborationMode;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::openai_models::ModelPreset;
@@ -415,10 +418,12 @@ impl ChatWidget {
             if banner.banner_type == LUNA_RESERVE_BANNER
                 && self.current_model() != LUNA_RESERVE_MODEL
             {
-                content.title = "Usage limit reached".to_string();
-                content.description =
-                    "Your included usage is exhausted. Choose an option below to continue."
-                        .to_string();
+                content.title = tr(current(), "Usage limit reached").to_string();
+                content.description = tr(
+                    current(),
+                    "Your included usage is exhausted. Choose an option below to continue.",
+                )
+                .to_string();
             }
             content
         });
@@ -446,15 +451,15 @@ impl ChatWidget {
                         self.backend_banner_state.account_id.clone();
                     // Continuing is a local dismissal, separate from the backend's purchase CTAs.
                     params.items.push(SelectionItem {
-                        name: "Continue with Luna Reserve".to_string(),
+                        name: tr(current(), "Continue with Luna Reserve").to_string(),
                         ..Default::default()
                     });
                     let list_keymap = self.bottom_pane.list_keymap();
                     params.footer_hint = Some(accept_cancel_hint_line(
                         list_keymap.primary_hint(ListAction::Accept),
-                        "to confirm",
+                        tr(current(), "to confirm"),
                         list_keymap.primary_hint(ListAction::Cancel),
-                        "to continue working",
+                        tr(current(), "to continue working"),
                     ));
                 }
                 // Use the standard focused picker: arrows/Enter and numeric shortcuts select,

@@ -13,6 +13,9 @@
 //! advertised order. Raising never silently crosses into Max or Ultra; those
 //! efforts require the explicit advanced-reasoning picker.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::openai_models::ModelPreset;
 use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
@@ -34,8 +37,16 @@ impl ReasoningShortcutDirection {
     fn bound_message(self, effort: &ReasoningEffortConfig) -> String {
         let label = ChatWidget::reasoning_effort_sentence_label(effort);
         match self {
-            Self::Lower => format!("Reasoning is already at the lowest level ({label})."),
-            Self::Raise => format!("Reasoning is already at the highest level ({label})."),
+            Self::Lower => tr_with(
+                current(),
+                "Reasoning is already at the lowest level ({0}).",
+                &[label.as_str()],
+            ),
+            Self::Raise => tr_with(
+                current(),
+                "Reasoning is already at the highest level ({0}).",
+                &[label.as_str()],
+            ),
         }
     }
 }
@@ -80,7 +91,11 @@ impl ChatWidget {
 
         if !self.is_session_configured() {
             self.add_info_message(
-                "Reasoning shortcuts are disabled until startup completes.".to_string(),
+                tr(
+                    current(),
+                    "Reasoning shortcuts are disabled until startup completes.",
+                )
+                .to_string(),
                 /*hint*/ None,
             );
             return true;
@@ -89,7 +104,11 @@ impl ChatWidget {
         let current_model = self.current_model().to_string();
         let Some(preset) = self.current_model_preset() else {
             self.add_info_message(
-                format!("Reasoning shortcuts are unavailable for {current_model}."),
+                tr_with(
+                    current(),
+                    "Reasoning shortcuts are unavailable for {0}.",
+                    &[&current_model],
+                ),
                 /*hint*/ None,
             );
             return true;
@@ -133,7 +152,7 @@ impl ChatWidget {
             let model_path = if current_model.starts_with("codex-auto-") {
                 current_model
             } else {
-                format!("All models → {current_model}")
+                tr_with(current(), "All models → {0}", &[&current_model])
             };
             self.add_info_message(
                 format!(

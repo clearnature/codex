@@ -560,7 +560,7 @@ impl ChatWidget {
             let effort = choice.clone();
             let mut effort_label = Self::reasoning_effort_label(&effort);
             if Some(choice) == default_choice.as_ref() {
-                effort_label.push_str(" (default)");
+                effort_label.push_str(tr(current(), " (default)"));
             }
 
             let description = supported
@@ -673,12 +673,14 @@ impl ChatWidget {
         let mut items = Vec::new();
         for effort in choices {
             let description = match &effort {
-                ReasoningEffortConfig::Max => {
-                    "For difficult problems when quality matters more than speed · higher usage"
-                }
-                ReasoningEffortConfig::Ultra => {
-                    "For demanding work using multiple agents · highest usage"
-                }
+                ReasoningEffortConfig::Max => tr(
+                    current(),
+                    "For difficult problems when quality matters more than speed · higher usage",
+                ),
+                ReasoningEffortConfig::Ultra => tr(
+                    current(),
+                    "For demanding work using multiple agents · highest usage",
+                ),
                 _ => unreachable!("advanced choices are limited to Max and Ultra"),
             };
             let should_prompt_plan_mode_scope = self
@@ -700,8 +702,10 @@ impl ChatWidget {
         }
 
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Advanced Reasoning".bold()));
-        header.push(Line::from("⚠ Consumes usage limits faster".cyan()));
+        header.push(Line::from(tr(current(), "Advanced Reasoning").bold()));
+        header.push(Line::from(
+            tr(current(), "⚠ Consumes usage limits faster").cyan(),
+        ));
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(header),
             footer_hint: Some(standard_popup_hint_line()),
@@ -724,7 +728,7 @@ impl ChatWidget {
             ReasoningEffortConfig::Low => "Low".to_string(),
             ReasoningEffortConfig::Medium => "Medium".to_string(),
             ReasoningEffortConfig::High => "High".to_string(),
-            ReasoningEffortConfig::XHigh => "Extra high".to_string(),
+            ReasoningEffortConfig::XHigh => tr(current(), "Extra high").to_string(),
             ReasoningEffortConfig::Max => "Max".to_string(),
             ReasoningEffortConfig::Ultra => "Ultra".to_string(),
             ReasoningEffortConfig::Persistent => "Persistent".to_string(),

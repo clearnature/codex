@@ -6,6 +6,9 @@
 //! Initial diagnostics coalesce beneath the splash; warnings after a turn starts
 //! stay inline so failures during ongoing work remain visible.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeSet;
 
 use codex_app_server_protocol::McpServerStartupFailureReason;
@@ -14,8 +17,13 @@ use codex_app_server_protocol::McpServerStatusUpdatedNotification;
 
 use super::ChatWidget;
 
-const MCP_STARTUP_SINGLE_HEADER_PREFIX: &str = "Booting MCP server:";
-const MCP_STARTUP_MULTI_HEADER_PREFIX: &str = "Starting MCP servers";
+/// MCP 启动标题前缀。用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+fn mcp_startup_single_header_prefix() -> &'static str {
+    tr(current(), "Booting MCP server:")
+}
+fn mcp_startup_multi_header_prefix() -> &'static str {
+    tr(current(), "Starting MCP servers")
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum McpStartupStatus {
@@ -184,11 +192,12 @@ impl ChatWidget {
         }
         Some(if total > 1 {
             format!(
-                "{MCP_STARTUP_MULTI_HEADER_PREFIX} ({completed}/{total}): {}",
+                "{} ({completed}/{total}): {}",
+                mcp_startup_multi_header_prefix(),
                 to_show.join(", ")
             )
         } else {
-            format!("{MCP_STARTUP_SINGLE_HEADER_PREFIX} {first}")
+            format!("{} {first}", mcp_startup_single_header_prefix())
         })
     }
 
@@ -203,7 +212,7 @@ impl ChatWidget {
         if !cancelled.is_empty() {
             self.add_mcp_startup_warning(
                 vec![format!(
-                    "MCP startup interrupted. The following servers were not initialized: {}",
+                    "MCP startup interrupted. The following servers were not initialized: {0}",
                     cancelled.join(", ")
                 )],
                 cancelled,
@@ -279,12 +288,12 @@ impl ChatWidget {
         self.status_state
             .current_status
             .header
-            .starts_with(MCP_STARTUP_SINGLE_HEADER_PREFIX)
+            .starts_with(mcp_startup_single_header_prefix())
             || self
                 .status_state
                 .current_status
                 .header
-                .starts_with(MCP_STARTUP_MULTI_HEADER_PREFIX)
+                .starts_with(mcp_startup_multi_header_prefix())
     }
 
     fn add_mcp_startup_warning(

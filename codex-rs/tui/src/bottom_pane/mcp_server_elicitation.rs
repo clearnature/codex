@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -270,9 +273,9 @@ impl McpServerElicitationFormRequest {
             (McpServerElicitationResponseMode::FormContent, Vec::new())
         } else if is_message_only_schema {
             let allow_description = if is_tool_approval_action {
-                "Run the tool and continue."
+                tr(current(), "Run the tool and continue.")
             } else {
-                "Allow this request and continue."
+                tr(current(), "Allow this request and continue.")
             };
             let mut options = vec![McpServerElicitationOption {
                 label: "Allow".to_string(),
@@ -281,24 +284,36 @@ impl McpServerElicitationFormRequest {
             }];
             if approval_supports_persist_mode(meta, APPROVAL_PERSIST_SESSION_VALUE) {
                 let description = if is_tool_approval_action {
-                    "Run the tool and remember this choice for this session."
+                    tr(
+                        current(),
+                        "Run the tool and remember this choice for this session.",
+                    )
                 } else {
-                    "Allow this request and remember this choice for this session."
+                    tr(
+                        current(),
+                        "Allow this request and remember this choice for this session.",
+                    )
                 };
                 options.push(McpServerElicitationOption {
-                    label: "Allow for this session".to_string(),
+                    label: tr(current(), "Allow for this session").to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_SESSION_VALUE.to_string()),
                 });
             }
             if approval_supports_persist_mode(meta, APPROVAL_PERSIST_ALWAYS_VALUE) {
                 let description = if is_tool_approval_action {
-                    "Run the tool and remember this choice for future tool calls."
+                    tr(
+                        current(),
+                        "Run the tool and remember this choice for future tool calls.",
+                    )
                 } else {
-                    "Allow this request and remember this choice for future requests."
+                    tr(
+                        current(),
+                        "Allow this request and remember this choice for future requests.",
+                    )
                 };
                 options.push(McpServerElicitationOption {
-                    label: "Always allow".to_string(),
+                    label: tr(current(), "Always allow").to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_ALWAYS_VALUE.to_string()),
                 });
@@ -306,19 +321,21 @@ impl McpServerElicitationFormRequest {
             if is_tool_approval_action {
                 options.push(McpServerElicitationOption {
                     label: "Cancel".to_string(),
-                    description: Some("Cancel this tool call".to_string()),
+                    description: Some(tr(current(), "Cancel this tool call").to_string()),
                     value: Value::String(APPROVAL_CANCEL_VALUE.to_string()),
                 });
             } else {
                 options.extend([
                     McpServerElicitationOption {
                         label: "Deny".to_string(),
-                        description: Some("Decline this request and continue.".to_string()),
+                        description: Some(
+                            tr(current(), "Decline this request and continue.").to_string(),
+                        ),
                         value: Value::String(APPROVAL_DECLINE_VALUE.to_string()),
                     },
                     McpServerElicitationOption {
                         label: "Cancel".to_string(),
-                        description: Some("Cancel this request".to_string()),
+                        description: Some(tr(current(), "Cancel this request").to_string()),
                         value: Value::String(APPROVAL_CANCEL_VALUE.to_string()),
                     },
                 ]);
@@ -998,23 +1015,36 @@ impl McpServerElicitationOverlay {
         };
         if let Some(submit_hint) = submit_hint.map(ShortcutHint::display_label) {
             if self.field_count() == 1 {
-                tips.push(FooterTip::highlighted(format!("{submit_hint} to submit")));
+                tips.push(FooterTip::highlighted(tr_with(
+                    current(),
+                    "{0} to submit",
+                    &[&submit_hint],
+                )));
             } else if is_last_field {
-                tips.push(FooterTip::highlighted(format!(
-                    "{submit_hint} to submit all"
+                tips.push(FooterTip::highlighted(tr_with(
+                    current(),
+                    "{0} to submit all",
+                    &[&submit_hint],
                 )));
             } else {
-                tips.push(FooterTip::new(format!("{submit_hint} to submit answer")));
+                tips.push(FooterTip::new(tr_with(
+                    current(),
+                    "{0} to submit answer",
+                    &[&submit_hint],
+                )));
             }
         }
         if self.field_count() > 1 {
             if self.current_field_is_select() {
-                tips.push(FooterTip::new("←/→ to navigate fields"));
+                tips.push(FooterTip::new(tr(current(), "←/→ to navigate fields")));
             } else {
-                tips.push(FooterTip::new("ctrl + p / ctrl + n change field"));
+                tips.push(FooterTip::new(tr(
+                    current(),
+                    "ctrl + p / ctrl + n change field",
+                )));
             }
         }
-        tips.push(FooterTip::new("esc to cancel"));
+        tips.push(FooterTip::new(tr(current(), "esc to cancel")));
         tips
     }
 
@@ -1164,7 +1194,8 @@ impl McpServerElicitationOverlay {
     fn submit_answers(&mut self) {
         self.save_current_draft();
         if let Some(idx) = self.first_required_unanswered_index() {
-            self.validation_error = Some("Answer required fields before submitting.".to_string());
+            self.validation_error =
+                Some(tr(current(), "Answer required fields before submitting.").to_string());
             self.jump_to_field(idx);
             return;
         }
@@ -1330,7 +1361,14 @@ impl McpServerElicitationOverlay {
                 state.selected_idx = Some(0);
             }
             state.ensure_visible(rows.len(), area.height as usize);
-            render_rows(area, buf, &rows, &state, rows.len().max(1), "No options");
+            render_rows(
+                area,
+                buf,
+                &rows,
+                &state,
+                rows.len().max(1),
+                tr(current(), "No options"),
+            );
             return;
         }
         if self.current_field_is_secret() {
@@ -1464,14 +1502,25 @@ impl Renderable for McpServerElicitationOverlay {
         let progress_line = if self.field_count() > 0 {
             let idx = self.current_index() + 1;
             let total = self.field_count();
-            let base = format!("Field {idx}/{total}");
+            let base = tr_with(
+                current(),
+                "Field {0}/{1}",
+                &[&idx.to_string(), &total.to_string()],
+            );
             if unanswered > 0 {
-                Line::from(format!("{base} ({unanswered} required unanswered)").dim())
+                Line::from(
+                    tr_with(
+                        current(),
+                        "{0} ({1} required unanswered)",
+                        &[&base, &unanswered.to_string()],
+                    )
+                    .dim(),
+                )
             } else {
                 Line::from(base.dim())
             }
         } else {
-            Line::from("No fields".dim())
+            Line::from(tr(current(), "No fields").dim())
         };
         Paragraph::new(progress_line).render(progress_area, buf);
         self.render_prompt(prompt_area, buf);

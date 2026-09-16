@@ -3659,6 +3659,50 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "This sub-agent is controlled by its parent. Direct input is disabled.",
         "此子代理由其父级控制。已禁用直接输入。",
     ),
+    ("Run the tool and continue.", "运行该工具并继续。"),
+    ("Allow this request and continue.", "允许该请求并继续。"),
+    (
+        "Run the tool and remember this choice for this session.",
+        "运行该工具，并在本次会话中记住此选择。",
+    ),
+    (
+        "Allow this request and remember this choice for this session.",
+        "允许该请求，并在本次会话中记住此选择。",
+    ),
+    ("Allow for this session", "本次会话内允许"),
+    (
+        "Run the tool and remember this choice for future tool calls.",
+        "运行该工具，并在今后的工具调用中记住此选择。",
+    ),
+    (
+        "Allow this request and remember this choice for future requests.",
+        "允许该请求，并在今后的请求中记住此选择。",
+    ),
+    ("Always allow", "始终允许"),
+    ("Cancel this tool call", "取消此次工具调用"),
+    ("Decline this request and continue.", "拒绝该请求并继续。"),
+    ("←/→ to navigate fields", "←/→ 切换字段"),
+    (
+        "ctrl + p / ctrl + n change field",
+        "ctrl + p / ctrl + n切换字段",
+    ),
+    ("esc to cancel", "esc取消"),
+    (
+        "Answer required fields before submitting.",
+        "提交前请先填写必填字段。",
+    ),
+    ("No options", "没有选项"),
+    ("No fields", "没有字段"),
+    ("{0} to submit", "{0} 提交"),
+    ("{0} to submit answer", "{0} 提交答案"),
+    ("{0} to submit all", "{0} 全部提交"),
+    ("Field {0}/{1}", "Field {0}/{1}"),
+    ("{0} ({1} required unanswered)", "{0}（{1} 个必填项未填写）"),
+    ("Allow", "允许"),
+    ("Deny", "拒绝"),
+    ("Confirm", "确认"),
+    ("True", "真"),
+    ("False", "假"),
 ];
 
 /// English source text -> Simplified Chinese.

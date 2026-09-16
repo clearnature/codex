@@ -1,5 +1,6 @@
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -236,7 +237,11 @@ pub(crate) async fn run_editor(
         .await?;
 
     if !status.success() {
-        return Err(Report::msg(format!("editor exited with status {status}")));
+        return Err(Report::msg(tr_with(
+            current(),
+            "editor exited with status {0}",
+            &[&status.to_string()],
+        )));
     }
 
     let contents = fs::read_to_string(&temp_path)?;

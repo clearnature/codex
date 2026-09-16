@@ -8,6 +8,7 @@ mod palette;
 
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeMap;
 
 use chrono::Datelike;
@@ -239,9 +240,17 @@ fn format_optional_tokens(value: Option<i64>) -> String {
 fn format_streak(current: Option<i64>, longest: Option<i64>) -> String {
     match (current, longest) {
         (Some(current), Some(longest)) if current == longest => format!("{current}d"),
-        (Some(current), Some(longest)) => format!("{current}d (best {longest}d)"),
+        (Some(current), Some(longest)) => tr_with(
+            codex_i18n::current(),
+            "{0}d (best {1}d)",
+            &[&current.to_string(), &longest.to_string()],
+        ),
         (Some(current), None) => format!("{current}d"),
-        (None, Some(longest)) => format!("- (best {longest}d)"),
+        (None, Some(longest)) => tr_with(
+            codex_i18n::current(),
+            "- (best {0}d)",
+            &[&longest.to_string()],
+        ),
         (None, None) => "-".to_string(),
     }
 }
@@ -254,10 +263,14 @@ fn format_optional_duration(value: Option<i64>) -> String {
             let hours = seconds / 3600;
             let minutes = (seconds % 3600) / 60;
             match (hours, minutes) {
-                (0, 0) => format!("{seconds}s"),
-                (0, minutes) => format!("{minutes}m"),
-                (hours, 0) => format!("{hours}h"),
-                (hours, minutes) => format!("{hours}h {minutes}m"),
+                (0, 0) => tr_with(codex_i18n::current(), "{0}s", &[&seconds.to_string()]),
+                (0, minutes) => tr_with(codex_i18n::current(), "{0}m", &[&minutes.to_string()]),
+                (hours, 0) => tr_with(codex_i18n::current(), "{0}h", &[&hours.to_string()]),
+                (hours, minutes) => tr_with(
+                    codex_i18n::current(),
+                    "{0}h {1}m",
+                    &[&hours.to_string(), &minutes.to_string()],
+                ),
             }
         },
     )

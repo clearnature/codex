@@ -38,6 +38,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // Footer hints (`tui/src/bottom_pane/footer.rs`). The leading space is part
     // of the key: it separates the hint from the key binding rendered before it.
     ("      Importing: none", "      正在导入：无"),
+    ("      • +{0} more marketplaces", "      • 还有{0}个市场"),
     ("     - <none>", "     - <无>"),
     ("     reason: {0}", "     原因：{0}"),
     ("     {label}: <empty>", "     {0}: <空>"),
@@ -216,6 +217,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         ", OpenAI's command-line coding agent",
         "，OpenAI的命令行编码代理",
     ),
+    ("+{0} more", "还有{0}个"),
+    ("- (best {0}d)", "-（最长{0}天）"),
     ("1 MCP server", "1个MCP服务器"),
     ("1 action.", "1个操作。"),
     (
@@ -300,6 +303,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "An experimental feature save is still in progress. Retry after it finishes.",
         "实验性特性保存仍在进行中。请在完成后重试。",
     ),
+    (
+        "Ambiguous `{0}` = `{1}`: `ctrl-z` is reserved for suspending the terminal on Unix. Choose a different chord and retry.",
+        "`{0}` = `{1}` 有歧义：`ctrl-z` 在Unix上保留用于挂起终端。请换一组和弦后重试。",
+    ),
+    (
+        "Ambiguous `{0}` = `{1}`: its prefix shadows `{2}`. Unbind or remap the existing shortcut before using it as a chord prefix.",
+        "`{0}` = `{1}` 有歧义：其前缀遮蔽了 `{2}`。请先解除或改绑已有快捷键，再把它用作战和弦前缀。",
+    ),
+    (
+        "Ambiguous `{0}` = `{1}`: plain `esc` is reserved for cancelling a pending chord.",
+        "`{0}` = `{1}` 有歧义：单独的 `esc` 保留用于取消未完成的和弦。",
+    ),
+    (
+        "Ambiguous `{0}` = `{1}`: the chord uses the key reserved by `{2}`. Choose a different chord and retry.",
+        "`{0}` = `{1}` 有歧义：该和弦使用了 `{2}` 保留的按键。请换一组和弦后重试。",
+    ),
+    (
+        "Ambiguous `{0}` = `{1}`: the same chord is already assigned to `{2}`. Choose a unique chord and retry.",
+        "`{0}` = `{1}` 有歧义：同一和弦已分配给 `{2}`。请使用不重复的和弦后重试。",
+    ),
     ("Answer the questions to continue.", "回答问题以继续。"),
     ("Approvals reviewer: {0}", "审批复核者：{0}"),
     (
@@ -349,6 +372,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
         "开发者指令不同，无法派生到该工作树。请改为开始新会话。已在{0}创建未使用的检出；请从源仓库运行 `git worktree remove <checkout-path>` 将其删除。",
+    ),
+    (
+        "Cannot dispatch `{0}`: the keymap action inventory exceeds {1} internal tokens.",
+        "无法分派 `{0}`：快捷键动作清单超过{1}个内部标记。",
+    ),
+    (
+        "Cannot dispatch unknown keymap action `{0}`.",
+        "无法分派未知的快捷键动作 `{0}`。",
     ),
     ("Cannot load {0}: {1}", "无法加载{0}：{1}"),
     (
@@ -609,12 +640,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to retry with a faster model: {0}",
         "用更快的模型重试失败：{0}",
     ),
+    ("Failed to save {0} setting: {1}", "保存{0}设置失败：{1}"),
     ("Fast off", "Fast关"),
     ("Fast on", "Fast开"),
     ("Feature discovery was interrupted", "特性发现被中断"),
     (
         "Features were saved, but readback was interrupted",
         "特性已保存，但回读被中断",
+    ),
+    (
+        "Features were saved, but configured values could not be refreshed: {0}",
+        "特性已保存，但无法刷新已配置的值：{0}",
     ),
     ("Finished waiting", "等待结束"),
     (
@@ -688,6 +724,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Job: running/completed/failed/expired; Run/Experiment: succeeded/failed/unknown (Recommended when triaging long-running background work and status transitions)",
         "Job：running/completed/failed/expired；Run/Experiment：succeeded/failed/unknown（排查长时间后台任务与状态变化时推荐）",
+    ),
+    (
+        "Invalid `{0}` = `{1}`. Use a single key such as `ctrl-a` or a two-stroke chord such as `ctrl-x ctrl-t`.",
+        "`{0}` = `{1}` 无效。请使用单个按键（如 `ctrl-a`）或两段和弦（如 `ctrl-x ctrl-t`）。",
+    ),
+    (
+        "Invalid `{0}` = `{1}`: `backspace` is reserved for editing task input.",
+        "`{0}` = `{1}` 无效：`backspace` 保留用于编辑任务输入。",
+    ),
+    (
+        "Invalid `{0}` = `{1}`: a chord prefix outside Vim must use ctrl, alt, or a non-character key so ordinary text input is not intercepted.",
+        "`{0}` = `{1}` 无效：Vim之外的和弦前缀必须使用ctrl、alt或非字符键，以免拦截普通文本输入。",
+    ),
+    (
+        "Invalid `{0}` = `{1}`: a ctrl-alt character prefix may be AltGr text input on Windows. Choose a different chord and retry.",
+        "`{0}` = `{1}` 无效：ctrl-alt字符前缀在Windows上可能是AltGr文本输入。请换一组和弦后重试。",
     ),
     ("Keep waiting", "继续等待"),
     ("Keep {0} disabled.", "保持禁用{0}。"),
@@ -1037,6 +1089,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "There is no conversation history to recap.",
         "没有可供回顾的会话历史。",
     ),
+    (
+        "The server did not advertise experimental feature `{0}`",
+        "服务器未声明实验性特性 `{0}`",
+    ),
     ("Thinking", "思考中"),
     (
         "This directory is not trusted; run Codex there.",
@@ -1286,6 +1342,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "editor directory must not contain symbolic links",
         "编辑器目录不能包含符号链接",
     ),
+    ("editor exited with status {0}", "编辑器以{0}退出"),
     ("embedded resource: {0}", "嵌入式资源：{0}"),
     ("enabled", "已启用"),
     ("event", "事件"),
@@ -1555,6 +1612,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} of {1}", "{0}/{1}"),
     ("{0} output", "输出 {0}"),
     ("{0} questions requested", "请求了{0}个问题"),
+    (
+        "{0} setting saved on the server for new threads. This thread is unchanged. Project or task settings may override it.",
+        "{0}设置已保存到服务器，用于新线程。当前线程不受影响。项目或任务设置可能覆盖它。",
+    ),
+    (
+        "{0} setting was saved but is overridden: {1}",
+        "{0}设置已保存但被覆盖：{1}",
+    ),
     ("{0} to interrupt", "{0} 中断"),
     ("{0} unavailable", "{0}不可用"),
     ("{0} window", "{0} 窗口"),
@@ -2818,7 +2883,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // 钩子; the provenance prefix keeps its arrow and separator spacing.
     ("Running hooks", "正在运行钩子"),
     ("Running hook", "正在运行钩子"),
+    ("{0}d (best {1}d)", "{0}天（最长{1}天）"),
+    ("{0}h", "{0}小时"),
+    ("{0}h {1}m", "{0}小时{1}分"),
+    ("{0}m", "{0}分"),
     ("{0}m {1}s", "{0}分{1}秒"),
+    ("{0}s", "{0}秒"),
     ("• Copied conversation to clipboard", "• 已复制会话到剪贴板"),
     ("• Saved conversation to ", "• 会话已保存到"),
     ("• Waited for background terminal", "• 已等待后台终端"),

@@ -13,6 +13,7 @@ use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::WriteStatus;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -118,7 +119,11 @@ pub(crate) async fn write(
                 .iter()
                 .find(|feature| feature.name == *name)
                 .ok_or_else(|| {
-                    format!("The server did not advertise experimental feature `{name}`")
+                    tr_with(
+                        current(),
+                        "The server did not advertise experimental feature `{0}`",
+                        &[&name],
+                    )
                 })?;
             // Quote the server's key as a single TOML path segment.
             let key = format!("features.{}", serde_json::json!(name));
@@ -161,7 +166,11 @@ pub(crate) async fn write(
             )
         })?
         .map_err(|error| {
-            format!("Features were saved, but configured values could not be refreshed: {error}")
+            tr_with(
+                current(),
+                "Features were saved, but configured values could not be refreshed: {0}",
+                &[&error.to_string()],
+            )
         })?;
     let overridden = response.status == WriteStatus::OkOverridden
         || updates.iter().any(|(name, enabled)| {

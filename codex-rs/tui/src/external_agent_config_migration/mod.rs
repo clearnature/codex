@@ -6,6 +6,7 @@ use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
 use codex_app_server_protocol::PluginsMigration;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -323,7 +324,11 @@ impl ExternalAgentConfigMigrationScreen {
                     .len()
                     .saturating_sub(plugin_names.len());
                 if hidden_plugin_count > 0 {
-                    plugin_names.push(format!("+{hidden_plugin_count} more"));
+                    plugin_names.push(tr_with(
+                        current(),
+                        "+{0} more",
+                        &[&hidden_plugin_count.to_string()],
+                    ));
                 }
                 Line::from(format!(
                     "      • {}: {}",
@@ -334,8 +339,10 @@ impl ExternalAgentConfigMigrationScreen {
             .collect::<Vec<_>>();
         let hidden_marketplace_count = plugin_groups.len().saturating_sub(lines.len());
         if hidden_marketplace_count > 0 {
-            lines.push(Line::from(format!(
-                "      • +{hidden_marketplace_count} more marketplaces"
+            lines.push(Line::from(tr_with(
+                current(),
+                "      • +{0} more marketplaces",
+                &[&hidden_marketplace_count.to_string()],
             )));
         }
         lines

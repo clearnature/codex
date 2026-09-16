@@ -487,3 +487,91 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。
+
+## 十三、两处「检查器看不见」的缺陷（第 87 轮实测）
+
+这一轮的入口不是新文案，而是**必需的 `i18n-unit` 门禁在 HEAD 上本来就是红的**
+（28 passed / 2 failed）。顺着这两条失败往回查，找到一类此前的门禁全都测不到的缺陷。
+
+### 13.1 命名占位符：`substitute` 只认 `{0}`、`{1}`
+
+`i18n/src/interpolate.rs:46-72` 的替换只处理能 `parse::<usize>()` 成功的 token；
+`{label}` / `{action}` 这类**命名**占位符落到 `None` 分支，被**原样抄进输出**
+（该分支的本意是「让错误可见」，见 `interpolate.rs:64-66`）。
+
+实测 4 处调用点同时踩中（其中 3 处在 `keymap.rs`）：
+
+| 位置 | 键 | 后果 |
+| --- | --- | --- |
+| `tui/src/debug_config.rs:470` | `"     {label}: <empty>"` | 英文态直接渲染字面量 `{label}` |
+| `tui/src/keymap.rs:1806` | `"tui.keymap.chat.{action}: …"` | 同上（`{action}`） |
+| `tui/src/keymap.rs:2129` | `"tui.keymap.agents.{action}: ctrl-z …"` | 同上 |
+| `tui/src/keymap.rs:2142` | `"tui.keymap.agents.{action}: printable …"` | 同上 |
+
+**这是英文侧的回归，不是「中文没翻到」**：i18n 之前的写法是
+`format!("     {label}: <empty>")`（commit `8a556296f`），`format!` 认得命名捕获；
+换成 `tr_with` 之后引擎不认，于是**默认语言下也渲染出字面量 `{label}`**。
+中文侧同样坏：那 3 条 `tui.keymap.*` 的译文里也写着 `{action}`，`substitute` 一样不替换。
+四处（调用点 + 键 + 译文）统一改成位置式 `{0}` 之后，英文输出重新逐字节等于 i18n 之前。
+
+**判据**：`tr_with` 的键或译文里出现 `{字母…}` 即缺陷——引擎只保证 `{N}`。
+扫描口径：对 `dict_zh.rs` 与全部 `tr(` / `tr_with(` 调用的字面量匹配 `\{[A-Za-z_]`，
+本轮清完为 **0**（此前 4 处）。
+
+### 13.2 重复键：`i18n-check` 数的是**去重后**的键
+
+`i18n-check` 的 coverage 行按唯一键计数，所以同一个键写两遍**不会**触发 missing / unused。
+实测 HEAD 的 `dict_zh.rs` 里 **31 个键各出现两次**，其中 18 个两次的译文**不一样**，门禁全程绿灯。
+
+哪一份生效？`DICT_ZH` 是 `ENTRIES.iter().copied().collect()`（`dict_zh.rs:6414-6415`），
+`HashMap` 的插入语义是**后写覆盖**，所以**最后一条**才是真正渲染的那条。
+
+于是清理口径定为「删前面的、留最后一条」。本轮 30 个键照此删除后
+**有效字典逐键不变**（可复核：对 HEAD 与工作树各建一次 `{key: value}` 映射再比对，
+差异只剩 `Field {0}/{1}` 一条，见 13.3）。第 31 个键
+（`"Data shared with this app is subject to the app's "`）是例外——清理时留下了**第一条**，
+而它比末条多一个尾随空格，等于把 `plugin_catalog.rs:1207` 拼出来的那句中文悄悄改了排版；
+已按「保留生效值」还原。尾随空格落在字符串末位，`[spacing]` 检查器看不见它。
+
+### 13.3 英文恒等条目：coverage 100% 之下的未译
+
+`("Field {0}/{1}", "Field {0}/{1}")` 是一条**英文恒等**条目：键值相同，
+被 coverage 行算作「已译」，而渲染出来仍是英文。本轮译成 `字段 {0}/{1}`。
+
+**判据**：`key == value` 只允许出现在**产品名 / 标识符**上（§12.6）。
+本轮实测恒等条目共 8 条，除 `Field {0}/{1}` 外的 7 条是
+`Alpha`、`Beta`、`LM Studio`、`M Studio`、`OpenAI Codex`、`OpenAI Codex (v{0})`、`Vim`，保持恒等。
+其余恒等条目一律按「拿恒等冒充已译」裁决。
+
+### 13.4 期望错：`interpolate_tests.rs:30`（改的是期望，附反例）
+
+`assert_eq!(tr_with(Lang::Zh, "Ready", &["unused"]), "Ready")` 只在 `Ready` **没有**词条时成立。
+词条早在 footer 批次就已存在（`dict_zh.rs:1102 ("Ready", "就绪")`），
+所以这条断言测的是「字典当时的状态」，不是「无占位符模板忽略实参」这个契约。
+
+**反例证据**：`cargo test -q -p codex-i18n` 在 HEAD 上失败
+（`left: "就绪"` / `right: "Ready"`，28 passed / 2 failed），而生产行为是对的（`Ready` 本来就该译）。
+改法是**换夹具而不是放宽断言**：中文侧改为与 `tr(Lang::Zh, "Ready")` 比较，
+「实参没被消费就不该出现」这条性质保留，且不再把某一条译文写死在测试里；
+无词条时的回退路径仍由 `a_translated_template_interpolates_after_translation` 覆盖。
+这属于「期望错」：有反例、有台账裁决记录，不是把尺子改短。
+
+### 13.5 证据（第 87 轮门禁回执）
+
+| 门禁 | 结果 |
+| --- | --- |
+| `i18n-unit`（必需） | ✅ 30 passed / 0 failed，`r-mu4lm2kd-lgzakq`（HEAD 时 28 passed / 2 failed） |
+| `i18n-check`（必需） | ✅ 2729/2729，missing 0 / unused 0 / spacing 0，`r-mu4lmsyc-qoflom` |
+| `fmt-check`（必需） | ✅ exit 0，`r-mu4lmpbf-tassl9` |
+| `check-tui-lib` | ✅ exit 0，`r-mu4lnmh2-pnq3lu` |
+| `cargo test -p codex-tui --lib -- debug_config:: keymap` | ✅ 190 passed / 0 failed |
+
+**尚未验证 / 未完成**：
+
+1. 全量 `tui-test`（本轮改动只落在 `debug_config.rs` 与 `keymap.rs` 的错误/空值路径，
+   已确认快照里不含被改字符串——`grep -rn '{label}\|{action}\|: <empty>' --include=*.snap` 为空；
+   全量跑仍在本轮后台进行）；
+2. `just i18n-smoke`（端到端中文渲染）；
+3. **机器闸门尚未补上**：`i18n-check` 目前不查「重复键」也不查「命名占位符」，
+   本轮的 4 处缺陷正是从这两条缝里漏过去的。判据已写在 13.1 / 13.2，
+   实现（含 `main_tests.rs` 用例）留待下一轮，**不要当成已完成**。

@@ -4,7 +4,12 @@
 //! rendered without a translation, or an entry whose string no longer exists --
 //! can be found automatically. Its refutation condition is "the equivalent of
 //! `extractUsedKeys` cannot be built", so this binary is the prototype, and it
-//! covers the three checks the plan names: missing, unused and coverage.
+//! covers the three checks the plan names: missing, unused and coverage, plus
+//! the two invariants the same scan can see for free and those three are blind
+//! to: a key declared twice (the map keeps the last entry, so the earlier
+//! translations are dead text) and a *named* placeholder such as `{label}`
+//! (the engine substitutes positional `{N}` only, so the token reaches the
+//! screen verbatim -- see `codex-rs/i18n/src/interpolate.rs`).
 //!
 //! It reads two sources:
 //!   * every `tr(..)` / `tr_with(..)` call in the workspace, taking the first
@@ -42,9 +47,11 @@ Usage:
   codex-i18n-check [--root <repo root>]
 
 Checks reported:
-  missing   keys rendered in code but absent from the dictionary
-  unused    dictionary entries no longer rendered anywhere
-  coverage  share of rendered keys that have a translation
+  missing      keys rendered in code but absent from the dictionary
+  unused       dictionary entries no longer rendered anywhere
+  coverage     share of rendered keys that have a translation
+  duplicate    dictionary keys declared more than once (the last one wins)
+  placeholder  named placeholders (`{label}`), which the engine copies verbatim
 ";
 
 /// One rendered key, with the place it was rendered.
@@ -222,8 +229,46 @@ fn run(root: &Path) -> Result<bool, String> {
         println!("  {value:?}");
         println!("      key {key:?}");
     }
+    println!();
 
-    Ok(!missing.is_empty() || !unused.is_empty() || !spacing.is_empty())
+    let duplicates = duplicate_keys(&pairs);
+    println!(
+        "[duplicate] keys declared more than once (the last entry wins): {}",
+        duplicates.len()
+    );
+    for (key, values) in &duplicates {
+        println!("  {key:?}");
+        for (index, value) in values.iter().enumerate() {
+            let note = if index + 1 == values.len() {
+                "effective"
+            } else {
+                "dead: the later entry overwrites it"
+            };
+            println!("      {value:?}  ({note})");
+        }
+    }
+    println!();
+
+    let placeholders = named_placeholder_hits(&pairs, &used);
+    println!(
+        "[placeholder] named placeholders (`substitute` only replaces positional `{{N}}`): {}",
+        placeholders.len()
+    );
+    for (template, (names, sites)) in &placeholders {
+        println!("  {template:?} carries {{{}}}", names.join("}, {"));
+        for site in sites.iter().take(3) {
+            println!("      {site}");
+        }
+        if sites.len() > 3 {
+            println!("      ... {} more", sites.len() - 3);
+        }
+    }
+
+    Ok(!missing.is_empty()
+        || !unused.is_empty()
+        || !spacing.is_empty()
+        || !duplicates.is_empty()
+        || !placeholders.is_empty())
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
@@ -299,6 +344,91 @@ fn spacing_violations(pairs: &[(String, String)]) -> Vec<(&str, &str)> {
         .iter()
         .filter(|(_, value)| has_mixed_boundary_space(value))
         .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect()
+}
+
+/// The named placeholders in `template`, without duplicates.
+///
+/// A placeholder the engine cannot substitute: `substitute` replaces `{0}`,
+/// `{1}`, ... and copies every other `{...}` through verbatim (the branch that
+/// keeps a mistake visible rather than swallowing text). `{label}` therefore
+/// reaches the screen as `{label}`, in the default language too.
+fn named_placeholders(template: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut rest = template;
+    while let Some(start) = rest.find('{') {
+        let after = &rest[start + 1..];
+        let Some(end) = after.find('}') else {
+            break;
+        };
+        let token = &after[..end];
+        // An index (`{0}`), an empty pair (`{}`) and prose (`{not a number}`)
+        // are all left alone: only `{identifier}` is the shape the engine
+        // cannot render.
+        let named = token.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
+            && token.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+        if named && !found.iter().any(|existing| existing == token) {
+            found.push(token.to_string());
+        }
+        rest = &after[end + 1..];
+    }
+    found
+}
+
+/// Records `template` in `hits` when it carries a named placeholder.
+fn record_named_placeholders(
+    hits: &mut BTreeMap<String, (Vec<String>, Vec<String>)>,
+    template: &str,
+    site: String,
+) {
+    let names = named_placeholders(template);
+    if names.is_empty() {
+        return;
+    }
+    let entry = hits
+        .entry(template.to_string())
+        .or_insert_with(|| (names, Vec::new()));
+    if !entry.1.contains(&site) {
+        entry.1.push(site);
+    }
+}
+
+/// Every place a named placeholder survives to the screen, keyed by template.
+///
+/// Both sides are checked together, because either can carry the token: the
+/// dictionary (key and translation) and the call site. None of the drift checks
+/// above can see it -- the template still matches its key and its call site.
+fn named_placeholder_hits(
+    pairs: &[(String, String)],
+    used: &BTreeMap<String, Vec<String>>,
+) -> BTreeMap<String, (Vec<String>, Vec<String>)> {
+    let mut hits: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
+    for (key, value) in pairs {
+        record_named_placeholders(&mut hits, key, "dictionary key".to_string());
+        record_named_placeholders(&mut hits, value, "dictionary translation".to_string());
+    }
+    for (key, sites) in used {
+        for site in sites {
+            record_named_placeholders(&mut hits, key, site.clone());
+        }
+    }
+    hits
+}
+
+/// Dictionary keys declared more than once, with every translation they were given.
+///
+/// `DICT_ZH` is `ENTRIES.iter().copied().collect()` -- a `HashMap`, so the last
+/// entry for a key overwrites the earlier ones. Two batches can translate one
+/// key differently and nothing above changes: the key stays unique in every
+/// count, and the rendered text quietly follows whichever entry came last.
+fn duplicate_keys(pairs: &[(String, String)]) -> Vec<(&str, Vec<&str>)> {
+    let mut by_key: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (key, value) in pairs {
+        by_key.entry(key.as_str()).or_default().push(value.as_str());
+    }
+    by_key
+        .into_iter()
+        .filter(|(_, values)| values.len() > 1)
         .collect()
 }
 

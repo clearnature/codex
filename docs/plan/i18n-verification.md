@@ -572,6 +572,25 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
    已确认快照里不含被改字符串——`grep -rn '{label}\|{action}\|: <empty>' --include=*.snap` 为空；
    全量跑仍在本轮后台进行）；
 2. `just i18n-smoke`（端到端中文渲染）；
-3. **机器闸门尚未补上**：`i18n-check` 目前不查「重复键」也不查「命名占位符」，
-   本轮的 4 处缺陷正是从这两条缝里漏过去的。判据已写在 13.1 / 13.2，
-   实现（含 `main_tests.rs` 用例）留待下一轮，**不要当成已完成**。
+3. 机器闸门已补上（见 13.6），但**只覆盖已登记的扫描面**：
+   重复键检查只在 `dict_zh.rs` 的 `ENTRIES` 上跑；命名占位符检查的调用点一侧
+   只覆盖「第一个实参是字面量」的 `tr` / `tr_with`（`extract_tr_calls` 的口径），
+   经变量传入的键由 `[bound]` 那 28 条按同一字面量规则一并检查，不构成盲区。
+
+### 13.6 把判据装进 `codex-i18n-check`（同轮完成）
+
+两条判据都加在同一个只读扫描器里，因此 `just i18n-check` 从此对这两类缺陷**非零退出**：
+
+| 新增检查 | 判据 | 本轮实测输出 |
+| --- | --- | --- |
+| `[duplicate]` | 同一键在 `ENTRIES` 里出现两次即报错，逐条打印「dead / effective」——死的那条是**被覆盖的前一条** | `0` |
+| `[placeholder]` | 键、译文、调用点字面量里出现 `{标识符}` 即报错（`{0}`/`{}`/`{not a number}` 不算） | `0` |
+
+实现落点：`i18n-check/src/main.rs`（`named_placeholders` / `named_placeholder_hits` /
+`duplicate_keys`，以及 `run()` 里两段报告与退出条件），用例在 `main_tests.rs`
+（5 条：索引与散文不误报、键/译文两侧都能命中、调用点命中、重复键返回两份译文）。
+**红转绿是可复现的**：把 `{label}` 填回任意一条键、或把某个键写两遍，
+`i18n-check` 立刻非零退出——本轮修复前的实测值正是 4 处命名占位符与 31 个重复键。
+
+*证据*：`just i18n-check` 退出码 0，回执 `r-mu4lwag5-j2q2h0`；
+`cargo test -p codex-i18n-check` 20 passed（其中新增 5 条）；`fmt-check` 回执 `r-mu4lwsxw-v3qcmc`。

@@ -1,7 +1,12 @@
+use std::collections::BTreeMap;
+
 use pretty_assertions::assert_eq;
 
+use crate::duplicate_keys;
 use crate::extract_label_literals;
 use crate::extract_tr_calls;
+use crate::named_placeholder_hits;
+use crate::named_placeholders;
 use crate::read_dictionary_pairs;
 use crate::spacing_violations;
 
@@ -110,6 +115,73 @@ fn skips_calls_whose_first_argument_is_not_a_literal() {
 fn ignores_commented_out_calls() {
     assert_eq!(extract_tr_calls(r#"// tr(lang, " commented ")"#), vec![]);
     assert_eq!(extract_tr_calls(r#"/* tr(lang, " blocked ") */"#), vec![]);
+}
+
+#[test]
+fn finds_a_named_placeholder_but_not_an_index_or_prose() {
+    // The engine substitutes `{0}`, `{1}`, ... and copies anything else through
+    // verbatim, so `{label}` is the shape that reaches the screen unchanged.
+    // `{not a number}` and `{}` are prose/idioms, not placeholders -- flagging
+    // them would train the reader to ignore the report.
+    assert_eq!(named_placeholders("     {label}: <empty>"), vec!["label"]);
+    assert_eq!(named_placeholders("{action}/{action}"), vec!["action"]);
+    assert_eq!(named_placeholders("Field {0}/{1}"), Vec::<String>::new());
+    assert_eq!(named_placeholders("{not a number}"), Vec::<String>::new());
+    assert_eq!(named_placeholders("{}"), Vec::<String>::new());
+    assert_eq!(named_placeholders("no placeholders"), Vec::<String>::new());
+}
+
+#[test]
+fn reports_a_named_placeholder_on_either_side_of_the_dictionary() {
+    let pairs = vec![
+        ("Fine {0}".to_string(), "没问题 {0}".to_string()),
+        (
+            "     {label}: <empty>".to_string(),
+            "     {0}: <空>".to_string(),
+        ),
+        ("Bad".to_string(), "坏 {reason}".to_string()),
+    ];
+    let hits = named_placeholder_hits(&pairs, &BTreeMap::new());
+    // The hit is keyed by the *template* that carries the token, so a broken
+    // translation reports its own text (with the origin as the site) rather
+    // than the English key it belongs to.
+    assert_eq!(
+        hits.keys().cloned().collect::<Vec<_>>(),
+        vec![
+            "     {label}: <empty>".to_string(),
+            "坏 {reason}".to_string()
+        ]
+    );
+    assert_eq!(
+        hits["坏 {reason}"].1,
+        vec!["dictionary translation".to_string()]
+    );
+}
+
+#[test]
+fn reports_a_call_site_that_renders_a_named_placeholder() {
+    let calls = extract_tr_calls(r#"tr_with(current(), "     {label}: <empty>", &[label])"#);
+    assert_eq!(calls.len(), 1);
+    let used: BTreeMap<String, Vec<String>> =
+        BTreeMap::from([(calls[0].key.clone(), vec!["src/a.rs:1".to_string()])]);
+    let hits = named_placeholder_hits(&[], &used);
+    assert_eq!(hits[&calls[0].key].1, vec!["src/a.rs:1".to_string()]);
+}
+
+#[test]
+fn reports_a_key_declared_twice_with_both_translations() {
+    // The map keeps the last entry, so the earlier translation is dead text --
+    // and no count in the report changes when a batch re-translates a key.
+    let pairs = vec![
+        ("Quit".to_string(), "退出".to_string()),
+        ("Ready".to_string(), "就绪".to_string()),
+        ("Ready".to_string(), "准备好了".to_string()),
+    ];
+    assert_eq!(
+        duplicate_keys(&pairs),
+        vec![("Ready", vec!["就绪", "准备好了"])]
+    );
+    assert_eq!(duplicate_keys(&pairs[..1]), Vec::<(&str, Vec<&str>)>::new());
 }
 
 #[test]

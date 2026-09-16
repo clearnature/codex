@@ -1,5 +1,8 @@
 //! Shared popup-related constants for bottom pane widgets.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::text::Line;
 
 use crate::key_hint;
@@ -15,20 +18,20 @@ pub(crate) const MAX_POPUP_ROWS: usize = 8;
 /// Standard footer hint text used by popups.
 pub(crate) fn standard_popup_hint_line() -> Line<'static> {
     Line::from(vec![
-        "Press ".into(),
+        tr(current(), "Press ").into(),
         key_hint::plain(KeyCode::Enter).into(),
-        " to confirm or ".into(),
+        tr(current(), " to confirm or ").into(),
         key_hint::plain(KeyCode::Esc).into(),
-        " to go back".into(),
+        tr(current(), " to go back").into(),
     ])
 }
 
 pub(crate) fn standard_popup_hint_line_for_keymap(list_keymap: &ListKeymap) -> Line<'static> {
     accept_cancel_hint_line(
         list_keymap.primary_hint(ListAction::Accept),
-        "to confirm",
+        tr(current(), "to confirm"),
         list_keymap.primary_hint(ListAction::Cancel),
-        "to go back",
+        tr(current(), "to go back"),
     )
 }
 
@@ -40,19 +43,19 @@ pub(crate) fn accept_cancel_hint_line(
 ) -> Line<'static> {
     match (accept, cancel) {
         (Some(accept), Some(cancel)) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             accept.into(),
-            format!(" {accept_label} or ").into(),
+            tr_with(current(), " {0} or ", &[accept_label]).into(),
             cancel.into(),
             format!(" {cancel_label}").into(),
         ]),
         (Some(accept), None) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             accept.into(),
             format!(" {accept_label}").into(),
         ]),
         (None, Some(cancel)) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             cancel.into(),
             format!(" {cancel_label}").into(),
         ]),

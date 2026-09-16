@@ -39,6 +39,9 @@
 //! .build();
 //! ```
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_utils_fuzzy_match::fuzzy_match;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -78,7 +81,11 @@ use crate::text_formatting::truncate_text;
 const ITEM_NAME_TRUNCATE_LEN: usize = 21;
 
 /// Placeholder text shown in the search input when empty.
-const SEARCH_PLACEHOLDER: &str = "Type to search";
+///
+/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+fn search_placeholder() -> &'static str {
+    tr(current(), "Type to search")
+}
 
 /// Prefix displayed before the search query (mimics a command prompt).
 const SEARCH_PROMPT_PREFIX: &str = "> ";
@@ -640,7 +647,7 @@ impl Renderable for MultiSelectPicker {
         if search_area.height >= 2 {
             let [placeholder_area, input_area] =
                 Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).areas(search_area);
-            Line::from(SEARCH_PLACEHOLDER.dim()).render(placeholder_area, buf);
+            Line::from(search_placeholder().dim()).render(placeholder_area, buf);
             let line = if self.search_query.is_empty() {
                 Line::from(vec![SEARCH_PROMPT_PREFIX.dim()])
             } else {
@@ -652,7 +659,7 @@ impl Renderable for MultiSelectPicker {
             line.render(input_area, buf);
         } else if search_area.height > 0 {
             let query_span = if self.search_query.is_empty() {
-                SEARCH_PLACEHOLDER.dim()
+                search_placeholder().dim()
             } else {
                 self.search_query.clone().into()
             };
@@ -672,7 +679,7 @@ impl Renderable for MultiSelectPicker {
                 &rows.rows,
                 &rows.state,
                 render_area.height as usize,
-                "no matches",
+                tr(current(), "no matches"),
             );
         }
 
@@ -828,7 +835,7 @@ impl MultiSelectPickerBuilder {
             let mut spans = vec![
                 "Press ".into(),
                 key_hint::plain(KeyCode::Char(' ')).into(),
-                " to toggle".into(),
+                tr(current(), " to toggle").into(),
             ];
             if self.ordering_enabled
                 && let (Some(move_left), Some(move_right)) = (
@@ -840,17 +847,17 @@ impl MultiSelectPickerBuilder {
                 spans.push(move_left.into());
                 spans.push("/".into());
                 spans.push(move_right.into());
-                spans.push(" to move".into());
+                spans.push(tr(current(), " to move").into());
             }
             if let Some(accept) = self.keymap.primary_hint(ListAction::Accept) {
                 spans.push("; ".into());
                 spans.push(accept.into());
-                spans.push(" to confirm and close".into());
+                spans.push(tr(current(), " to confirm and close").into());
             }
             if let Some(cancel) = self.keymap.primary_hint(ListAction::Cancel) {
                 spans.push("; ".into());
                 spans.push(cancel.into());
-                spans.push(" to close".into());
+                spans.push(tr(current(), " to close").into());
             }
             spans
         } else {

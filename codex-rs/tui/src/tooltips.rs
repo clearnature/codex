@@ -11,6 +11,121 @@ const ANNOUNCEMENT_TIP_URL: &str =
 const IS_MACOS: bool = cfg!(target_os = "macos");
 const IS_WINDOWS: bool = cfg!(target_os = "windows");
 
+/// 启动提示语。
+///
+/// 这些行原先放在 `assets/tooltips.txt` 里用 `include_str!` 引入——那样
+/// `codex-i18n-check` 看不见它们（不是 Rust 字面量），字典与渲染集无从对账。
+/// 现在逐行写成 `tr(...)` 字面量，盲区消失；顺序与原文一致。
+fn raw_tooltips() -> Vec<&'static str> {
+    vec![
+        tr(
+            current(),
+            "Use /compact when the conversation gets long to summarize history and free up context.",
+        ),
+        tr(
+            current(),
+            "Start a fresh idea with /new; the previous session stays in history.",
+        ),
+        tr(
+            current(),
+            "Use /feedback to send logs to the maintainers when something looks off.",
+        ),
+        tr(
+            current(),
+            "Switch models or reasoning effort quickly with /model.",
+        ),
+        tr(
+            current(),
+            "Use /permissions to control when Codex asks for confirmation.",
+        ),
+        tr(
+            current(),
+            "Run /review to get a code review of your current changes.",
+        ),
+        tr(
+            current(),
+            "Use /skills to list available skills or ask Codex to use one.",
+        ),
+        tr(
+            current(),
+            "Use /status to see the current model, approvals, and token usage.",
+        ),
+        tr(
+            current(),
+            "Use /statusline to configure which items appear in the status line.",
+        ),
+        tr(
+            current(),
+            "Use /fork to branch the current chat into a new thread.",
+        ),
+        tr(
+            current(),
+            "Use /side to start a side conversation in a temporary fork without polluting the main thread.",
+        ),
+        tr(
+            current(),
+            "Use /init to create an AGENTS.md with project-specific guidance.",
+        ),
+        tr(current(), "Use /mcp to list configured MCP tools."),
+        tr(
+            current(),
+            "Use /personality to customize how Codex communicates.",
+        ),
+        tr(
+            current(),
+            "Use /rename to rename your threads for easier thread resuming.",
+        ),
+        tr(
+            current(),
+            "Use the OpenAI docs MCP for API questions; enable it with `codex mcp add openaiDeveloperDocs --url https://developers.openai.com/mcp`.",
+        ),
+        tr(
+            current(),
+            "Join the OpenAI community Discord: http://discord.gg/openai",
+        ),
+        tr(
+            current(),
+            "Visit the Codex community forum: https://community.openai.com/c/codex/37",
+        ),
+        tr(
+            current(),
+            "You can run any shell command from Codex using `!` (e.g. `!ls`)",
+        ),
+        tr(
+            current(),
+            "Type / to open the command popup; Tab autocompletes slash commands.",
+        ),
+        tr(
+            current(),
+            "When the composer is empty, press Esc to step back and edit your last message; Enter confirms.",
+        ),
+        tr(
+            current(),
+            "Press Tab to queue a message when a task is running; otherwise it sends immediately (except `!`).",
+        ),
+        tr(
+            current(),
+            "[tui.keymap] in ~/.codex/config.toml lets you rebind supported shortcuts.",
+        ),
+        tr(
+            current(),
+            "See the Codex keymap documentation for supported actions and examples.",
+        ),
+        tr(
+            current(),
+            "Paste an image with Ctrl+V to attach it to your next message.",
+        ),
+        tr(
+            current(),
+            "You can resume a previous conversation by running `codex resume`",
+        ),
+        tr(
+            current(),
+            "Use /copy or press Ctrl+O to copy the latest agent response as Markdown.",
+        ),
+    ]
+}
+
 fn app_tooltip() -> &'static str {
     tr(
         current(),
@@ -51,13 +166,9 @@ fn free_go_tooltip() -> &'static str {
     )
 }
 
-const RAW_TOOLTIPS: &str = include_str!("../assets/tooltips.txt");
-
 lazy_static! {
-    static ref TOOLTIPS: Vec<&'static str> = RAW_TOOLTIPS
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+    static ref TOOLTIPS: Vec<&'static str> = raw_tooltips()
+        .into_iter()
         .chain(if IS_MACOS {
             Some(macos_app_tooltip())
         } else {

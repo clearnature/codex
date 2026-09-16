@@ -877,6 +877,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Invalid `{0}` = `{1}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. See the Codex keymap documentation for supported actions and examples.",
         "`{0}` = `{1}` 无效。请使用`ctrl-a`、`shift-enter`或`page-down`这类取值。支持的动作与示例见Codex快捷键文档。",
     ),
+    (
+        "Join the OpenAI community Discord: http://discord.gg/openai",
+        "加入OpenAI社区Discord：http://discord.gg/openai",
+    ),
     ("Keep waiting", "继续等待"),
     ("Keep {0} disabled.", "保持禁用{0}。"),
     ("Keymap", "快捷键"),
@@ -1024,6 +1028,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Option 3", "选项3"),
     ("Or run {0} and select {1}.", "或运行{0}并选择{1}。"),
     ("Other (write an answer)", "其他（自行作答）"),
+    (
+        "Paste an image with Ctrl+V to attach it to your next message.",
+        "按Ctrl+V粘贴图片，附加到下一条消息。",
+    ),
     ("Pending init", "等待初始化"),
     (
         "Pets are disabled in Zellij. Terminal images don’t stay reliably pane-local in Zellij. Run Codex outside Zellij to use pets.",
@@ -1063,6 +1071,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "按任意键查看Codex收到的内容。Esc会被检查；Ctrl+C关闭。",
     ),
     ("Preparing device code login", "正在准备设备码登录"),
+    (
+        "Press Tab to queue a message when a task is running; otherwise it sends immediately (except `!`).",
+        "任务运行时按Tab可排队一条消息；否则会立即发送（`!`除外）。",
+    ),
     ("Press enter to continue", "按Enter继续"),
     ("Preview unavailable", "预览不可用"),
     (
@@ -1147,6 +1159,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Review hooks", "查看钩子"),
     ("Review selection", "查看选择"),
     ("Review the diff", "审查该diff"),
+    (
+        "Run /review to get a code review of your current changes.",
+        "运行/review对当前改动做代码审查。",
+    ),
     ("Run Codex non-interactively", "以非交互方式运行Codex。"),
     (
         "Run a code review non-interactively",
@@ -1188,6 +1204,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "正在保存…关闭此弹窗不会取消写入。",
     ),
     ("Search › ", "搜索 › "),
+    (
+        "See the Codex keymap documentation for supported actions and examples.",
+        "支持的操作与示例见Codex快捷键文档。",
+    ),
     ("Select Personality", "选择个性"),
     ("Select Pet", "选择宠物"),
     ("Select Syntax Theme", "选择语法主题"),
@@ -1232,6 +1252,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Small green shoots for new ideas", "新想法的嫩绿幼苗"),
     ("Spawned", "已启动"),
     ("Spawned an agent", "已启动一个代理"),
+    (
+        "Start a fresh idea with /new; the previous session stays in history.",
+        "用/new开启新话题；上一次会话仍保留在历史中。",
+    ),
     ("Started", "已启动"),
     ("Started ", "已启动 "),
     ("Started `{0}`", "已启动 `{0}`"),
@@ -1276,6 +1300,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "Switch to Default and start coding.",
         "切换到默认模式并开始编码。",
+    ),
+    (
+        "Switch models or reasoning effort quickly with /model.",
+        "用/model快速切换模型或推理强度。",
     ),
     ("T R A N S C R I P T", "转录"),
     ("TBT: {0}", "TBT：{0}"),
@@ -1362,6 +1390,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Try the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true",
         "试试**桌面应用**。运行'codex app'，或访问https://chatgpt.com/codex?app-landing-page=true",
     ),
+    (
+        "Type / to open the command popup; Tab autocompletes slash commands.",
+        "输入/打开命令弹窗；Tab可补全斜杠命令。",
+    ),
     ("Type a filename and press Enter", "输入文件名后按Enter"),
     ("Type to filter pets...", "输入以筛选宠物…"),
     ("Type to filter themes...", "输入以筛选主题…"),
@@ -1396,6 +1428,58 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Use Codex with non-admin sandbox",
         "在非管理员沙箱中使用Codex",
     ),
+    (
+        "Use /compact when the conversation gets long to summarize history and free up context.",
+        "对话变长时用/compact汇总历史并释放上下文。",
+    ),
+    (
+        "Use /copy or press Ctrl+O to copy the latest agent response as Markdown.",
+        "用/copy或按Ctrl+O把最新回复复制为Markdown。",
+    ),
+    (
+        "Use /feedback to send logs to the maintainers when something looks off.",
+        "发现异常时用/feedback把日志发给维护者。",
+    ),
+    (
+        "Use /fork to branch the current chat into a new thread.",
+        "用/fork把当前聊天派生成新线程。",
+    ),
+    (
+        "Use /init to create an AGENTS.md with project-specific guidance.",
+        "用/init创建带项目专属指引的AGENTS.md。",
+    ),
+    (
+        "Use /mcp to list configured MCP tools.",
+        "用/mcp列出已配置的MCP工具。",
+    ),
+    (
+        "Use /permissions to control when Codex asks for confirmation.",
+        "用/permissions控制Codex何时请求确认。",
+    ),
+    (
+        "Use /personality to customize how Codex communicates.",
+        "用/personality定制Codex的沟通风格。",
+    ),
+    (
+        "Use /rename to rename your threads for easier thread resuming.",
+        "用/rename重命名线程，便于后续恢复。",
+    ),
+    (
+        "Use /side to start a side conversation in a temporary fork without polluting the main thread.",
+        "用/side在临时分叉中开启侧会话，不污染主线程。",
+    ),
+    (
+        "Use /skills to list available skills or ask Codex to use one.",
+        "用/skills列出可用技能，或让Codex使用某个技能。",
+    ),
+    (
+        "Use /status to see the current model, approvals, and token usage.",
+        "用/status查看当前模型、审批设置与Token用量。",
+    ),
+    (
+        "Use /statusline to configure which items appear in the status line.",
+        "用/statusline配置状态行显示哪些项。",
+    ),
     ("Use Detailed Hint A (Recommended)", "使用详细提示A（推荐）"),
     ("Use Detailed Hint B", "使用详细提示B"),
     ("Use Detailed Hint C", "使用详细提示C"),
@@ -1411,6 +1495,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "使用非管理员沙箱（提示词注入时风险更高）",
     ),
     ("Use session directory ({0})", "使用会话目录（{0}）"),
+    (
+        "Use the OpenAI docs MCP for API questions; enable it with `codex mcp add openaiDeveloperDocs --url https://developers.openai.com/mcp`.",
+        "API问题可用OpenAI文档MCP；用`codex mcp add openaiDeveloperDocs --url https://developers.openai.com/mcp`启用。",
+    ),
     ("Viewed {0}", "已查看{0}"),
     (
         "Viewing sub-agent — direct input is disabled",
@@ -1418,6 +1506,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("Vim mode disabled.", "Vim模式已关闭。"),
     ("Vim mode enabled.", "Vim模式已开启。"),
+    (
+        "Visit the Codex community forum: https://community.openai.com/c/codex/37",
+        "访问Codex社区论坛：https://community.openai.com/c/codex/37",
+    ),
     ("Waited for an agent", "等待了一个代理"),
     ("Waited for background terminal", "已等待后台终端"),
     ("Waited for background terminal: {0}", "已等待后台终端：{0}"),
@@ -1454,6 +1546,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("WebSocket timing: {0}", "WebSocket计时：{0}"),
     ("Welcome to ", "欢迎使用 "),
+    (
+        "When the composer is empty, press Esc to step back and edit your last message; Enter confirms.",
+        "输入框为空时，按Esc回退编辑上一条消息；Enter确认。",
+    ),
     ("Worked for {0}", "耗时 {0}"),
     ("Working directory changed to: {0}", "工作目录已切换到：{0}"),
     ("Yes, clear context and implement", "是，清空上下文并实施"),
@@ -1488,6 +1584,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "You can continue using {0} if you prefer.",
         "如果你愿意，也可以继续使用{0}。",
+    ),
+    (
+        "You can resume a previous conversation by running `codex resume`",
+        "可运行`codex resume`恢复之前的对话",
+    ),
+    (
+        "You can run any shell command from Codex using `!` (e.g. `!ls`)",
+        "在Codex里可用`!`运行任意shell命令（如`!ls`）",
     ),
     ("[ ! ] Action Required", "[ ! ] 需要操作"),
     ("[ . ] Action Required", "[ . ] 需要操作"),
@@ -1524,6 +1628,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "[实验性]运行app server或相关工具。",
     ),
     ("[Pasted Content {0} chars]", "[粘贴内容 {0} 字符]"),
+    (
+        "[tui.keymap] in ~/.codex/config.toml lets you rebind supported shortcuts.",
+        "~/.codex/config.toml中的[tui.keymap]可重新绑定受支持的快捷键。",
+    ),
     ("[{0}] {1} · modified", "[{0}] {1} · 已修改"),
     ("[{0}] {1} · new", "[{0}] {1} · 新增"),
     (

@@ -355,7 +355,7 @@ clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `a
 | `tui/src/chatwidget/warnings.rs:3,5` | `FALLBACK_MODEL_METADATA_WARNING_SUFFIX` 的后缀被 `fallback_model_metadata_slug()` 用反引号扫描 |
 | `tui/src/chatwidget/permission_popups.rs:83` / `permissions_menu.rs:110` | `preset.description.replace(" (Identical to Agent mode)", "")` 后缀剥离 |
 | `tui/src/app/session_start.rs:69` | `archived_prefix` 与 `archived_session_guidance()` 的 `starts_with` 配对 |
-| `tui/src/app/config_update.rs:221,223,257,301` | `split_once(", add ")` / `rsplit_once(" as a trusted project in ")` 解析服务端 `disabledReason` |
+| `tui/src/app/config_update.rs:257,301` | `split_once(", add ")` / `rsplit_once(" as a trusted project in ")` 解析服务端 `disabledReason` |
 | `tui/src/external_agent_config_migration/mod.rs:208,248` | `"Import …"` 归一化后又用 `strip_prefix("Import enabled plugins from ")` 二次匹配 |
 | `tui/src/status/thread_usage.rs:23-38,210-235` | 档位表被 `.position(|v| v == display_name)` 与分组 `entry(key)` 当键使用 |
 | `tui/src/markdown_render/local_links.rs:19` | 正则字面量 |
@@ -380,7 +380,7 @@ clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `a
 ### 12.3 诊断 / eyre 上下文 / 内部错误
 
 `tui/src/app/{safety_buffering.rs:303, event_dispatch.rs:494, history_pagination.rs:30, resize_reflow.rs:533,
-session_picker.rs:128, resume_config.rs:15, side.rs:762}`、`app/config_persistence.rs:28`（`{error_context} task failed`）、
+session_picker.rs:128, resume_config.rs:15, side.rs:762}`、`app/config_persistence.rs:28`（`{error_context} task failed`）、`app/config_update.rs:221,223`（远程项目信任解析的 eyre 上下文）、
 `tui/src/{get_git_diff.rs:137,157,180, npm_registry.rs:34-66, named_session_lookup.rs:33,89,110,123,133,
 terminal_probe.rs:101-124, windows_sandbox.rs:127,130,133, update_versions.rs:12, session_resume.rs:76,
 startup_error.rs:6, wrapping.rs:392, app_server_connection.rs:20, dynamic_tools_mcp.rs:137,264,

@@ -3814,7 +3814,37 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "1 additional item remains. After it finishes, run /import again to review it.",
         "还剩1个额外项目。完成后请再次运行/import查看。",
     ),
-    ("Selected import source is no longer available.", "所选导入来源已不可用。"),
+    (
+        "Selected import source is no longer available.",
+        "所选导入来源已不可用。",
+    ),
+    (" scroll disclosure", " 滚动展开"),
+    ("to submit", "提交"),
+    (
+        "Your data may be used to improve our models and products",
+        "你的数据可能被用于改进我们的模型和产品",
+    ),
+    (
+        "Your feedback can be used to improve ChatGPT. ",
+        "你的反馈可用于改进ChatGPT。",
+    ),
+    ("Tell us more (bad result)", "告诉我们更多（结果不佳）"),
+    (
+        "(optional) Write a short description to help us further",
+        "（可选）写一段简短描述，帮助我们进一步了解",
+    ),
+    ("Tell us more (good result)", "告诉我们更多（结果良好）"),
+    ("Tell us more (bug)", "告诉我们更多（缺陷）"),
+    ("Tell us more (safety check)", "告诉我们更多（安全检查）"),
+    (
+        "(optional) Share what was refused and why it should have been allowed",
+        "（可选）说明被拒绝的内容，以及为何本应被允许",
+    ),
+    ("Tell us more (other)", "告诉我们更多（其他）"),
+    (
+        "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ",
+        "提交反馈即表示你同意OpenAI将你的反馈用于安全目的和内部模型训练，详见",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

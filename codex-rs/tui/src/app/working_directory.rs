@@ -220,12 +220,19 @@ impl App {
             DestinationConfig::Load => match self.rebuild_config_for_cwd(cwd.to_path_buf()).await {
                 Ok(config) => config,
                 Err(err) => {
-                    return self.working_directory_error(format!("Cannot load {cwd:?}: {err}"));
+                    return self.working_directory_error(tr_with(
+                        current(),
+                        "Cannot load {0}: {1}",
+                        &[&format!("{cwd:?}"), &err.to_string()],
+                    ));
                 }
             },
         };
         if config.active_project.trust_level.is_none() {
-            return self.working_directory_error("This directory is not trusted; run Codex there.");
+            return self.working_directory_error(tr(
+                current(),
+                "This directory is not trusted; run Codex there.",
+            ));
         }
         if let Some((_, checkout, crate::app_event::ManagedWorktreeMode::Fork, _)) =
             managed_worktree.as_ref()
@@ -237,9 +244,10 @@ impl App {
                 config.developer_instructions.clone(),
             )
         {
-            return self.working_directory_error(format!(
-                "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                checkout.root.display()
+            return self.working_directory_error(tr_with(
+                current(),
+                "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                &[&checkout.root.display().to_string()],
             ));
         }
         if let Some(profile) = self.runtime_permission_profile_override.as_ref()
@@ -248,7 +256,10 @@ impl App {
                 || config.permissions.profile_workspace_roots()
                     != self.config.permissions.profile_workspace_roots())
         {
-            return self.working_directory_error("Permission profile has different settings.");
+            return self.working_directory_error(tr(
+                current(),
+                "Permission profile has different settings.",
+            ));
         }
         if let Some(profile) = self.runtime_permission_profile_override.as_ref()
             && profile.turn_override == RuntimePermissionProfileTurnOverride::Preserve
@@ -258,14 +269,21 @@ impl App {
                 cwd.as_path(),
             )
         {
-            return self.working_directory_error("Permission profile cannot be preserved by /cd.");
+            return self.working_directory_error(tr(
+                current(),
+                "Permission profile cannot be preserved by /cd.",
+            ));
         }
         self.apply_runtime_policy_overrides(&mut config, RuntimePolicyOverrideScope::All);
         if self.runtime_permission_profile_override.is_some() {
             let reviewer = self.config.approvals_reviewer;
             let reviewers = &config.config_layer_stack.requirements().approvals_reviewer;
             if let Err(error) = reviewers.can_set(&reviewer) {
-                return self.working_directory_error(format!("Approvals reviewer: {error}"));
+                return self.working_directory_error(tr_with(
+                    current(),
+                    "Approvals reviewer: {0}",
+                    &[&error.to_string()],
+                ));
             }
             config.approvals_reviewer = reviewer;
         }
@@ -310,7 +328,8 @@ impl App {
                     })
                 }))
         {
-            return self.working_directory_error("Conversation history is not saved.");
+            return self
+                .working_directory_error(tr(current(), "Conversation history is not saved."));
         }
         let mut ids: HashSet<_> = channels
             .keys()
@@ -331,7 +350,10 @@ impl App {
             let handle = app_server.request_handle();
             let result = handle.request_typed::<ListResponse>(request).await;
             if !matches!(result, Ok(response) if response.data.is_empty()) {
-                return self.working_directory_error("Active background terminals block /cd.");
+                return self.working_directory_error(tr(
+                    current(),
+                    "Active background terminals block /cd.",
+                ));
             }
         }
         if is_new_worktree {
@@ -368,7 +390,13 @@ impl App {
         };
         let mut transitioned = match transitioned {
             Ok(value) => value,
-            Err(e) => return self.working_directory_error(format!("Failed to change: {e}")),
+            Err(e) => {
+                return self.working_directory_error(tr_with(
+                    current(),
+                    "Failed to change: {0}",
+                    &[&e.to_string()],
+                ));
+            }
         };
         let session = &transitioned.session;
         if session.thread_id == thread_id
@@ -384,7 +412,10 @@ impl App {
                     let _ = app_server.thread_archive(session.thread_id).await;
                 }
             }
-            return self.working_directory_error("Requested directory or permissions not applied.");
+            return self.working_directory_error(tr(
+                current(),
+                "Requested directory or permissions not applied.",
+            ));
         }
         if let Some((manager, checkout, _, _)) = managed_worktree.as_ref()
             && let Err(error) =
@@ -395,8 +426,10 @@ impl App {
             if preserve_history {
                 let _ = app_server.thread_archive(replacement_id).await;
             }
-            return self.working_directory_error(format!(
-                "Cannot register managed worktree ownership: {error}"
+            return self.working_directory_error(tr_with(
+                current(),
+                "Cannot register managed worktree ownership: {0}",
+                &[&error.to_string()],
             ));
         }
         let name_error = if let Some(name) = managed_worktree
@@ -411,7 +444,11 @@ impl App {
                     transitioned.session.thread_name = Some(name.clone());
                     None
                 }
-                Err(error) => Some(format!("Failed to name the worktree session: {error}")),
+                Err(error) => Some(tr_with(
+                    current(),
+                    "Failed to name the worktree session: {0}",
+                    &[&error.to_string()],
+                )),
             }
         } else {
             None
@@ -422,7 +459,11 @@ impl App {
             if preserve_history {
                 let _ = app_server.thread_archive(replacement_id).await;
             }
-            return self.working_directory_error(format!("Cannot change directories: {error}"));
+            return self.working_directory_error(tr_with(
+                current(),
+                "Cannot change directories: {0}",
+                &[&error.to_string()],
+            ));
         }
         for tracked_id in ids.into_iter().filter(|id| *id != thread_id) {
             if let Err(error) = app_server.thread_unsubscribe(tracked_id).await {
@@ -473,7 +514,11 @@ impl App {
         let attach_widget = App::replace_chat_widget_with_app_server_thread;
         let (lineage, message) = (ThreadAttachPresentation::SessionLineage, None);
         if let Err(error) = attach_widget(self, tui, started, lineage, message).await {
-            return self.working_directory_error(format!("Could not restore session: {error}"));
+            return self.working_directory_error(tr_with(
+                current(),
+                "Could not restore session: {0}",
+                &[&error.to_string()],
+            ));
         }
         if let Some(error) = name_error {
             self.chat_widget.add_error_message(error);
@@ -486,7 +531,12 @@ impl App {
         if let Some(message) = project_config_warning(&self.config) {
             self.chat_widget.add_warning_message(message);
         }
-        let message = format!("Working directory changed to: {}", cwd.display());
+        let message = tr_with(
+            current(),
+            "Working directory changed to: {0}",
+            &[&cwd.display().to_string()],
+        )
+        .to_string();
         self.chat_widget.add_info_message(message, /*hint*/ None);
         if !self.config.bypass_hook_trust {
             let load_review = crate::startup_hooks_review::load_startup_hooks_review_entry;

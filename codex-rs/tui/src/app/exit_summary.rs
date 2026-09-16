@@ -5,6 +5,9 @@ use super::*;
 use crate::RemoteAppServerEndpoint;
 use crate::exec_command::escape_command;
 use crate::status::remote_connection::sanitized_websocket_url;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 /// A persisted thread that can be resumed after the TUI exits.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -57,8 +60,11 @@ impl App {
                 .agents
                 .primary_hint("stop", &self.keymap.agents.stop)
                 .map_or_else(
-                    || "use the configured stop shortcut".to_string(),
-                    |key| format!("press {}", key.display_label()),
+                    || tr(current(), "use the configured stop shortcut").to_string(),
+                    |key| {
+                        tr_with(current(), "press {0}", &[&key.display_label().to_string()])
+                            .to_string()
+                    },
                 );
             Some(DisconnectInfo { command, stop_hint })
         });
@@ -94,35 +100,56 @@ impl AppExitInfo {
             let turn_interrupted = matches!(self.exit_reason, ExitReason::TurnInterrupted);
             let message = match self.exit_reason {
                 ExitReason::UserRequested | ExitReason::Archived(_) | ExitReason::ThreadRemoved => {
-                    "Disconnected from this task. Any running work continues."
+                    tr(
+                        current(),
+                        "Disconnected from this task. Any running work continues.",
+                    )
                 }
-                ExitReason::Fatal(_) => "Disconnected from this task. Work may still be running.",
-                ExitReason::TurnInterrupted => {
-                    "Disconnected from this task. The current turn was stopped."
-                }
+                ExitReason::Fatal(_) => tr(
+                    current(),
+                    "Disconnected from this task. Work may still be running.",
+                ),
+                ExitReason::TurnInterrupted => tr(
+                    current(),
+                    "Disconnected from this task. The current turn was stopped.",
+                ),
             };
             lines.push(message.to_string());
             let mut resume_command = disconnect.command.clone();
             resume_command.extend(["resume".to_string(), thread_id.to_string()]);
-            lines.push(format!(
-                "Reconnect: {}",
-                color_command(escape_command(&resume_command)),
-            ));
+            lines.push(
+                tr_with(
+                    current(),
+                    "Reconnect: {0}",
+                    &[&color_command(escape_command(&resume_command))],
+                )
+                .to_string(),
+            );
             if !turn_interrupted {
                 let mut agents_command = disconnect.command;
                 agents_command.push("agents".to_string());
-                lines.push(format!(
-                    "Stop the current turn: run {}, select this task, and {}.",
-                    color_command(escape_command(&agents_command)),
-                    disconnect.stop_hint,
-                ));
+                lines.push(
+                    tr_with(
+                        current(),
+                        "Stop the current turn: run {0}, select this task, and {1}.",
+                        &[
+                            &color_command(escape_command(&agents_command)),
+                            &disconnect.stop_hint,
+                        ],
+                    )
+                    .to_string(),
+                );
             }
             if !self.token_usage.is_zero() {
                 let usage = self.token_usage.to_string();
                 lines.push(if turn_interrupted {
                     usage
                 } else {
-                    usage.replacen("Token usage:", "Token usage so far:", /*count*/ 1)
+                    usage.replacen(
+                        tr(current(), "Token usage:"),
+                        tr(current(), "Token usage so far:"),
+                        /*count*/ 1,
+                    )
                 });
             }
             return lines;
@@ -132,22 +159,36 @@ impl AppExitInfo {
             lines.push(self.token_usage.to_string());
         }
         if let ExitReason::Archived(thread_id) = self.exit_reason {
-            lines.push(format!("Session archived: {thread_id}"));
+            lines.push(
+                tr_with(
+                    current(),
+                    "Session archived: {0}",
+                    &[&thread_id.to_string()],
+                )
+                .to_string(),
+            );
         } else if let Some(thread) = self.resume_hint {
-            lines.push("To continue this session, run:".to_string());
+            lines.push(tr(current(), "To continue this session, run:").to_string());
             lines.push(format!(
                 "  {}",
                 color_command(format!("codex resume {}", thread.thread_id)),
             ));
             if let Some(thread_name) = thread.thread_name.filter(|name| !name.is_empty()) {
-                lines.push(format!(
-                    "Or run {} and select {}.",
-                    color_command("codex resume".to_string()),
-                    color_command(thread_name),
-                ));
+                lines.push(
+                    tr_with(
+                        current(),
+                        "Or run {0} and select {1}.",
+                        &[
+                            &color_command("codex resume".to_string()),
+                            &color_command(thread_name),
+                        ],
+                    )
+                    .to_string(),
+                );
             }
         } else if let Some(thread_id) = self.thread_id {
-            lines.push(format!("Session ID: {thread_id}"));
+            lines
+                .push(tr_with(current(), "Session ID: {0}", &[&thread_id.to_string()]).to_string());
         }
         lines
     }

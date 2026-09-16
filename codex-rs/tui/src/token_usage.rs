@@ -1,5 +1,7 @@
 //! TUI token usage models and display formatting.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::fmt;
 
 use codex_protocol::num_format::format_with_separators;
@@ -62,28 +64,40 @@ pub(crate) struct TokenUsageInfo {
 
 impl fmt::Display for TokenUsage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cached = if self.cached_input() > 0 {
+            tr_with(
+                current(),
+                " (+ {0} cached)",
+                &[&format_with_separators(self.cached_input())],
+            )
+            .to_string()
+        } else {
+            String::new()
+        };
+        let reasoning = if self.reasoning_output_tokens > 0 {
+            tr_with(
+                current(),
+                " (reasoning {0})",
+                &[&format_with_separators(self.reasoning_output_tokens)],
+            )
+            .to_string()
+        } else {
+            String::new()
+        };
         write!(
             f,
-            "Token usage: total={} input={}{} output={}{}",
-            format_with_separators(self.blended_total()),
-            format_with_separators(self.non_cached_input()),
-            if self.cached_input() > 0 {
-                format!(
-                    " (+ {} cached)",
-                    format_with_separators(self.cached_input())
-                )
-            } else {
-                String::new()
-            },
-            format_with_separators(self.output_tokens),
-            if self.reasoning_output_tokens > 0 {
-                format!(
-                    " (reasoning {})",
-                    format_with_separators(self.reasoning_output_tokens)
-                )
-            } else {
-                String::new()
-            }
+            "{}",
+            tr_with(
+                current(),
+                "Token usage: total={0} input={1}{2} output={3}{4}",
+                &[
+                    &format_with_separators(self.blended_total()),
+                    &format_with_separators(self.non_cached_input()),
+                    cached.as_str(),
+                    &format_with_separators(self.output_tokens),
+                    reasoning.as_str(),
+                ],
+            )
         )
     }
 }

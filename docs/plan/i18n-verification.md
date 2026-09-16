@@ -55,6 +55,12 @@
     断言 `pump.pending_paste_newline.is_some()`（lookahead 时间窗）。该模块未接入 i18n，本分支从未改动此文件，
     其最后改动是上游 `9587c9ef3`（2026-09-06）且基线中已存在 → 负载敏感型 flaky，与适配无关。
 
+> **续记（2026-09-16，第 42–43 轮）**：字典 **1287 → 1326**。新接入三个文件：`core/src/config/mod.rs`
+> （26 条配置校验消息，§3.4 步骤 5 开工；core 其余大头是喂模型的 `tools/*_spec.rs` / `guardian/prompt.rs`，不译）、
+> `tui/chatwidget/permission_popups.rs`（23 条）、`tui/app/agents_overview.rs`（18 条）。
+> `python3 scripts/i18n_todo.py` 实测 tui 口径 **已包 1394 / 剩 1788**。同一提交序列里还修掉一个 HEAD 上的红测试
+> （`config_schema_matches_fixture` 生成物过期，见 §八.2）。
+
 ### 两条失败的归属（H1 的对抗自检）
 
 连续三轮、同一命令下，失败集合**互不相同**：

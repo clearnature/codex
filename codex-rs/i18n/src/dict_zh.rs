@@ -6488,6 +6488,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("replace", "替换"),
     ("update", "更新"),
     ("clear", "清除"),
+    // Memories reset confirmation rows, the shared disabled-row suffix, the
+    // onboarding trust error and the public composer placeholder.
+    ("Go back", "返回"),
+    ("Failed to set trust for {0}: {1}", "无法为{0}设置信任：{1}"),
+    ("Compose new task", "撰写新任务"),
 ];
 
 /// English source text -> Simplified Chinese.

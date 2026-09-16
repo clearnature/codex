@@ -20,6 +20,7 @@ use codex_exec_server::LOCAL_FS;
 use codex_git_utils::resolve_root_git_project_for_trust;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 #[cfg(target_os = "windows")]
 use codex_protocol::config_types::WindowsSandboxLevel;
 use crossterm::event::KeyCode;
@@ -706,10 +707,14 @@ async fn persist_selected_trust(
             );
             if let Step::TrustDirectory(widget) = &mut onboarding_screen.steps[trust_step_index] {
                 widget.selection = None;
-                widget.error = Some(format!(
-                    "Failed to set trust for {}: {error}",
-                    trust_target.display()
-                ));
+                widget.error = Some(
+                    tr_with(
+                        current(),
+                        "Failed to set trust for {0}: {1}",
+                        &[&trust_target.display().to_string(), &error.to_string()],
+                    )
+                    .to_string(),
+                );
             }
             false
         }

@@ -4,6 +4,8 @@
 //! codex-cloud-tasks) to reuse the mature composer behavior: multi-line input,
 //! paste heuristics, Enter-to-submit, and Shift+Enter for newline.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyEvent;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -42,7 +44,7 @@ impl ComposerInput {
             /*has_input_focus*/ true,
             sender,
             /*enhanced_keys_supported*/ true,
-            "Compose new task".to_string(),
+            tr(current(), "Compose new task").to_string(),
             /*disable_paste_burst*/ false,
         );
         Self { inner, _tx: tx, rx }

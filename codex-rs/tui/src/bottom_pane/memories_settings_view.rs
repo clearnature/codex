@@ -168,27 +168,30 @@ impl MemoriesSettingsView {
 
     fn build_rows(&self) -> Vec<GenericDisplayRow> {
         if let Some(state) = self.reset_confirmation.as_ref() {
-            return ["Reset all memories", "Go back"]
-                .into_iter()
-                .enumerate()
-                .map(|(idx, name)| GenericDisplayRow {
-                    name: if state.selected_idx == Some(idx) {
-                        format!("› {name}")
-                    } else {
-                        format!("  {name}")
-                    },
-                    description: Some(match idx {
-                        0 => tr(
-                            current(),
-                            "Delete local memory files and rollout summaries.",
-                        )
-                        .to_string(),
-                        1 => tr(current(), "Return to memory settings.").to_string(),
-                        _ => unreachable!("reset confirmation only renders two rows"),
-                    }),
-                    ..Default::default()
-                })
-                .collect();
+            return [
+                tr(current(), "Reset all memories"),
+                tr(current(), "Go back"),
+            ]
+            .into_iter()
+            .enumerate()
+            .map(|(idx, name)| GenericDisplayRow {
+                name: if state.selected_idx == Some(idx) {
+                    format!("› {name}")
+                } else {
+                    format!("  {name}")
+                },
+                description: Some(match idx {
+                    0 => tr(
+                        current(),
+                        "Delete local memory files and rollout summaries.",
+                    )
+                    .to_string(),
+                    1 => tr(current(), "Return to memory settings.").to_string(),
+                    _ => unreachable!("reset confirmation only renders two rows"),
+                }),
+                ..Default::default()
+            })
+            .collect();
         }
 
         let selected_idx = self.state.selected_idx;

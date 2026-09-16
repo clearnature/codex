@@ -1,4 +1,5 @@
 use codex_i18n::current;
+use codex_i18n::tr;
 use codex_i18n::tr_with;
 use std::borrow::Cow;
 
@@ -118,7 +119,7 @@ fn build_name_spans(row: &GenericDisplayRow, name_limit: usize) -> Vec<Span<'sta
         name_spans.push("…".into());
     }
     if row.disabled_reason.is_some() {
-        name_spans.push(" (disabled)".dim());
+        name_spans.push(tr(current(), " (disabled)").dim());
     }
     name_spans
 }

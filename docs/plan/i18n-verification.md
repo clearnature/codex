@@ -247,10 +247,20 @@
    `{key} = {value}` 等行：内容全是 **config.toml 的键名与值**，用户的动作是把键名贴回配置文件，
    译名反而不可用；这些行没有散文（真正的散文如 `(V1 only; ignored by V2)` 已单独包装成
    `  - max_depth = {0} (V1 only; ignored by V2)` 模板）。
-7. **thiserror 属性宏**（**已知缺口，不是"已排除"**）—— 锚点：`tui/src/app_server_session.rs:393-396`
-   的 `#[error("the selected permission profile cannot be safely represented by the legacy
-   app-server sandbox policy; …")]`。`#[error(..)]` 里放不下 `tr()` 调用（属性宏要求字面量），
-   要译只能把该 variant 改成手写 `Display`。**当前未译，登记为待办**，不要当成已排除。
+7. **thiserror 属性宏**（第 86 轮**已闭合**）—— `#[error(..)]` 里放不下 `tr()` 调用（属性宏要求
+   字面量），所以要译必须把类型改成手写 `Display`。已按此改写的类型：
+   - `tui/src/external_editor.rs` `EditorError`（缺 VISUAL/EDITOR、解析失败、命令为空）
+   - `tui/src/named_session_lookup.rs` `AmbiguousSessionName`（`Multiple` / `Paginated`）
+   - `tui/src/app_server_session.rs` `UnsupportedLegacyPermissionProfile`
+   - `tui/src/startup_error.rs` `LocalStateDbStartupError`
+
+   它们都保留 `#[derive(Debug)]` 并手写 `Display` + `impl std::error::Error`；英文输出逐字不变
+   （`tr(En, key)` 返回 key 本身），因此既有测试与英文快照不受影响。
+
+   仍然保持 `#[error(..)]` 且**不译**的位置（已列入 §12.9）：`tui/src/ide_context/ipc.rs:49-67`
+   的 7 条 IPC 错误（IDE 上下文协议层，不对用户渲染），以及 `tui/src/startup_draft.rs:72` 的
+   `StartupCancelled` —— 该类型只通过 `StartupCancelled::matches()` 的 `is::<Self>()` 类型判定
+   使用（`tui/src/lib.rs:1041`），其 Display 文本从不渲染。
 
 ## 十、locale 入口的两个真实缺陷（第 58 轮实测）
 
@@ -389,8 +399,9 @@ tui.rs:261,282,424,427,455}`（WinAPI/stdio 内部消息）。
 
 ### 12.4 `#[error(...)]`（thiserror 只接受字面量）
 
-`tui/src/app_server_session.rs:397`、`tui/src/named_session_lookup.rs:25`、`tui/src/external_editor.rs:23,26,28`。
-要翻译需先手写 `Display` 实现，属独立改动。
+第 86 轮已全部改为手写 `Display`（`app_server_session.rs` 的 `UnsupportedLegacyPermissionProfile`、
+`named_session_lookup.rs` 的 `AmbiguousSessionName`、`external_editor.rs` 的 `EditorError`，另有
+`startup_error.rs` 的 `LocalStateDbStartupError`），见 §九.7。
 
 ### 12.5 代码样本 / 配置转储 / 数据格式
 

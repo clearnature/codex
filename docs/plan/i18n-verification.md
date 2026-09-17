@@ -597,6 +597,24 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 「已译的用户可见文案」并存。所以判定必须**逐条看调用点**，不能按文件下一个结论。
 `i18n-todo` 的计数之所以远大于剩余工作量，根源就在这里。
 
+### 12.17 第 88 轮补录：其余热点的分界（`terminal_stderr` / `transcript_export` / `debug_config`）
+
+| 文件 | 候选 | 分界 | 依据 |
+| --- | --- | --- | --- |
+| `tui/src/tui/terminal_stderr.rs` | 2（生产） | **不译**：`:80` `io::ErrorKind::AlreadyExists` 的 `io::Error` 文案、`:142` `io::Error::other("… lock poisoned")` | §12.3 诊断/内部错误；调用方只把它当 `io::Error` 传播，无 UI 渲染路径（与 §12.9 原记录一致） |
+| `tui/src/app/transcript_export.rs` | 10（§12.8 待裁决项所在文件） | 已译的 3 条样例（`No active conversation to export.`、`Saved conversation to {0}`、`could not load conversation: {0}` 各在字典 1 处）；其余按 §12.8 的裁决状态处理 | 见 §12.8：本文件是**唯一**仍待人类裁决的迁移/导出范围问题 |
+| `tui/src/debug_config.rs` | 8 | **混合**：`Session runtime:`（`:38` 起）等 28 处已接 `tr`（字典命中）；同一文件里的字段名/键名行（`  - network_proxy`、`    - HTTP_PROXY  = …` 这类**配置转储格式**）**不译** | §12.5 配置转储/数据格式（键名与格式是数据）；`:38` 起是标题→已译 |
+
+**第 88 轮统一结论（给下一批的方法）**：
+
+1. 热点文件的候选数**不是**待办数；逐条看下来，绝大多数落在
+   §12.1 匹配键 / §12.2 喂模型 / §12.3 诊断 / §12.5 数据格式 / §12.7 标识符 这五类里。
+2. 判定顺序（本轮反复用到，可复用）：
+   **① 有渲染路径吗**（`add_error_message`/`add_info_message`/`Line`/`Span`）
+   → ② 有的话**已经接 `tr` 了吗**（用 `git grep -c -F '<原文>' -- codex-rs/i18n/src/dict_zh.rs` 精确复核）
+   → ③ 没有渲染路径就按五类归因并写进本节。
+3. **一个文件不是一个判定单位**——本轮 6 个热点全部是混合体。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

@@ -1,5 +1,7 @@
 use anyhow::Result;
 use anyhow::anyhow;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::McpStartupFailure;
 use tracing::Instrument;
 use tracing::info_span;
@@ -19,7 +21,11 @@ impl McpConnectionSet {
                 let Some(view) = self.servers.get(server_name) else {
                     failures.push(McpStartupFailure {
                         server: server_name.clone(),
-                        error: format!("required MCP server `{server_name}` was not initialized"),
+                        error: tr_with(
+                            current(),
+                            "required MCP server `{0}` was not initialized",
+                            &[server_name],
+                        ),
                     });
                     continue;
                 };

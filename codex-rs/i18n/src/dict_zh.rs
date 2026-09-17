@@ -1818,6 +1818,13 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Skip installation for now and do not show again for these MCP servers in this session.",
         "暂时跳过安装，并在本次会话中不再为这些MCP服务器提示。",
     ),
+    // session 初始化失败家族（§12.23）：外层 `ERROR: {0}` 早已接入（cli/src/main.rs:922），
+    // 这里补内层的两条；`{0}` 是 anyhow 链展开后的文本（保留原样，属底层错误信息）。
+    ("Failed to initialize session: {0}", "会话初始化失败：{0}"),
+    (
+        "required MCP server `{0}` was not initialized",
+        "必需的MCP服务器 `{0}` 未能初始化",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

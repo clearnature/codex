@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::io::ErrorKind;
 use std::path::Path;
 
@@ -31,7 +33,11 @@ pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> 
         return mapped;
     }
 
-    CodexErr::Fatal(format!("Failed to initialize session: {err:#}"))
+    CodexErr::Fatal(tr_with(
+        current(),
+        "Failed to initialize session: {0}",
+        &[&format!("{err:#}")],
+    ))
 }
 
 fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<CodexErr> {

@@ -858,6 +858,25 @@ description 的「译了但当前 TUI 不显示」这一事实记在此处，避
 而不是在 `bottom_pane/` 下 grep 到「形状像渲染点」的一处就下结论。
 本仓库同一目录下并存多套同类 UI 是常态（这已经是本轮第二次因「只查一处」而误判）。
 
+### 12.27 第 88 轮：55 条审批模板的本地化 —— **机制选型（含否决理由），本轮不实现**
+
+`i18n.asset.approval-templates` 的三条候选，逐条评估后**都不该现在做**，理由如下：
+
+| 候选 | 评估 |
+| --- | --- |
+| A. 新增 `consequential_tool_message_templates.zh.json`，`load_…()` 按 `current()` 选文件 | **改动最小**（一处 `include_str!` + 一处选择），但要维护 55×2 条资产的**同步**——两份 JSON 一旦漂移没有检查器看得见（`i18n-check` 只扫 `.rs`） |
+| B. 把 55 条模板改成位置占位 `{0}`，渲染后过 `tr_with` | 要改**资产格式**（破坏 `template.replace(CONNECTOR_NAME_TEMPLATE_VAR, …)` 的语义）+ 55 条键进字典（`i18n-check` 看得见，但因为键在**资产**里、不在源码字面量里，扫描器**扫不到**，会全量报 unused） |
+| C. 保持全英文 | 与 §3.5 阶段口径冲突：这是**给用户看的提问**，该译 |
+
+**结论（本轮不动手，登记为独立项）**：真正缺的不是「翻译」，是**一条资产本地化的通道 + 一条对账检查**。
+在检查器能覆盖资产之前，做 A 会引入**无人看守的双份数据**（比不译更危险）。
+判据：**先给 `i18n-check` 加「资产对账」（zh 资产键集合 == en 资产键集合），再上 A**。
+
+**已核实的资产事实（供实现者用）**：`schema_version: 4`、55 条、字段
+`connector_id` / `server_name` / `source_tool_index` / `template` / `template_params` / `tool_title`；
+模板样例 `Allow {connector_name} to add a comment to an issue comment?`；
+载入处 `mcp_tool_approval_templates.rs:71-90`（`include_str!` + serde + schema 版本校验）。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

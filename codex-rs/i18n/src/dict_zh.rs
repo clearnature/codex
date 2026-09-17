@@ -1770,6 +1770,30 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Automatic approval review rejected too many approval requests for this turn ({0} consecutive, {1} in the last {2} reviews); interrupting the turn.",
         "本轮自动审批审查拒绝了过多审批请求（连续 {0} 次，最近 {2} 次审查中有 {1} 次）；正在中断该回合。",
     ),
+    // codex-mcp 启动失败文案（`connection_manager/startup.rs`）：经
+    // `McpStartupStatus::Failed.error` → `EventMsg::McpStartupUpdate` →
+    // tui `chatwidget/mcp_startup.rs:122` → `on_warning` → `new_warning_event` 渲染给用户。
+    // ⚠ `\n[mcp_servers.…]` 是**可粘贴的配置样例**，译文里必须逐字节保留（含 `XX` 占位）。
+    (
+        "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{0}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN",
+        "GitHub MCP不支持OAuth。请在环境变量与config.toml中加入个人访问令牌（https://github.com/settings/personal-access-tokens）后登录：\n[mcp_servers.{0}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN",
+    ),
+    (
+        "Use your client's MCP OAuth sign-in flow.",
+        "请使用你客户端的MCP OAuth登录流程。",
+    ),
+    ("Run `codex mcp login {0}`.", "运行 `codex mcp login {0}`。"),
+    ("requires OAuth reauthentication", "需要重新进行OAuth认证"),
+    ("is not logged in", "尚未登录"),
+    ("The {0} MCP server {1}. {2}", "{0} MCP服务器{1}。{2}"),
+    (
+        "MCP client for `{0}` timed out after {1} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{2}]\nstartup_timeout_sec = XX",
+        "`{0}` 的MCP客户端在 {1} 秒后超时。请在config.toml中新增或调整 `startup_timeout_sec`：\n[mcp_servers.{2}]\nstartup_timeout_sec = XX",
+    ),
+    (
+        "MCP client for `{0}` failed to start: {1}",
+        "`{0}` 的MCP客户端启动失败：{1}",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

@@ -3848,6 +3848,7 @@ dependencies = [
  "codex-diagnostics",
  "codex-exec-server",
  "codex-exec-server-test-support",
+ "codex-i18n",
  "codex-login",
  "codex-model-provider",
  "codex-otel",

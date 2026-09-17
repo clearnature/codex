@@ -6,6 +6,9 @@ use codex_api::SharedAuthProvider;
 use codex_config::McpServerAuth;
 use codex_config::McpServerConfig;
 use codex_config::McpServerTransportConfig;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::McpStartupFailureReason;
@@ -97,22 +100,28 @@ pub(super) fn mcp_init_error_display(
         && bearer_token_env_var.is_none()
         && http_headers.as_ref().map(HashMap::is_empty).unwrap_or(true)
     {
-        format!(
-            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_key}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN"
+        tr_with(
+            current(),
+            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{0}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN",
+            &[&server_key],
         )
     } else if error.is_authentication_required() {
         let recovery_hint = if config.is_some_and(|config| !config.is_local_environment()) {
-            "Use your client's MCP OAuth sign-in flow.".to_string()
+            tr(current(), "Use your client's MCP OAuth sign-in flow.").to_string()
         } else {
-            format!("Run `codex mcp login {server_name}`.")
+            tr_with(current(), "Run `codex mcp login {0}`.", &[&server_name])
         };
         let auth_status = match reason {
             Some(McpStartupFailureReason::ReauthenticationRequired) => {
-                "requires OAuth reauthentication"
+                tr(current(), "requires OAuth reauthentication")
             }
-            None => "is not logged in",
+            None => tr(current(), "is not logged in"),
         };
-        format!("The {server_name} MCP server {auth_status}. {recovery_hint}")
+        tr_with(
+            current(),
+            "The {0} MCP server {1}. {2}",
+            &[&server_name, auth_status, &recovery_hint],
+        )
     } else if matches!(
         error,
         StartupOutcomeError::Failed { error, .. }
@@ -124,10 +133,16 @@ pub(super) fn mcp_init_error_display(
             .and_then(|config| config.startup_timeout_sec)
             .unwrap_or(DEFAULT_STARTUP_TIMEOUT)
             .as_secs();
-        format!(
-            "MCP client for `{server_name}` timed out after {startup_timeout_secs} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{server_key}]\nstartup_timeout_sec = XX"
+        tr_with(
+            current(),
+            "MCP client for `{0}` timed out after {1} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{2}]\nstartup_timeout_sec = XX",
+            &[&server_name, &startup_timeout_secs.to_string(), &server_key],
         )
     } else {
-        format!("MCP client for `{server_name}` failed to start: {error:#}")
+        tr_with(
+            current(),
+            "MCP client for `{0}` failed to start: {1}",
+            &[&server_name, &format!("{error:#}")],
+        )
     }
 }

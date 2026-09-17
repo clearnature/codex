@@ -811,6 +811,25 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 **处置**：`i18n.core.request-user-input-copy` 已接入（commit `c4b5bdaa4`）；
 description 的「译了但当前 TUI 不显示」这一事实记在此处，避免下一批误以为漏译。
 
+### 12.25 第 88 轮：`i18n-todo` 的扫描面**不含 core / exec / codex-mcp**（一个测量口径陷阱）
+
+第 88 轮做了 `exec`（阶段 5）、`core` 与 `codex-mcp`（阶段 6）的接入，但
+`python3 scripts/i18n_todo.py --top 15` 的数字**一点没动**（312 unwrapped / 2922 wrapped，与接入前逐字相同）。
+
+原因在脚本自己的注释里（`scripts/i18n_todo.py:81-86`）：它**只扫 TUI** ——
+`roots = args.root or [scanner.DEFAULT_ROOT]`，而
+`DEFAULT_ROOT = REPO_ROOT / "codex-rs" / "tui" / "src"`（`scripts/i18n_scan.py:45`）。
+注释明说：「Widening it later (cli / exec / core) means adding roots here on purpose.」
+
+**两条结论（都影响后续判断）**：
+
+1. **`i18n-todo` 的数字不是「全局剩余量」**，它只反映 `tui/src`。用「数字没降」来判断
+   「exec/core 的接入没生效」会是**错误推论**——那里的正确证据是 `i18n-check` 的
+   `missing/unused` 与逐条调用点复核（本轮用的是后者）。
+2. **要不要扩面是显式决定，不是顺手改**：脚本注释把「加 roots」标记为**有意的**动作，
+   因为直接传仓库根会把 `target/` 与字典自身的中文扫成候选（注释记录过一次 20 倍的虚高）。
+   本轮**不改**脚本；若要覆盖 exec/core，应新增一个 `--root` 显式调用并单独记录口径。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

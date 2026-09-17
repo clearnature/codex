@@ -731,6 +731,27 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 由调用点 `tr_with`）。**本轮不动手**，因为它属于「新增机制」而非「接入既有机制」，
 且会与 `[placeholder]` 检查器的判据交互——先登记，避免被当成漏译。
 
+### 12.22 第 88 轮：core 其余可见渠道盘点（`i18n.core.channels.sweep` 首轮）
+
+按 §12.20 确立的口径（core 的渠道是 **`EventMsg`** 而非 `add_*_message`）逐个变体看下来：
+
+| 渠道 | 结论 | 依据 |
+| --- | --- | --- |
+| `EventMsg::Warning/Error/GuardianWarning` | **已接入**（§12.20 批 1/2） | 有渲染路径（app-server 转通知 → tui 错误/警告行） |
+| `EventMsg::McpStartupUpdate/McpStartupComplete` | **UI 侧文案已译**，但**失败详情串没有** | tui `chatwidget/mcp_startup.rs:228` 已用 `tr_with(current(), "failed: {0}", …)`；而失败的 **error 文本**由 `codex-mcp/src/connection_manager/startup.rs:101-131` 拼（`GitHub MCP does not support OAuth…`、`MCP client for \`{server_name}\` failed to start: {error:#}`）**原样显示**，未译、且形态为**运行时拼接** |
+| `EventMsg::ModelVerification` / `SafetyBuffering` | **数据字段**（`verifications`、`reasons`、`use_cases`） | §12.5 数据格式；渲染由 tui 侧决定（`safety_buffering` 文案另计） |
+| `EventMsg::ThreadGoalUpdated` / `ThreadQueueChanged` / `ThreadSettingsApplied` / `TokenCount` / `ThreadRolledBack` / `TurnStarted` / `TurnComplete` | **无自由文案字段**（id / 数值 / 结构化） | 逐 struct 看过字段类型 |
+
+**新增的待办（本轮发现，未接入）**：`codex-mcp` crate 的启动失败文案（5 条模板）
+—— 它们**经 `McpStartupStatus::Failed.error` 进 `EventMsg::McpStartupUpdate`**，
+最终由 tui 的状态/警告行展示给用户。形态是 `format!` + `anyhow` 的 `{error:#}` 插值，
+要接入需 `tr_with` + 位置占位，并注意 `\n[mcp_servers.…]` 这类**配置样例片段保持原样**
+（§12.5：可粘贴的配置不是文案）。
+
+**未纳入本轮判定的渠道（标记为未验证，别当成已覆盖）**：
+`EventMsg::StreamError` 是否存在独立变体、审批请求（`ExecApprovalRequest` 等）
+在 core 侧的文案、以及 `RequestUserInput` 的 question 文本来源 —— 下一批继续。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

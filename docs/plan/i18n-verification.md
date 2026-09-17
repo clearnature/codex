@@ -634,6 +634,24 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 **注意 `" context compacted"` 已译而其余未译**这个事实本身就是证据：阶段 5 是**部分做过**，
 不是没开始——所以不能按「文件计数」判阶段完成度（第 88 轮 §12.13 已犯过一次同类错）。
 
+#### 阶段 5 的第一步（同轮落地）与一个**形状不支持的实测**
+
+- **已接入**：`:397` 的用量行 → `tr(current(), "tokens used")` → `已用token`
+  （初版写成 `已用 token`，被 `[spacing]` 判违规——CJK 与拉丁相邻即算；改成无空格）。
+  回执：`just i18n-check` `r-mu4s11l8-dg02oy`（六列全零，2730/2730）、
+  `exec-test` `r-mu4s24kp-1wzzzp`（63 + 1 + 78 passed）。
+- **实测不支持的形状**（已起草后**主动回退**，不是跳过）：
+  `" succeeded"` / `" exited {code}"` / `" declined"` / `" in progress"` 四条命令状态。
+  它们**带前导空格**（排版：状态跟在命令名之后），译文边界是含该空格的整段；
+  且被拼在 `format!("…{duration_suffix}:")` 里、紧挨 `status` 后缀。
+  当前管线**没有**「键含首尾空格且需在拼接处替换整段」的形态，硬塞进字典会
+  **改渲染逻辑**（超出 i18n 范围）。处置：**列入本节的显式待办**，不计入已完成。
+  下一步若要支持，需要在 `format!` 处把「空格 + 状态词」当作一个 `tr` 单位，
+  并接受译文首字符为空格（或改用 `tr_with(" {0}")` 形式）——**需先与**（此处留白，
+  待人类裁决形态）**确认**，因为这会改变英文态拼接方式。
+
+
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

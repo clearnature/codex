@@ -209,11 +209,11 @@ fn run(root: &Path) -> Result<bool, String> {
         missing.len()
     );
     println!(
-        "[missing] judged not-translatable (\u{2026}/i18n/not-translated.tsv): {}",
+        "[missing] exempted, declared not-translatable (\u{2026}/i18n/not-translated.tsv): {}",
         not_translated.len()
     );
     println!(
-        "[unused] judged test fixtures (\u{2026}/i18n/test-fixture-keys.tsv): {}",
+        "[unused] exempted as test fixtures, not yet re-verified (\u{2026}/i18n/test-fixture-keys.tsv): {}",
         fixtures.len()
     );
     for (key, sites) in &missing {

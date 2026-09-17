@@ -771,6 +771,33 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 **另**：`session/mod.rs:824-828` 的 `Failed to initialize session: {err:#}` 本身也是**用户可见文案**，
 与 `required` 那条同属「session 初始化失败」家族，应一并评估。
 
+### 12.24 第 88 轮：渠道盘点收尾 —— `RequestUserInput` 是**真实缺口**
+
+三个未判渠道，本轮判完：
+
+| 渠道 | 结论 | 依据 |
+| --- | --- | --- |
+| `EventMsg::StreamError(StreamErrorEvent)` | **文案来源是 `String` 字段（数据），且与本轮已覆盖的 `Error` 同族**（`codex_error_info` + `additional_details` 注释明说「often the same human-readable message that is surfaced as the terminal error」） | 无仓内字面量可接；不进本轮 |
+| `EventMsg::ExecApprovalRequest` | **无自由文案**：字段是 `call_id` / `plugin_id` / `script_path` / 命令本身 | 逐字段看过；§12.7 |
+| `EventMsg::RequestUserInput` | ⚠ **真实缺口**：`header` / `question` / 选项 `label`+`description` 是**仓内字面量且直接渲染** | 见下 |
+
+**`RequestUserInput` 缺口的证据链**：
+
+- core 构造点两处：`core/src/mcp_tool_call.rs:1777-1813`（`header: "Approve app tool call?"`、
+  选项描述 `"Run the tool and continue."` / `"Run the tool and remember this choice for this session."` /
+  `"Run the tool and remember this choice for future tool calls."` / `"Cancel this tool call."`）、
+  `core/src/mcp_skill_dependencies.rs:275-292`（`header: "Install MCP servers?"`、
+  `question: "The following MCP servers are required by the selected skills but are not installed yet: {server_list}. Install them now?"`、
+  选项描述 `"Install and enable the missing MCP servers in your global config."` / `"Skip installation for now and do not show again for these MCP servers in this session."`）
+- 渲染链：core `RequestUserInputQuestion` → app-server `bespoke_event_handling.rs:836` 转
+  `ToolRequestUserInputQuestion` → tui `bottom_pane/async_questions/`（`question.title` / `question.options` 直接进布局）
+- **字典现状**：`Approve app tool call?` / `Cancel this tool call.` / `Install MCP servers?` /
+  `Skip installation for now…` **均 0 命中**；两文件 **0 处 `tr`**。
+
+**⇒ 这是阶段 6 里第一处「确定漏译且已定位到行」的用户可见文案**，已登记台账项
+`i18n.core.request-user-input-copy`。注意 `question` 里有 `{server_list}` 插值
+（`format!` 命名捕获）⇒ 接入要改 `tr_with` + 位置占位。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

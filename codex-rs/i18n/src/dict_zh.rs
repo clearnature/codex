@@ -1825,6 +1825,13 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "required MCP server `{0}` was not initialized",
         "必需的MCP服务器 `{0}` 未能初始化",
     ),
+    // 只译**纯显示**的那些；同名的比对值（`label` 被 TUI 原样提交、
+    // 再与英文 const 精确比对）**不译** —— 译了会静默破坏匹配。
+    // 见 `mcp_tool_call.rs` 中 `MCP_TOOL_APPROVAL_ACCEPT*` 的注释与 §3.6。
+    (
+        "Optionally, add details in notes (tab).",
+        "可在备注中补充细节（tab）。",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

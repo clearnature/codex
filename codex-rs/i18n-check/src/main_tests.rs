@@ -5,11 +5,14 @@ use pretty_assertions::assert_eq;
 use crate::asset_row_drift;
 
 use crate::duplicate_keys;
+use crate::extract_const_literals;
 use crate::extract_label_literals;
+use crate::extract_label_literals_in;
 use crate::extract_tr_calls;
 use crate::named_placeholder_hits;
 use crate::named_placeholders;
 use crate::read_dictionary_pairs;
+use crate::read_not_translated;
 use crate::spacing_violations;
 
 #[test]
@@ -41,6 +44,66 @@ fn finds_a_template_rendered_with_tr_with() {
     let calls = extract_tr_calls(r#"tr_with(current(), "{0}% context left", &["7"])"#);
     assert_eq!(calls.len(), 1);
     assert_eq!(calls[0].key, "{0}% context left");
+}
+
+#[test]
+fn ignores_label_literals_inside_a_test_module() {
+    // A fixture's `label:` is a value to compare against, not a key anything
+    // renders through `tr`. Scanning it turns fixtures into phantom "missing"
+    // keys as soon as a previously i18n-free file gains `use codex_i18n::..`.
+    let source = "fn prod() { let label = \"x\"; }\n#[cfg(test)]\nmod tests {\n    fn t() {\n        label: \"Calendar\",\n    }\n}\n";
+    assert_eq!(extract_label_literals(source), vec![]);
+    // ...and the same source still yields it when the filter is off, proving the
+    // assertion above is about the filter and not about the fixture text.
+    let all = extract_label_literals_in(source, /*skip_tests*/ false);
+    assert_eq!(all.len(), 1);
+    assert_eq!(all[0].key, "Calendar");
+}
+
+#[test]
+fn reads_not_translated_anchors_and_rejects_rows_without_a_reason() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("not-translated.tsv");
+    std::fs::write(
+        &path,
+        "# a comment\nInstall\tcore/src/a.rs:42\tcompared against an English constant\n",
+    )
+    .expect("write");
+    let anchors = read_not_translated(&path).expect("read");
+    assert_eq!(anchors.len(), 1);
+    assert_eq!(
+        anchors.get("Install").map(String::as_str),
+        Some("core/src/a.rs:42")
+    );
+
+    std::fs::write(&path, "Install\tcore/src/a.rs:42\n").expect("write");
+    assert!(
+        read_not_translated(&path).is_err(),
+        "a row without a reason must be rejected"
+    );
+
+    let missing = dir.path().join("absent.tsv");
+    assert_eq!(
+        read_not_translated(&missing).expect("absent is fine").len(),
+        0
+    );
+}
+
+#[test]
+fn finds_a_rendered_string_constant() {
+    // The third shape: a `const` cannot call `tr`, so the text lives in a
+    // constant and is spliced into a rendered expression.
+    let source = "const OTHER_OPTION_LABEL: &str = \"None of the above\";\nfn f() {\n    name: format!(\"{prefix}{OTHER_OPTION_LABEL}\"),\n}\n";
+    let calls = extract_const_literals(source);
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].key, "None of the above");
+}
+
+#[test]
+fn ignores_constants_that_are_never_rendered() {
+    // A layout constant is not text the user reads.
+    let source = "const MIN_HEIGHT: u16 = 3;\nconst NAME: &str = \"internal_tag\";\nfn f() { let _ = MIN_HEIGHT; }\n";
+    assert_eq!(extract_const_literals(source), vec![]);
 }
 
 #[test]

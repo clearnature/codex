@@ -1,0 +1,11 @@
+# 已判定**不译**的展示文案锚点（制表符分隔：key<TAB>文件:行<TAB>理由）
+#
+# 为什么需要它：这些串**会被渲染**（所以 codex-i18n-check 正确地把它算作 rendered key），
+# 但**翻译会破坏功能**，因此字典里不该有它们 —— 没有这份清单，门禁就会永远报 missing，
+# 而 missing 全零是本仓库的核心验收判据（docs/plan/i18n-verification.md H3）。
+#
+# 每条必须写清「为什么不能译」；清单条数会被检查器打在报告里，豁免是**可见**的。
+# 口径见 docs/plan/i18n-verification.md §12（不译锚点总表）与 i18n-glossary。
+Allow and don't ask me again	codex-rs/core/src/mcp_tool_call.rs:1378	选项 label 同时是比对值：TUI 原样提交该文本（request_user_input/mod.rs 的 submit_answers），core 再用 == 与英文 const 比对（mcp_tool_call.rs:2088）⇒ 译了静默破坏 ApprovedMcpPolicyAmendment
+Install	codex-rs/core/src/mcp_skill_dependencies.rs:42	同上：label 被提交后与 MCP_DEPENDENCY_OPTION_INSTALL 比对（:336）
+Continue anyway	codex-rs/core/src/mcp_skill_dependencies.rs:43	同上：与 MCP_DEPENDENCY_OPTION_SKIP 比对

@@ -62,6 +62,7 @@ const SELECT_OPTION_PLACEHOLDER: &str = "Select an option to add notes";
 pub(super) const TIP_SEPARATOR: &str = " | ";
 pub(super) const DESIRED_SPACERS_BETWEEN_SECTIONS: u16 = 2;
 const OTHER_OPTION_LABEL: &str = "None of the above";
+/// Display text only (never compared), so it can carry `tr` at the use site.
 const OTHER_OPTION_DESCRIPTION: &str = "Optionally, add details in notes (tab).";
 const UNANSWERED_CONFIRM_TITLE: &str = "Submit with unanswered questions?";
 const UNANSWERED_CONFIRM_GO_BACK: &str = "Go back";
@@ -475,7 +476,7 @@ impl RequestUserInputOverlay {
                     let wrap_indent = UnicodeWidthStr::width(prefix_label.as_str());
                     rows.push(GenericDisplayRow {
                         name: format!("{prefix_label}{OTHER_OPTION_LABEL}"),
-                        description: Some(OTHER_OPTION_DESCRIPTION.to_string()),
+                        description: Some(tr(current(), OTHER_OPTION_DESCRIPTION).to_string()),
                         wrap_indent: Some(wrap_indent),
                         ..Default::default()
                     });

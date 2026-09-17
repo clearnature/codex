@@ -224,7 +224,7 @@ fn build_keymap_picker_params_for_action(
     let mut tabs = Vec::new();
     tabs.push(SelectionTab {
         id: KEYMAP_ALL_TAB_ID.to_string(),
-        label: "All".to_string(),
+        label: tr(current(), "All").to_string(),
         header: keymap_header(
             tr(current(), "All configurable shortcuts.").to_string(),
             tr_with(
@@ -248,7 +248,7 @@ fn build_keymap_picker_params_for_action(
     let common_count = common_rows.len();
     tabs.push(SelectionTab {
         id: KEYMAP_COMMON_TAB_ID.to_string(),
-        label: "Common".to_string(),
+        label: tr(current(), "Common").to_string(),
         header: keymap_header(
             tr(current(), "Frequently customized shortcuts.").to_string(),
             action_count_line(common_count),

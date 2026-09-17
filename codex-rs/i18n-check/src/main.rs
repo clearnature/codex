@@ -133,6 +133,14 @@ fn run(root: &Path) -> Result<bool, String> {
         if !text.contains("codex_i18n") {
             continue;
         }
+        // The checker's own source is a tool, not product copy: its literals are
+        // syntax it parses, and counting them reports the parser as a rendered
+        // key (it did -- `"text"` from the constant parser showed up as missing).
+        if file.ends_with("i18n-check/src/main.rs")
+            || file.ends_with("i18n-check/src/main_tests.rs")
+        {
+            continue;
+        }
         referencing_files += 1;
         let location_base = file
             .strip_prefix(root)
@@ -144,7 +152,10 @@ fn run(root: &Path) -> Result<bool, String> {
                 call.line
             ));
         }
-        for call in extract_label_literals(&text) {
+        for call in extract_label_literals(&text)
+            .into_iter()
+            .chain(extract_const_literals(&text))
+        {
             bound.entry(call.key).or_default().push(format!(
                 "{}:{}",
                 location_base.display(),
@@ -157,9 +168,11 @@ fn run(root: &Path) -> Result<bool, String> {
         used.entry(key).or_default().extend(sites);
     }
 
+    let not_translated_path = root.join("codex-rs/i18n/not-translated.tsv");
+    let not_translated = read_not_translated(&not_translated_path)?;
     let missing: Vec<(&String, &Vec<String>)> = used
         .iter()
-        .filter(|(key, _)| !dictionary.contains(*key))
+        .filter(|(key, _)| !dictionary.contains(*key) && !not_translated.contains_key(*key))
         .collect();
     let unused: Vec<&String> = dictionary
         .iter()
@@ -188,6 +201,10 @@ fn run(root: &Path) -> Result<bool, String> {
     println!(
         "[missing] rendered but not in the dictionary: {}",
         missing.len()
+    );
+    println!(
+        "[missing] judged not-translatable (\u{2026}/i18n/not-translated.tsv): {}",
+        not_translated.len()
     );
     for (key, sites) in &missing {
         println!("  {key:?}");
@@ -513,6 +530,47 @@ fn asset_row_drift(english: &[String], translated: &[String]) -> Vec<String> {
     drift
 }
 
+/// Anchors that were judged **not translatable**, with the reason.
+///
+/// They are rendered (so they count as rendered keys) but translating them would
+/// break behaviour -- the display value doubles as a comparison value, so the
+/// answer submitted by the UI stops matching the English constant. Without this
+/// list the gate reports them as `missing` forever, and "missing == 0" is the
+/// core acceptance criterion, so the verdict has to be machine-readable rather
+/// than living only in prose.
+///
+/// File format: one `key<TAB>file:line<TAB>reason` row per verdict, `#` comments.
+/// The count is printed in the report so the exemption stays visible.
+fn read_not_translated(path: &Path) -> Result<BTreeMap<String, String>, String> {
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut out = BTreeMap::new();
+    for line in text.lines() {
+        let line = line.trim_end();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut fields = line.split('\t');
+        let (Some(key), Some(site)) = (fields.next(), fields.next()) else {
+            return Err(format!(
+                "{}: row is not `key<TAB>file:line<TAB>reason`: {line:?}",
+                path.display()
+            ));
+        };
+        let reason = fields.next().unwrap_or_default();
+        if reason.trim().is_empty() {
+            return Err(format!(
+                "{}: row for {key:?} has no reason; every exemption must say why",
+                path.display()
+            ));
+        }
+        out.insert(key.to_string(), site.to_string());
+    }
+    Ok(out)
+}
+
 /// Reads the `(english, translation)` pairs of `static ENTRIES`.
 fn read_dictionary_pairs(path: &Path) -> Result<Vec<(String, String)>, String> {
     let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -638,6 +696,114 @@ fn is_bound_key_field(name: &str) -> bool {
     name == "label"
 }
 
+/// String constants that are rendered somewhere: `const NAME: &str = "text"`.
+///
+/// The third shape an English original can take. A `const` cannot call `tr`, so
+/// tables keep the text in a constant and splice it into a rendered string
+/// (`format!("{prefix}{NAME}")`, `name:`/`Line`/`Span`). The literal is not at a
+/// `tr` call site and not in a `label:` field, so without this pass the key looks
+/// unused -- and "unused" is the report that invites deleting a translation that
+/// is on screen. That is exactly what happened to `None of the above`
+/// (`request_user_input/mod.rs:64` -> `:477` `name: format!("{prefix_label}{OTHER_OPTION_LABEL}")`).
+///
+/// A constant that is never rendered (`MIN_HEIGHT`, a telemetry name) does not
+/// count: it has to appear in a rendering expression.
+fn extract_const_literals(text: &str) -> Vec<TrCall> {
+    let mut calls = Vec::new();
+    let mut i = 0usize;
+    while i < text.len() {
+        let Some(offset) = text[i..].find("const ") else {
+            break;
+        };
+        let start = i + offset;
+        i = start + "const ".len();
+        let Some((name, after_name)) = read_identifier(text, i) else {
+            continue;
+        };
+        let Some((value, _after_value)) = parse_const_string_value(text, after_name) else {
+            continue;
+        };
+        // Three shapes are structure, not copy: empty strings, whitespace-only
+        // strings, and escape sequences (terminal control, box drawing). They are
+        // rendered, but nothing renders them *as text to read*.
+        let is_structure = value.trim().is_empty()
+            || value.contains('\u{1b}')
+            || value.chars().all(|c| !c.is_alphanumeric());
+        if is_structure || !const_is_rendered(text, &name, start) {
+            continue;
+        }
+        calls.push(TrCall {
+            line: line_number(text, start),
+            key: value,
+        });
+    }
+    calls
+}
+
+/// Reads an identifier at `i`, returning it and the index just past it.
+fn read_identifier(text: &str, i: usize) -> Option<(String, usize)> {
+    let bytes = text.as_bytes();
+    if !bytes.get(i).copied().is_some_and(is_identifier_start) {
+        return None;
+    }
+    let mut end = i;
+    while bytes.get(end).copied().is_some_and(is_identifier_continue) {
+        end += 1;
+    }
+    Some((text[i..end].to_string(), end))
+}
+
+/// Parses `: &str = "<literal>";` after a constant's name.
+fn parse_const_string_value(text: &str, after_name: usize) -> Option<(String, usize)> {
+    let colon = skip_trivia(text, after_name);
+    if text.as_bytes().get(colon) != Some(&b':') {
+        return None;
+    }
+    let mut cursor = skip_trivia(text, colon + 1);
+    if !text[cursor..].starts_with("&str") && !text[cursor..].starts_with("&'static str") {
+        return None;
+    }
+    cursor = skip_trivia(text, text[cursor..].find("str")? + cursor + 3);
+    if text.as_bytes().get(cursor) != Some(&b'=') {
+        return None;
+    }
+    let value = skip_trivia(text, cursor + 1);
+    read_string(text, value)
+}
+
+/// Whether `name` is spliced into a *text slot* that reaches the screen.
+///
+/// Deliberately narrow. `format!` / `push_str` also assemble prompts for the
+/// model, telemetry names and config keys -- `"Read the Codex goal objective
+/// file at "`, `".config.toml"`, `"features.multi_agent_v2.tool_namespace"` --
+/// and those stay English by design (i18n-design §3.6). A constant whose text a
+/// user reads does so through a slot that names it as text.
+fn const_is_rendered(text: &str, name: &str, definition: usize) -> bool {
+    const RENDER_SLOTS: [&str; 6] = [
+        "name:",
+        "title:",
+        "label:",
+        "description:",
+        "Line::from",
+        "Span::from",
+    ];
+    let mut from = definition;
+    while let Some(offset) = text[from..].find(name) {
+        let at = from + offset;
+        from = at + name.len();
+        // Skip the definition itself.
+        if at < definition + name.len() + "const ".len() {
+            continue;
+        }
+        let line_start = text[..at].rfind('\n').map_or(0, |nl| nl + 1);
+        let line = &text[line_start..text[at..].find('\n').map_or(text.len(), |nl| at + nl)];
+        if RENDER_SLOTS.iter().any(|slot| line.contains(slot)) {
+            return true;
+        }
+    }
+    false
+}
+
 /// Every `label: "<literal>"` (and the other bound-key fields) in the source.
 ///
 /// Shortcut descriptors and `const` tables keep their English text in a field
@@ -645,7 +811,24 @@ fn is_bound_key_field(name: &str) -> bool {
 /// key never shows up as a literal inside a `tr(..)` call. Without this pass
 /// those keys look unused. Only string literals count, so `label: field` and
 /// `name: some_expr` are ignored.
+///
+/// Test code is skipped: a fixture's `label: "Calendar"` is a value to compare
+/// against, not a key anything renders through `tr`. Scanning it turned a
+/// fixture into a phantom "missing" key the moment a previously i18n-free file
+/// gained its first `use codex_i18n::..` (the file-level gate below).
 fn extract_label_literals(text: &str) -> Vec<TrCall> {
+    extract_label_literals_in(text, /*skip_tests*/ true)
+}
+
+/// [`extract_label_literals`] with the test-code filter switchable, so the rule
+/// itself is testable without a whole file.
+fn extract_label_literals_in(text: &str, skip_tests: bool) -> Vec<TrCall> {
+    let production_end = if skip_tests {
+        test_module_start(text).unwrap_or(text.len())
+    } else {
+        text.len()
+    };
+    let text = &text[..production_end];
     let bytes = text.as_bytes();
     let mut calls = Vec::new();
     let mut i = 0usize;
@@ -679,6 +862,15 @@ fn extract_label_literals(text: &str) -> Vec<TrCall> {
         i += 1;
     }
     calls
+}
+
+/// Offset of the first `#[cfg(test)]`, i.e. where production code ends.
+///
+/// Deliberately a plain search rather than a parser: this tool is lexical
+/// everywhere else, and every i18n-relevant `#[cfg(test)]` in this repo is
+/// spelled exactly that way.
+fn test_module_start(text: &str) -> Option<usize> {
+    text.find("#[cfg(test)]")
 }
 
 /// Parses the literal in `label: "<literal>"`, where `label` ends at

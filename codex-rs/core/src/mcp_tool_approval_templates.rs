@@ -1,3 +1,5 @@
+use codex_i18n::Lang;
+use codex_i18n::current;
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
@@ -10,9 +12,24 @@ use tracing::warn;
 const CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_SCHEMA_VERSION: u8 = 4;
 const CONNECTOR_NAME_TEMPLATE_VAR: &str = "{connector_name}";
 
-static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES: LazyLock<
+/// One cache per language. A single `LazyLock` would freeze whichever language
+/// happened to load first, and the language is published at startup but can be
+/// swapped in-process (tests do exactly that); two statics keep that correct
+/// without adding a `Hash` bound to `Lang`.
+static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_EN: LazyLock<
     Option<Vec<ConsequentialToolMessageTemplate>>,
-> = LazyLock::new(load_consequential_tool_message_templates);
+> = LazyLock::new(|| load_consequential_tool_message_templates(Lang::En));
+static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH: LazyLock<
+    Option<Vec<ConsequentialToolMessageTemplate>>,
+> = LazyLock::new(|| load_consequential_tool_message_templates(Lang::Zh));
+
+fn consequential_tool_message_templates() -> Option<&'static Vec<ConsequentialToolMessageTemplate>>
+{
+    match current() {
+        Lang::En => CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_EN.as_ref(),
+        Lang::Zh => CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH.as_ref(),
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct RenderedMcpToolApprovalTemplate {
@@ -57,7 +74,7 @@ pub(crate) fn render_mcp_tool_approval_template(
     tool_title: Option<&str>,
     tool_params: Option<&Value>,
 ) -> Option<RenderedMcpToolApprovalTemplate> {
-    let templates = CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES.as_ref()?;
+    let templates = consequential_tool_message_templates()?;
     render_mcp_tool_approval_template_from_templates(
         templates,
         server_name,
@@ -68,9 +85,25 @@ pub(crate) fn render_mcp_tool_approval_template(
     )
 }
 
-fn load_consequential_tool_message_templates() -> Option<Vec<ConsequentialToolMessageTemplate>> {
+/// The English asset, or the translated one when Chinese is selected.
+///
+/// Both files carry the same 55 rows (`connector_id | server_name | tool_title`);
+/// `codex-i18n-check`'s `[asset]` column reconciles them so the pair cannot drift
+/// silently. Only the `template` text differs, and the `{connector_name}`
+/// placeholder is left verbatim in both -- `render_question_template` substitutes
+/// it after selection.
+fn consequential_tool_message_templates_asset(lang: Lang) -> &'static str {
+    match lang {
+        Lang::Zh => include_str!("../assets/consequential_tool_message_templates.zh.json"),
+        Lang::En => include_str!("../assets/consequential_tool_message_templates.json"),
+    }
+}
+
+fn load_consequential_tool_message_templates(
+    lang: Lang,
+) -> Option<Vec<ConsequentialToolMessageTemplate>> {
     let templates = match serde_json::from_str::<ConsequentialToolMessageTemplatesFile>(
-        include_str!("../assets/consequential_tool_message_templates.json"),
+        consequential_tool_message_templates_asset(lang),
     ) {
         Ok(templates) => templates,
         Err(err) => {
@@ -313,7 +346,24 @@ mod tests {
 
     #[test]
     fn bundled_templates_load() {
-        assert_eq!(CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES.is_some(), true);
+        // Both languages must load, in the same process: a single `LazyLock`
+        // would freeze whichever was requested first (see the two caches above).
+        assert_eq!(
+            consequential_tool_message_templates_asset(Lang::En).is_empty(),
+            false
+        );
+        assert_eq!(
+            consequential_tool_message_templates_asset(Lang::Zh).is_empty(),
+            false
+        );
+        assert_eq!(
+            load_consequential_tool_message_templates(Lang::En).is_some(),
+            true
+        );
+        assert_eq!(
+            load_consequential_tool_message_templates(Lang::Zh).is_some(),
+            true
+        );
     }
 
     #[test]

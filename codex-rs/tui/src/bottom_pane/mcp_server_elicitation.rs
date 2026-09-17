@@ -327,7 +327,7 @@ impl McpServerElicitationFormRequest {
             } else {
                 options.extend([
                     McpServerElicitationOption {
-                        label: "Deny".to_string(),
+                        label: tr(current(), "Deny").to_string(),
                         description: Some(
                             tr(current(), "Decline this request and continue.").to_string(),
                         ),
@@ -599,7 +599,7 @@ fn parse_field(
             let options = [true, false]
                 .into_iter()
                 .map(|value| {
-                    let label = if value { "True" } else { "False" }.to_string();
+                    let label = tr(current(), if value { "True" } else { "False" }).to_string();
                     McpServerElicitationOption {
                         label,
                         description: None,
@@ -2038,7 +2038,7 @@ mod tests {
                                 value: Value::String(APPROVAL_ACCEPT_ONCE_VALUE.to_string()),
                             },
                             McpServerElicitationOption {
-                                label: "Deny".to_string(),
+                                label: tr(current(), "Deny").to_string(),
                                 description: Some("Decline this request and continue.".to_string()),
                                 value: Value::String(APPROVAL_DECLINE_VALUE.to_string()),
                             },

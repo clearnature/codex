@@ -1368,6 +1368,11 @@ struct McpToolApprovalElicitationRequest<'a> {
 }
 
 pub(crate) const MCP_TOOL_APPROVAL_QUESTION_ID_PREFIX: &str = "mcp_tool_call_approval";
+/// Display **and** comparison value: the TUI submits the selected option's
+/// label text (`request_user_input/mod.rs:937` `submit_answers`), and this file
+/// compares that answer against these exact strings (`:2088`). Translating the
+/// label would silently stop matching, so it stays English -- the same rule as
+/// §3.6's `match`-pattern case, only less visible.
 pub(crate) const MCP_TOOL_APPROVAL_ACCEPT: &str = "Allow";
 pub(crate) const MCP_TOOL_APPROVAL_ACCEPT_FOR_SESSION: &str = "Allow for this session";
 const MCP_TOOL_APPROVAL_ACCEPT_AND_REMEMBER: &str = "Allow and don't ask me again";

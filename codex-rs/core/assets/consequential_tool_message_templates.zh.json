@@ -1,0 +1,962 @@
+{
+  "schema_version": 4,
+  "templates": [
+    {
+      "source_tool_index": 0,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "add_comment_to_issue",
+      "template_params": [
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "comment",
+          "label": "Comment"
+        }
+      ],
+      "template": "允许{connector_name}在拉取请求上发表评论吗？"
+    },
+    {
+      "source_tool_index": 1,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "add_reaction_to_issue_comment",
+      "template_params": [
+        {
+          "name": "reaction",
+          "label": "Reaction"
+        },
+        {
+          "name": "comment_id",
+          "label": "Comment"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}为议题评论添加表情回应吗？"
+    },
+    {
+      "source_tool_index": 2,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "add_reaction_to_pr",
+      "template_params": [
+        {
+          "name": "reaction",
+          "label": "Reaction"
+        },
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}为拉取请求添加表情回应吗？"
+    },
+    {
+      "source_tool_index": 3,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "add_reaction_to_pr_review_comment",
+      "template_params": [
+        {
+          "name": "reaction",
+          "label": "Reaction"
+        },
+        {
+          "name": "comment_id",
+          "label": "Comment"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}为拉取请求审查评论添加表情回应吗？"
+    },
+    {
+      "source_tool_index": 4,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "add_review_to_pr",
+      "template_params": [
+        {
+          "name": "action",
+          "label": "Action"
+        },
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "review",
+          "label": "Review"
+        }
+      ],
+      "template": "允许{connector_name}提交拉取请求审查吗？"
+    },
+    {
+      "source_tool_index": 5,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "create_blob",
+      "template_params": [
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "content",
+          "label": "Content"
+        }
+      ],
+      "template": "允许{connector_name}创建Git blob吗？"
+    },
+    {
+      "source_tool_index": 6,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "create_branch",
+      "template_params": [
+        {
+          "name": "branch_name",
+          "label": "Branch"
+        },
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}创建分支吗？"
+    },
+    {
+      "source_tool_index": 7,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "create_commit",
+      "template_params": [
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "message",
+          "label": "Message"
+        }
+      ],
+      "template": "允许{connector_name}创建提交吗？"
+    },
+    {
+      "source_tool_index": 8,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "create_pull_request",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        },
+        {
+          "name": "head_branch",
+          "label": "Head branch"
+        },
+        {
+          "name": "base_branch",
+          "label": "Base branch"
+        }
+      ],
+      "template": "允许{connector_name}创建拉取请求吗？"
+    },
+    {
+      "source_tool_index": 9,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "create_tree",
+      "template_params": [
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "tree_elements",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}创建Git tree吗？"
+    },
+    {
+      "source_tool_index": 10,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "enable_auto_merge",
+      "template_params": [
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}启用拉取请求自动合并吗？"
+    },
+    {
+      "source_tool_index": 11,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "label_pr",
+      "template_params": [
+        {
+          "name": "label",
+          "label": "Label"
+        },
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}为拉取请求添加标签吗？"
+    },
+    {
+      "source_tool_index": 12,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "remove_reaction_from_issue_comment",
+      "template_params": [
+        {
+          "name": "reaction_id",
+          "label": "Reaction"
+        },
+        {
+          "name": "comment_id",
+          "label": "Comment"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}移除议题评论上的表情回应吗？"
+    },
+    {
+      "source_tool_index": 13,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "remove_reaction_from_pr",
+      "template_params": [
+        {
+          "name": "reaction_id",
+          "label": "Reaction"
+        },
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}移除拉取请求上的表情回应吗？"
+    },
+    {
+      "source_tool_index": 14,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "remove_reaction_from_pr_review_comment",
+      "template_params": [
+        {
+          "name": "reaction_id",
+          "label": "Reaction"
+        },
+        {
+          "name": "comment_id",
+          "label": "Comment"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        }
+      ],
+      "template": "允许{connector_name}移除拉取请求审查评论上的表情回应吗？"
+    },
+    {
+      "source_tool_index": 15,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "reply_to_review_comment",
+      "template_params": [
+        {
+          "name": "pr_number",
+          "label": "Pull request"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "comment",
+          "label": "Comment"
+        }
+      ],
+      "template": "允许{connector_name}回复拉取请求审查评论吗？"
+    },
+    {
+      "source_tool_index": 16,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "update_issue_comment",
+      "template_params": [
+        {
+          "name": "comment_id",
+          "label": "Comment ID"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "comment",
+          "label": "Comment"
+        }
+      ],
+      "template": "允许{connector_name}更新议题评论吗？"
+    },
+    {
+      "source_tool_index": 17,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "update_ref",
+      "template_params": [
+        {
+          "name": "branch_name",
+          "label": "Branch"
+        },
+        {
+          "name": "repository_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "sha",
+          "label": "Commit"
+        }
+      ],
+      "template": "允许{connector_name}更新分支引用吗？"
+    },
+    {
+      "source_tool_index": 18,
+      "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
+      "server_name": "codex_apps",
+      "tool_title": "update_review_comment",
+      "template_params": [
+        {
+          "name": "comment_id",
+          "label": "Comment ID"
+        },
+        {
+          "name": "repo_full_name",
+          "label": "Repository"
+        },
+        {
+          "name": "comment",
+          "label": "Comment"
+        }
+      ],
+      "template": "允许{connector_name}更新拉取请求审查评论吗？"
+    },
+    {
+      "source_tool_index": 19,
+      "connector_id": "connector_947e0d954944416db111db556030eea6",
+      "server_name": "codex_apps",
+      "tool_title": "create_event",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        },
+        {
+          "name": "start_time",
+          "label": "Start"
+        },
+        {
+          "name": "attendees",
+          "label": "Attendees"
+        }
+      ],
+      "template": "允许{connector_name}创建日程吗？"
+    },
+    {
+      "source_tool_index": 20,
+      "connector_id": "connector_947e0d954944416db111db556030eea6",
+      "server_name": "codex_apps",
+      "tool_title": "delete_event",
+      "template_params": [
+        {
+          "name": "event_id",
+          "label": "Event"
+        }
+      ],
+      "template": "允许{connector_name}删除日程吗？"
+    },
+    {
+      "source_tool_index": 21,
+      "connector_id": "connector_947e0d954944416db111db556030eea6",
+      "server_name": "codex_apps",
+      "tool_title": "respond_event",
+      "template_params": [
+        {
+          "name": "response_status",
+          "label": "Response Status"
+        },
+        {
+          "name": "event_id",
+          "label": "Event"
+        }
+      ],
+      "template": "允许{connector_name}回复日程邀请吗？"
+    },
+    {
+      "source_tool_index": 22,
+      "connector_id": "connector_947e0d954944416db111db556030eea6",
+      "server_name": "codex_apps",
+      "tool_title": "update_event",
+      "template_params": [
+        {
+          "name": "event_id",
+          "label": "Event"
+        }
+      ],
+      "template": "允许{connector_name}更新日程吗？"
+    },
+    {
+      "source_tool_index": 23,
+      "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
+      "server_name": "codex_apps",
+      "tool_title": "batch_update",
+      "template_params": [
+        {
+          "name": "spreadsheet_url",
+          "label": "Spreadsheet"
+        },
+        {
+          "name": "requests",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}应用电子表格更新吗？"
+    },
+    {
+      "source_tool_index": 24,
+      "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
+      "server_name": "codex_apps",
+      "tool_title": "create_spreadsheet",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        }
+      ],
+      "template": "允许{connector_name}创建电子表格吗？"
+    },
+    {
+      "source_tool_index": 25,
+      "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
+      "server_name": "codex_apps",
+      "tool_title": "duplicate_sheet_in_new_file",
+      "template_params": [
+        {
+          "name": "source_sheet_name",
+          "label": "Source Sheet Name"
+        },
+        {
+          "name": "spreadsheet_url",
+          "label": "Spreadsheet"
+        },
+        {
+          "name": "new_file_name",
+          "label": "New File Name"
+        }
+      ],
+      "template": "允许{connector_name}将工作表复制到新的电子表格吗？"
+    },
+    {
+      "source_tool_index": 26,
+      "connector_id": "connector_6f1ec045b8fa4ced8738e32c7f74514b",
+      "server_name": "codex_apps",
+      "tool_title": "batch_update",
+      "template_params": [
+        {
+          "name": "presentation_url",
+          "label": "Presentation"
+        },
+        {
+          "name": "requests",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}应用演示文稿更新吗？"
+    },
+    {
+      "source_tool_index": 27,
+      "connector_id": "connector_6f1ec045b8fa4ced8738e32c7f74514b",
+      "server_name": "codex_apps",
+      "tool_title": "create_presentation",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        }
+      ],
+      "template": "允许{connector_name}创建演示文稿吗？"
+    },
+    {
+      "source_tool_index": 28,
+      "connector_id": "connector_4964e3b22e3e427e9b4ae1acf2c1fa34",
+      "server_name": "codex_apps",
+      "tool_title": "batch_update",
+      "template_params": [
+        {
+          "name": "document_url",
+          "label": "Document"
+        },
+        {
+          "name": "requests",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}应用文档更新吗？"
+    },
+    {
+      "source_tool_index": 29,
+      "connector_id": "connector_4964e3b22e3e427e9b4ae1acf2c1fa34",
+      "server_name": "codex_apps",
+      "tool_title": "create_document",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        }
+      ],
+      "template": "允许{connector_name}创建文档吗？"
+    },
+    {
+      "source_tool_index": 30,
+      "connector_id": "connector_5f3c8c41a1e54ad7a76272c89e2554fa",
+      "server_name": "codex_apps",
+      "tool_title": "copy_document",
+      "template_params": [
+        {
+          "name": "url",
+          "label": "URL"
+        }
+      ],
+      "template": "允许{connector_name}复制文件吗？"
+    },
+    {
+      "source_tool_index": 31,
+      "connector_id": "connector_5f3c8c41a1e54ad7a76272c89e2554fa",
+      "server_name": "codex_apps",
+      "tool_title": "share_document",
+      "template_params": [
+        {
+          "name": "url",
+          "label": "URL"
+        },
+        {
+          "name": "permission",
+          "label": "Permission"
+        }
+      ],
+      "template": "允许{connector_name}更改文件共享设置吗？"
+    },
+    {
+      "source_tool_index": 32,
+      "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
+      "server_name": "codex_apps",
+      "tool_title": "slack_send_message",
+      "template_params": [
+        {
+          "name": "channel_id",
+          "label": "Conversation"
+        },
+        {
+          "name": "message",
+          "label": "Message"
+        }
+      ],
+      "template": "允许{connector_name}发送消息吗？"
+    },
+    {
+      "source_tool_index": 33,
+      "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
+      "server_name": "codex_apps",
+      "tool_title": "slack_schedule_message",
+      "template_params": [
+        {
+          "name": "channel_id",
+          "label": "Conversation"
+        },
+        {
+          "name": "post_at",
+          "label": "Send at"
+        },
+        {
+          "name": "message",
+          "label": "Message"
+        }
+      ],
+      "template": "允许{connector_name}安排消息发送时间吗？"
+    },
+    {
+      "source_tool_index": 34,
+      "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
+      "server_name": "codex_apps",
+      "tool_title": "slack_create_canvas",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        },
+        {
+          "name": "content",
+          "label": "Content"
+        }
+      ],
+      "template": "允许{connector_name}创建画布吗？"
+    },
+    {
+      "source_tool_index": 35,
+      "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
+      "server_name": "codex_apps",
+      "tool_title": "slack_send_message_draft",
+      "template_params": [
+        {
+          "name": "channel_id",
+          "label": "Conversation"
+        },
+        {
+          "name": "message",
+          "label": "Message"
+        }
+      ],
+      "template": "允许{connector_name}创建消息草稿吗？"
+    },
+    {
+      "source_tool_index": 36,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "add_comment_to_issue",
+      "template_params": [
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        },
+        {
+          "name": "body",
+          "label": "Body"
+        }
+      ],
+      "template": "允许{connector_name}在议题上发表评论吗？"
+    },
+    {
+      "source_tool_index": 37,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "add_label_to_issue",
+      "template_params": [
+        {
+          "name": "label_id",
+          "label": "Label"
+        },
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        }
+      ],
+      "template": "允许{connector_name}为议题添加标签吗？"
+    },
+    {
+      "source_tool_index": 38,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "add_url_attachment_to_issue",
+      "template_params": [
+        {
+          "name": "url",
+          "label": "URL"
+        },
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        },
+        {
+          "name": "title",
+          "label": "Title"
+        }
+      ],
+      "template": "允许{connector_name}为议题附上链接吗？"
+    },
+    {
+      "source_tool_index": 39,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "assign_issue",
+      "template_params": [
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        },
+        {
+          "name": "user_id",
+          "label": "User"
+        }
+      ],
+      "template": "允许{connector_name}指派议题吗？"
+    },
+    {
+      "source_tool_index": 40,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "create_issue",
+      "template_params": [
+        {
+          "name": "title",
+          "label": "Title"
+        },
+        {
+          "name": "team_id",
+          "label": "Team"
+        }
+      ],
+      "template": "允许{connector_name}创建议题吗？"
+    },
+    {
+      "source_tool_index": 41,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "create_label",
+      "template_params": [
+        {
+          "name": "label_name",
+          "label": "Label Name"
+        }
+      ],
+      "template": "允许{connector_name}创建标签吗？"
+    },
+    {
+      "source_tool_index": 42,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "create_project",
+      "template_params": [
+        {
+          "name": "name",
+          "label": "Name"
+        },
+        {
+          "name": "team_id",
+          "label": "Team"
+        }
+      ],
+      "template": "允许{connector_name}创建项目吗？"
+    },
+    {
+      "source_tool_index": 43,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "remove_label_from_issue",
+      "template_params": [
+        {
+          "name": "label_id",
+          "label": "Label"
+        },
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        }
+      ],
+      "template": "允许{connector_name}移除议题上的标签吗？"
+    },
+    {
+      "source_tool_index": 44,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "resolve_comment",
+      "template_params": [
+        {
+          "name": "comment_id",
+          "label": "Comment"
+        }
+      ],
+      "template": "允许{connector_name}解决评论吗？"
+    },
+    {
+      "source_tool_index": 45,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "set_issue_state",
+      "template_params": [
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        },
+        {
+          "name": "state_id",
+          "label": "State"
+        }
+      ],
+      "template": "允许{connector_name}更改议题状态吗？"
+    },
+    {
+      "source_tool_index": 46,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "unassign_issue",
+      "template_params": [
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        }
+      ],
+      "template": "允许{connector_name}取消指派议题吗？"
+    },
+    {
+      "source_tool_index": 47,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "update_issue",
+      "template_params": [
+        {
+          "name": "issue_id",
+          "label": "Issue"
+        },
+        {
+          "name": "issue_update",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}更新议题吗？"
+    },
+    {
+      "source_tool_index": 48,
+      "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
+      "server_name": "codex_apps",
+      "tool_title": "update_project",
+      "template_params": [
+        {
+          "name": "project_id",
+          "label": "Project"
+        },
+        {
+          "name": "update_fields",
+          "label": "Changes"
+        }
+      ],
+      "template": "允许{connector_name}更新项目吗？"
+    },
+    {
+      "source_tool_index": 49,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "apply_labels_to_emails",
+      "template_params": [],
+      "template": "允许{connector_name}应用消息标签变更吗？"
+    },
+    {
+      "source_tool_index": 50,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "batch_modify_email",
+      "template_params": [],
+      "template": "允许{connector_name}更新消息标签吗？"
+    },
+    {
+      "source_tool_index": 51,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "bulk_label_matching_emails",
+      "template_params": [
+        {
+          "name": "label_name",
+          "label": "Label Name"
+        },
+        {
+          "name": "query",
+          "label": "Query"
+        }
+      ],
+      "template": "允许{connector_name}为匹配的消息添加标签吗？"
+    },
+    {
+      "source_tool_index": 52,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "create_draft",
+      "template_params": [
+        {
+          "name": "to",
+          "label": "To"
+        },
+        {
+          "name": "subject",
+          "label": "Subject"
+        },
+        {
+          "name": "body",
+          "label": "Body"
+        }
+      ],
+      "template": "允许{connector_name}创建邮件草稿吗？"
+    },
+    {
+      "source_tool_index": 53,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "create_label",
+      "template_params": [
+        {
+          "name": "name",
+          "label": "Name"
+        }
+      ],
+      "template": "允许{connector_name}创建标签吗？"
+    },
+    {
+      "source_tool_index": 54,
+      "connector_id": "connector_2128aebfecb84f64a069897515042a44",
+      "server_name": "codex_apps",
+      "tool_title": "send_email",
+      "template_params": [
+        {
+          "name": "to",
+          "label": "To"
+        },
+        {
+          "name": "subject",
+          "label": "Subject"
+        },
+        {
+          "name": "body",
+          "label": "Body"
+        }
+      ],
+      "template": "允许{connector_name}发送邮件吗？"
+    }
+  ]
+}

@@ -37,6 +37,8 @@ use codex_skills::SkillMetadata;
 use codex_skills::SkillToolDependency;
 
 const SKILL_MCP_DEPENDENCY_PROMPT_ID: &str = "skill_mcp_dependency_install";
+// Both are display **and** comparison values (`:336` compares the answer),
+// so they stay English -- see the note in `mcp_tool_call.rs`.
 const MCP_DEPENDENCY_OPTION_INSTALL: &str = "Install";
 const MCP_DEPENDENCY_OPTION_SKIP: &str = "Continue anyway";
 

@@ -1794,6 +1794,30 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "MCP client for `{0}` failed to start: {1}",
         "`{0}` 的MCP客户端启动失败：{1}",
     ),
+    // core `RequestUserInput` 的审批提问（`mcp_tool_call.rs` / `mcp_skill_dependencies.rs`）：
+    // header / question / 选项 description 经 app-server 转 `ToolRequestUserInputQuestion`
+    // 后在 tui `bottom_pane/async_questions/` 直接渲染。
+    // 注：`Run the tool and continue.` / `…for this session.` / `…for future tool calls.`
+    // 三条**字典里早已存在**（本轮只接调用点，不重复加条目——第 87 轮加的 [duplicate] 列
+    // 当场抓到了我重复添加，这是它第一次派上用场）。
+    ("Approve app tool call?", "批准应用工具调用？"),
+    ("Cancel this tool call.", "取消该工具调用。"),
+    ("this app", "此应用"),
+    ("the {0} MCP server", "{0} MCP服务器"),
+    ("Allow {0} to run tool \"{1}\"?", "允许{0}运行工具“{1}”吗？"),
+    ("Install MCP servers?", "安装MCP服务器？"),
+    (
+        "The following MCP servers are required by the selected skills but are not installed yet: {0}. Install them now?",
+        "所选技能需要以下MCP服务器，但它们尚未安装：{0}。现在安装吗？",
+    ),
+    (
+        "Install and enable the missing MCP servers in your global config.",
+        "在全局配置中安装并启用缺失的MCP服务器。",
+    ),
+    (
+        "Skip installation for now and do not show again for these MCP servers in this session.",
+        "暂时跳过安装，并在本次会话中不再为这些MCP服务器提示。",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

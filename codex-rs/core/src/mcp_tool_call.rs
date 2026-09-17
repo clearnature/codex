@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::time::Duration;
 use std::time::Instant;
@@ -1784,28 +1787,36 @@ fn build_mcp_tool_approval_question(
 
     let mut options = vec![RequestUserInputQuestionOption {
         label: MCP_TOOL_APPROVAL_ACCEPT.to_string(),
-        description: "Run the tool and continue.".to_string(),
+        description: tr(current(), "Run the tool and continue.").to_string(),
     }];
     if prompt_options.allow_session_remember {
         options.push(RequestUserInputQuestionOption {
             label: MCP_TOOL_APPROVAL_ACCEPT_FOR_SESSION.to_string(),
-            description: "Run the tool and remember this choice for this session.".to_string(),
+            description: tr(
+                current(),
+                "Run the tool and remember this choice for this session.",
+            )
+            .to_string(),
         });
     }
     if prompt_options.allow_persistent_approval {
         options.push(RequestUserInputQuestionOption {
             label: MCP_TOOL_APPROVAL_ACCEPT_AND_REMEMBER.to_string(),
-            description: "Run the tool and remember this choice for future tool calls.".to_string(),
+            description: tr(
+                current(),
+                "Run the tool and remember this choice for future tool calls.",
+            )
+            .to_string(),
         });
     }
     options.push(RequestUserInputQuestionOption {
         label: MCP_TOOL_APPROVAL_CANCEL.to_string(),
-        description: "Cancel this tool call.".to_string(),
+        description: tr(current(), "Cancel this tool call.").to_string(),
     });
 
     RequestUserInputQuestion {
         id: question_id,
-        header: "Approve app tool call?".to_string(),
+        header: tr(current(), "Approve app tool call?").to_string(),
         question,
         is_other: false,
         is_secret: false,
@@ -1824,12 +1835,16 @@ fn build_mcp_tool_approval_fallback_message(
         .map(ToString::to_string)
         .unwrap_or_else(|| {
             if server == CODEX_APPS_MCP_SERVER_NAME {
-                "this app".to_string()
+                tr(current(), "this app").to_string()
             } else {
-                format!("the {server} MCP server")
+                tr_with(current(), "the {0} MCP server", &[server])
             }
         });
-    format!("Allow {actor} to run tool \"{tool_name}\"?")
+    tr_with(
+        current(),
+        "Allow {0} to run tool \"{1}\"?",
+        &[&actor, tool_name],
+    )
 }
 
 fn build_mcp_tool_approval_elicitation_request(

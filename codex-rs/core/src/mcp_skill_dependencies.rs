@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -274,22 +277,29 @@ async fn should_install_mcp_dependencies(
     let server_list = format_missing_mcp_dependencies(missing);
     let question = RequestUserInputQuestion {
         id: SKILL_MCP_DEPENDENCY_PROMPT_ID.to_string(),
-        header: "Install MCP servers?".to_string(),
-        question: format!(
-            "The following MCP servers are required by the selected skills but are not installed yet: {server_list}. Install them now?"
+        header: tr(current(), "Install MCP servers?").to_string(),
+        question: tr_with(
+            current(),
+            "The following MCP servers are required by the selected skills but are not installed yet: {0}. Install them now?",
+            &[&server_list],
         ),
         is_other: false,
         is_secret: false,
         options: Some(vec![
             RequestUserInputQuestionOption {
                 label: MCP_DEPENDENCY_OPTION_INSTALL.to_string(),
-                description:
-                    "Install and enable the missing MCP servers in your global config."
-                        .to_string(),
+                description: tr(
+                    current(),
+                    "Install and enable the missing MCP servers in your global config.",
+                )
+                .to_string(),
             },
             RequestUserInputQuestionOption {
                 label: MCP_DEPENDENCY_OPTION_SKIP.to_string(),
-                description: "Skip installation for now and do not show again for these MCP servers in this session."
+                description: tr(
+                    current(),
+                    "Skip installation for now and do not show again for these MCP servers in this session.",
+                )
                     .to_string(),
             },
         ]),

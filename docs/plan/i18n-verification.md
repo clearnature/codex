@@ -906,6 +906,25 @@ tr(current(), if value { "True" } else { "False" })   // ← 检查器只认【�
 即「屏幕上的字被报成 unused」。修法是**拆成两个字面量调用**，而不是让工具去解析表达式。
 **判据**：`tr`/`tr_with` 的 key 实参**必须是字符串字面量**；条件式、变量、`format!` 都不行。
 
+### 12.29 第 88 轮：`i18n.r38.core-model-facing` 的判据**被实测推翻**（迁移自 math-proof 的结论过强）
+
+该迁移项声称：「core 里的大头是**喂模型**的内容……计入 core 剩余量时应**视为误报预算**」。
+本机实测（`python3 scripts/i18n_scan.py --root codex-rs/core/src`）：
+
+```
+string literals extracted : 24670
+candidate (user-visible)  : 1161 (4.7%)         ← 不是「大头都已排除」
+internal                  : 23509
+  test 20137 / short 961 / identifier 767 / name 421 / log 389 / data 309 / …
+```
+
+⇒ **core 仍有 1161 个候选**。它们是否确实「不该译」需要**逐条按 §3.6 甄别**（用户可见 / 喂模型 / 诊断 / 数据），
+**不能**靠一句「大头是喂模型的」把整个 crate 记成「误报预算」。
+本项据此**退回**：它不是「已完成」，而是「**结论过强、需按 crate 重新盘账**」。
+
+**注**：这条推翻了迁移时对 core 的乐观判断。与之相对，本仓库 §12.11–§12.24 已对 core 的 **EventMsg 渠道**逐条判定，
+但那是「渠道」维度；**候选数量**维度（1161）尚未分层。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

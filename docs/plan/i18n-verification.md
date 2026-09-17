@@ -705,6 +705,32 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 `RUST_MIN_STACK=16777216`，否则 `fatal runtime error: stack overflow, aborting`（SIGABRT，signal 6）
 ——与 `tui-test` 门禁同源，**不是**代码回归（见 `ax-core-test-needs-min-stack`）。
 
+### 12.21 第 88 轮：core 里 55 条审批提示模板 —— **数据资产，不在字典机制内**
+
+上一批把 `mcp_tool_approval_templates.rs:235,342` 的两条「待判」。本轮追到了源头：
+
+- 那两条在**测试代码**里（`#[cfg(test)]` 起于 :191），生产区只有**渲染逻辑**（`render_question_template`）；
+- 真正的模板串在资产文件 **`codex-rs/core/assets/consequential_tool_message_templates.json`**，
+  共 **55 条**，全部形如 `Allow {connector_name} to …?`，通过
+  `include_str!` + `serde_json` 载入（`mcp_tool_approval_templates.rs:71-73`），
+  再经 `render_question_template` 把 `{connector_name}` 替换成连接器名。
+
+**为什么不当普通文案处理（三条独立理由）**：
+
+1. **形状**：它用 `{connector_name}` **命名**占位符，而 i18n 的 `substitute` 只替换位置式 `{0}`
+   （`interpolate.rs`），且 `i18n-check` 的 `[placeholder]` 列会**主动把它判成缺陷**——
+   这正是第 87 轮加的检查。要么把 55 条改成 `{0}`（同时改渲染器的 `replace` 逻辑），
+   要么给它一条独立通道，**不能**直接塞进 `ENTRIES`。
+2. **机制**：键必须是 Rust 源里的**字面量**才能被 `i18n-check` 的扫描器看见；
+   而这 55 条来自 JSON 资产，扫描器**看不到**，塞进字典会全量报 `unused`。
+3. **范围**：模板要显示给用户的**问题**（`question` / `elicitation_message`），
+   所以它**该译**——只是要走「数据本地化」，不是「源码本地化」。
+
+**结论（待开工的独立小项）**：需要给资产文件一条本地化路径（例如
+`consequential_tool_message_templates.zh.json` + 按 `current()` 选择，或把模板改成位置占位后
+由调用点 `tr_with`）。**本轮不动手**，因为它属于「新增机制」而非「接入既有机制」，
+且会与 `[placeholder]` 检查器的判据交互——先登记，避免被当成漏译。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

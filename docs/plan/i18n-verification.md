@@ -651,6 +651,33 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
   **教训：形状类判断必须端到端（条目 + 调用点 + 门禁），半截实测会把「还没接线」误读成「不支持」。**
   回执：`i18n-check`（六列全零）、`exec-test`（63 + 1 + 78 passed），见 commit `2f6b894e2`。
 
+### 12.19 第 88 轮：阶段 5 收口 —— 接入清单与「刻意保持英文」清单
+
+**已接入 `tr`（本轮）**：`exec/src/event_processor_with_human_output.rs`
+`:84` `started`、`:88`/`:207` `web search:`、`:91` `apply patch`、`:137` ` succeeded`、
+`:144` ` exited `、`:150` ` declined`、`:156` ` in progress`、`:242`/`:386` `warning:`、
+`:260`/`:336` `ERROR:`、`:304` `model rerouted:`、`:344` `turn interrupted`、`:397` `tokens used`。
+字典 2730 → **2741**。
+
+**刻意保持英文（附判据，不是遗漏）**：
+
+| 位置 | 内容 | 判据 |
+| --- | --- | --- |
+| `:167-190` | `"completed"` / `"declined"` / `"in_progress"`（`match` 手臂里与 `PatchApplyStatus`/`McpToolCallStatus` 比对） | **比对值**不是文案；§12.1 |
+| `:424-476` | `config_summary_entries` 的 `"workdir"`/`"model"`/`"provider"`/`"approval"`/`"sandbox"`/`"reasoning effort"`/`"reasoning summaries"`/`"session id"` | **对齐块的左列键名**；§12.7 |
+| `:78,:190,:192` 等 | `"{} {} {}"`、`"{server}/{tool}"`、`"--------"` | 数据格式；§12.5 |
+
+**证据**：`just i18n-check` 六列全零（**2741/2741**）回执 `r-mu4sa93b-c748js`；
+`exec-test`（63 + 1 + 78 passed）回执 `r-mu4sbbx5-kvwqdj`；
+英文态逐字节不变由 `exec-test` 的 78 条集成/单测守住。
+
+#### 本轮的方法错误（值得单列）
+
+上轮我把命令状态四态判成「形状不支持」并回退，依据是一次**半截实测**：只往字典加
+`(" succeeded", …)` 而**没接调用点**，门禁报 `[unused] 1`，我把它读成「形状被拒」。
+端到端实测（条目 **+** 调用点）后六列全零。**判据**：`[unused]` 亮说明「条目还没接线」，
+是正常中间态，**不是形状被拒**；形状类结论必须跑完整链路。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

@@ -12,6 +12,9 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+# Parsing the approval-template assets: they are data, so a translated copy has
+# to be reconciled against the English one (`[asset]` column in the report).
+serde_json = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use pretty_assertions::assert_eq;
 
+use crate::asset_row_drift;
+
 use crate::duplicate_keys;
 use crate::extract_label_literals;
 use crate::extract_tr_calls;
@@ -182,6 +184,31 @@ fn reports_a_key_declared_twice_with_both_translations() {
         vec![("Ready", vec!["就绪", "准备好了"])]
     );
     assert_eq!(duplicate_keys(&pairs[..1]), Vec::<(&str, Vec<&str>)>::new());
+}
+
+#[test]
+fn reports_asset_rows_missing_from_either_side() {
+    // The rows are the identity of a template (connector_id + server + tool
+    // title); the template text is what a translation may change.
+    let english = vec!["c1|srv|title_a".to_string(), "c1|srv|title_b".to_string()];
+    let same = english.clone();
+    assert_eq!(asset_row_drift(&english, &same), Vec::<String>::new());
+
+    let short = vec!["c1|srv|title_a".to_string()];
+    assert_eq!(
+        asset_row_drift(&english, &short),
+        vec!["missing from the translation: c1|srv|title_b".to_string()]
+    );
+
+    let extra = vec![
+        "c1|srv|title_a".to_string(),
+        "c1|srv|title_b".to_string(),
+        "c2|srv|title_c".to_string(),
+    ];
+    assert_eq!(
+        asset_row_drift(&english, &extra),
+        vec!["not in the English asset: c2|srv|title_c".to_string()]
+    );
 }
 
 #[test]

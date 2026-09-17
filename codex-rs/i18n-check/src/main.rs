@@ -5,11 +5,13 @@
 //! can be found automatically. Its refutation condition is "the equivalent of
 //! `extractUsedKeys` cannot be built", so this binary is the prototype, and it
 //! covers the three checks the plan names: missing, unused and coverage, plus
-//! the two invariants the same scan can see for free and those three are blind
+//! the invariants the same scan can see for free and those three are blind
 //! to: a key declared twice (the map keeps the last entry, so the earlier
 //! translations are dead text) and a *named* placeholder such as `{label}`
 //! (the engine substitutes positional `{N}` only, so the token reaches the
-//! screen verbatim -- see `codex-rs/i18n/src/interpolate.rs`).
+//! screen verbatim -- see `codex-rs/i18n/src/interpolate.rs`), plus asset
+//! reconciliation: a translated asset must carry exactly the same rows as the
+//! English one, because nothing else can compare two JSON files.
 //!
 //! It reads two sources:
 //!   * every `tr(..)` / `tr_with(..)` call in the workspace, taking the first
@@ -52,6 +54,7 @@ Checks reported:
   coverage     share of rendered keys that have a translation
   duplicate    dictionary keys declared more than once (the last one wins)
   placeholder  named placeholders (`{label}`), which the engine copies verbatim
+  asset        a translated asset whose rows differ from the English one
 ";
 
 /// One rendered key, with the place it was rendered.
@@ -264,11 +267,40 @@ fn run(root: &Path) -> Result<bool, String> {
         }
     }
 
+    // Assets are data, so a translated copy is invisible to every check above.
+    // Reconciling the two files is what makes a translation safe to add: the
+    // rows are the identity, the template text is what may differ.
+    let english_asset = root.join("codex-rs/core/assets/consequential_tool_message_templates.json");
+    let translated_asset =
+        root.join("codex-rs/core/assets/consequential_tool_message_templates.zh.json");
+    println!();
+    let asset_drift = if translated_asset.exists() {
+        let drift = asset_row_drift(
+            &asset_template_rows(&english_asset)?,
+            &asset_template_rows(&translated_asset)?,
+        );
+        println!(
+            "[asset] translated asset rows not mirrored: {}",
+            drift.len()
+        );
+        for row in &drift {
+            println!("  {row}");
+        }
+        drift
+    } else {
+        println!(
+            "[asset] no translated asset yet ({})",
+            translated_asset.display()
+        );
+        Vec::new()
+    };
+
     Ok(!missing.is_empty()
         || !unused.is_empty()
         || !spacing.is_empty()
         || !duplicates.is_empty()
-        || !placeholders.is_empty())
+        || !placeholders.is_empty()
+        || !asset_drift.is_empty())
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
@@ -430,6 +462,55 @@ fn duplicate_keys(pairs: &[(String, String)]) -> Vec<(&str, Vec<&str>)> {
         .into_iter()
         .filter(|(_, values)| values.len() > 1)
         .collect()
+}
+
+/// The `(connector_id, server_name, tool_title)` rows of an approval-template asset.
+///
+/// The asset is data, not source: `i18n-check` cannot see its strings, so a
+/// translated copy is only safe if something compares the two files. That is
+/// this function's job -- the row identity is the triple that selects a template
+/// (`mcp_tool_approval_templates.rs`), not the template text, which is exactly
+/// what a translation is allowed to change.
+fn asset_template_rows(path: &Path) -> Result<Vec<String>, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let value: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+    let rows = value
+        .get("templates")
+        .and_then(|templates| templates.as_array())
+        .ok_or_else(|| format!("{}: no `templates` array", path.display()))?;
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let field = |name: &str| {
+            row.get(name)
+                .and_then(|value| value.as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        out.push(format!(
+            "{}|{}|{}",
+            field("connector_id"),
+            field("server_name"),
+            field("tool_title")
+        ));
+    }
+    Ok(out)
+}
+
+/// Rows present in one asset but not the other, in both directions.
+fn asset_row_drift(english: &[String], translated: &[String]) -> Vec<String> {
+    let english: BTreeSet<&String> = english.iter().collect();
+    let translated: BTreeSet<&String> = translated.iter().collect();
+    let mut drift: Vec<String> = english
+        .difference(&translated)
+        .map(|row| format!("missing from the translation: {row}"))
+        .collect();
+    drift.extend(
+        translated
+            .difference(&english)
+            .map(|row| format!("not in the English asset: {row}")),
+    );
+    drift
 }
 
 /// Reads the `(english, translation)` pairs of `static ENTRIES`.

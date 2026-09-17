@@ -170,13 +170,19 @@ fn run(root: &Path) -> Result<bool, String> {
 
     let not_translated_path = root.join("codex-rs/i18n/not-translated.tsv");
     let not_translated = read_not_translated(&not_translated_path)?;
+    // Entries that came from test fixtures. Registered instead of deleted: the
+    // production/test split has been got wrong four times in this repo, and an
+    // unregistered deletion of a real key is unrecoverable while an registered
+    // exemption is visible in the report and reversible.
+    let fixture_path = root.join("codex-rs/i18n/test-fixture-keys.tsv");
+    let fixtures = read_not_translated(&fixture_path)?;
     let missing: Vec<(&String, &Vec<String>)> = used
         .iter()
         .filter(|(key, _)| !dictionary.contains(*key) && !not_translated.contains_key(*key))
         .collect();
     let unused: Vec<&String> = dictionary
         .iter()
-        .filter(|key| !used.contains_key(*key))
+        .filter(|key| !used.contains_key(*key) && !fixtures.contains_key(*key))
         .collect();
     let translated = used.keys().filter(|key| dictionary.contains(*key)).count();
 
@@ -205,6 +211,10 @@ fn run(root: &Path) -> Result<bool, String> {
     println!(
         "[missing] judged not-translatable (\u{2026}/i18n/not-translated.tsv): {}",
         not_translated.len()
+    );
+    println!(
+        "[unused] judged test fixtures (\u{2026}/i18n/test-fixture-keys.tsv): {}",
+        fixtures.len()
     );
     for (key, sites) in &missing {
         println!("  {key:?}");

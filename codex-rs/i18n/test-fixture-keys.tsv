@@ -1,0 +1,28 @@
+# 已确证为**测试夹具**的字典条目（制表符分隔：key<TAB>文件:行<TAB>理由）
+#
+# 它们是怎么进字典的：`label: "…"` 的 bound-key 规则早期也扫测试代码，
+# 于是把夹具值当成了「英文原文存在字段里」的真键。
+#
+# 为什么**不删**而是登记：删除字典条目不可逆，而「测试区」的判据在本仓库里
+# 已经失败过四次（第一个 #[cfg(test)] 位置 / 忘记排除字典自身 / 目录级 tests/ 判断 /
+# 同级 tests.rs 文件名）——`None of the above` 就曾因此被误判为夹具。
+# 登记不改数据、理由与点位可查，且检查器会把条数打在报告里，豁免是**可见**的。
+Alpha	codex-rs/tui/src/bottom_pane/list_selection_view.rs:1870	测试夹具：点位在 #[cfg(test)] 块内（list_selection_view.rs:1870）
+Beta	codex-rs/tui/src/bottom_pane/list_selection_view.rs:1880	测试夹具：点位在 #[cfg(test)] 块内（list_selection_view.rs:1880）
+Add a short status model	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1708	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1708）
+Discuss a code change	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1674	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1674）
+Discuss a code change (Recommended)	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:3693	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:3693）
+Job: running/completed/failed/expired; Run/Experiment: succeeded/failed/unknown (Recommended when triaging long-running background work and status transitions)	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1704	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1704）
+Option 1	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1626	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1626）
+Option 2	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1630	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1630）
+Option 3	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1634	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1634）
+Refactor	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:3705	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:3705）
+Review a diff	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:3701	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:3701）
+Review the diff	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1686	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1686）
+Run targeted tests	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1680	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1680）
+Run tests	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:3697	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:3697）
+Ship it	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:3709	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:3709）
+Use Detailed Hint A (Recommended)	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1726	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1726）
+Use Detailed Hint B	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1730	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1730）
+Use Detailed Hint C	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:1734	测试夹具：点位在 #[cfg(test)] 块内（mod.rs:1734）
+Confirm	codex-rs/tui/src/bottom_pane/mcp_server_elicitation.rs:1946	测试夹具：JSON schema 里的 title 字段；该文件的 title 在生产路径来自【服务器下发的 requested_schema】（:585 schema.title / :551 parse_fields_from_schema），不是仓内字面量

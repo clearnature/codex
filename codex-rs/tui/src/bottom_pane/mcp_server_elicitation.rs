@@ -599,7 +599,15 @@ fn parse_field(
             let options = [true, false]
                 .into_iter()
                 .map(|value| {
-                    let label = tr(current(), if value { "True" } else { "False" }).to_string();
+                    // Two separate calls, not `tr(current(), if value {..} else {..})`:
+                    // the checker only recognises a literal first argument, so a
+                    // conditional argument makes the key invisible to it (it then
+                    // reports the entry as unused while it is on screen).
+                    let label = if value {
+                        tr(current(), "True").to_string()
+                    } else {
+                        tr(current(), "False").to_string()
+                    };
                     McpServerElicitationOption {
                         label,
                         description: None,

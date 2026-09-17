@@ -65,15 +65,17 @@ def is_wrapped(lines: list[str], line_number: int) -> bool:
     return False
 
 
-def read_not_translated(path: Path) -> dict[str, str]:
-    """Rows of `key<TAB>file:line<TAB>reason`; the reason is mandatory.
+def read_not_translated(path: Path) -> tuple[set[str], set[str]]:
+    """Returns (keys, sites): rows are `key<TAB>site<TAB>reason`.
 
-    Deliberately identical in shape to the file `codex-i18n-check` reads, so a
-    verdict lives in one place per *kind* of check and both stay auditable.
+    A row with an **empty key** means "exempt this *site*", which is the only
+    way to exempt a literal spanning several lines: the value cannot be written
+    in a one-line TSV field, but its position can.
     """
     if not path.exists():
-        return {}
-    out: dict[str, str] = {}
+        return set(), set()
+    keys: set[str] = set()
+    sites: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.rstrip()
         if not line or line.startswith("#"):
@@ -81,9 +83,12 @@ def read_not_translated(path: Path) -> dict[str, str]:
         key, _, rest = line.partition("\t")
         site, _, reason = rest.partition("\t")
         if not site or not reason.strip():
-            raise SystemExit(f"{path}: row for {key!r} needs `file:line<TAB>reason`")
-        out[key] = site
-    return out
+            raise SystemExit(f"{path}: row for {key!r} needs `key<TAB>file:line<TAB>reason`")
+        if key:
+            keys.add(key)
+        else:
+            sites.add(site.rsplit(":", 1)[-1] if False else site)
+    return keys, sites
 
 
 def main(argv: list[str]) -> int:
@@ -127,7 +132,8 @@ def main(argv: list[str]) -> int:
             )
         if is_wrapped(cache[path], finding["line"]):
             continue
-        if finding["value"] in not_translated:
+        site = f"{finding['path']}:{finding['line']}"
+        if finding["value"] in not_translated[0] or site in not_translated[1]:
             continue
         remaining.append(finding)
 
@@ -140,7 +146,8 @@ def main(argv: list[str]) -> int:
             1
             for finding in findings
             if finding["path"].endswith(args.file)
-            and finding["value"] in not_translated
+            and (finding["value"] in not_translated[0]
+                 or f"{finding['path']}:{finding['line']}" in not_translated[1])
             and not is_wrapped(
                 (REPO / finding["path"]).read_text(encoding="utf-8", errors="replace").splitlines(),
                 finding["line"],
@@ -156,7 +163,7 @@ def main(argv: list[str]) -> int:
     by_file = Counter(f["path"] for f in remaining)
     by_module = Counter(f["module"] for f in remaining)
     print(f"unwrapped candidates : {len(remaining)}")
-    print(f"declared not-translatable (skipped): {len(not_translated)}")
+    print(f"declared not-translatable (skipped): {len(not_translated[0]) + len(not_translated[1])}")
     print(f"all candidates       : {len(findings)}")
     print(f"wrapped so far       : {len(findings) - len(remaining)}")
     print()

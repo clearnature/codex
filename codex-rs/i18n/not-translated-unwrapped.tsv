@@ -3,6 +3,14 @@
 # 消费者：`scripts/i18n_todo.py` —— 它扫「**未**包 tr 的候选」，这些串正是它列出的残留。
 # 与 not-translated.tsv **分开**：两者的输入集合互补（一个看已包的、一个看未包的），
 # 混在一起会让每个工具都读到一半无意义的行。
+#
+# 两种行形态：
+#   key<TAB>file:line<TAB>理由      —— 按【值】排除（值必须单行）
+#   <TAB>file:line<TAB>理由         —— 按【位置】排除（跨行/超长字面量只能是这种：
+#                                      值写不进单行 TSV，但位置可以）
+# ⚠ 按位置排除的脆弱点：代码移动会让 file:line 漂移。漂移后**不会**错误豁免别处
+#   （除非恰好有候选落在同一行），但会**静默失效**——所以清单条数会打在扫描器输出里
+#   （`declared not-translatable (skipped): N`），N 变小就该查是不是漂了。
 forking the thread	codex-rs/tui/src/app/event_dispatch.rs:494	`refresh_in_memory_config_from_disk_best_effort` 的参数只进 tracing::warn!（config_persistence.rs:457-465 逐行读到），无渲染路径 ⇒ §12.3
 TUI disconnected while handling a dynamic tool call	codex-rs/tui/src/app/event_dispatch.rs:3418	经 dynamic_tools::failure_response 回给 app-server 的协议响应，不渲染到屏幕 ⇒ §12.11
 Git · {url}@{ref_name}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1678	仓库坐标标识符（Git 是产品名）⇒ §12.9
@@ -17,3 +25,30 @@ OpenAI Codex	codex-rs/tui/src/status/card.rs:760	产品名（§12.6）
 ✨\u{200A}	codex-rs/tui/src/history_cell/notices.rs:54	emoji + 窄空格（§12.7；§12.10 已锚定同类）
 %Y-%m-%d %H:%M:%S	codex-rs/tui/src/resume_picker.rs:3524	strftime 格式串（§12.7）
 user_note: {notes}	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:943	答案前缀，随答案提交回 core 并在别处被解析（§12.1）
+Source task was closed while handling a dynamic tool call	codex-rs/tui/src/app/side.rs:551	经 failure_response 回给 app-server 的协议响应 ⇒ §12.11
+starting a side conversation	codex-rs/tui/src/app/side.rs:762	`refresh_in_memory_config_from_disk_best_effort` 的参数，逐行读到只进 tracing::warn! ⇒ §12.3
+
+
+
+
+
+
+
+Do not modify files, source, git state, permissions, configuration, or any other workspace state unless the user explicitly requests that mutation in this side conversation. Do not request escalated permissions or broader sandbox access unless the user explicitly requests a mutation that requires it. If the user explicitly requests a mutation, keep it minimal, local to the request, and avoid disrupting the main thread.	codex-rs/tui/src/app/side.rs	侧会话系统提示词：喂给模型的会话边界/系统提示资产 ⇒ §12.2
+
+
+
+
+
+
+Do not modify files, source, git state, permissions, configuration, or workspace state unless the user explicitly asks for that mutation after this boundary. Do not request escalated permissions or broader sandbox access unless the user explicitly asks for a mutation that requires it. If the user explicitly requests a mutation, keep it minimal, local to the request, and avoid disrupting the main thread.	codex-rs/tui/src/app/side.rs	喂给模型的会话边界/系统提示资产（SIDE_BOUNDARY_PROMPT，raw string）⇒ §12.2
+
+
+
+
+
+
+
+Do not modify files, source, git state, permissions, configuration, or any other workspace state unless the user explicitly requests that mutation in this side conversation. Do not request escalated permissions or broader sandbox access unless the user explicitly requests a mutation that requires it. If the user explicitly requests a mutation, keep it minimal, local to the request, and avoid disrupting the main thread.	codex-rs/tui/src/app/side.rs	喂给模型的会话边界/系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string）⇒ §12.2
+	codex-rs/tui/src/app/side.rs:56	喂给模型的会话边界提示资产（SIDE_BOUNDARY_PROMPT，raw string 1435 字符，跨行无法写进 TSV）⇒ §12.2
+	codex-rs/tui/src/app/side.rs:70	侧会话系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string 1613 字符）⇒ §12.2

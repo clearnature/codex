@@ -4,6 +4,8 @@ mod regular;
 mod review;
 mod user_shell;
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -375,8 +377,10 @@ impl Session {
                     sess.send_event(
                         ctx_for_finish.as_ref(),
                         EventMsg::Warning(WarningEvent {
-                            message: format!(
-                                "Failed to save the conversation transcript; Codex will continue retrying. Error: {err}"
+                            message: tr_with(
+                                current(),
+                                "Failed to save the conversation transcript; Codex will continue retrying. Error: {0}",
+                                &[&err.to_string()],
                             ),
                         }),
                     )

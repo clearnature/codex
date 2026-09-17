@@ -1752,6 +1752,24 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Invalid image in your last message. Please remove it and try again.",
         "上一条消息中的图片无效。请移除后重试。",
     ),
+    // core 阶段 6 批 2：插值形态（`tr_with`）。键是**位置占位** `{0}`，不是 Rust 的命名捕获——
+    // 下一批改这些串时，调用点的字面量必须与这里的键逐字一致，否则 i18n-check 报 missing。
+    (
+        "Falling back from WebSockets to HTTPS transport. {0}",
+        "正在从WebSockets回退到HTTPS传输。{0}",
+    ),
+    (
+        "Failed to save the conversation transcript; Codex will continue retrying. Error: {0}",
+        "保存会话转录失败；Codex将继续重试。错误：{0}",
+    ),
+    (
+        "Model metadata for `{0}` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.",
+        "未找到模型 `{0}` 的元数据。将使用回退元数据；这可能降低性能并引发问题。",
+    ),
+    (
+        "Automatic approval review rejected too many approval requests for this turn ({0} consecutive, {1} in the last {2} reviews); interrupting the turn.",
+        "本轮自动审批审查拒绝了过多审批请求（连续 {0} 次，最近 {2} 次审查中有 {1} 次）；正在中断该回合。",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

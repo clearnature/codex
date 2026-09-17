@@ -1,5 +1,7 @@
 //! Shared retry and transport fallback decisions for Responses requests.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::time::Duration;
 
 use crate::client::ModelClientSession;
@@ -91,7 +93,11 @@ pub(crate) async fn handle_retryable_response_stream_error(
         sess.send_event(
             turn_context,
             EventMsg::Warning(WarningEvent {
-                message: format!("Falling back from WebSockets to HTTPS transport. {err:#}"),
+                message: tr_with(
+                    current(),
+                    "Falling back from WebSockets to HTTPS transport. {0}",
+                    &[&format!("{err:#}")],
+                ),
             }),
         )
         .await;

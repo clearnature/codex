@@ -9,6 +9,8 @@ use codex_analytics::GuardianReviewedAction;
 use codex_core_plugins::PluginCommandAttribution;
 use codex_extension_api::ThreadIdleCause;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::openai_models::MODEL_SPECIALTY_CYBER;
 use codex_protocol::openai_models::ModelInfo;
@@ -299,8 +301,14 @@ async fn record_guardian_denial(session: &Arc<Session>, turn: &Arc<TurnContext>,
         .send_event(
             turn.as_ref(),
             EventMsg::GuardianWarning(WarningEvent {
-                message: format!(
-                    "Automatic approval review rejected too many approval requests for this turn ({consecutive_denials} consecutive, {recent_denials} in the last {AUTO_REVIEW_DENIAL_WINDOW_SIZE} reviews); interrupting the turn."
+                message: tr_with(
+                    current(),
+                    "Automatic approval review rejected too many approval requests for this turn ({0} consecutive, {1} in the last {2} reviews); interrupting the turn.",
+                    &[
+                        &consecutive_denials.to_string(),
+                        &recent_denials.to_string(),
+                        &AUTO_REVIEW_DENIAL_WINDOW_SIZE.to_string(),
+                    ],
                 ),
             }),
         )

@@ -14,6 +14,8 @@ use codex_core_plugins::ResolvedPluginMetricsOperation;
 use codex_core_plugins::TrustedPluginRoots;
 use codex_exec_server::ExecutorFileSystem;
 use codex_file_system::FileSystemSandboxContext;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_model_provider::SharedModelProvider;
 use codex_protocol::SessionId;
 use codex_protocol::ThreadId;
@@ -1058,9 +1060,10 @@ impl Session {
             self.send_event(
                 tc,
                 EventMsg::Warning(WarningEvent {
-                    message: format!(
-                        "Model metadata for `{}` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.",
-                        tc.model_info().slug
+                    message: tr_with(
+                        current(),
+                        "Model metadata for `{0}` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.",
+                        &[&tc.model_info().slug],
                     ),
                 }),
             )

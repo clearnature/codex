@@ -458,11 +458,14 @@ pub(super) enum KeymapDebugBindingSource {
 }
 
 impl KeymapDebugBindingSource {
-    pub(super) const fn label(&self) -> &'static str {
+    /// Not `const`: the label reaches a rendered `Line`
+    /// (`debug.rs:148`), so it has to pass through `tr`, which a `const fn`
+    /// cannot call (§3.6 "const tables become functions").
+    pub(super) fn label(&self) -> &'static str {
         match self {
-            Self::Custom => "Custom",
-            Self::CustomGlobal => "Custom global",
-            Self::Default => "Default",
+            Self::Custom => tr(current(), "Custom"),
+            Self::CustomGlobal => tr(current(), "Custom global"),
+            Self::Default => tr(current(), "Default"),
         }
     }
 }

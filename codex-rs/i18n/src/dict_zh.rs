@@ -4201,6 +4201,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // context table): All / Common / Debug.
     ("All", "全部"),
     ("Common", "常用"),
+    // `keymap_setup/actions.rs` 的调试视图来源标签（经 `debug.rs:148` 进 Line 渲染）。
+    // 三条都短于扫描器的 MIN_CANDIDATE_LEN=8，属 §十二·附 的「短标签盲区」——
+    // 只有 `Custom global`（13 字符）会出现在候选里，另两条只能靠人工核对发现。
+    ("Custom", "自定义"),
+    ("Default", "默认"),
+    ("Custom global", "全局自定义"),
     ("Debug", "调试"),
     // Session picker (`tui/src/resume_picker.rs`). The `eyre!` error contexts in
     // that file ("invalid keymap configuration…", "failed to write config.toml…")

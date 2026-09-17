@@ -367,6 +367,48 @@ mod tests {
     }
 
     #[test]
+    fn zh_asset_carries_translated_templates() {
+        // The zh asset must genuinely be a translation, not a copy of the
+        // English file: at least one template must contain CJK characters, and
+        // every translated row must keep its (connector_id, server_name,
+        // tool_title) identity while changing the template text -- the text is
+        // exactly what a translation is allowed to change.
+        fn is_cjk(c: char) -> bool {
+            matches!(c, '\u{4e00}'..='\u{9fff}')
+        }
+        let zh = load_consequential_tool_message_templates(Lang::Zh).unwrap();
+        let en = load_consequential_tool_message_templates(Lang::En).unwrap();
+        let translated = zh
+            .iter()
+            .filter(|t| t.template.chars().any(is_cjk))
+            .collect::<Vec<_>>();
+        assert!(
+            !translated.is_empty(),
+            "zh asset carries no CJK text -- it is not a translation"
+        );
+        for row in &translated {
+            let en_row = en.iter().find(|t| {
+                t.connector_id == row.connector_id
+                    && t.server_name == row.server_name
+                    && t.tool_title == row.tool_title
+            });
+            assert!(
+                en_row.is_some(),
+                "zh row {:?}/{:?}/{:?} has no English counterpart",
+                row.connector_id,
+                row.server_name,
+                row.tool_title
+            );
+            assert_ne!(
+                en_row.unwrap().template,
+                row.template,
+                "zh template for {:?} equals the English one",
+                row.tool_title
+            );
+        }
+    }
+
+    #[test]
     fn renders_literal_template_without_connector_substitution() {
         let templates = vec![ConsequentialToolMessageTemplate {
             connector_id: "github".to_string(),

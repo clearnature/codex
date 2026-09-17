@@ -78,10 +78,7 @@ const REMOTE_ERROR_TAB_ID_PREFIX: &str = "remote-error:";
 fn openai_curated_loading_description() -> &'static str {
     tr(
         current(),
-        tr(
-            current(),
-            "This updates when OpenAI Curated plugins finish loading.",
-        ),
+        "This updates when OpenAI Curated plugins finish loading.",
     )
 }
 const WORKSPACE_SECTION_TAB_ORDER: u8 = 0;
@@ -199,10 +196,7 @@ fn remote_marketplace_sections() -> [RemoteMarketplaceSection; 2] {
             loading_tab_id: "workspace-loading",
             loading_item_description: tr(
                 current(),
-                tr(
-                    current(),
-                    "This updates when workspace plugins finish loading.",
-                ),
+                "This updates when workspace plugins finish loading.",
             ),
             marketplace_names: &[REMOTE_WORKSPACE_MARKETPLACE_NAME],
             show_empty_tab: true,
@@ -216,10 +210,7 @@ fn remote_marketplace_sections() -> [RemoteMarketplaceSection; 2] {
             loading_tab_id: "shared-with-me-loading",
             loading_item_description: tr(
                 current(),
-                tr(
-                    current(),
-                    "This updates when shared plugins finish loading.",
-                ),
+                "This updates when shared plugins finish loading.",
             ),
             marketplace_names: &[
                 REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME,
@@ -388,10 +379,7 @@ impl ChatWidget {
                 Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when the marketplace list is ready.",
-                        ),
+                        "This updates when the marketplace list is ready.",
                     )
                     .to_string(),
                 ),
@@ -401,10 +389,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when the marketplace list is ready.",
-                        ),
+                        "This updates when the marketplace list is ready.",
                     )
                     .to_string(),
                 ),
@@ -429,10 +414,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when marketplace installation completes.",
-                        ),
+                        "This updates when marketplace installation completes.",
                     )
                     .to_string(),
                 ),
@@ -462,10 +444,7 @@ impl ChatWidget {
         header.push(Line::from(
             tr(
                 current(),
-                tr(
-                    current(),
-                    "This removes the configured marketplace from Codex.",
-                ),
+                "This removes the configured marketplace from Codex.",
             )
             .dim(),
         ));
@@ -491,20 +470,14 @@ impl ChatWidget {
                     description: Some(
                         tr(
                             current(),
-                            tr(
-                                current(),
-                                "Remove this marketplace from the available plugin list.",
-                            ),
+                            "Remove this marketplace from the available plugin list.",
                         )
                         .to_string(),
                     ),
                     selected_description: Some(
                         tr(
                             current(),
-                            tr(
-                                current(),
-                                "Remove this marketplace from the available plugin list.",
-                            ),
+                            "Remove this marketplace from the available plugin list.",
                         )
                         .to_string(),
                     ),
@@ -565,10 +538,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when marketplace removal completes.",
-                        ),
+                        "This updates when marketplace removal completes.",
                     )
                     .to_string(),
                 ),
@@ -599,10 +569,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when marketplace upgrade completes.",
-                        ),
+                        "This updates when marketplace upgrade completes.",
                     )
                     .to_string(),
                 ),
@@ -659,10 +626,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This updates when plugin installation completes.",
-                        ),
+                        "This updates when plugin installation completes.",
                     )
                     .to_string(),
                 ),
@@ -729,10 +693,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "Failed to add marketplace from the provided source.",
-                        ),
+                        "Failed to add marketplace from the provided source.",
                     )
                     .to_string(),
                 ),
@@ -921,10 +882,7 @@ impl ChatWidget {
             tr(current(), "No marketplace plugins available"),
             tr(
                 current(),
-                tr(
-                    current(),
-                    "No plugins are available in the discovered marketplaces.",
-                ),
+                "No plugins are available in the discovered marketplaces.",
             ),
         );
 
@@ -1140,18 +1098,12 @@ impl ChatWidget {
             header: plugins_header(
                 tr(
                     current(),
-                    tr(
-                        current(),
-                        "Add a marketplace from a Git repo or local root.",
-                    ),
+                    "Add a marketplace from a Git repo or local root.",
                 )
                 .to_string(),
                 tr(
                     current(),
-                    tr(
-                        current(),
-                        "Enter a source to make its plugins available in this menu.",
-                    ),
+                    "Enter a source to make its plugins available in this menu.",
                 )
                 .to_string(),
             ),
@@ -1160,10 +1112,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "Enter owner/repo, a Git URL, or a local marketplace path.",
-                        ),
+                        "Enter owner/repo, a Git URL, or a local marketplace path.",
                     )
                     .to_string(),
                 ),
@@ -1202,10 +1151,7 @@ impl ChatWidget {
                 line: Line::from(vec![
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "Data shared with this app is subject to the app's ",
-                        ),
+                        "Data shared with this app is subject to the app's ",
                     )
                     .into(),
                     tr(current(), "terms of service").bold(),
@@ -1277,10 +1223,7 @@ impl ChatWidget {
                     description: Some(
                         tr(
                             current(),
-                            tr(
-                                current(),
-                                "This remote plugin did not provide an uninstall identity.",
-                            ),
+                            "This remote plugin did not provide an uninstall identity.",
                         )
                         .to_string(),
                     ),
@@ -1294,10 +1237,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This plugin is disabled by your workspace admin.",
-                        ),
+                        "This plugin is disabled by your workspace admin.",
                     )
                     .to_string(),
                 ),
@@ -1310,10 +1250,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This plugin is not installable from this marketplace.",
-                        ),
+                        "This plugin is not installable from this marketplace.",
                     )
                     .to_string(),
                 ),
@@ -1347,10 +1284,7 @@ impl ChatWidget {
                 description: Some(
                     tr(
                         current(),
-                        tr(
-                            current(),
-                            "This plugin did not provide an install location.",
-                        ),
+                        "This plugin did not provide an install location.",
                     )
                     .to_string(),
                 ),
@@ -1569,24 +1503,15 @@ fn plugins_popup_hint_line(
     match (can_remove_marketplace, can_upgrade_marketplace) {
         (true, true) => Line::from(tr(
             current(),
-            tr(
-                current(),
-                "ctrl + u upgrade · ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
-            ),
+            "ctrl + u upgrade · ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
         )),
         (true, false) => Line::from(tr(
             current(),
-            tr(
-                current(),
-                "ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
-            ),
+            "ctrl + r remove · space toggle · ←/→ tabs · enter details · esc close",
         )),
         (false, true) => Line::from(tr(
             current(),
-            tr(
-                current(),
-                "ctrl + u upgrade · space toggle · ←/→ tabs · enter details · esc close",
-            ),
+            "ctrl + u upgrade · space toggle · ←/→ tabs · enter details · esc close",
         )),
         (false, false) => Line::from(tr(
             current(),

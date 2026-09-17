@@ -11,6 +11,7 @@ use crate::extract_label_literals_in;
 use crate::extract_tr_calls;
 use crate::named_placeholder_hits;
 use crate::named_placeholders;
+use crate::nested_tr_calls;
 use crate::read_dictionary_pairs;
 use crate::read_not_translated;
 use crate::spacing_violations;
@@ -180,6 +181,34 @@ fn skips_calls_whose_first_argument_is_not_a_literal() {
 fn ignores_commented_out_calls() {
     assert_eq!(extract_tr_calls(r#"// tr(lang, " commented ")"#), vec![]);
     assert_eq!(extract_tr_calls(r#"/* tr(lang, " blocked ") */"#), vec![]);
+}
+
+#[test]
+fn finds_nested_tr_calls() {
+    // English renders the same either way, so this is invisible until a
+    // translation misses; round 33 fixed one by hand.
+    assert_eq!(
+        nested_tr_calls(r#"tr(current(), tr(current(), "Ready"))"#),
+        vec![1]
+    );
+    // Line numbers, not offsets: the outer `tr(` is on line 1 of this sample.
+    assert_eq!(
+        nested_tr_calls("tr(\n    current(),\n    tr_with(current(), \"x\", &[]),\n)"),
+        vec![1]
+    );
+    // A later line is reported as that line.
+    assert_eq!(
+        nested_tr_calls("let x = 1;\nlet y = tr(current(), tr(current(), \"Ready\"));"),
+        vec![2]
+    );
+    assert_eq!(
+        nested_tr_calls(r#"tr(current(), "Ready")"#),
+        Vec::<usize>::new()
+    );
+    assert_eq!(
+        nested_tr_calls(r#"format!("{}{}", tr(current(), "a"), tr(current(), "b"))"#),
+        Vec::<usize>::new()
+    );
 }
 
 #[test]

@@ -82,10 +82,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         } else {
             tr(
                 current(),
-                tr(
-                    current(),
-                    "See https://github.com/openai/codex for installation options.",
-                ),
+                "See https://github.com/openai/codex for installation options.",
             )
             .to_string()
         };

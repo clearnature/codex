@@ -54,6 +54,7 @@ Checks reported:
   coverage     share of rendered keys that have a translation
   duplicate    dictionary keys declared more than once (the last one wins)
   placeholder  named placeholders (`{label}`), which the engine copies verbatim
+  nested       tr/tr_with inside another tr/tr_with (double translation)
   asset        a translated asset whose rows differ from the English one
 ";
 
@@ -261,7 +262,32 @@ fn run(root: &Path) -> Result<bool, String> {
     }
     println!();
 
+    let nested: Vec<(&PathBuf, usize)> = files
+        .iter()
+        .filter(|file| {
+            fs::read_to_string(file)
+                .map(|text| text.contains("codex_i18n"))
+                .unwrap_or(false)
+        })
+        .flat_map(|file| {
+            let text = fs::read_to_string(file).unwrap_or_default();
+            nested_tr_calls(&text)
+                .into_iter()
+                .map(|line| (file, line))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+
     let duplicates = duplicate_keys(&pairs);
+    println!(
+        "[nested] nested tr/tr_with calls (double translation): {}",
+        nested.len()
+    );
+    for (file, line) in &nested {
+        println!("  {}:{}", file.display(), line);
+    }
+    println!();
+
     println!(
         "[duplicate] keys declared more than once (the last entry wins): {}",
         duplicates.len()
@@ -327,7 +353,8 @@ fn run(root: &Path) -> Result<bool, String> {
         || !spacing.is_empty()
         || !duplicates.is_empty()
         || !placeholders.is_empty()
-        || !asset_drift.is_empty())
+        || !asset_drift.is_empty()
+        || !nested.is_empty())
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
@@ -579,6 +606,73 @@ fn read_not_translated(path: &Path) -> Result<BTreeMap<String, String>, String> 
         out.insert(key.to_string(), site.to_string());
     }
     Ok(out)
+}
+
+/// Nested `tr`/`tr_with` calls, which double-translate.
+///
+/// `tr(current(), tr(current(), "…"))` looks harmless and renders correctly in
+/// English, but the inner call already returns the translation, and the outer
+/// one then looks that up again -- a no-op in English and a missed lookup in
+/// Chinese. Round 33 fixed one of these by hand; this makes the property
+/// checkable instead of relying on somebody grepping for it.
+///
+/// Detection is deliberately lexical and narrow: an identifier `tr`/`tr_with`
+/// immediately followed by `(` whose first argument itself starts with a
+/// `tr`/`tr_with` call.
+///
+/// Returns **line numbers** (1-based), not byte offsets.
+fn nested_tr_calls(text: &str) -> Vec<usize> {
+    let mut lines = Vec::new();
+    let bytes = text.as_bytes();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if let Some(next) = skip_ignorable(text, i) {
+            i = next;
+            continue;
+        }
+        if is_identifier_start(bytes[i]) {
+            let start = i;
+            while i < bytes.len() && is_identifier_continue(bytes[i]) {
+                i += 1;
+            }
+            let ident = &text[start..i];
+            if (ident == "tr" || ident == "tr_with") && is_followed_by_nested_tr(text, i) {
+                lines.push(line_number(text, start));
+            }
+            continue;
+        }
+        i += 1;
+    }
+    lines
+}
+
+/// Whether the call whose `(` follows `after_ident` passes a `tr` call as its
+/// first argument, e.g. `(current(), tr(...))`.
+fn is_followed_by_nested_tr(text: &str, after_ident: usize) -> bool {
+    let open = skip_trivia(text, after_ident);
+    if text.as_bytes().get(open) != Some(&b'(') {
+        return false;
+    }
+    let mut at = skip_trivia(text, open + 1);
+    // Walk the outer argument list looking for an inner call at argument start.
+    loop {
+        let bytes = text.as_bytes();
+        if !bytes.get(at).copied().is_some_and(is_identifier_start) {
+            return false;
+        }
+        let start = at;
+        while at < bytes.len() && is_identifier_continue(bytes[at]) {
+            at += 1;
+        }
+        if &text[start..at] == "tr" || &text[start..at] == "tr_with" {
+            return true;
+        }
+        let after = argument_end(text, start);
+        match after {
+            Some(end) if bytes.get(end) == Some(&b',') => at = skip_trivia(text, end + 1),
+            _ => return false,
+        }
+    }
 }
 
 /// Reads the `(english, translation)` pairs of `static ENTRIES`.

@@ -571,6 +571,32 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 后者的后果是模型行为变化（可观察、可回滚），前者是**静默的功能性破坏**（跨端回放错位）。
 §12.1（匹配/解析管线）列的就是这一类，两者应当互相引用。
 
+### 12.15 第 88 轮补录：`status_surface_preview.rs` 的 12 个候选 —— **匹配键 + 夹具 + 已译**三类混合
+
+| 位置 | 内容 | 处置 | 依据 |
+| --- | --- | --- | --- |
+| `:258-311` | `"secondary usage "` / `"usage "` 前缀匹配，`"secondary-usage-limit"`、`"five-hour-limit"`、`"weekly-limit"`、`"monthly-limit"`、`"annual-limit"` 键名 | **不译** | §12.1 匹配/解析管线 + §12.7 标识符；这些串被 `value.starts_with(…)` 与 `status_line_from_segments` 的键查表使用 |
+| `:52-78` | `'~/my-project/subdir'`、`'thread title'`、`'feat/awesome-feature'`、`'Context 0% left'`、`'gpt-5.2-codex medium'`… | **不译** | 行 52-78 处于 **`#[cfg(test)]` 内**（本文件 `#[cfg(test)]` 起于 :316；这些是该区之前的 `preview_copy()` **数据夹具**），是渲染样例不是文案 |
+| `:263,:271,:279,:287,:295,:303,:311` | `Remaining usage on the … usage limit (omitted when unavailable)` 七条 | **已译**（各在字典 1 处；同一批文案的主文件 `status_line_setup.rs` 也已接入） | `git grep -c -F '<原文>' -- codex-rs/i18n/src/dict_zh.rs` |
+
+**注意这里有个容易读错的点**：`i18n-todo` 把 `:258-311` 计入「候选」，但它们是**匹配条件与键名**，
+而紧邻的 `description` 字段**已经**走 `tr(current(), …)`（`:263` 起）。即「同一个结构里，
+匹配用的串不译、展示用的串已译」——扫描器只看形状，看不到这个区分。
+
+### 12.16 第 88 轮补录：`goal_files.rs` 的 8 个候选 —— 喂模型的附件说明 + 已译上下文
+
+| 位置 | 内容 | 处置 | 依据 |
+| --- | --- | --- | --- |
+| `:21-23` | `GOAL_FILE_PREFIX = "Read the Codex goal objective file at "` / `GOAL_FILE_SUFFIX = " before continuing."` | **不译** | 这两片拼成**替代用户消息的附件说明**（进 `UserInput`，给模型读），§12.2 |
+| `:74,:79` | `pasted-text-{}.txt` / `"pasted text file: {path}. Read this file before continuing."` | **不译** | 同上：占位符文本随附件进模型上下文；文件名是数据 |
+| `:107` | `"- [Image #{}]: {path}"` | **不译** | 图片清单行，schema 形状的数据 |
+| `:43,:53` | `bail!(tr(current(), "Goal objective must not be empty."))` | **已译**（字典 1 处） | 这是**用户可见**的校验错误 |
+| `:101-105` | `tr_with(current(), "Could not read goal image {0}", …)` 作为 `with_context` | **已译**（字典 1 处） | 该 `with_context` 经调用链浮到 UI（与本文件其余 `bail!` 同类） |
+
+**通用观察（第 88 轮反复出现）**：热点文件几乎都是**混合体**——「喂模型 / 匹配键 / 夹具」与
+「已译的用户可见文案」并存。所以判定必须**逐条看调用点**，不能按文件下一个结论。
+`i18n-todo` 的计数之所以远大于剩余工作量，根源就在这里。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

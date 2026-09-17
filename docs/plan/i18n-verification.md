@@ -794,9 +794,22 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 - **字典现状**：`Approve app tool call?` / `Cancel this tool call.` / `Install MCP servers?` /
   `Skip installation for now…` **均 0 命中**；两文件 **0 处 `tr`**。
 
-**⇒ 这是阶段 6 里第一处「确定漏译且已定位到行」的用户可见文案**，已登记台账项
-`i18n.core.request-user-input-copy`。注意 `question` 里有 `{server_list}` 插值
-（`format!` 命名捕获）⇒ 接入要改 `tr_with` + 位置占位。
+**⇒ 这是阶段 6 里第一处「确定漏译且已定位到行」的用户可见文案**（已接入，见下）。
+
+**渲染链闭合（次轮补实测，收窄了上一版的断言）**：
+
+- `question.title`：**确实渲染**——`bottom_pane/async_questions/mod.rs:161`
+  `textwrap::wrap(&q.title, …)` → `wrapped_question_lines` → 布局。
+- 选项 `label`：**确实渲染**——`state.rs:21-29` 把每个选项**当成一个字符串**收进
+  `AsyncUserInputQuestion.options`（`options.iter().take(32).filter(|label| label.len() <= 512).cloned()`），
+  随后进选项列表渲染。
+- 选项 `description`：⚠ **在本 UI 里被丢弃**——core 的 `RequestUserInputQuestionOption`
+  有 `label` + `description` 两个字段，而 tui 侧 `state.rs` 只取 `label`（`.filter(|label| …)`）。
+  所以本轮接入的 6 条 description 译文**在 TUI 路径上暂时看不见**（但字段仍会随
+  app-server 协议传给别的客户端，译了不留错）。
+
+**处置**：`i18n.core.request-user-input-copy` 已接入（commit `c4b5bdaa4`）；
+description 的「译了但当前 TUI 不显示」这一事实记在此处，避免下一批误以为漏译。
 
 ### 12.8 待人类裁决
 

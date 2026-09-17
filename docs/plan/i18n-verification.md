@@ -615,6 +615,25 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
    → ③ 没有渲染路径就按五类归因并写进本节。
 3. **一个文件不是一个判定单位**——本轮 6 个热点全部是混合体。
 
+### 12.18 第 88 轮：rollout **阶段 5（exec 非交互输出）** 的实况与切口
+
+`i18n-design.md` §3.5 的 rollout 表把阶段 5 记为「接入 `exec` 的非交互输出」。本轮实测：
+**只有 `exec/src/lib.rs` 一个文件接了 `tr`**（`lib.rs:86-88,266,307-327`），而
+**人类可读输出处理器 `exec/src/event_processor_with_human_output.rs`（534 行、43 处
+`eprintln!`/`println!`）一行都没接**。这就是阶段 5 的主战场。
+
+**甄别结果（逐条，判据同 §12.17）**：
+
+| 类别 | 实例 | 处置 |
+| --- | --- | --- |
+| **用户可见文案（要译，当前漏）** | `" succeeded{duration_suffix}:"`(:134)、`" exited {exit_code}{duration_suffix}:"`(:141)、`" declined{duration_suffix}:"`(:147)、`" in progress{duration_suffix}:"`(:153)、`"tokens used"`(:394)、`"warning:"`(:235,:379)、`"turn interrupted"`(:337)、`"context compacted"`(:203，**已译**，`dict_zh.rs:1716`) | 接入 `tr` / `tr_with` |
+| **键名（不译）** | `config_summary_entries` 的 `"workdir"`/`"model"`/`"provider"`/`"approval"`/`"sandbox"`/`"reasoning effort"`/`"reasoning summaries"`/`"session id"`(:424-476) | §12.7 标识符：它们是**表键**，左列对齐用；译了会破坏对齐与脚本消费 |
+| **数据/格式串（不译）** | `"{} {} {}"`(:78,:190)、`"{server}/{tool}"`(:80,:192)、`"{output}"`、`"--------"`、`{duration_ms}ms` | §12.5 数据格式 |
+| **待判（有渲染路径但语义特殊）** | `"web search:"`(:85,:200)、`"apply patch"`(:88)、`"model rerouted:"`(:297) | 都是 `eprintln!` 可见文案 ⇒ 归入「要译」，但 `apply patch` 同时是工具名，需一并核对调用点（下一批） |
+
+**注意 `" context compacted"` 已译而其余未译**这个事实本身就是证据：阶段 5 是**部分做过**，
+不是没开始——所以不能按「文件计数」判阶段完成度（第 88 轮 §12.13 已犯过一次同类错）。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

@@ -454,7 +454,8 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 
 | 位置 | 依据 |
 | --- | --- |
-| `tui/src/ide_context/ipc.rs:49-393`（33 条） | IDE 上下文协议错误与 socket 诊断；IPC 层，不对用户渲染 |
+| `tui/src/ide_context/ipc.rs:49-393`（33 条） | IDE 上下文**协议层**错误与 socket 诊断（`#[error("failed to connect to IDE context provider: {0}")]` 这类 thiserror 手臂）；不进 UI 渲染，见 §12.13 的分层说明 |
+| `tui/src/ide_context/ipc.rs:32-47,88-150`（**已译**，非排除） | **同一文件里的用户可见提示**已接入 `tr`：`open_ide_hint`(:34)、`ide_did_not_provide_context_hint`(:39)、`keep_trying_hint`(:43)、`Codex could not request/read IDE context. Try /ide again.`(:93,:96)、`hint_with_retry(…)`(:125,:149)。按 §3.6「表改函数」口径写成 `fn` 而不是 `const`（`tr` 不是 `const fn`） |
 | `tui/src/ide_context/prompt.rs`（11 条） | 注入模型的 IDE 上下文提示词 |
 | `tui/src/ide_context/windows_pipe.rs:186-343` | Windows 命名管道内部错误（WinAPI） |
 | `tui/src/tui/terminal_stderr.rs:80-291`（9 条） | 终端 stderr 抑制状态机的内部断言/状态标签 |
@@ -512,11 +513,14 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 
 | 位置 | 字符串 | 包装 | 字典 |
 | --- | --- | --- | --- |
-| `tui/src/theme_picker.rs:146` | `Move up/down to live preview themes` | `tr(current(), …)`（`preview_fallback_subtitle` 用函数而非 `const`，正是 §3.6 的 `const` 表口径） | ✅ 1 处 |
-| `:304` | `Custom .tmTheme files can be added to the {0} directory.` | `tr_with(current(), …, &[&path…])` | ✅ |
-| `:355` | `{0} (custom)` | `tr_with` | ✅ |
-| `:404` | `Select Syntax Theme` | `tr(current(), …).to_string()` | ✅ |
-| `:412` | `Type to filter themes...` | `tr(current(), …).to_string()` | ✅ |
+| `tui/src/theme_picker.rs:146` | `Move up/down to live preview themes` | `tr(current(), …)`（`preview_fallback_subtitle` 用函数而非 `const`，正是 §3.6 的 `const` 表口径） | `dict_zh.rs:952` |
+| `:304` | `Custom .tmTheme files can be added to the {0} directory.` | `tr_with(current(), …, &[&path…])` | `dict_zh.rs:574` |
+| `:355` | `{0} (custom)` | `tr_with` | `dict_zh.rs:2108` |
+| `:404` | `Select Syntax Theme` | `tr(current(), …).to_string()` | `dict_zh.rs:1220` |
+| `:412` | `Type to filter themes...` | `tr(current(), …).to_string()` | `dict_zh.rs:1410` |
+
+（字典侧的行号是 `git grep -n -F` 精确匹配的结果，不是转义/拼接形式——上一版只写了「✅ 1 处」，
+本轮补上 `文件:行`，因为「精确串匹配」本身也可能漏判转义形式。）
 
 其余 4 个候选在同一文件的 `#[cfg(test)]` 区块（`expected …` 断言串、预览夹具代码样本
 `fn greet(name: &str) -> String` 等），按口径不入生产。
@@ -528,6 +532,44 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 > **排期看 `i18n-todo` 的模块分布，判定必须看 `i18n-check`（missing/unused 双向为零）+ 本节这类逐条锚定。**
 
 这条对 `dynamic_tools.rs`（§12.11）同样成立：28 与 9 这两个数字都不是「还剩 9/28 件活」。
+
+### 12.13 第 88 轮补录：`ide_context/ipc.rs` 的 33 个候选 —— **同一文件里两套口径并存**
+
+上一轮（§12.9）把该文件的 33 条一律记成「IPC 层，不对用户渲染」，本轮逐条走下来发现**这个口径太粗**：
+同一个文件里同时存在**两类**字符串，必须分开记，否则下一批会把已译的当排除、或把协议错误当漏译。
+
+| 类别 | 位置 | 处置 | 复核方式 |
+| --- | --- | --- | --- |
+| **用户可见提示（已译）** | `:34` `open_ide_hint`、`:39` `ide_did_not_provide_context_hint`、`:43` `keep_trying_hint`、`:93`/`:96` `Codex could not request/read IDE context. Try /ide again.`、`:125`/`:149` `hint_with_retry(…)` | **已接 `tr`/`tr_with`，各在 `dict_zh.rs` 出现 1 次** | `git grep -n -F '<原文>' -- codex-rs/i18n/src/dict_zh.rs` 逐条命中 |
+| **协议层错误（不译）** | `IdeContextError` 的 7 条 `#[error(...)]`（`:49`/`:52`/`:55`/`:58`/`:61`/`:64`/`:67`）与 socket 诊断 | **不译**：thiserror 只接受字面量；这些串随 `eyre`/`tracing` 走内部诊断链，不渲染成 UI 行 | 该文件**没有** `add_error_message` / `Line` / `Span` 调用点 |
+
+**判据（可复核，供后续文件复用）**：
+1. 先问「这个串有没有渲染路径」——`add_error_message` / `add_info_message` / `Line::from` / `Span` 之一；
+   没有 ⇒ 按 §12.3/§12.7 排除（`tracing::warn!`、`eyre` 上下文、协议回包都归此类）。
+2. 有渲染路径 ⇒ 再看是否已接 `tr`（**用字典精确匹配复核，别只看形状**）。
+3. 若同一文件两类并存 ⇒ **分行记**，不要用一句话概括整个文件（本轮 §12.9 的教训）。
+
+**本节纠正的错误**：§12.9 把 `ipc.rs:32-47,88-150` 的用户可见提示误记为「不对用户渲染」；
+实际它们**已经译好**。这不是漏译，而是**文档口径漏了一类**——两者都算「已覆盖」，但依据不同，
+留着会让下一批重复劳动。
+
+### 12.14 第 88 轮补录：`ide_context/prompt.rs` 的 11 个候选 —— 双理由（喂模型 + 解析契约）
+
+这 11 条按 §12.9 已记「注入模型的提示词」，本轮补上**第二条独立的理由**，因为只写一条会漏掉风险更大的那种：
+
+| 位置 | 内容 | 理由 |
+| --- | --- | --- |
+| `tui/src/ide_context/prompt.rs:16` | `const PROMPT_REQUEST_BEGIN: &str = "## My request for Codex:"` | **解析契约**：源码注释写明「Match the desktop app and IDE extension delimiter exactly … transcript rendering strips back to the request after the last marker」。翻译它会同时破坏①与桌面端/IDE 扩展的互操作、②transcript 回放时的切分 |
+| `:120,:122,:141,:154` | `\n## Active selection range(s):` / `\n## Active selection of the file:` / `\n## Open tabs:` | 喂给模型的提示词结构（§12.2） |
+| `:145-148,:174` | `[Selection truncated to … characters.]` / `[{omitted_tabs} open tabs omitted.]` | 同上；且截断提示是**模型据以判断「内容不全」**的信号 |
+
+**判据（可复核）**：① 它有没有进 `render_prompt_context` 产出的字符串、并最终拼进发给模型的 prompt；
+② 它是不是**被别处按字面量匹配/切分**的标记（本文件 `PROMPT_REQUEST_BEGIN` 属于此类，
+其余为纯结构标题）。
+
+**由此得出的通用规则**：一个串如果**同时**是「喂模型」和「被按字面量匹配」，它比单纯喂模型更硬——
+后者的后果是模型行为变化（可观察、可回滚），前者是**静默的功能性破坏**（跨端回放错位）。
+§12.1（匹配/解析管线）列的就是这一类，两者应当互相引用。
 
 ### 12.8 待人类裁决
 

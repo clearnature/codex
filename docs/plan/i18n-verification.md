@@ -765,8 +765,15 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 **结论与新待办**：`required.rs` 的文案**最终进入 Fatal 错误**（用户可见的启动失败），
 但用的是 **`format!` 命名捕获 + `{err:#}` 链式展开**，形态上比前两类更复杂
 （`err:#` 会把 anyhow 链路整段展开，其中既有我们自己的文案也有底层错误）。
-**本轮不动手**，登记为待办：`i18n.mcp.required-server-fatal`；
-实施时要先决定「只译我们自己的那一层，还是连 anyhow 链一起处理」（后者会碰到 §12.3 的边界）。
+**口径已定并落地（次轮）**：**只译我们自己的那一层** ——
+`{0}` 保留 anyhow 链展开的原始文本（底层错误信息不动，§12.3 边界不越）。
+接入两条：`session_rollout_init_error.rs:34` 的 `Failed to initialize session: {0}`
+与 `codex-mcp/.../required.rs:20` 的 ``required MCP server `{0}` was not initialized``
+（commit `a424c8126`）。
+
+**判据链补全（本轮追通的那一跳）**：`CodexErr::Fatal` → `ExitReason::Fatal(message)`
+→ **`cli/src/main.rs:922`** 的 `eprintln!("{}", tr_with(current(), "ERROR: {0}", &[&message]))`
+——**外层 `ERROR: {0}` 早已接入**，所以缺的只是内层 message。
 
 **另**：`session/mod.rs:824-828` 的 `Failed to initialize session: {err:#}` 本身也是**用户可见文案**，
 与 `required` 那条同属「session 初始化失败」家族，应一并评估。

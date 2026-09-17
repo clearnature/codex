@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::marker::PhantomData;
@@ -589,7 +591,11 @@ pub(crate) async fn run_turn(
                             sess.send_event(
                                 &turn_context,
                                 EventMsg::Warning(WarningEvent {
-                                    message: "Stop hook requested continuation without a prompt; ignoring the block.".to_string(),
+                                    message: tr(
+                                        current(),
+                                        "Stop hook requested continuation without a prompt; ignoring the block.",
+                                    )
+                                    .to_string(),
                                 }),
                             )
                             .await;
@@ -627,8 +633,11 @@ pub(crate) async fn run_turn(
                     .await;
                 let event = EventMsg::Error(ErrorEvent {
                     misalignment: None,
-                    message: "Invalid image in your last message. Please remove it and try again."
-                        .to_string(),
+                    message: tr(
+                        current(),
+                        "Invalid image in your last message. Please remove it and try again.",
+                    )
+                    .to_string(),
                     codex_error_info: Some(error),
                 });
                 sess.send_event(&turn_context, event).await;

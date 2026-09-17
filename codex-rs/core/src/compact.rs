@@ -1,4 +1,6 @@
 use crate::context::GuardianContextMode;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -402,7 +404,11 @@ async fn run_compact_task_inner_impl(
     sess.emit_turn_item_completed(&turn_context, compaction_item)
         .await;
     let warning = EventMsg::Warning(WarningEvent {
-        message: "Heads up: Long threads and multiple compactions can cause the model to be less accurate. Start a new thread when possible to keep threads small and targeted.".to_string(),
+        message: tr(
+            current(),
+            "Heads up: Long threads and multiple compactions can cause the model to be less accurate. Start a new thread when possible to keep threads small and targeted.",
+        )
+        .to_string(),
     });
     sess.send_event(&turn_context, warning).await;
     Ok(summary_suffix)

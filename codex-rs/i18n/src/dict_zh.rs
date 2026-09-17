@@ -1736,6 +1736,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("ERROR:", "错误："),
     ("model rerouted:", "模型已改道："),
     ("turn interrupted", "回合已中断"),
+    // core 阶段 6 批 1：流向 UI 的 `WarningEvent` / `ErrorEvent` 文案
+    // （`compact.rs`、`session/turn.rs`）。判据：`EventMsg::Warning/Error` 经事件流到
+    // `add_warning_message`/`add_error_message` 渲染；`tracing::*`、`wrap_err`、
+    // 喂模型的文本与内部 `Err(String)` **不在此列**。
+    (
+        "Heads up: Long threads and multiple compactions can cause the model to be less accurate. Start a new thread when possible to keep threads small and targeted.",
+        "注意：长会话与多次压缩会让模型准确性下降。条件允许时请新建会话，让会话保持小而聚焦。",
+    ),
+    (
+        "Stop hook requested continuation without a prompt; ignoring the block.",
+        "Stop钩子请求继续但未提供提示词；已忽略该阻断。",
+    ),
+    (
+        "Invalid image in your last message. Please remove it and try again.",
+        "上一条消息中的图片无效。请移除后重试。",
+    ),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

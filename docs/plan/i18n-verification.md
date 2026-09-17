@@ -693,7 +693,8 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 | `core/src/compact.rs:405` | `Heads up: Long threads and multiple compactions …` | **已译**（`WarningEvent` → 警告行） |
 | `core/src/session/turn.rs:592` | `Stop hook requested continuation without a prompt; ignoring the block.` | **已译**（`WarningEvent`） |
 | `core/src/session/turn.rs:630` | `Invalid image in your last message. Please remove it and try again.` | **已译**（`ErrorEvent`） |
-| `core/src/session/handlers.rs:260,292,471` | `num_turns must be >= 1` / `thread rollback requires persisted thread history` / `Failed to shutdown thread persistence` | **不译**：内部校验与持久化失败原因（§12.3） |
+| `core/src/session/handlers.rs:260,274,292` | `num_turns must be >= 1` / `Cannot rollback while a turn is in progress.` / `thread rollback requires persisted thread history` | **不译，且判据链已闭合**：三者都带 `CodexErrorInfo::ThreadRollbackFailed` ⇒ `affects_turn_status()==false`（`protocol/src/protocol.rs:1891`）⇒ app-server **不发通知**，只把 message 作为**该 RPC 请求的 error** 回给调用方（`bespoke_event_handling.rs:1042-1051` 的注释明写 "Don't send a notification for this error"，`:1638-1651` 走 `send_error(request_id, invalid_request(message))`）。即 `tui` 侧用户看到的是它自己的错误文案，而非这几个串 |
+| `core/src/session/handlers.rs:471` | `Failed to shutdown thread persistence` | **不译**：持久化关闭失败原因（§12.3，只进 `tracing`） |
 | `core/src/mcp_tool_approval_templates.rs:235,342` | `Allow Calendar to create an event?` / `Allow GitHub to add a comment …` | **待判**：审批提示模板，需确认渲染路径（下一批） |
 
 **证据**：`just i18n-check` 六列全零（**2744/2744**）；`cargo check -p codex-core` exit 0；

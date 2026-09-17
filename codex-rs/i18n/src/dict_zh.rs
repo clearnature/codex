@@ -1714,6 +1714,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("codex to {0}", "Codex将要{0}"),
     ("connected", "已连接"),
     ("context compacted", "上下文已压缩"),
+    // `exec` 阶段 5：非交互输出的用量行（`event_processor_with_human_output.rs:397`）。
+    // 键里没有内部空格，避免触发 [spacing] 的 CJK↔拉丁规则；命令状态四态（` succeeded` 等）
+    // **不进字典**：它们带前导空格、且被 `format!` 拼在 `status` 后缀里，形状不适合作键，
+    // 单列在 docs/plan/i18n-verification.md §12.18。
+    ("tokens used", "已用token"),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

@@ -16,6 +16,9 @@ use codex_utils_sandbox_summary::summarize_permission_profile;
 use owo_colors::OwoColorize;
 use owo_colors::Style;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+
 use crate::event_processor::CodexStatus;
 use crate::event_processor::EventProcessor;
 use crate::event_processor::handle_last_message;
@@ -391,7 +394,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         if let Some(usage) = &self.last_total_token_usage {
             eprintln!(
                 "{}\n{}",
-                "tokens used".style(self.dimmed),
+                tr(current(), "tokens used").style(self.dimmed),
                 format_with_separators(blended_total(usage))
             );
         }

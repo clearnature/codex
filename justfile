@@ -196,13 +196,27 @@ i18n-scan *args:
 i18n-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
+    # 正向：显式请求中文时必须真的渲染中文。
     out="$(cd {{ justfile_directory() }}/codex-rs && cargo run --quiet -p codex-cli --bin codex -- --lang zh --help)"
     n="$(printf '%s\n' "$out" | grep -cP '[\x{4e00}-\x{9fff}]' || true)"
     if [ "${n:-0}" -lt 5 ]; then
         echo "i18n-smoke: 期望至少 5 行中文帮助，实际 ${n:-0} 行" >&2
         exit 1
     fi
-    echo "i18n-smoke: OK（${n} 行中文）"
+    # 反向：`--lang` 缺席且 locale 为 C 时必须逐字节是英文。只测正方向的门禁，
+    # 在另一侧回归时会全绿放行——这一半是承重墙：语言发布链是
+    # `--lang` > config.toml locale > LC_ALL > LANG > 系统 locale
+    # （i18n/src/resolution.rs），locale 为 C 时整条链都应落到 En。
+    # 不能用 `--lang en` 构造这个期望：那测的是「显式英文」，
+    # 不是「环境没给语言时默认是英文」——后者才是要守的性质。
+    en_out="$(cd {{ justfile_directory() }}/codex-rs && LC_ALL=C LANG=C LANGUAGE=C cargo run --quiet -p codex-cli --bin codex -- --help)"
+    m="$(printf '%s\n' "$en_out" | grep -cP '[\x{4e00}-\x{9fff}]' || true)"
+    if [ "${m:-0}" -ne 0 ]; then
+        echo "i18n-smoke: locale=C 且未传 --lang 时不应出现中文，实际 ${m} 行" >&2
+        printf '%s\n' "$en_out" | grep -P '[\x{4e00}-\x{9fff}]' | head -5 >&2
+        exit 1
+    fi
+    echo "i18n-smoke: OK（zh ${n} 行中文；locale=C 时 ${m} 行）"
 
 [no-cd]
 write-hooks-schema:

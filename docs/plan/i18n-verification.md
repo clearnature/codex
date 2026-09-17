@@ -877,6 +877,35 @@ description 的「译了但当前 TUI 不显示」这一事实记在此处，避
 模板样例 `Allow {connector_name} to add a comment to an issue comment?`；
 载入处 `mcp_tool_approval_templates.rs:71-90`（`include_str!` + serde + schema 版本校验）。
 
+### 12.28 第 88 轮：`i18n-check` 的**四种消费形态**与两份清单
+
+铺开过程中反复出现「字典里有、检查器看不见」的键。把它们归成**四种形态**，并把
+「已判定不译」「已确证测试夹具」做成**机器可读的清单**（都要求理由与点位，条数打在报告里）：
+
+| 形态 | 例子 | 检查器如何识别 |
+| --- | --- | --- |
+| ① bound key：英文原文存在字段里，别处 `tr(current(), self.field)` 渲染 | `SelectionTab.label`、`ShortcutDescriptor.label` | `extract_label_literals`（**只扫生产代码**） |
+| ② `const NAME = "…"` + **文本槽**渲染（`name:`/`title:`/`label:`/`description:`/`Line::from`/`Span::from`） | `OTHER_OPTION_LABEL` → `name: format!("{prefix_label}{…}")` | `extract_const_literals`（新增） |
+| ③ **显示值兼比对值**（同一字符串既渲染又被回传比对） | `request_user_input` 的 `label`：TUI 原样提交、core 与英文 const 比对 | **不译** → `not-translated.tsv`（3 条） |
+| ④ 测试夹具混进字典（早期 bound-key 规则也扫测试代码） | `Ship it`、`Option 1/2/3`、`Confirm` | **登记**（不删）→ `test-fixture-keys.tsv`（19 条） |
+
+**为什么夹具只登记不删**：本仓库里「生产/测试」的判据**失败过四次** ——
+（a）用「第一个 `#[cfg(test)]` 的位置」（该文件有 4 处，生产代码夹在中间）；
+（b）忘记排除字典自身（自匹配）；
+（c）用目录级 `/tests/` 判断（对 `src/…/tests.rs` 这种**同级文件**失效）；
+（d）只按块范围判断（漏掉「夹具与生产共用同一 `const`」这一形态 —— `OTHER_OPTION_LABEL` 就是）。
+**登记的误差方向是可恢复的，删除不是。** 19 条现已**逐条读过点位**（所属函数均为测试函数）
+且**已排除同名生产 const**（0 命中）。
+
+#### 本轮新踩到的坑：**条件实参作 `tr` 首参 ⇒ 键完全不可见**
+
+```rust
+tr(current(), if value { "True" } else { "False" })   // ← 检查器只认【字面量】首参
+```
+两个键**既不被记作 rendered（不报 missing），也不计 used（仍报 unused）** ——
+即「屏幕上的字被报成 unused」。修法是**拆成两个字面量调用**，而不是让工具去解析表达式。
+**判据**：`tr`/`tr_with` 的 key 实参**必须是字符串字面量**；条件式、变量、`format!` 都不行。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

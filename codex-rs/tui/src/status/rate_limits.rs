@@ -400,7 +400,7 @@ pub(crate) fn format_status_limit_summary(percent_remaining: f64) -> String {
 fn credit_status_row(credits: &CreditsSnapshotDisplay) -> Option<StatusRateLimitRow> {
     if credits.unlimited {
         return Some(StatusRateLimitRow {
-            label: "Credits".to_string(),
+            label: tr(current(), "Credits").to_string(),
             value: StatusRateLimitValue::Text("Unlimited".to_string()),
         });
     }
@@ -416,7 +416,7 @@ fn credit_status_row(credits: &CreditsSnapshotDisplay) -> Option<StatusRateLimit
             |display_balance| tr_with(current(), "{0} credits", &[&display_balance]),
         );
     Some(StatusRateLimitRow {
-        label: "Credits".to_string(),
+        label: tr(current(), "Credits").to_string(),
         value: StatusRateLimitValue::Text(value),
     })
 }
@@ -454,6 +454,9 @@ fn format_credit_amount(raw: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use codex_i18n::current;
+    use codex_i18n::tr;
+
     use super::CreditsSnapshotDisplay;
     use super::RateLimitSnapshotDisplay;
     use super::RateLimitWindowDisplay;
@@ -515,7 +518,15 @@ mod tests {
                 "Credits".to_string(),
             ]
         );
-        assert_eq!(rows.iter().filter(|row| row.label == "Credits").count(), 2);
+        // Compare against the translated form: a test that runs after someone
+        // publishes `Zh` (the crate supports it) must not fail on English-only
+        // expectations, and `tr` keeps the English path byte-identical.
+        assert_eq!(
+            rows.iter()
+                .filter(|row| row.label == tr(current(), "Credits"))
+                .count(),
+            2
+        );
     }
 
     #[test]

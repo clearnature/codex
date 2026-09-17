@@ -752,6 +752,25 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 `EventMsg::StreamError` 是否存在独立变体、审批请求（`ExecApprovalRequest` 等）
 在 core 侧的文案、以及 `RequestUserInput` 的 question 文本来源 —— 下一批继续。
 
+### 12.23 第 88 轮：MCP 失败构造点的**第二条路径**与 `required` 服务器文案
+
+上轮我接入后自评「不确认真的是否只此一路」，本轮把三条构造点走完：
+
+| 构造点 | 结果 |
+| --- | --- |
+| `connection_manager.rs:469` | 用 `mcp_init_error_display` ⇒ **已被本轮接入覆盖** |
+| `connection_manager.rs:677` | **同一个** `mcp_init_error_display` ⇒ 同样覆盖 |
+| `connection_manager/required.rs:20,33` | **另一条路**：`McpStartupFailure { error }`（`required MCP server \`{server_name}\` was not initialized` 与 `startup_outcome_error_message(error)`）⇒ 汇总进 `validate_required_servers` 的 `Err` ⇒ `session/mcp_runtime.rs:140` ⇒ `Session::new` ⇒ `session/mod.rs:824-828` 的 `map_session_init_error` ⇒ **`CodexErr::Fatal(format!("Failed to initialize session: {err:#}"))`**（`session_rollout_init_error.rs:34`） |
+
+**结论与新待办**：`required.rs` 的文案**最终进入 Fatal 错误**（用户可见的启动失败），
+但用的是 **`format!` 命名捕获 + `{err:#}` 链式展开**，形态上比前两类更复杂
+（`err:#` 会把 anyhow 链路整段展开，其中既有我们自己的文案也有底层错误）。
+**本轮不动手**，登记为待办：`i18n.mcp.required-server-fatal`；
+实施时要先决定「只译我们自己的那一层，还是连 anyhow 链一起处理」（后者会碰到 §12.3 的边界）。
+
+**另**：`session/mod.rs:824-828` 的 `Failed to initialize session: {err:#}` 本身也是**用户可见文案**，
+与 `required` 那条同属「session 初始化失败」家族，应一并评估。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

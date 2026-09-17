@@ -83,7 +83,9 @@ def read_not_translated(path: Path) -> tuple[set[str], set[str]]:
         key, _, rest = line.partition("\t")
         site, _, reason = rest.partition("\t")
         if not site or not reason.strip():
-            raise SystemExit(f"{path}: row for {key!r} needs `key<TAB>file:line<TAB>reason`")
+            raise SystemExit(
+                f"{path}: row for {key!r} needs `key<TAB>file:line<TAB>reason`"
+            )
         if key:
             keys.add(key)
         else:
@@ -120,7 +122,9 @@ def main(argv: list[str]) -> int:
     # `codex-i18n-check`'s *rendered* keys (literals already wrapped in `tr`),
     # this one filters the *unwrapped* candidates listed here. Same object,
     # two tools -- one sees it, the other does not.
-    not_translated = read_not_translated(REPO / "codex-rs" / "i18n" / "not-translated-unwrapped.tsv")
+    not_translated = read_not_translated(
+        REPO / "codex-rs" / "i18n" / "not-translated-unwrapped.tsv"
+    )
 
     cache: dict[str, list[str]] = {}
     remaining = []
@@ -146,10 +150,14 @@ def main(argv: list[str]) -> int:
             1
             for finding in findings
             if finding["path"].endswith(args.file)
-            and (finding["value"] in not_translated[0]
-                 or f"{finding['path']}:{finding['line']}" in not_translated[1])
+            and (
+                finding["value"] in not_translated[0]
+                or f"{finding['path']}:{finding['line']}" in not_translated[1]
+            )
             and not is_wrapped(
-                (REPO / finding["path"]).read_text(encoding="utf-8", errors="replace").splitlines(),
+                (REPO / finding["path"])
+                .read_text(encoding="utf-8", errors="replace")
+                .splitlines(),
                 finding["line"],
             )
         )
@@ -163,7 +171,9 @@ def main(argv: list[str]) -> int:
     by_file = Counter(f["path"] for f in remaining)
     by_module = Counter(f["module"] for f in remaining)
     print(f"unwrapped candidates : {len(remaining)}")
-    print(f"declared not-translatable (skipped): {len(not_translated[0]) + len(not_translated[1])}")
+    print(
+        f"declared not-translatable (skipped): {len(not_translated[0]) + len(not_translated[1])}"
+    )
     print(f"all candidates       : {len(findings)}")
     print(f"wrapped so far       : {len(findings) - len(remaining)}")
     print()

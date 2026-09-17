@@ -2105,7 +2105,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("sixel pixel index overflow", "sixel像素索引溢出"),
     ("slash command", "斜杠命令"),
     ("starting", "正在启动"),
-    ("starting a background task", "正在启动后台任务"),
     ("status: {0}{1}", "状态：{0}{1}"),
     ("stop", "停止"),
     ("summaries off", "摘要关闭"),

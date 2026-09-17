@@ -638,11 +638,11 @@ impl App {
         prompt: String,
         cwd: Option<AbsolutePathBuf>,
     ) {
-        self.refresh_in_memory_config_from_disk_best_effort(tr(
-            current(),
-            "starting a background task",
-        ))
-        .await;
+        // Plain English: the parameter only reaches `tracing::warn!`
+        // (`config_persistence.rs:459`), never a rendered line -- matching the
+        // other five call sites.
+        self.refresh_in_memory_config_from_disk_best_effort("starting a background task")
+            .await;
         let remote_cwd = cwd
             .as_ref()
             .filter(|_| app_server.uses_remote_workspace())

@@ -803,10 +803,13 @@ core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::E
 - 选项 `label`：**确实渲染**——`state.rs:21-29` 把每个选项**当成一个字符串**收进
   `AsyncUserInputQuestion.options`（`options.iter().take(32).filter(|label| label.len() <= 512).cloned()`），
   随后进选项列表渲染。
-- 选项 `description`：⚠ **在本 UI 里被丢弃**——core 的 `RequestUserInputQuestionOption`
-  有 `label` + `description` 两个字段，而 tui 侧 `state.rs` 只取 `label`（`.filter(|label| …)`）。
-  所以本轮接入的 6 条 description 译文**在 TUI 路径上暂时看不见**（但字段仍会随
-  app-server 协议传给别的客户端，译了不留错）。
+- 选项 `description`：**也渲染**——`bottom_pane/request_user_input/mod.rs:445-462` 的
+  `option_rows()` 里 `description: Some(opt.description.clone())` 进 `GenericDisplayRow`。
+  ⚠ **我上一版写「被丢弃」是错的**：当时只看到 `bottom_pane/async_questions/state.rs:21-29`
+  把选项**当字符串**收（`.filter(|label| label.len() <= 512).cloned()`），
+  就下了「description 不可见」的结论——**看错文件了**：那是 `async_questions` 模块，
+  而 RequestUserInput 的**实际渲染器是 `bottom_pane/request_user_input/`**（两个模块并存）。
+  **教训**：`grep` 到一处「形状像渲染点」的消费不足以定论，必须确认**这条 UI 路径用的是哪个模块**。
 
 **处置**：`i18n.core.request-user-input-copy` 已接入（commit `c4b5bdaa4`）；
 description 的「译了但当前 TUI 不显示」这一事实记在此处，避免下一批误以为漏译。
@@ -829,6 +832,24 @@ description 的「译了但当前 TUI 不显示」这一事实记在此处，避
 2. **要不要扩面是显式决定，不是顺手改**：脚本注释把「加 roots」标记为**有意的**动作，
    因为直接传仓库根会把 `target/` 与字典自身的中文扫成候选（注释记录过一次 20 倍的虚高）。
    本轮**不改**脚本；若要覆盖 exec/core，应新增一个 `--root` 显式调用并单独记录口径。
+
+### 12.26 第 88 轮：`bottom_pane` 下**两套 request-user-input 渲染器并存**（一次误判的来源）
+
+排查「选项 `description` 是否显示」时踩到的坑，值得单列，因为它会重复发生：
+
+| 模块 | 作用 | 是否被 RequestUserInput 用 |
+| --- | --- | --- |
+| `bottom_pane/async_questions/`（`state.rs` / `mod.rs` / `render.rs`） | 另一套问答 UI；其 `AsyncUserInputQuestion.options` 是 **`Vec<String>`**（只收 label） | ❌ 不是本路径 |
+| `bottom_pane/request_user_input/`（`mod.rs` / `render.rs` / `layout.rs`） | **RequestUserInput 的实际渲染器**；`option_rows()` 里 `GenericDisplayRow { name: label, description: Some(opt.description) }` | ✅ |
+
+`tool_requests.rs:466` 调的是 `self.bottom_pane.push_user_input_request(ev)`，
+它进的是**后者**（`request_user_input`）。我第一版只看了前者（`async_questions/state.rs`，
+那里确实只取 label），于是把「description 不可见」写进了 §12.24——**是错的**，已更正。
+
+**判据（可复用）**：判断某个 UI 字段是否渲染，必须**先定路径**：
+从 `push_*` / `on_*` 入口函数出发走到**最终 `render`**，
+而不是在 `bottom_pane/` 下 grep 到「形状像渲染点」的一处就下结论。
+本仓库同一目录下并存多套同类 UI 是常态（这已经是本轮第二次因「只查一处」而误判）。
 
 ### 12.8 待人类裁决
 

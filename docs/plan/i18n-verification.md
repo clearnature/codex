@@ -678,6 +678,32 @@ Business Premium / Pro Lite / Edu Plus 等套餐名）、`tui/src/model_catalog.
 端到端实测（条目 **+** 调用点）后六列全零。**判据**：`[unused]` 亮说明「条目还没接线」，
 是正常中间态，**不是形状被拒**；形状类结论必须跑完整链路。
 
+### 12.20 第 88 轮：rollout **阶段 6（core 用户可见错误）** 开工与逐条甄别
+
+**先纠正一个入口假设**：§3.6 的甄别规则写的是「进入 `add_error_message` / `add_info_message` /
+`add_warning_message`」，但那三个函数**在 `tui`**（`tui/src/chatwidget.rs:1547`），core 里调用数为 **0**。
+core 的用户可见渠道是 **`EventMsg::Warning(WarningEvent)` / `EventMsg::Error(ErrorEvent)`**
+（core 内 `EventMsg::Warning(` 19 处、`EventMsg::Error(` 33 处），经事件流到 tui 再渲染。
+**判据要按这个渠道写**，否则会在 core 里找不到任何候选。
+
+**批 1：字面量 `message:`（生产代码，≥20 字符）共 10 条，甄别如下**：
+
+| 位置 | 文案 | 处置 |
+| --- | --- | --- |
+| `core/src/compact.rs:405` | `Heads up: Long threads and multiple compactions …` | **已译**（`WarningEvent` → 警告行） |
+| `core/src/session/turn.rs:592` | `Stop hook requested continuation without a prompt; ignoring the block.` | **已译**（`WarningEvent`） |
+| `core/src/session/turn.rs:630` | `Invalid image in your last message. Please remove it and try again.` | **已译**（`ErrorEvent`） |
+| `core/src/session/handlers.rs:260,292,471` | `num_turns must be >= 1` / `thread rollback requires persisted thread history` / `Failed to shutdown thread persistence` | **不译**：内部校验与持久化失败原因（§12.3） |
+| `core/src/mcp_tool_approval_templates.rs:235,342` | `Allow Calendar to create an event?` / `Allow GitHub to add a comment …` | **待判**：审批提示模板，需确认渲染路径（下一批） |
+
+**证据**：`just i18n-check` 六列全零（**2744/2744**）；`cargo check -p codex-core` exit 0；
+`RUST_MIN_STACK=16777216 cargo test -p codex-core --lib -- compact` **81 passed**、
+`-- session::turn` **19 passed**。
+
+**环境提示（已记 known_issues）**：`cargo test -p codex-core --lib` **必须**带
+`RUST_MIN_STACK=16777216`，否则 `fatal runtime error: stack overflow, aborting`（SIGABRT，signal 6）
+——与 `tui-test` 门禁同源，**不是**代码回归（见 `ax-core-test-needs-min-stack`）。
+
 ### 12.8 待人类裁决
 
 `tui/src/app/transcript_export.rs:158-300`（导出 markdown 正文与标题，等 export-scaffolding 裁决）。

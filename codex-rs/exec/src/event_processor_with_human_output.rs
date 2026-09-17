@@ -134,26 +134,30 @@ impl EventProcessorWithHumanOutput {
                     CommandExecutionStatus::Completed => {
                         eprintln!(
                             "{}",
-                            format!(" succeeded{duration_suffix}:").style(self.green)
+                            format!("{}{duration_suffix}:", tr(current(), " succeeded"))
+                                .style(self.green)
                         );
                     }
                     CommandExecutionStatus::Failed => {
                         let exit_code = exit_code.unwrap_or(1);
                         eprintln!(
                             "{}",
-                            format!(" exited {exit_code}{duration_suffix}:").style(self.red)
+                            format!("{}{exit_code}{duration_suffix}:", tr(current(), " exited "))
+                                .style(self.red)
                         );
                     }
                     CommandExecutionStatus::Declined => {
                         eprintln!(
                             "{}",
-                            format!(" declined{duration_suffix}:").style(self.yellow)
+                            format!("{}{duration_suffix}:", tr(current(), " declined"))
+                                .style(self.yellow)
                         );
                     }
                     CommandExecutionStatus::InProgress => {
                         eprintln!(
                             "{}",
-                            format!(" in progress{duration_suffix}:").style(self.dimmed)
+                            format!("{}{duration_suffix}:", tr(current(), " in progress"))
+                                .style(self.dimmed)
                         );
                     }
                 }

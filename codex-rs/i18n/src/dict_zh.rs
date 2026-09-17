@@ -1719,6 +1719,13 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // **不进字典**：它们带前导空格、且被 `format!` 拼在 `status` 后缀里，形状不适合作键，
     // 单列在 docs/plan/i18n-verification.md §12.18。
     ("tokens used", "已用token"),
+    // exec 命令状态四态：键**含前导空格**（排版：状态跟在命令名之后），译文保留该空格。
+    // 拼接处是 `format!("{}{duration_suffix}:", tr(current(), " succeeded"))` —— 英文态
+    // 与原先的 `format!(" succeeded{suffix}:")` 逐字节相同（exec-test 78 passed 守住）。
+    (" succeeded", " 执行成功"),
+    (" exited ", " 退出码 "),
+    (" declined", " 已拒绝"),
+    (" in progress", " 进行中"),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

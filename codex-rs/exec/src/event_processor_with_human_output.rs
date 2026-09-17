@@ -81,14 +81,18 @@ impl EventProcessorWithHumanOutput {
                     "{} {} {}",
                     "mcp:".style(self.bold),
                     format!("{server}/{tool}").style(self.cyan),
-                    "started".style(self.dimmed)
+                    tr(current(), "started").style(self.dimmed)
                 );
             }
             ThreadItem::WebSearch(item) => {
-                eprintln!("{} {}", "web search:".style(self.bold), item.query);
+                eprintln!(
+                    "{} {}",
+                    tr(current(), "web search:").style(self.bold),
+                    item.query
+                );
             }
             ThreadItem::FileChange { .. } => {
-                eprintln!("{}", "apply patch".style(self.bold));
+                eprintln!("{}", tr(current(), "apply patch").style(self.bold));
             }
             ThreadItem::CollabAgentToolCall { tool, .. } => {
                 eprintln!("{} {:?}", "collab:".style(self.bold), tool);
@@ -204,7 +208,11 @@ impl EventProcessorWithHumanOutput {
                 }
             }
             ThreadItem::WebSearch(item) => {
-                eprintln!("{} {}", "web search:".style(self.bold), item.query);
+                eprintln!(
+                    "{} {}",
+                    tr(current(), "web search:").style(self.bold),
+                    item.query
+                );
             }
             ThreadItem::ContextCompaction { .. } => {
                 eprintln!("{}", "context compacted".style(self.dimmed));
@@ -239,7 +247,9 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     .unwrap_or_default();
                 eprintln!(
                     "{} {}{}",
-                    "warning:".style(self.yellow).style(self.bold),
+                    tr(current(), "warning:")
+                        .style(self.yellow)
+                        .style(self.bold),
                     notification.summary,
                     details
                 );
@@ -257,7 +267,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
             ServerNotification::Error(notification) => {
                 eprintln!(
                     "{} {}",
-                    "ERROR:".style(self.red).style(self.bold),
+                    tr(current(), "ERROR:").style(self.red).style(self.bold),
                     notification.error
                 );
                 CodexStatus::Running
@@ -301,7 +311,9 @@ impl EventProcessor for EventProcessorWithHumanOutput {
             ServerNotification::ModelRerouted(notification) => {
                 eprintln!(
                     "{} {} -> {}",
-                    "model rerouted:".style(self.yellow).style(self.bold),
+                    tr(current(), "model rerouted:")
+                        .style(self.yellow)
+                        .style(self.bold),
                     notification.from_model,
                     notification.to_model
                 );
@@ -333,7 +345,11 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     self.final_message_rendered = false;
                     self.emit_final_message_on_shutdown = false;
                     if let Some(error) = notification.turn.error {
-                        eprintln!("{} {}", "ERROR:".style(self.red).style(self.bold), error);
+                        eprintln!(
+                            "{} {}",
+                            tr(current(), "ERROR:").style(self.red).style(self.bold),
+                            error
+                        );
                     }
                     CodexStatus::InitiateShutdown
                 }
@@ -341,7 +357,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     self.final_message = None;
                     self.final_message_rendered = false;
                     self.emit_final_message_on_shutdown = false;
-                    eprintln!("{}", "turn interrupted".style(self.dimmed));
+                    eprintln!("{}", tr(current(), "turn interrupted").style(self.dimmed));
                     CodexStatus::InitiateShutdown
                 }
                 TurnStatus::InProgress => CodexStatus::Running,
@@ -383,7 +399,9 @@ impl EventProcessor for EventProcessorWithHumanOutput {
     fn process_warning(&mut self, message: String) -> CodexStatus {
         eprintln!(
             "{} {message}",
-            "warning:".style(self.yellow).style(self.bold)
+            tr(current(), "warning:")
+                .style(self.yellow)
+                .style(self.bold)
         );
         CodexStatus::Running
     }

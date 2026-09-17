@@ -1726,6 +1726,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (" exited ", " 退出码 "),
     (" declined", " 已拒绝"),
     (" in progress", " 进行中"),
+    // exec 阶段 5：状态/标签行（`event_processor_with_human_output.rs`）。
+    // `started`/`completed`/`declined`/`in_progress` 里只有进 eprintln! 的才进字典；
+    // `EXEC_STATUS_*` 之类**匹配用**字符串（:167-190 的 match 手臂）保持英文。
+    ("started", "已开始"),
+    ("web search:", "网页搜索："),
+    ("apply patch", "应用补丁"),
+    ("warning:", "警告："),
+    ("ERROR:", "错误："),
+    ("model rerouted:", "模型已改道："),
+    ("turn interrupted", "回合已中断"),
     ("could not encode image: {0}", "无法编码图像：{0}"),
     ("could not write {0}: {1}", "无法写入{0}：{1}"),
     ("create {0}", "创建{0}"),

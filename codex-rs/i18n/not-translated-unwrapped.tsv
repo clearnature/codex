@@ -1,0 +1,13 @@
+# 已判定**不译**的**未接入候选**（key<TAB>file:line<TAB>理由）
+#
+# 消费者：`scripts/i18n_todo.py` —— 它扫「**未**包 tr 的候选」，这些串正是它列出的残留。
+# 与 not-translated.tsv **分开**：两者的输入集合互补（一个看已包的、一个看未包的），
+# 混在一起会让每个工具都读到一半无意义的行。
+forking the thread	codex-rs/tui/src/app/event_dispatch.rs:494	`refresh_in_memory_config_from_disk_best_effort` 的参数只进 tracing::warn!（config_persistence.rs:457-465 逐行读到），无渲染路径 ⇒ §12.3
+TUI disconnected while handling a dynamic tool call	codex-rs/tui/src/app/event_dispatch.rs:3418	经 dynamic_tools::failure_response 回给 app-server 的协议响应，不渲染到屏幕 ⇒ §12.11
+Git · {url}@{ref_name}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1678	仓库坐标标识符（Git 是产品名）⇒ §12.9
+Git · {url}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1679	同上 ⇒ §12.9
+npm · {package}@{version}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1684	同上 ⇒ §12.9
+npm · {package}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1685	同上 ⇒ §12.9
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text	codex-rs/tui/src/clipboard_copy.rs:338	PowerShell 脚本片段（要原样执行，不是文案）⇒ §12.5
+{error_context} task failed	codex-rs/tui/src/app/config_persistence.rs:28	`wrap_err_with` 的错误上下文（§12.3），且本身就是占位拼接

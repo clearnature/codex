@@ -154,7 +154,7 @@ writeln!(f, "{}", tr(lang, "Show this help"))?;
 | 1 | 建 `codex-i18n` crate（`Lang`、`parse_lang`、`tr`、空字典） | `cargo test -p codex-i18n`；全仓 `just test` 快照全绿（此时未接入任何调用点） |
 | 2 | 选**最小垂直切片**接入：`bottom_pane/footer.rs` 几行 | 快照仍全绿（证明 En 逐字节不变）；`--lang zh` 能看到中文 |
 | 3 | 铺开 `tui`：`bottom_pane` → `chatwidget` → `app` | 分批，每批后跑 `just test -p codex-tui` |
-| 4 | 接入 `cli`：帮助文本、`doctor` 输出 | `codex doctor` 在 En 下输出不变 |
+| 4 | 接入 `cli`：帮助文本、`doctor` 输出 | `codex doctor` 在 En 下输出不变。⚠ **后续裁定修正**：`doctor` **整体不译**（其字符串要么进 `--json` 稳定机器契约，要么是 `detail_value(check, label)` 的查表键），见 `i18n-verification.md` §九 与台账 `i18n.r37.doctor-excluded`；本步实际范围＝**帮助文本** |
 | 5 | 接入 `exec` 的非交互输出 | — |
 | 6 | `core` 的用户可见错误（**需逐条甄别**，跳过日志/遥测/喂模型的工具描述） | 单独一轮，逐文件评估 |
 

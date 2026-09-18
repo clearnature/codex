@@ -7162,6 +7162,25 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Your account was flagged for potentially high-risk cyber activity and this request was routed to gpt-5.2 as a fallback. To regain access to gpt-5.3-codex, apply for trusted access: {0} or learn more: {1}",
         "你的账号因可能存在高风险网络活动被标记，本次请求已回退路由到gpt-5.2。要恢复对gpt-5.3-codex的访问，请申请可信访问：{0}，或了解详情：{1}",
     ),
+    (
+        "turn suspension requires the owning root thread",
+        "挂起回合需要拥有该线程的根线程",
+    ),
+    ("thread session has stopped", "线程会话已停止"),
+    ("thread suspension reply was lost", "线程挂起回复丢失"),
+    ("items must not be empty", "条目不得为空"),
+    (
+        "out-of-band elicitation count overflowed",
+        "带外征询计数溢出",
+    ),
+    (
+        "out-of-band elicitation count is already zero",
+        "带外征询计数已为零",
+    ),
+    ("load history", "加载历史"),
+    ("read thread", "读取线程"),
+    ("update thread metadata", "更新线程元数据"),
+    ("append rollout items", "追加rollout条目"),
 ];
 
 /// English source text -> Simplified Chinese.

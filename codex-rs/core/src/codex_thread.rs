@@ -15,6 +15,8 @@ use codex_extension_api::ConversationHistorySnapshot;
 use codex_extension_api::ThreadIdleCause;
 use codex_features::Feature;
 use codex_history::RolloutItem;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::SessionTelemetry;
 use codex_otel::current_span_w3c_trace_context;
 use codex_protocol::ThreadId;
@@ -403,7 +405,7 @@ impl CodexThread {
     pub async fn suspend_turn_and_shutdown(&self) -> CodexResult<SuspendTurnOutcome> {
         if self.session_source.is_non_root_agent() {
             return Err(CodexErr::UnsupportedOperation(
-                "turn suspension requires the owning root thread".to_string(),
+                tr(current(), "turn suspension requires the owning root thread").to_string(),
             ));
         }
 
@@ -420,10 +422,12 @@ impl CodexThread {
                 root_turn_id: None,
             })
             .await
-            .map_err(|_| CodexErr::Fatal("thread session has stopped".to_string()))?;
-        let outcome = result
-            .await
-            .map_err(|_| CodexErr::Fatal("thread suspension reply was lost".to_string()))??;
+            .map_err(|_| {
+                CodexErr::Fatal(tr(current(), "thread session has stopped").to_string())
+            })?;
+        let outcome = result.await.map_err(|_| {
+            CodexErr::Fatal(tr(current(), "thread suspension reply was lost").to_string())
+        })??;
         if matches!(&outcome, SuspendTurnOutcome::Suspended { .. }) {
             self.io.session_loop_termination.clone().await;
         }
@@ -623,7 +627,7 @@ impl CodexThread {
     ) -> CodexResult<()> {
         if items.is_empty() {
             return Err(CodexErr::InvalidRequest(
-                "items must not be empty".to_string(),
+                tr(current(), "items must not be empty").to_string(),
             ));
         }
 
@@ -669,7 +673,7 @@ impl CodexThread {
     ) -> ThreadStoreResult<StoredThreadHistory> {
         let live_thread = self
             .session
-            .live_thread_for_persistence("load history")
+            .live_thread_for_persistence(tr(current(), "load history"))
             .map_err(|err| ThreadStoreError::Internal {
                 message: err.to_string(),
             })?;
@@ -683,7 +687,7 @@ impl CodexThread {
     ) -> ThreadStoreResult<StoredThread> {
         let live_thread = self
             .session
-            .live_thread_for_persistence("read thread")
+            .live_thread_for_persistence(tr(current(), "read thread"))
             .map_err(|err| ThreadStoreError::Internal {
                 message: err.to_string(),
             })?;
@@ -699,7 +703,7 @@ impl CodexThread {
     ) -> ThreadStoreResult<StoredThread> {
         let live_thread = self
             .session
-            .live_thread_for_persistence("update thread metadata")
+            .live_thread_for_persistence(tr(current(), "update thread metadata"))
             .map_err(|err| ThreadStoreError::Internal {
                 message: err.to_string(),
             })?;
@@ -710,7 +714,7 @@ impl CodexThread {
     pub async fn append_rollout_items(&self, items: &[RolloutItem]) -> ThreadStoreResult<()> {
         let live_thread = self
             .session
-            .live_thread_for_persistence("append rollout items")
+            .live_thread_for_persistence(tr(current(), "append rollout items"))
             .map_err(|err| ThreadStoreError::Internal {
                 message: err.to_string(),
             })?;
@@ -951,7 +955,7 @@ impl CodexThread {
     pub async fn increment_out_of_band_elicitation_count(&self) -> CodexResult<i64> {
         let mut elicitations = self.out_of_band_elicitations.lock().await;
         let incremented = elicitations.count.checked_add(1).ok_or_else(|| {
-            CodexErr::Fatal("out-of-band elicitation count overflowed".to_string())
+            CodexErr::Fatal(tr(current(), "out-of-band elicitation count overflowed").to_string())
         })?;
         if elicitations.count == 0 {
             elicitations.registration = Some(self.session.services.elicitations.register());
@@ -964,7 +968,7 @@ impl CodexThread {
         let mut elicitations = self.out_of_band_elicitations.lock().await;
         if elicitations.count == 0 {
             return Err(CodexErr::InvalidRequest(
-                "out-of-band elicitation count is already zero".to_string(),
+                tr(current(), "out-of-band elicitation count is already zero").to_string(),
             ));
         }
 

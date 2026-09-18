@@ -327,7 +327,7 @@ async fn dropping_pending_owner_denies_waiters_and_preserves_replacement() {
         .expect_err("abandoned approval should fail its execution closed");
     assert!(matches!(
         error,
-        ToolError::Rejected(message) if message == ABANDONED_NETWORK_APPROVAL_MESSAGE
+        ToolError::Rejected(message) if message == abandoned_network_approval_message()
     ));
 
     let (replacement, is_owner) = service.get_or_create_pending_approval(key.clone());

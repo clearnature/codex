@@ -9,6 +9,9 @@ use crate::tools::approvals::ApprovalAction;
 use crate::tools::approvals::ApprovalContext;
 use crate::tools::events::truncate_rejection_message;
 use crate::tools::sandboxing::ToolError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::BlockedRequest;
 use codex_network_proxy::BlockedRequestObserver;
 use codex_network_proxy::EnvironmentNetworkPolicy;
@@ -47,8 +50,14 @@ use tracing::error;
 use tracing::warn;
 use uuid::Uuid;
 
-const ABANDONED_NETWORK_APPROVAL_MESSAGE: &str =
-    "network approval was cancelled before a decision was returned";
+// A `const` cannot call `tr`; the value is a call outcome, which the TUI shows
+// as the tool result (design §3.6).
+fn abandoned_network_approval_message() -> &'static str {
+    tr(
+        current(),
+        "network approval was cancelled before a decision was returned",
+    )
+}
 
 #[derive(Debug)]
 pub(crate) struct NetworkApprovalSpec {
@@ -182,7 +191,7 @@ fn network_approval_outcome_to_result(outcome: Option<String>) -> Result<(), Too
 fn abandoned_network_approval_outcome(cancellation_token: &CancellationToken) -> Option<String> {
     cancellation_token
         .is_cancelled()
-        .then(|| ABANDONED_NETWORK_APPROVAL_MESSAGE.to_string())
+        .then(|| abandoned_network_approval_message().to_string())
 }
 
 /// Whether an allowlist miss may be reviewed instead of hard-denied.
@@ -365,9 +374,14 @@ impl Drop for PendingHostApprovalOwner<'_> {
                     .and_then(NetworkRequestDisconnect::elapsed)
             {
                 let elapsed_ms = elapsed.as_millis();
-                self.service.record_call_outcome_if_absent(registration_id, format!(
-                    "Network request disconnected after {elapsed_ms} ms, before approval could complete"
-                ));
+                self.service.record_call_outcome_if_absent(
+                    registration_id,
+                    tr_with(
+                        current(),
+                        "Network request disconnected after {0} ms, before approval could complete",
+                        &[&elapsed_ms.to_string()],
+                    ),
+                );
             }
             self.cancel_execution_if_denied(self.decision_on_drop);
             self.publish_and_remove(self.decision_on_drop);
@@ -666,9 +680,16 @@ impl NetworkApprovalService {
         }
 
         let target = Self::format_network_target(key.protocol, request.host.as_str(), key.port);
-        let policy_denial_message =
-            format!("Network access to \"{target}\" was blocked by policy.");
-        let prompt_reason = format!("{} is not in the allowed_domains", request.host);
+        let policy_denial_message = tr_with(
+            current(),
+            "Network access to \"{0}\" was blocked by policy.",
+            &[&target],
+        );
+        let prompt_reason = tr_with(
+            current(),
+            "{0} is not in the allowed_domains",
+            &[&request.host],
+        );
 
         let Some((turn_context, step_settings, strict_auto_review)) = active_turn else {
             if let Some(owner_call) = owner_call.as_ref() {
@@ -820,9 +841,13 @@ impl NetworkApprovalService {
                         err.details(),
                         codex_protocol::error::CodexErrorDetails::TurnAborted
                     ) {
-                        "rejected by user".to_string()
+                        tr(current(), "rejected by user").to_string()
                     } else {
-                        format!("Error while requesting approval: {err}")
+                        tr_with(
+                            current(),
+                            "Error while requesting approval: {0}",
+                            &[&err.to_string()],
+                        )
                     };
                     self.record_call_outcome(&owner_call.registration_id, rejection);
                 }
@@ -845,8 +870,10 @@ impl NetworkApprovalService {
         {
             // Preserve the denial before waiting for the policy commit. Defer
             // cancellation until after saving so it cannot interrupt persistence.
-            let _ = self
-                .store_call_outcome(&owner_call.registration_id, "rejected by user".to_string());
+            let _ = self.store_call_outcome(
+                &owner_call.registration_id,
+                tr(current(), "rejected by user").to_string(),
+            );
         }
 
         let _session_policy_commit_guard = if matches!(
@@ -915,8 +942,11 @@ impl NetworkApprovalService {
                                 .await;
                         }
                         Err(err) => {
-                            let message =
-                                format!("Failed to apply network policy amendment: {err}");
+                            let message = tr_with(
+                                current(),
+                                "Failed to apply network policy amendment: {0}",
+                                &[&err.to_string()],
+                            );
                             warn!("{message}");
                             session
                                 .send_event_raw(Event {
@@ -964,8 +994,11 @@ impl NetworkApprovalService {
                                 .await;
                         }
                         Err(err) => {
-                            let message =
-                                format!("Failed to apply network policy amendment: {err}");
+                            let message = tr_with(
+                                current(),
+                                "Failed to apply network policy amendment: {0}",
+                                &[&err.to_string()],
+                            );
                             warn!("{message}");
                             session
                                 .send_event_raw(Event {
@@ -978,7 +1011,7 @@ impl NetworkApprovalService {
                     if let Some(owner_call) = owner_call.as_ref() {
                         self.record_call_outcome(
                             &owner_call.registration_id,
-                            "rejected by user".to_string(),
+                            tr(current(), "rejected by user").to_string(),
                         );
                     }
                     {
@@ -997,7 +1030,7 @@ impl NetworkApprovalService {
                 if let Some(owner_call) = owner_call.as_ref() {
                     self.record_call_outcome(
                         &owner_call.registration_id,
-                        "Error while requesting approval".to_string(),
+                        tr(current(), "Error while requesting approval").to_string(),
                     );
                 }
                 PendingApprovalDecision::Deny
@@ -1100,9 +1133,14 @@ pub(crate) async fn begin_network_approval(
         })
         .transpose()
         .map_err(|error| {
-            ToolError::Rejected(format!(
-                "failed to resolve environment network policy: {error}"
-            ))
+            ToolError::Rejected(
+                tr_with(
+                    current(),
+                    "failed to resolve environment network policy: {0}",
+                    &[&error.to_string()],
+                )
+                .to_string(),
+            )
         })?;
     let network = if let Some(owner_spec) = owner_spec.as_ref() {
         if controller.is_some() {
@@ -1116,8 +1154,11 @@ pub(crate) async fn begin_network_approval(
                 })
                 .ok_or_else(|| {
                     ToolError::Rejected(
-                        "environment network policy requires its configured controller proxy"
-                            .to_string(),
+                        tr(
+                            current(),
+                            "environment network policy requires its configured controller proxy",
+                        )
+                        .to_string(),
                     )
                 })?
         } else {
@@ -1127,9 +1168,14 @@ pub(crate) async fn begin_network_approval(
                     session.services.network_proxy_audit_metadata.clone(),
                 )
                 .map_err(|error| {
-                    ToolError::Rejected(format!(
-                        "failed to build environment network policy: {error}"
-                    ))
+                    ToolError::Rejected(
+                        tr_with(
+                            current(),
+                            "failed to build environment network policy: {0}",
+                            &[&error.to_string()],
+                        )
+                        .to_string(),
+                    )
                 })?;
             NetworkProxy::builder()
                 .state(Arc::new(state))
@@ -1137,9 +1183,14 @@ pub(crate) async fn begin_network_approval(
                 .build()
                 .await
                 .map_err(|error| {
-                    ToolError::Rejected(format!(
-                        "failed to build execution-scoped network proxy: {error}"
-                    ))
+                    ToolError::Rejected(
+                        tr_with(
+                            current(),
+                            "failed to build execution-scoped network proxy: {0}",
+                            &[&error.to_string()],
+                        )
+                        .to_string(),
+                    )
                 })?
         }
     } else if let Some(network) = network {
@@ -1166,7 +1217,11 @@ pub(crate) async fn begin_network_approval(
         )
         .map_err(|err| {
             ToolError::Codex(codex_protocol::error::CodexErr::Io(io::Error::other(
-                format!("failed to create execution-scoped network proxy: {err}"),
+                tr_with(
+                    current(),
+                    "failed to create execution-scoped network proxy: {0}",
+                    &[&err.to_string()],
+                ),
             )))
         })?;
     let cancellation_token = CancellationToken::new();

@@ -6773,6 +6773,55 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "approval required by policy rule, but AskForApproval::Granular.rules is false",
         "策略规则要求审批，但AskForApproval::Granular.rules为false",
     ),
+    // Network approval (`core/src/tools/network_approval.rs`). The call outcomes
+    // and ToolError texts reach the TUI as tool results; the telemetry decision
+    // reasons stay English and are registered separately.
+    (
+        "network approval was cancelled before a decision was returned",
+        "网络审批在返回决定前被取消",
+    ),
+    (
+        "Network request disconnected after {0} ms, before approval could complete",
+        "网络请求在审批完成前断开（已等待{0}毫秒）",
+    ),
+    (
+        "Network access to \"{0}\" was blocked by policy.",
+        "对\"{0}\"的网络访问被策略阻止。",
+    ),
+    (
+        "{0} is not in the allowed_domains",
+        "{0}不在allowed_domains中",
+    ),
+    ("rejected by user", "被用户拒绝"),
+    (
+        "Error while requesting approval: {0}",
+        "请求审批时出错：{0}",
+    ),
+    ("Error while requesting approval", "请求审批时出错"),
+    (
+        "Failed to apply network policy amendment: {0}",
+        "应用网络策略修改失败：{0}",
+    ),
+    (
+        "failed to resolve environment network policy: {0}",
+        "解析环境网络策略失败：{0}",
+    ),
+    (
+        "failed to build environment network policy: {0}",
+        "构建环境网络策略失败：{0}",
+    ),
+    (
+        "failed to build execution-scoped network proxy: {0}",
+        "构建执行域网络代理失败：{0}",
+    ),
+    (
+        "failed to create execution-scoped network proxy: {0}",
+        "创建执行域网络代理失败：{0}",
+    ),
+    (
+        "environment network policy requires its configured controller proxy",
+        "环境网络策略需要其已配置的控制器代理",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

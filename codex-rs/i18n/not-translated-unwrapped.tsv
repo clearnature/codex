@@ -388,3 +388,7 @@ exec policy update semaphore closed	codex-rs/core/src/exec_policy.rs:548	内部�
 : starlark error: 	codex-rs/core/src/exec_policy.rs:603	Starlark 解析错误拼装（内部诊断）
 : starlark error:	codex-rs/core/src/exec_policy.rs:618	同上
 {}:{}: {} (problem is on or around line {})	codex-rs/core/src/exec_policy.rs:651	Starlark 错误定位格式串
+network approval was rejected	codex-rs/core/src/tools/network_approval.rs:824	**遥测** decision reason：作为 `ReviewDecision::denied(…)` 的参数进 `session_telemetry.tool_decision(…)`，不渲染 ⇒ §3.6「遥测属性名与值不译」
+network approval failed	codex-rs/core/src/tools/network_approval.rs:837	**遥测** decision reason：作为 `ReviewDecision::denied(…)` 的参数进 `session_telemetry.tool_decision(…)`，不渲染 ⇒ §3.6「遥测属性名与值不译」
+network approval was not applied	codex-rs/core/src/tools/network_approval.rs:1050	**遥测** decision reason：作为 `ReviewDecision::denied(…)` 的参数进 `session_telemetry.tool_decision(…)`，不渲染 ⇒ §3.6「遥测属性名与值不译」
+network approval was not applied	codex-rs/core/src/tools/network_approval.rs:1056	**遥测** decision reason：作为 `ReviewDecision::denied(…)` 的参数进 `session_telemetry.tool_decision(…)`，不渲染 ⇒ §3.6「遥测属性名与值不译」

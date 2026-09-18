@@ -14,7 +14,7 @@ const CONNECTOR_NAME_TEMPLATE_VAR: &str = "{connector_name}";
 
 /// One cache per language. A single `LazyLock` would freeze whichever language
 /// happened to load first, and the language is published at startup but can be
-/// swapped in-process (tests do exactly that); two statics keep that correct
+/// swapped in-process (tests do exactly that); two caches keep that correct
 /// without adding a `Hash` bound to `Lang`.
 static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_EN: LazyLock<
     Option<Vec<ConsequentialToolMessageTemplate>>,

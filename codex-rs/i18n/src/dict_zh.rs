@@ -6666,6 +6666,41 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Select a commit to review", "选择要审查的提交"),
     ("Type to search commits", "输入以搜索提交"),
     ("Type instructions and press Enter", "输入说明后按回车"),
+    // core config validation errors (`core/src/config/mod.rs`). Same class as
+    // the 26 messages already wrapped in that file: config keys stay verbatim,
+    // and no space separates them from the Chinese.
+    (
+        "features.token_budget.reminder_message_template must not exceed {0} bytes",
+        "features.token_budget.reminder_message_template不得超过{0}字节",
+    ),
+    (
+        "features.token_budget.guidance_message must not exceed {0} bytes",
+        "features.token_budget.guidance_message不得超过{0}字节",
+    ),
+    (
+        "features.token_budget.auto_compact_fallback_prompt must not exceed {0} bytes",
+        "features.token_budget.auto_compact_fallback_prompt不得超过{0}字节",
+    ),
+    (
+        "model_catalog_json path `{0}` must contain at least one model",
+        "model_catalog_json路径`{0}`必须至少包含一个模型",
+    ),
+    ("{0} must be at least {1}", "{0}至少为{1}"),
+    ("{0} must be at most {1}", "{0}最多为{1}"),
+    ("{0} must not be empty", "{0}不能为空"),
+    (
+        "{0} must not have leading or trailing whitespace",
+        "{0}不能有前导或尾随空白",
+    ),
+    (
+        "{0} must match ^[a-zA-Z0-9_-]+$",
+        "{0}必须匹配^[a-zA-Z0-9_-]+$",
+    ),
+    ("{0} must be at most {1} characters", "{0}最多为{1}个字符"),
+    (
+        "{0} uses a reserved namespace: {1}",
+        "{0}使用了保留命名空间：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

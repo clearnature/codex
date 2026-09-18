@@ -80,6 +80,7 @@ use codex_http_client::HttpClientFactory;
 use codex_http_client::OutboundProxyPolicy;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_install_context::InstallContext;
 use codex_login::AuthManagerConfig;
 use codex_login::AuthRouteConfig;
@@ -1187,8 +1188,10 @@ impl TokenBudgetConfig {
         if self.reminder_message_template.len() > TOKEN_BUDGET_REMINDER_MESSAGE_TEMPLATE_MAX_BYTES {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!(
-                    "features.token_budget.reminder_message_template must not exceed {TOKEN_BUDGET_REMINDER_MESSAGE_TEMPLATE_MAX_BYTES} bytes"
+                tr_with(
+                    current(),
+                    "features.token_budget.reminder_message_template must not exceed {0} bytes",
+                    &[&TOKEN_BUDGET_REMINDER_MESSAGE_TEMPLATE_MAX_BYTES.to_string()],
                 ),
             ));
         }
@@ -1200,8 +1203,10 @@ impl TokenBudgetConfig {
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!(
-                    "features.token_budget.guidance_message must not exceed {TOKEN_BUDGET_GUIDANCE_MESSAGE_MAX_BYTES} bytes"
+                tr_with(
+                    current(),
+                    "features.token_budget.guidance_message must not exceed {0} bytes",
+                    &[&TOKEN_BUDGET_GUIDANCE_MESSAGE_MAX_BYTES.to_string()],
                 ),
             ));
         }
@@ -1213,8 +1218,10 @@ impl TokenBudgetConfig {
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!(
-                    "features.token_budget.auto_compact_fallback_prompt must not exceed {AUTO_COMPACT_FALLBACK_PROMPT_MAX_BYTES} bytes"
+                tr_with(
+                    current(),
+                    "features.token_budget.auto_compact_fallback_prompt must not exceed {0} bytes",
+                    &[&AUTO_COMPACT_FALLBACK_PROMPT_MAX_BYTES.to_string()],
                 ),
             ));
         }
@@ -2090,9 +2097,10 @@ fn load_catalog_json(path: &AbsolutePathBuf) -> std::io::Result<ModelsResponse> 
     if catalog.models.is_empty() {
         return Err(std::io::Error::new(
             ErrorKind::InvalidData,
-            format!(
-                "model_catalog_json path `{}` must contain at least one model",
-                path.display()
+            tr_with(
+                current(),
+                "model_catalog_json path `{0}` must contain at least one model",
+                &[&path.display().to_string()],
             ),
         ));
     }
@@ -3090,13 +3098,21 @@ fn validate_multi_agent_v2_wait_timeout(label: &str, value: i64) -> std::io::Res
     if value < HARD_MIN_MULTI_AGENT_V2_TIMEOUT_MS {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{label} must be at least {HARD_MIN_MULTI_AGENT_V2_TIMEOUT_MS}"),
+            tr_with(
+                current(),
+                "{0} must be at least {1}",
+                &[label, &HARD_MIN_MULTI_AGENT_V2_TIMEOUT_MS.to_string()],
+            ),
         ));
     }
     if value > HARD_MAX_MULTI_AGENT_V2_TIMEOUT_MS {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{label} must be at most {HARD_MAX_MULTI_AGENT_V2_TIMEOUT_MS}"),
+            tr_with(
+                current(),
+                "{0} must be at most {1}",
+                &[label, &HARD_MAX_MULTI_AGENT_V2_TIMEOUT_MS.to_string()],
+            ),
         ));
     }
     Ok(())
@@ -3128,13 +3144,17 @@ fn validate_multi_agent_v2_tool_namespace(namespace: Option<&str>) -> std::io::R
     if namespace.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{LABEL} must not be empty"),
+            tr_with(current(), "{0} must not be empty", &[LABEL]),
         ));
     }
     if namespace.trim() != namespace {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{LABEL} must not have leading or trailing whitespace"),
+            tr_with(
+                current(),
+                "{0} must not have leading or trailing whitespace",
+                &[LABEL],
+            ),
         ));
     }
     if !namespace
@@ -3143,13 +3163,17 @@ fn validate_multi_agent_v2_tool_namespace(namespace: Option<&str>) -> std::io::R
     {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{LABEL} must match ^[a-zA-Z0-9_-]+$"),
+            tr_with(current(), "{0} must match ^[a-zA-Z0-9_-]+$", &[LABEL]),
         ));
     }
     if namespace.chars().count() > MAX_LEN {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{LABEL} must be at most {MAX_LEN} characters"),
+            tr_with(
+                current(),
+                "{0} must be at most {1} characters",
+                &[LABEL, &MAX_LEN.to_string()],
+            ),
         ));
     }
     if namespace == "mcp"
@@ -3158,7 +3182,11 @@ fn validate_multi_agent_v2_tool_namespace(namespace: Option<&str>) -> std::io::R
     {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{LABEL} uses a reserved namespace: {namespace}"),
+            tr_with(
+                current(),
+                "{0} uses a reserved namespace: {1}",
+                &[LABEL, namespace],
+            ),
         ));
     }
 

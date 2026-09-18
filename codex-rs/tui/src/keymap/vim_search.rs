@@ -68,8 +68,7 @@ impl RuntimeKeymap {
                     current(),
                     "Conflicting `{0}` and `{1}` bindings",
                     &[path.as_str(), other_path.as_str()],
-                )
-                .to_string());
+                ));
             }
         }
         validate_unique(

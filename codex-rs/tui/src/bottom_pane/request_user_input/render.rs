@@ -133,8 +133,7 @@ impl RequestUserInputOverlay {
                 "{0} unanswered questions",
                 &[&unanswered.to_string()],
             )
-        }
-        .to_string();
+        };
         UnansweredConfirmationData {
             title_line: Line::from(super::UNANSWERED_CONFIRM_TITLE.bold()),
             subtitle_line: Line::from(subtitle.dim()),

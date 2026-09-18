@@ -166,7 +166,7 @@ impl App {
                     self.chat_widget.add_error_message(tr_with(
                         current(),
                         "Failed to load shared agents: {0}",
-                        &[&error.to_string()],
+                        &[&error],
                     ));
                 }
             }

@@ -149,9 +149,7 @@ impl LiveCommandOutput {
                     .iter()
                     .map(|line| Cow::Borrowed(line.as_str()))
                     .chain((omitted > 0).then(|| {
-                        Cow::Owned(
-                            tr_with(current(), "… +{0} lines", &[&omitted.to_string()]).to_string(),
-                        )
+                        Cow::Owned(tr_with(current(), "… +{0} lines", &[&omitted.to_string()]))
                     }))
                     .chain(self.tail.iter().map(|line| Cow::Borrowed(line.as_str())))
                     .chain(

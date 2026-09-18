@@ -910,7 +910,7 @@ fn parse_socket_path(raw: &str) -> Result<AbsolutePathBuf, String> {
         tr_with(
             current(),
             "failed to resolve socket path `{0}`: {1}",
-            &[&raw.to_string(), &err.to_string()],
+            &[raw, &err.to_string()],
         )
     })
 }
@@ -919,7 +919,7 @@ fn parse_socket_path(raw: &str) -> Result<AbsolutePathBuf, String> {
 fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
     let is_fatal = match &exit_info.exit_reason {
         ExitReason::Fatal(message) => {
-            eprintln!("{}", tr_with(current(), "ERROR: {0}", &[&message]));
+            eprintln!("{}", tr_with(current(), "ERROR: {0}", &[message]));
             true
         }
         ExitReason::UserRequested
@@ -1155,7 +1155,7 @@ impl FeatureToggles {
         if is_known_feature_key(feature) {
             Ok(())
         } else {
-            anyhow::bail!(tr_with(current(), "Unknown feature flag: {0}", &[&feature]))
+            anyhow::bail!(tr_with(current(), "Unknown feature flag: {0}", &[feature]))
         }
     }
 }
@@ -2350,7 +2350,7 @@ async fn enable_feature_in_config(feature: &str) -> anyhow::Result<()> {
         tr_with(
             current(),
             "Enabled feature `{0}` in config.toml.",
-            &[&feature]
+            &[feature]
         )
     );
     maybe_print_under_development_feature_warning(&codex_home, feature);
@@ -2369,7 +2369,7 @@ async fn disable_feature_in_config(feature: &str) -> anyhow::Result<()> {
         tr_with(
             current(),
             "Disabled feature `{0}` in config.toml.",
-            &[&feature]
+            &[feature]
         )
     );
     Ok(())
@@ -2767,7 +2767,7 @@ fn reject_strict_config_for_unsupported_subcommand(
         anyhow::bail!(tr_with(
             current(),
             "`--strict-config` is not supported for `codex {0}`",
-            &[&subcommand],
+            &[subcommand],
         ));
     }
     Ok(())
@@ -2854,7 +2854,7 @@ where
         anyhow::anyhow!(tr_with(
             current(),
             "environment variable `{0}` is not set",
-            &[&env_var_name],
+            &[env_var_name],
         ))
     })?;
     let auth_token = auth_token.trim().to_string();
@@ -2862,7 +2862,7 @@ where
         anyhow::bail!(tr_with(
             current(),
             "environment variable `{0}` is empty",
-            &[&env_var_name],
+            &[env_var_name],
         ));
     }
     Ok(auth_token)

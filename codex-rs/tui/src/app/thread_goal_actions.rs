@@ -383,7 +383,6 @@ fn thread_goal_error_message(action: &str, err: &color_eyre::Report) -> String {
             "Failed to {0} thread goal: {1}",
             &[action, &err.to_string()],
         )
-        .to_string()
     }
 }
 

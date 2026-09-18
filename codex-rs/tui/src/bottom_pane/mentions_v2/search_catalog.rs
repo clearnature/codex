@@ -197,7 +197,7 @@ fn plugin_description(plugin: &PluginCapabilitySummary) -> Option<String> {
             tr(current(), "Plugin").to_string()
         } else {
             // the " - " join is layout: the labels themselves are translated below.
-            tr_with(current(), "Plugin - {0}", &[&capability_labels.join(" - ")]).to_string()
+            tr_with(current(), "Plugin - {0}", &[&capability_labels.join(" - ")])
         })
     })
 }
@@ -217,7 +217,6 @@ fn plugin_capability_labels(plugin: &PluginCapabilitySummary) -> Vec<String> {
                 "{0} MCP servers",
                 &[&mcp_server_count.to_string()],
             )
-            .to_string()
         });
     }
     if !plugin.app_connector_ids.is_empty() {
@@ -225,7 +224,7 @@ fn plugin_capability_labels(plugin: &PluginCapabilitySummary) -> Vec<String> {
         labels.push(if app_count == 1 {
             tr(current(), "1 app").to_string()
         } else {
-            tr_with(current(), "{0} apps", &[&app_count.to_string()]).to_string()
+            tr_with(current(), "{0} apps", &[&app_count.to_string()])
         });
     }
     labels

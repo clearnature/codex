@@ -330,16 +330,16 @@ impl ChatWidget {
                 tr_with(
                     current(),
                     "{0}. Press Enter to open the app page to install, manage, or enable/disable this app.",
-                    &[&status_label],
+                    &[status_label],
                 )
             } else {
                 tr_with(
                     current(),
                     "{0}. Press Enter to open the app page to install this app.",
-                    &[&status_label],
+                    &[status_label],
                 )
             };
-            let missing_label = tr_with(current(), "{0}. App link unavailable.", &[&status_label]);
+            let missing_label = tr_with(current(), "{0}. App link unavailable.", &[status_label]);
             let instructions = if connector.is_accessible {
                 tr(current(), "Manage this app in your browser.")
             } else {

@@ -371,7 +371,6 @@ impl ChatWidget {
             "Model {0} does not support image inputs. Remove images or switch models.",
             &[self.current_model()],
         )
-        .to_string()
     }
 
     pub(crate) fn current_collaboration_mode(&self) -> &CollaborationMode {
@@ -702,7 +701,7 @@ impl ChatWidget {
         if previous_mode != next_mode
             && (previous_model != next_model || previous_effort != next_effort)
         {
-            let mut message = tr_with(current(), "Model changed to {0}", &[next_model]).to_string();
+            let mut message = tr_with(current(), "Model changed to {0}", &[next_model]);
             if !next_model.starts_with("codex-auto-") {
                 let reasoning_label = match next_effort.as_ref() {
                     None | Some(ReasoningEffortConfig::None) => "default",

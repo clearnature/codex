@@ -294,7 +294,7 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                 tr_with(
                     current(),
                     "tool: {0} · {1}",
-                    &[&name.to_string(), &format!("{status:?}")],
+                    &[&name, &format!("{status:?}")],
                 )
                 .dim()
                 .into(),
@@ -327,11 +327,7 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         }
         ThreadItem::ImageView { path, .. } => {
             let path = path.render_for_ui();
-            vec![
-                tr_with(current(), "image: {0}", &[&path.to_string()])
-                    .dim()
-                    .into(),
-            ]
+            vec![tr_with(current(), "image: {0}", &[&path]).dim().into()]
         }
         ThreadItem::ImageGeneration(item) => {
             let saved = item

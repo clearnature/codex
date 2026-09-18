@@ -1260,7 +1260,7 @@ impl App {
                 self.add_session_picker_error(tr_with(
                     current(),
                     "Failed to resume session from {0}: {1}",
-                    &[&path_display.to_string(), &err.to_string()],
+                    &[&path_display, &err.to_string()],
                 ));
                 return Ok(AppRunControl::Continue);
             }

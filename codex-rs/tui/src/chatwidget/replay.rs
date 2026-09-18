@@ -254,9 +254,8 @@ impl ChatWidget {
                         tr_with(
                             current(),
                             "Sent by Codex from task {0}\n{1}",
-                            &[&source_thread_id.to_string(), &prompt],
-                        )
-                        .to_string(),
+                            &[&source_thread_id, &prompt],
+                        ),
                         "• ".dim(),
                         "  ",
                     ));

@@ -287,7 +287,7 @@ fn build_keymap_picker_params_for_action(
         .collect::<Vec<_>>();
     tabs.push(SelectionTab {
         id: KEYMAP_UNBOUND_TAB_ID.to_string(),
-        label: tr_with(current(), "Unbound ({0})", &[&unbound_count.to_string()]).to_string(),
+        label: tr_with(current(), "Unbound ({0})", &[&unbound_count.to_string()]),
         header: keymap_header(
             tr(current(), "Actions without an active shortcut.").to_string(),
             action_count_line(unbound_count),
@@ -489,7 +489,7 @@ fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
 fn action_count_line(count: usize) -> String {
     match count {
         1 => tr(current(), "1 action.").to_string(),
-        _ => tr_with(current(), "{0} actions.", &[&count.to_string()]).to_string(),
+        _ => tr_with(current(), "{0} actions.", &[&count.to_string()]),
     }
 }
 

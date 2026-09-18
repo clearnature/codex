@@ -707,14 +707,11 @@ async fn persist_selected_trust(
             );
             if let Step::TrustDirectory(widget) = &mut onboarding_screen.steps[trust_step_index] {
                 widget.selection = None;
-                widget.error = Some(
-                    tr_with(
-                        current(),
-                        "Failed to set trust for {0}: {1}",
-                        &[&trust_target.display().to_string(), &error.to_string()],
-                    )
-                    .to_string(),
-                );
+                widget.error = Some(tr_with(
+                    current(),
+                    "Failed to set trust for {0}: {1}",
+                    &[&trust_target.display().to_string(), &error],
+                ));
             }
             false
         }

@@ -122,7 +122,7 @@ pub(crate) async fn write(
                     tr_with(
                         current(),
                         "The server did not advertise experimental feature `{0}`",
-                        &[&name],
+                        &[name],
                     )
                 })?;
             // Quote the server's key as a single TOML path segment.
@@ -169,7 +169,7 @@ pub(crate) async fn write(
             tr_with(
                 current(),
                 "Features were saved, but configured values could not be refreshed: {0}",
-                &[&error.to_string()],
+                &[&error],
             )
         })?;
     let overridden = response.status == WriteStatus::OkOverridden

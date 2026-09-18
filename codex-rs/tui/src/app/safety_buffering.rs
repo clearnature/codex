@@ -277,21 +277,21 @@ fn safety_retry_fork_point(turns: &[Turn], turn_id: &str) -> Result<()> {
         return Err(color_eyre::eyre::eyre!(tr_with(
             current(),
             "interrupted turn {0} is missing from the source thread",
-            &[&turn_id.to_string()],
+            &[turn_id],
         )));
     };
     if turn_index + 1 != turns.len() {
         return Err(color_eyre::eyre::eyre!(tr_with(
             current(),
             "interrupted turn {0} is no longer the latest turn",
-            &[&turn_id.to_string()],
+            &[turn_id],
         )));
     }
     if turns[turn_index].status == TurnStatus::InProgress {
         return Err(color_eyre::eyre::eyre!(tr_with(
             current(),
             "interrupted turn {0} is still in progress",
-            &[&turn_id.to_string()],
+            &[turn_id],
         )));
     }
 

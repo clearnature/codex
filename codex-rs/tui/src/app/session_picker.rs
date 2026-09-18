@@ -35,14 +35,11 @@ impl App {
         let picker_app_server = match picker_app_server {
             Ok(app_server) => app_server,
             Err(err) => {
-                self.add_session_picker_error(
-                    tr_with(
-                        current(),
-                        "Failed to start TUI session picker: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.add_session_picker_error(tr_with(
+                    current(),
+                    "Failed to start TUI session picker: {0}",
+                    &[&err.to_string()],
+                ));
                 self.chat_widget.maybe_send_next_queued_input();
                 return Ok(AppRunControl::Continue);
             }
@@ -70,14 +67,11 @@ impl App {
                     .await
             }
             Err(err) => {
-                self.add_session_picker_error(
-                    tr_with(
-                        current(),
-                        "Failed to open session picker: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.add_session_picker_error(tr_with(
+                    current(),
+                    "Failed to open session picker: {0}",
+                    &[&err.to_string()],
+                ));
                 self.chat_widget.maybe_send_next_queued_input();
                 Ok(AppRunControl::Continue)
             }

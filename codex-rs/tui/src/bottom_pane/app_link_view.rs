@@ -193,7 +193,7 @@ impl AppLinkViewParams {
         Self {
             app_id: elicitation_id.to_string(),
             title: tr(current(), "Action required").to_string(),
-            description: Some(tr_with(current(), "Server: {0}", &[&server_name])),
+            description: Some(tr_with(current(), "Server: {0}", &[server_name])),
             instructions: tr(
                 current(),
                 "Complete the requested action in your browser, then return here.",

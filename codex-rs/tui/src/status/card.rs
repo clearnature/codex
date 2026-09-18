@@ -668,21 +668,21 @@ fn status_permissions_label(
             } else {
                 tr(current(), "Read Only")
             };
-            return tr_with(current(), "{0} ({1})", &[label, &approval.to_string()]);
+            return tr_with(current(), "{0} ({1})", &[label, approval]);
         }
         Some(BUILT_IN_PERMISSION_PROFILE_WORKSPACE) => match sandbox {
             "workspace" => {
                 return tr_with(
                     current(),
                     "Workspace{0} ({1})",
-                    &[workspace_root_suffix.unwrap_or(""), &approval.to_string()],
+                    &[workspace_root_suffix.unwrap_or(""), approval],
                 );
             }
             "workspace with network access" => {
                 return tr_with(
                     current(),
                     "Workspace with network access{0} ({1})",
-                    &[workspace_root_suffix.unwrap_or(""), &approval.to_string()],
+                    &[workspace_root_suffix.unwrap_or(""), approval],
                 );
             }
             _ => {}
@@ -693,7 +693,7 @@ fn status_permissions_label(
             return if approval_policy == AskForApproval::Never {
                 tr(current(), "Full Access").to_string()
             } else {
-                tr_with(current(), "No Sandbox ({0})", &[&approval.to_string()])
+                tr_with(current(), "No Sandbox ({0})", &[approval])
             };
         }
         Some(id) => {
@@ -701,20 +701,20 @@ fn status_permissions_label(
             return tr_with(
                 current(),
                 "Profile {0} ({1}, {2})",
-                &[id, &sandbox, &approval.to_string()],
+                &[id, &sandbox, approval],
             );
         }
         None => {}
     }
 
     if sandbox == "read-only" {
-        return tr_with(current(), "Read Only ({0})", &[&approval.to_string()]);
+        return tr_with(current(), "Read Only ({0})", &[approval]);
     }
     if approval_policy == AskForApproval::OnRequest && sandbox == "workspace" {
         return tr_with(
             current(),
             "Workspace{0} ({1})",
-            &[workspace_root_suffix.unwrap_or(""), &approval.to_string()],
+            &[workspace_root_suffix.unwrap_or(""), approval],
         );
     }
     if approval_policy == AskForApproval::Never
@@ -723,11 +723,7 @@ fn status_permissions_label(
         return tr(current(), "Full Access").to_string();
     }
     let sandbox = decorate_workspace_sandbox_label(sandbox, workspace_root_suffix);
-    tr_with(
-        current(),
-        "Custom ({0}, {1})",
-        &[&sandbox, &approval.to_string()],
-    )
+    tr_with(current(), "Custom ({0}, {1})", &[&sandbox, approval])
 }
 
 fn decorate_workspace_sandbox_label(sandbox: &str, workspace_root_suffix: Option<&str>) -> String {

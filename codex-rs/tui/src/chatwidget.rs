@@ -1076,11 +1076,11 @@ impl ChatWidget {
             _ => return,
         };
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some(tr_with(current(), "Enable {0}?", &[&name])),
+            title: Some(tr_with(current(), "Enable {0}?", &[name])),
             subtitle: Some(tr_with(
                 current(),
                 "{0} are disabled in this TUI session.",
-                &[&label],
+                &[label],
             )),
             footer_note: (feature == Feature::MemoryTool).then(|| {
                 Line::from(vec![
@@ -1107,7 +1107,7 @@ impl ChatWidget {
                 },
                 SelectionItem {
                     name: "Not now".to_string(),
-                    description: Some(tr_with(current(), "Keep {0} disabled.", &[&name])),
+                    description: Some(tr_with(current(), "Keep {0} disabled.", &[name])),
                     dismiss_on_select: true,
                     ..Default::default()
                 },

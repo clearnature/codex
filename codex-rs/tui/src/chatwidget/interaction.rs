@@ -315,7 +315,7 @@ impl ChatWidget {
                 Err(error) => self.add_to_history(history_cell::new_error_event(tr_with(
                     current(),
                     "Copy failed: {0}",
-                    &[&error.to_string()],
+                    &[&error],
                 ))),
             },
             _ => self.add_to_history(history_cell::new_error_event(
@@ -439,15 +439,11 @@ impl ChatWidget {
             Ok(lease) => {
                 self.clipboard_lease = lease;
                 self.add_info_message(
-                    tr_with(current(), "Copied {0} to clipboard", &[&label]),
+                    tr_with(current(), "Copied {0} to clipboard", &[label]),
                     /*hint*/ None,
                 );
             }
-            Err(error) => self.add_error_message(tr_with(
-                current(),
-                "Copy failed: {0}",
-                &[&error.to_string()],
-            )),
+            Err(error) => self.add_error_message(tr_with(current(), "Copy failed: {0}", &[&error])),
         }
         self.request_redraw();
     }

@@ -238,11 +238,7 @@ impl App {
         }
 
         self.chat_widget.add_info_message(
-            tr_with(
-                current(),
-                "Opened {0} in your browser.",
-                &[&url.to_string()],
-            ),
+            tr_with(current(), "Opened {0} in your browser.", &[&url]),
             /*hint*/ None,
         );
     }
@@ -355,7 +351,7 @@ fn desktop_thread_open_error_message(err: &str) -> String {
     tr_with(
         current(),
         "Failed to open this session in the Desktop app: {0}. Install or launch the Desktop app and try again.",
-        &[&err.to_string()],
+        &[err],
     )
 }
 

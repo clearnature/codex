@@ -363,9 +363,9 @@ impl App {
                         current(),
                         "Permission selection requested: {0}",
                         &[&selection.display_label],
-                    )
-                    .to_string(),
-                    /*hint*/ None,
+                    ),
+                    /*hint*/
+                    None,
                 );
                 self.chat_widget.submit_initial_user_message_if_pending();
             }
@@ -379,14 +379,11 @@ impl App {
             Err(error) => {
                 self.chat_widget
                     .retain_input_after_failed_permission_selection();
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to select permissions: {0}",
-                        &[&error.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to select permissions: {0}",
+                    &[&error.to_string()],
+                ));
             }
         }
     }
@@ -478,14 +475,11 @@ impl App {
                     setting,
                     "failed to refresh effective config after an overridden write"
                 );
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "{0} were saved, but Codex could not refresh the effective config: {1}",
-                        &[setting, &err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "{0} were saved, but Codex could not refresh the effective config: {1}",
+                    &[setting, &err.to_string()],
+                ));
                 None
             }
         }
@@ -531,14 +525,11 @@ impl App {
                 .set(policy.policy().to_core())
         {
             tracing::warn!(%err, "failed to carry forward approval policy override");
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Failed to carry forward approval policy override: {0}",
-                    &[&err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to carry forward approval policy override: {0}",
+                &[&err.to_string()],
+            ));
         }
         if let Some(profile_override) = self.runtime_permission_profile_override.as_ref()
             && (scope == RuntimePolicyOverrideScope::All
@@ -552,14 +543,11 @@ impl App {
                 .can_set(&profile_override.approvals_reviewer)
             {
                 Ok(()) => config.approvals_reviewer = profile_override.approvals_reviewer,
-                Err(error) => self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to carry forward approvals reviewer: {0}",
-                        &[&error.to_string()],
-                    )
-                    .to_string(),
-                ),
+                Err(error) => self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to carry forward approvals reviewer: {0}",
+                    &[&error.to_string()],
+                )),
             }
             match config
                 .permissions
@@ -574,14 +562,11 @@ impl App {
                 }
                 Err(err) => {
                     tracing::warn!(%err, "failed to carry forward permission profile override");
-                    self.chat_widget.add_error_message(
-                        tr_with(
-                            current(),
-                            "Failed to carry forward permission profile override: {0}",
-                            &[&err.to_string()],
-                        )
-                        .to_string(),
-                    );
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to carry forward permission profile override: {0}",
+                        &[&err.to_string()],
+                    ));
                 }
             }
         }
@@ -601,14 +586,11 @@ impl App {
     ) -> bool {
         if let Err(err) = config.permissions.approval_policy.set(policy.to_core()) {
             tracing::warn!(error = %err, "{log_message}");
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "{0}: {1}",
-                    &[user_message_prefix, &err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "{0}: {1}",
+                &[user_message_prefix, &err.to_string()],
+            ));
             return false;
         }
 
@@ -629,14 +611,11 @@ impl App {
                 id = %active_permission_profile.id,
                 "{log_message}: unsupported active permission profile"
             );
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "{0}: unsupported active permission profile `{1}`",
-                    &[user_message_prefix, &active_permission_profile.id],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "{0}: unsupported active permission profile `{1}`",
+                &[user_message_prefix, &active_permission_profile.id],
+            ));
             return None;
         };
 
@@ -648,14 +627,11 @@ impl App {
             ))
         {
             tracing::warn!(error = %err, "{log_message}");
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "{0}: {1}",
-                    &[user_message_prefix, &err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "{0}: {1}",
+                &[user_message_prefix, &err.to_string()],
+            ));
             return None;
         }
 
@@ -800,14 +776,11 @@ impl App {
             Err(err) => {
                 let error = crate::config_update::format_config_error(&err);
                 tracing::error!(error = %error, "failed to persist feature flags");
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to update experimental features: {0}",
-                        &[&error],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to update experimental features: {0}",
+                    &[&error],
+                ));
                 return;
             }
         };
@@ -817,14 +790,11 @@ impl App {
                 message,
                 "feature flag config write was overridden by effective config"
             );
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Experimental feature changes were saved but not applied: {0}",
-                    &[message],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Experimental feature changes were saved but not applied: {0}",
+                &[message],
+            ));
             if let Some(effective_config) = self
                 .read_effective_config_after_overridden_write(
                     app_server,
@@ -886,14 +856,11 @@ impl App {
                 error = %err,
                 "failed to set auto-review permission profile on chat config"
             );
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Failed to enable Approve for me: {0}",
-                    &[&err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to enable Approve for me: {0}",
+                &[&err.to_string()],
+            ));
         }
         if permission_profile_override.is_some() {
             self.runtime_permission_profile_override =
@@ -940,7 +907,7 @@ impl App {
 
         if let Some(label) = permissions_history_label {
             self.chat_widget.add_info_message(
-                tr_with(current(), "Permissions updated to {0}", &[label]).to_string(),
+                tr_with(current(), "Permissions updated to {0}", &[label]),
                 /*hint*/ None,
             );
         }
@@ -964,14 +931,11 @@ impl App {
             Ok(response) => response,
             Err(err) => {
                 tracing::error!(error = %err, "failed to persist memory settings");
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to save memory settings: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to save memory settings: {0}",
+                    &[&err.to_string()],
+                ));
                 return false;
             }
         };
@@ -981,14 +945,11 @@ impl App {
                 message,
                 "memory settings config write was overridden by effective config"
             );
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Memory setting changes were saved but not applied: {0}",
-                    &[message],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Memory setting changes were saved but not applied: {0}",
+                &[message],
+            ));
             let Some(effective_config) = self
                 .read_effective_config_after_overridden_write(
                     app_server,
@@ -1039,14 +1000,11 @@ impl App {
 
         if let Err(err) = app_server.thread_memory_mode_set(thread_id, mode).await {
             tracing::error!(error = %err, %thread_id, "failed to update thread memory mode");
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Saved memory settings, but failed to update the current thread: {0}",
-                    &[&err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Saved memory settings, but failed to update the current thread: {0}",
+                &[&err.to_string()],
+            ));
         }
     }
 
@@ -1056,14 +1014,11 @@ impl App {
     ) {
         if let Err(err) = app_server.memory_reset().await {
             tracing::error!(error = %err, "failed to reset memories");
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Failed to reset memories: {0}",
-                    &[&err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to reset memories: {0}",
+                &[&err.to_string()],
+            ));
             return;
         }
 
@@ -1299,14 +1254,11 @@ impl App {
                     error = %err,
                     "failed to sync effective approval policy after an overridden write"
                 );
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to refresh overridden Approve for me settings: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to refresh overridden Approve for me settings: {0}",
+                    &[&err.to_string()],
+                ));
             } else {
                 self.chat_widget.set_approval_policy(policy);
             }
@@ -1353,14 +1305,11 @@ impl App {
                 error = %err,
                 "failed to sync overridden Auto-review permission profile on chat config"
             );
-            self.chat_widget.add_error_message(
-                tr_with(
-                    current(),
-                    "Failed to refresh overridden Approve for me settings: {0}",
-                    &[&err.to_string()],
-                )
-                .to_string(),
-            );
+            self.chat_widget.add_error_message(tr_with(
+                current(),
+                "Failed to refresh overridden Approve for me settings: {0}",
+                &[&err.to_string()],
+            ));
             return;
         }
 

@@ -275,9 +275,8 @@ fn visualization_link_labels(file: &str) -> (String, String) {
             current(),
             "Open {0} visualization in the browser",
             &[&escaped_name],
-        )
-        .to_string(),
-        tr_with(current(), "Open {0} visualization in the browser", &[name]).to_string(),
+        ),
+        tr_with(current(), "Open {0} visualization in the browser", &[name]),
     )
 }
 

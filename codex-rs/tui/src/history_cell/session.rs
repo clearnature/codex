@@ -210,7 +210,7 @@ pub(crate) fn new_session_info(
         if requested_model != session.model.as_str() {
             let lines = vec![
                 tr(current(), "model changed:").magenta().bold().into(),
-                tr_with(current(), "requested: {0}", &[&requested_model]).into(),
+                tr_with(current(), "requested: {0}", &[requested_model]).into(),
                 tr_with(current(), "used: {0}", &[&session.model]).into(),
             ];
             parts.push(Box::new(PlainHistoryCell { lines }));
@@ -410,11 +410,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(tr_with(
-                current(),
-                "OpenAI Codex (v{0})",
-                &[&self.version.to_string()],
-            )),
+            Line::from(tr_with(current(), "OpenAI Codex (v{0})", &[self.version])),
             Line::from(tr_with(
                 current(),
                 "model: {0}{1}",

@@ -45,7 +45,6 @@ fn format_warning(additional_dirs: &[PathBuf]) -> String {
         "Ignoring --add-dir ({0}) because the effective permissions do not allow additional writable roots. Switch to workspace-write or danger-full-access to allow them.",
         &[&joined_paths],
     )
-    .to_string()
 }
 
 #[cfg(test)]

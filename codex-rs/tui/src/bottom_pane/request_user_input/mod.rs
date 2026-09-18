@@ -663,7 +663,7 @@ impl RequestUserInputOverlay {
             tips.push(FooterTip::new(tr_with(
                 current(),
                 "{0} to interrupt",
-                &[&interrupt_key.display_label().to_string()],
+                &[&interrupt_key.display_label()],
             )));
         }
         tips

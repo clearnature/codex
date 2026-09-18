@@ -55,8 +55,7 @@ impl BottomPane {
                     tr_with(current(), "{0} question", &[&count.to_string()])
                 } else {
                     tr_with(current(), "{0} questions", &[&count.to_string()])
-                }
-                .to_string(),
+                },
                 crate::style::accent_style(),
             )
             .bold(),

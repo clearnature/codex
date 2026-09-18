@@ -112,7 +112,7 @@ impl RuntimeChordKeymap {
                         tr_with(
                             current(),
                             "Invalid `{0}` = `{1}`. Use a single key such as `ctrl-a` or a two-stroke chord such as `ctrl-x ctrl-t`.",
-                            &[&action.config_path().to_string(), &raw.to_string()],
+                            &[&action.config_path(), raw],
                         )
                     };
                     keymap_chords.bindings.push(RuntimeChordBinding {
@@ -328,7 +328,7 @@ pub(super) fn install_dispatch_bindings(keymap: &mut RuntimeKeymap) -> Result<()
                 current(),
                 "Cannot dispatch `{0}`: the keymap action inventory exceeds {1} internal tokens.",
                 &[
-                    &action.config_path().to_string(),
+                    &action.config_path(),
                     &(LAST_DISPATCH_FUNCTION_KEY - FIRST_DISPATCH_FUNCTION_KEY + 1).to_string(),
                 ],
             )
@@ -337,7 +337,7 @@ pub(super) fn install_dispatch_bindings(keymap: &mut RuntimeKeymap) -> Result<()
             return Err(tr_with(
                 current(),
                 "Cannot dispatch unknown keymap action `{0}`.",
-                &[&action.config_path().to_string()],
+                &[&action.config_path()],
             ));
         }
     }
@@ -430,9 +430,9 @@ pub(super) fn validate_chord_conflicts(keymap: &RuntimeKeymap) -> Result<(), Str
                 current(),
                 "Ambiguous `{0}` = `{1}`: its prefix shadows `{2}`. Unbind or remap the existing shortcut before using it as a chord prefix.",
                 &[
-                    &binding.action.config_path().to_string(),
+                    &binding.action.config_path(),
                     &binding.spec.to_string(),
-                    &conflict.id.config_path().to_string(),
+                    &conflict.id.config_path(),
                 ],
             ));
         }
@@ -446,9 +446,9 @@ pub(super) fn validate_chord_conflicts(keymap: &RuntimeKeymap) -> Result<(), Str
                     current(),
                     "Ambiguous `{0}` = `{1}`: the same chord is already assigned to `{2}`. Choose a unique chord and retry.",
                     &[
-                        &binding.action.config_path().to_string(),
+                        &binding.action.config_path(),
                         &binding.spec.to_string(),
-                        &previous.action.config_path().to_string(),
+                        &previous.action.config_path(),
                     ],
                 ));
             }
@@ -469,7 +469,7 @@ fn validate_binding_shape(binding: &RuntimeChordBinding) -> Result<(), String> {
         return Err(tr_with(
             current(),
             "Invalid `{0}` = `{1}`: a ctrl-alt character prefix may be AltGr text input on Windows. Choose a different chord and retry.",
-            &[&path.to_string(), &binding.spec.to_string()],
+            &[&path, &binding.spec.to_string()],
         ));
     }
 
@@ -480,7 +480,7 @@ fn validate_binding_shape(binding: &RuntimeChordBinding) -> Result<(), String> {
         return Err(tr_with(
             current(),
             "Invalid `{0}` = `{1}`: a chord prefix outside Vim must use ctrl, alt, or a non-character key so ordinary text input is not intercepted.",
-            &[&path.to_string(), &binding.spec.to_string()],
+            &[&path, &binding.spec.to_string()],
         ));
     }
 
@@ -498,7 +498,7 @@ fn validate_reserved_strokes(binding: &RuntimeChordBinding) -> Result<(), String
         return Err(tr_with(
             current(),
             "Ambiguous `{0}` = `{1}`: plain `esc` is reserved for cancelling a pending chord.",
-            &[&path.to_string(), &binding.spec.to_string()],
+            &[&path, &binding.spec.to_string()],
         ));
     }
 
@@ -508,7 +508,7 @@ fn validate_reserved_strokes(binding: &RuntimeChordBinding) -> Result<(), String
         return Err(tr_with(
             current(),
             "Invalid `{0}` = `{1}`: `backspace` is reserved for editing task input.",
-            &[&path.to_string(), &binding.spec.to_string()],
+            &[&path, &binding.spec.to_string()],
         ));
     }
 
@@ -517,7 +517,7 @@ fn validate_reserved_strokes(binding: &RuntimeChordBinding) -> Result<(), String
         return Err(tr_with(
             current(),
             "Ambiguous `{0}` = `{1}`: `ctrl-z` is reserved for suspending the terminal on Unix. Choose a different chord and retry.",
-            &[&path.to_string(), &binding.spec.to_string()],
+            &[&path, &binding.spec.to_string()],
         ));
     }
 
@@ -543,11 +543,7 @@ fn validate_reserved_strokes(binding: &RuntimeChordBinding) -> Result<(), String
         return Err(tr_with(
             current(),
             "Ambiguous `{0}` = `{1}`: the chord uses the key reserved by `{2}`. Choose a different chord and retry.",
-            &[
-                &path.to_string(),
-                &binding.spec.to_string(),
-                &reserved_action.to_string(),
-            ],
+            &[&path, &binding.spec.to_string(), reserved_action],
         ));
     }
 

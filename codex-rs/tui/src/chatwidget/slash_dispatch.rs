@@ -75,14 +75,11 @@ impl ChatWidget {
     pub(super) fn handle_service_tier_command_dispatch(&mut self, command: ServiceTierCommand) {
         self.transcript.last_status_copy_targets = None;
         if self.active_side_conversation {
-            self.add_error_message(
-                tr_with(
-                    current(),
-                    "'/{0}' is unavailable in side conversations. {1}",
-                    &[&command.name, side_slash_command_unavailable_hint()],
-                )
-                .to_string(),
-            );
+            self.add_error_message(tr_with(
+                current(),
+                "'/{0}' is unavailable in side conversations. {1}",
+                &[&command.name, side_slash_command_unavailable_hint()],
+            ));
             self.bottom_pane.drain_pending_submission_state();
             self.bottom_pane.record_pending_slash_command_history();
             return;
@@ -142,14 +139,11 @@ impl ChatWidget {
     fn request_empty_side_conversation(&mut self, cmd: SlashCommand) {
         let Some(parent_thread_id) = self.thread_id else {
             let command = cmd.command();
-            self.add_error_message(
-                tr_with(
-                    current(),
-                    "'/{0}' is unavailable before the session starts.",
-                    &[command],
-                )
-                .to_string(),
-            );
+            self.add_error_message(tr_with(
+                current(),
+                "'/{0}' is unavailable before the session starts.",
+                &[command],
+            ));
             return;
         };
 
@@ -189,8 +183,7 @@ impl ChatWidget {
                 current(),
                 "'/{0}' is disabled while a task is in progress.",
                 &[cmd.command()],
-            )
-            .to_string();
+            );
             self.add_to_history(history_cell::new_error_event(message));
             self.bottom_pane.drain_pending_submission_state();
             self.request_redraw();
@@ -518,10 +511,7 @@ impl ChatWidget {
                                         .to_string()
                                 }
                             }
-                            Err(e) => {
-                                tr_with(current(), "Failed to compute diff: {0}", &[&e.to_string()])
-                                    .to_string()
-                            }
+                            Err(e) => tr_with(current(), "Failed to compute diff: {0}", &[&e]),
                         },
                         None => tr(
                             current(),
@@ -569,9 +559,9 @@ impl ChatWidget {
                         current(),
                         "Current working directory: {0}",
                         &[&self.config.cwd.display().to_string()],
-                    )
-                    .to_string(),
-                    /*hint*/ None,
+                    ),
+                    /*hint*/
+                    None,
                 );
             }
             SlashCommand::Usage => {
@@ -625,9 +615,9 @@ impl ChatWidget {
                             current(),
                             "Current rollout path: {0}",
                             &[&path.display().to_string()],
-                        )
-                        .to_string(),
-                        /*hint*/ None,
+                        ),
+                        /*hint*/
+                        None,
                     );
                 } else {
                     self.add_info_message(
@@ -699,8 +689,7 @@ impl ChatWidget {
                 current(),
                 "'/{0}' is disabled while a task is in progress.",
                 &[cmd.command()],
-            )
-            .to_string();
+            );
             self.add_to_history(history_cell::new_error_event(message));
             self.request_redraw();
             return;
@@ -851,14 +840,11 @@ impl ChatWidget {
                     {
                         Ok(runtime_keymap) => self.open_keymap_debug(&runtime_keymap),
                         Err(err) => {
-                            self.add_error_message(
-                                tr_with(
-                                    current(),
-                                    "Invalid `tui.keymap` configuration: {0}",
-                                    &[&err.to_string()],
-                                )
-                                .to_string(),
-                            );
+                            self.add_error_message(tr_with(
+                                current(),
+                                "Invalid `tui.keymap` configuration: {0}",
+                                &[&err],
+                            ));
                         }
                     }
                 }
@@ -1070,14 +1056,11 @@ impl ChatWidget {
             SlashCommand::Side | SlashCommand::Btw if !trimmed.is_empty() => {
                 let Some(parent_thread_id) = self.thread_id else {
                     let command = cmd.command();
-                    self.add_error_message(
-                        tr_with(
-                            current(),
-                            "'/{0}' is unavailable before the session starts.",
-                            &[command],
-                        )
-                        .to_string(),
-                    );
+                    self.add_error_message(tr_with(
+                        current(),
+                        "'/{0}' is unavailable before the session starts.",
+                        &[command],
+                    ));
                     return;
                 };
                 let user_message = self.prepared_inline_user_message(
@@ -1168,9 +1151,9 @@ impl ChatWidget {
                     current(),
                     r#"Unrecognized command '/{0}'. Type "/" for a list of supported commands."#,
                     &[name],
-                )
-                .to_string(),
-                /*hint*/ None,
+                ),
+                /*hint*/
+                None,
             );
             return QueueDrain::Continue;
         };
@@ -1370,14 +1353,11 @@ impl ChatWidget {
         if !self.active_side_conversation || cmd.available_in_side_conversation() {
             return true;
         }
-        self.add_error_message(
-            tr_with(
-                current(),
-                "'/{0}' is unavailable in side conversations. {1}",
-                &[cmd.command(), side_slash_command_unavailable_hint()],
-            )
-            .to_string(),
-        );
+        self.add_error_message(tr_with(
+            current(),
+            "'/{0}' is unavailable in side conversations. {1}",
+            &[cmd.command(), side_slash_command_unavailable_hint()],
+        ));
         self.bottom_pane.drain_pending_submission_state();
         false
     }
@@ -1388,14 +1368,11 @@ impl ChatWidget {
         }
 
         let command = cmd.command();
-        self.add_error_message(
-            tr_with(
-                current(),
-                "'/{0}' is unavailable while code review is running.",
-                &[command],
-            )
-            .to_string(),
-        );
+        self.add_error_message(tr_with(
+            current(),
+            "'/{0}' is unavailable while code review is running.",
+            &[command],
+        ));
         self.bottom_pane.drain_pending_submission_state();
         false
     }

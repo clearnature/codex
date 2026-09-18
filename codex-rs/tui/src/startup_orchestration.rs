@@ -63,11 +63,7 @@ pub(super) async fn run_main_inner(
         Err(e) => {
             eprintln!(
                 "{}",
-                tr_with(
-                    current(),
-                    "Error parsing -c overrides: {0}",
-                    &[&e.to_string()]
-                )
+                tr_with(current(), "Error parsing -c overrides: {0}", &[&e])
             );
             std::process::exit(1);
         }
@@ -528,11 +524,7 @@ pub(super) async fn run_main_inner(
             restore_terminal_before_fatal_exit();
             eprintln!(
                 "{}",
-                tr_with(
-                    current(),
-                    "Error adding directories: {0}",
-                    &[&warning.to_string()]
-                )
+                tr_with(current(), "Error adding directories: {0}", &[&warning])
             );
             if let Some(worktree) = managed_worktree.as_ref() {
                 worktree.report_startup_failure();

@@ -50,22 +50,19 @@ impl UnifiedExecFooter {
         }
 
         let count = self.processes.len();
-        Some(
-            if count == 1 {
-                tr_with(
-                    current(),
-                    "{0} background terminal running · /ps to view · /stop to close",
-                    &[&count.to_string()],
-                )
-            } else {
-                tr_with(
-                    current(),
-                    "{0} background terminals running · /ps to view · /stop to close",
-                    &[&count.to_string()],
-                )
-            }
-            .to_string(),
-        )
+        Some(if count == 1 {
+            tr_with(
+                current(),
+                "{0} background terminal running · /ps to view · /stop to close",
+                &[&count.to_string()],
+            )
+        } else {
+            tr_with(
+                current(),
+                "{0} background terminals running · /ps to view · /stop to close",
+                &[&count.to_string()],
+            )
+        })
     }
 
     fn render_lines(&self, width: u16) -> Vec<Line<'static>> {

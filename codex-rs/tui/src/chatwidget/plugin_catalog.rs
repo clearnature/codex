@@ -527,7 +527,7 @@ impl ChatWidget {
         let mut header = ColumnRenderable::new();
         header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            tr_with(current(), "Removing {0}...", &[&marketplace_display_name]).dim(),
+            tr_with(current(), "Removing {0}...", &[marketplace_display_name]).dim(),
         ));
 
         SelectionViewParams {
@@ -554,7 +554,7 @@ impl ChatWidget {
         marketplace_name: Option<&str>,
     ) -> SelectionViewParams {
         let loading_text = marketplace_name
-            .map(|name| tr_with(current(), "Upgrading {0} marketplace...", &[&name]))
+            .map(|name| tr_with(current(), "Upgrading {0} marketplace...", &[name]))
             .unwrap_or_else(|| tr(current(), "Upgrading marketplaces...").to_string());
         SelectionViewParams {
             view_id: Some(PLUGINS_SELECTION_VIEW_ID),
@@ -592,7 +592,7 @@ impl ChatWidget {
                 tr_with(
                     current(),
                     "Loading details for {0}...",
-                    &[&plugin_display_name],
+                    &[plugin_display_name],
                 ),
                 /*note*/ None,
             )),
@@ -615,7 +615,7 @@ impl ChatWidget {
         let mut header = ColumnRenderable::new();
         header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            tr_with(current(), "Installing {0}...", &[&plugin_display_name]).dim(),
+            tr_with(current(), "Installing {0}...", &[plugin_display_name]).dim(),
         ));
 
         SelectionViewParams {
@@ -644,7 +644,7 @@ impl ChatWidget {
         let mut header = ColumnRenderable::new();
         header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            tr_with(current(), "Uninstalling {0}...", &[&plugin_display_name]).dim(),
+            tr_with(current(), "Uninstalling {0}...", &[plugin_display_name]).dim(),
         ));
 
         SelectionViewParams {
@@ -1384,13 +1384,13 @@ impl ChatWidget {
                     tr_with(
                         current(),
                         "{0}   Space to {1}; Enter view details.",
-                        &[&selected_status_label, &toggle_action],
+                        &[&selected_status_label, toggle_action],
                     )
                 } else {
                     tr_with(
                         current(),
                         "{0}   Space to {1}.",
-                        &[&selected_status_label, &toggle_action],
+                        &[&selected_status_label, toggle_action],
                     )
                 }
             } else if disabled_by_admin && can_view_details {

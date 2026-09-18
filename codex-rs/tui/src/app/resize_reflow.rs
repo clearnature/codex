@@ -657,14 +657,11 @@ impl App {
         let Some(binding) = crate::keymap::primary_binding(&self.keymap.app.open_transcript) else {
             return;
         };
-        let notice = Line::from(
-            tr_with(
-                current(),
-                "Earlier messages are available — press {0} to view the full transcript",
-                &[&binding.display_label()],
-            )
-            .to_string(),
-        )
+        let notice = Line::from(tr_with(
+            current(),
+            "Earlier messages are available — press {0} to view the full transcript",
+            &[&binding.display_label()],
+        ))
         .dim();
         let notice_lines =
             crate::wrapping::word_wrap_lines([notice], usize::from(width.max(/*other*/ 1)));

@@ -131,7 +131,6 @@ impl AsyncQuestions {
                     "Answer too long; limit {0} characters",
                     &[&limit.to_string()],
                 )
-                .to_string()
                 .into(),
                 Duration::from_secs(5),
             );

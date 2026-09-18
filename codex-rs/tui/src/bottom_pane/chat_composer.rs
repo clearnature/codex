@@ -3449,7 +3449,7 @@ impl ChatComposer {
         let message = tr_with(
             current(),
             "'/{0}' is disabled while a task is in progress.",
-            &[&command.command().to_string()],
+            &[command.command()],
         );
         self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
             history_cell::new_error_event(message),

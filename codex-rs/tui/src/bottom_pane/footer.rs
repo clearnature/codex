@@ -583,7 +583,7 @@ pub(crate) fn goal_status_indicator_line(
     let label = match indicator {
         GoalStatusIndicator::Active { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Pursuing goal ({0})", &[&usage])
+                tr_with(current(), "Pursuing goal ({0})", &[usage])
             } else {
                 tr(current(), "Pursuing goal").to_string()
             }
@@ -595,14 +595,14 @@ pub(crate) fn goal_status_indicator_line(
         }
         GoalStatusIndicator::BudgetLimited { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Goal unmet ({0})", &[&usage])
+                tr_with(current(), "Goal unmet ({0})", &[usage])
             } else {
                 tr(current(), "Goal abandoned").to_string()
             }
         }
         GoalStatusIndicator::Complete { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Goal achieved ({0})", &[&usage])
+                tr_with(current(), "Goal achieved ({0})", &[usage])
             } else {
                 tr(current(), "Goal achieved").to_string()
             }
@@ -1085,7 +1085,7 @@ pub(crate) fn context_window_line(percent: Option<i64>, used_tokens: Option<i64>
         ]);
     }
 
-    Line::from(vec![Span::from(tr(current(), "100% context left").dim())])
+    Line::from(vec![tr(current(), "100% context left").dim()])
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

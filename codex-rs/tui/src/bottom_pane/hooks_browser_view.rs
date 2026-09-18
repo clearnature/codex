@@ -459,12 +459,12 @@ impl HooksBrowserView {
                     HookTrustStatus::Modified => tr_with(
                         current(),
                         "[{0}] {1} · modified",
-                        &[&marker.to_string(), &hook_title(idx).to_string()],
+                        &[&marker.to_string(), &hook_title(idx)],
                     ),
                     HookTrustStatus::Untrusted => tr_with(
                         current(),
                         "[{0}] {1} · new",
-                        &[&marker.to_string(), &hook_title(idx).to_string()],
+                        &[&marker.to_string(), &hook_title(idx)],
                     ),
                     HookTrustStatus::Managed | HookTrustStatus::Trusted => {
                         format!("[{marker}] {}", hook_title(idx))
@@ -866,7 +866,7 @@ fn event_description(event_name: HookEventName) -> &'static str {
 }
 
 fn hook_title(idx: usize) -> String {
-    tr_with(current(), "Hook {0}", &[&(idx + 1).to_string()]).to_string()
+    tr_with(current(), "Hook {0}", &[&(idx + 1).to_string()])
 }
 
 fn hook_source_summary(hook: &HookMetadata) -> String {
@@ -874,7 +874,7 @@ fn hook_source_summary(hook: &HookMetadata) -> String {
         HookSource::Plugin => hook
             .plugin_id
             .as_deref()
-            .map(|plugin_id| tr_with(current(), "Plugin - {0}", &[plugin_id]).to_string())
+            .map(|plugin_id| tr_with(current(), "Plugin - {0}", &[plugin_id]))
             .unwrap_or_else(|| tr(current(), "Plugin").to_string()),
         _ => config_source_label(hook.source).to_string(),
     }

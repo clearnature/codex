@@ -152,9 +152,11 @@ impl HistoryCell for RequestUserInputResultCell {
                     lines.push(Line::from(tr(current(), "answer: ******")));
                 } else {
                     let (options, note) = split_request_user_input_answer(answer);
-                    lines.extend(options.into_iter().map(|option| {
-                        Line::from(tr_with(current(), "answer: {0}", &[&option.to_string()]))
-                    }));
+                    lines.extend(
+                        options.into_iter().map(|option| {
+                            Line::from(tr_with(current(), "answer: {0}", &[&option]))
+                        }),
+                    );
                     if let Some(note) = note {
                         lines.push(Line::from(tr_with(
                             current(),

@@ -54,7 +54,7 @@ impl App {
             return;
         }
         self.chat_widget.add_info_message(
-            tr_with(current(), "Unsent task: {0}", &[&prompt]).to_string(),
+            tr_with(current(), "Unsent task: {0}", &[&prompt]),
             /*hint*/ None,
         );
     }

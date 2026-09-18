@@ -367,7 +367,7 @@ impl BedrockState {
                         tr_with(current(), "  AWS profile detected: {0}", &[&profile.name]).into(),
                     );
                     if let Some(region) = &profile.region {
-                        lines.push(tr_with(current(), "  Region: {0}", &[&region]).dim().into());
+                        lines.push(tr_with(current(), "  Region: {0}", &[region]).dim().into());
                     }
                 } else if *list == BedrockMethodList::Detected && self.profiles.len() > 1 {
                     lines.push(tr(current(), "  Choose an AWS profile.").into());

@@ -323,21 +323,12 @@ pub(crate) fn sub_agent_activity_history_cell(item: &ThreadItem) -> Option<Plain
 
 pub(crate) fn sub_agent_activity_summary(kind: SubAgentActivityKind, agent_path: &str) -> String {
     match kind {
-        SubAgentActivityKind::Started => {
-            tr_with(current(), "Started `{0}`", &[&agent_path.to_string()]).to_string()
+        SubAgentActivityKind::Started => tr_with(current(), "Started `{0}`", &[agent_path]),
+        SubAgentActivityKind::Interacted => {
+            tr_with(current(), "Interacted with `{0}`", &[agent_path])
         }
-        SubAgentActivityKind::Interacted => tr_with(
-            current(),
-            "Interacted with `{0}`",
-            &[&agent_path.to_string()],
-        )
-        .to_string(),
-        SubAgentActivityKind::Interrupted => {
-            tr_with(current(), "Interrupted `{0}`", &[&agent_path.to_string()]).to_string()
-        }
-        SubAgentActivityKind::Completed => {
-            tr_with(current(), "Completed `{0}`", &[&agent_path.to_string()]).to_string()
-        }
+        SubAgentActivityKind::Interrupted => tr_with(current(), "Interrupted `{0}`", &[agent_path]),
+        SubAgentActivityKind::Completed => tr_with(current(), "Completed `{0}`", &[agent_path]),
     }
 }
 
@@ -411,14 +402,11 @@ fn waiting_begin(
             /*spawn_request*/ None,
         ),
         [] => title_text(tr(current(), "Waiting for agents")),
-        _ => title_text(
-            tr_with(
-                current(),
-                "Waiting for {0} agents",
-                &[&receiver_agents.len().to_string()],
-            )
-            .to_string(),
-        ),
+        _ => title_text(tr_with(
+            current(),
+            "Waiting for {0} agents",
+            &[&receiver_agents.len().to_string()],
+        )),
     };
 
     let details = if receiver_agents.len() > 1 {

@@ -94,14 +94,11 @@ impl PickerState {
         self.archive_state = ArchiveState::Idle;
 
         if let Err(error) = result {
-            self.inline_error = Some(
-                tr_with(
-                    current(),
-                    "Failed to archive session: {0}",
-                    &[&error.to_string()],
-                )
-                .to_string(),
-            );
+            self.inline_error = Some(tr_with(
+                current(),
+                "Failed to archive session: {0}",
+                &[&error.to_string()],
+            ));
             self.request_frame();
             return;
         }
@@ -174,14 +171,11 @@ impl PickerState {
         match result {
             Ok(target) => Some(SessionSelection::Resume(target)),
             Err(error) => {
-                self.inline_error = Some(
-                    tr_with(
-                        current(),
-                        "Failed to restore archived session: {0}",
-                        &[&error.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.inline_error = Some(tr_with(
+                    current(),
+                    "Failed to restore archived session: {0}",
+                    &[&error.to_string()],
+                ));
                 self.request_frame();
                 None
             }

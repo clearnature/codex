@@ -93,7 +93,7 @@ impl PendingGuardianReviewStatus {
                 .collect::<Vec<_>>();
             let remaining = self.entries.len().saturating_sub(3);
             if remaining > 0 {
-                lines.push(tr_with(current(), "+{0} more", &[&remaining.to_string()]).to_string());
+                lines.push(tr_with(current(), "+{0} more", &[&remaining.to_string()]));
             }
             Some(lines.join("\n"))
         };
@@ -106,7 +106,6 @@ impl PendingGuardianReviewStatus {
                 "Reviewing {0} approval requests",
                 &[&self.entries.len().to_string()],
             )
-            .to_string()
         };
         let details_max_lines = if self.entries.len() == 1 { 1 } else { 4 };
         Some(StatusIndicatorState {

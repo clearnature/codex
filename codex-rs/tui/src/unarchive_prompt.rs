@@ -173,7 +173,7 @@ impl UnarchivePrompt {
         column.push("");
         column.push(selection_option_row(
             /*index*/ 0,
-            tr_with(current(), "Unarchive and {0}", &[self.action.verb()]).to_string(),
+            tr_with(current(), "Unarchive and {0}", &[self.action.verb()]),
             self.highlighted == UnarchiveChoice::Unarchive,
         ));
         column.push(selection_option_row(

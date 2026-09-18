@@ -296,7 +296,7 @@ impl WidgetRef for &CwdPromptScreen {
             Line::from(tr_with(
                 current(),
                 "Session = latest cwd recorded in the {0} session",
-                &[&action_past.to_string()],
+                &[action_past],
             ))
             .dim()
             .inset(Insets::tlbr(
@@ -313,12 +313,12 @@ impl WidgetRef for &CwdPromptScreen {
         column.push("");
         column.push(selection_option_row(
             /*index*/ 0,
-            tr_with(current(), "Use session directory ({0})", &[&session_cwd]),
+            tr_with(current(), "Use session directory ({0})", &[session_cwd]),
             self.highlighted == CwdSelection::Session,
         ));
         column.push(selection_option_row(
             /*index*/ 1,
-            tr_with(current(), "Use current directory ({0})", &[&current_cwd]),
+            tr_with(current(), "Use current directory ({0})", &[current_cwd]),
             self.highlighted == CwdSelection::Current,
         ));
         column.push(selection_option_row(

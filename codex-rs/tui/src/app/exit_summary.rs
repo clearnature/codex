@@ -61,10 +61,7 @@ impl App {
                 .primary_hint("stop", &self.keymap.agents.stop)
                 .map_or_else(
                     || tr(current(), "use the configured stop shortcut").to_string(),
-                    |key| {
-                        tr_with(current(), "press {0}", &[&key.display_label().to_string()])
-                            .to_string()
-                    },
+                    |key| tr_with(current(), "press {0}", &[&key.display_label()]),
                 );
             Some(DisconnectInfo { command, stop_hint })
         });
@@ -117,28 +114,22 @@ impl AppExitInfo {
             lines.push(message.to_string());
             let mut resume_command = disconnect.command.clone();
             resume_command.extend(["resume".to_string(), thread_id.to_string()]);
-            lines.push(
-                tr_with(
-                    current(),
-                    "Reconnect: {0}",
-                    &[&color_command(escape_command(&resume_command))],
-                )
-                .to_string(),
-            );
+            lines.push(tr_with(
+                current(),
+                "Reconnect: {0}",
+                &[&color_command(escape_command(&resume_command))],
+            ));
             if !turn_interrupted {
                 let mut agents_command = disconnect.command;
                 agents_command.push("agents".to_string());
-                lines.push(
-                    tr_with(
-                        current(),
-                        "Stop the current turn: run {0}, select this task, and {1}.",
-                        &[
-                            &color_command(escape_command(&agents_command)),
-                            &disconnect.stop_hint,
-                        ],
-                    )
-                    .to_string(),
-                );
+                lines.push(tr_with(
+                    current(),
+                    "Stop the current turn: run {0}, select this task, and {1}.",
+                    &[
+                        &color_command(escape_command(&agents_command)),
+                        &disconnect.stop_hint,
+                    ],
+                ));
             }
             if !self.token_usage.is_zero() {
                 let usage = self.token_usage.to_string();
@@ -159,14 +150,11 @@ impl AppExitInfo {
             lines.push(self.token_usage.to_string());
         }
         if let ExitReason::Archived(thread_id) = self.exit_reason {
-            lines.push(
-                tr_with(
-                    current(),
-                    "Session archived: {0}",
-                    &[&thread_id.to_string()],
-                )
-                .to_string(),
-            );
+            lines.push(tr_with(
+                current(),
+                "Session archived: {0}",
+                &[&thread_id.to_string()],
+            ));
         } else if let Some(thread) = self.resume_hint {
             lines.push(tr(current(), "To continue this session, run:").to_string());
             lines.push(format!(
@@ -174,21 +162,21 @@ impl AppExitInfo {
                 color_command(format!("codex resume {}", thread.thread_id)),
             ));
             if let Some(thread_name) = thread.thread_name.filter(|name| !name.is_empty()) {
-                lines.push(
-                    tr_with(
-                        current(),
-                        "Or run {0} and select {1}.",
-                        &[
-                            &color_command("codex resume".to_string()),
-                            &color_command(thread_name),
-                        ],
-                    )
-                    .to_string(),
-                );
+                lines.push(tr_with(
+                    current(),
+                    "Or run {0} and select {1}.",
+                    &[
+                        &color_command("codex resume".to_string()),
+                        &color_command(thread_name),
+                    ],
+                ));
             }
         } else if let Some(thread_id) = self.thread_id {
-            lines
-                .push(tr_with(current(), "Session ID: {0}", &[&thread_id.to_string()]).to_string());
+            lines.push(tr_with(
+                current(),
+                "Session ID: {0}",
+                &[&thread_id.to_string()],
+            ));
         }
         lines
     }

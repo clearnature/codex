@@ -69,7 +69,7 @@ impl App {
                 "Permissions updated to {0}",
                 &[&selection.display_label],
             )
-            .to_string(), /*hint*/ None)));
+            , /*hint*/ None)));
             Ok(())
         }.await;
         self.chat_widget.complete_permission_shortcut(thread_id);
@@ -77,14 +77,11 @@ impl App {
             let error = crate::config_update::format_config_error(&err);
             self.insert_history_cell(
                 tui,
-                Box::new(history_cell::new_error_event(
-                    tr_with(
-                        current(),
-                        "Failed to update permissions: {0}",
-                        &[&error.to_string()],
-                    )
-                    .to_string(),
-                )),
+                Box::new(history_cell::new_error_event(tr_with(
+                    current(),
+                    "Failed to update permissions: {0}",
+                    &[&error],
+                ))),
             );
         }
     }

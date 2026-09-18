@@ -193,7 +193,7 @@ impl AsyncQuestions {
         {
             tips.push(
                 Span::styled(
-                    tr_with(current(), "{0} submit", &[&key.display_label().to_string()]),
+                    tr_with(current(), "{0} submit", &[&key.display_label()]),
                     crate::style::accent_style(),
                 )
                 .bold(),

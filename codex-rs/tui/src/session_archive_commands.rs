@@ -73,14 +73,12 @@ fn success_message(
             current(),
             "{0} session {1} ({2}).",
             &[action, name, &session_id.to_string()],
-        )
-        .to_string(),
+        ),
         None => tr_with(
             current(),
             "{0} session {1}.",
             &[action, &session_id.to_string()],
-        )
-        .to_string(),
+        ),
     }
 }
 
@@ -159,7 +157,6 @@ async fn resolve_session_target(
                         "No active or archived session found matching '{0}'.",
                         &[target],
                     )
-                    .to_string()
                 })?;
             return Ok(ResolvedSessionTarget {
                 session_id,
@@ -278,7 +275,7 @@ pub(super) async fn start_app_server_for_session_command(
         eyre!(tr_with(
             current(),
             "failed to parse -c overrides: {0}",
-            &[&err.to_string()]
+            &[&err]
         ))
     })?;
     let mut launch_loader_overrides = loader_overrides.clone();

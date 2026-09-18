@@ -414,7 +414,7 @@ pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndp
             color_eyre::eyre::bail!(tr_with(
                 current(),
                 "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
-                &[&addr.to_string()],
+                &[addr],
             ));
         }
     };
@@ -434,7 +434,7 @@ pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndp
     color_eyre::eyre::bail!(tr_with(
         current(),
         "invalid remote address `{0}`; expected `ws://host:port`, `wss://host:port`, `unix://`, or `unix://PATH`",
-        &[&addr.to_string()],
+        &[addr],
     ));
 }
 
@@ -1378,7 +1378,7 @@ async fn run_ratatui_app(
                 exit_reason: ExitReason::Fatal(tr_with(
                     current(),
                     "No saved session found with ID {0}. Run `codex {1}` without an ID to choose from existing sessions.",
-                    &[&id_str.to_string(), &action.to_string()],
+                    &[id_str, action],
                 )),
             })
         };

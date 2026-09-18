@@ -56,14 +56,11 @@ pub(super) fn skill_load_warning_messages(errors: &[SkillErrorInfo]) -> Vec<Stri
     }
 
     let error_count = errors.len();
-    let mut messages = vec![
-        tr_with(
-            current(),
-            "Skipped loading {0} skill(s) due to invalid SKILL.md files.",
-            &[&error_count.to_string()],
-        )
-        .to_string(),
-    ];
+    let mut messages = vec![tr_with(
+        current(),
+        "Skipped loading {0} skill(s) due to invalid SKILL.md files.",
+        &[&error_count.to_string()],
+    )];
     messages.extend(
         errors
             .iter()

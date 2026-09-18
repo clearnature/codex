@@ -131,24 +131,18 @@ pub(crate) fn validate_theme_name(name: Option<&str>, codex_home: Option<&Path>)
             if load_custom_theme(name, home).is_some() {
                 return None;
             }
-            return Some(
-                tr_with(
-                    current(),
-                    "Custom theme \"{0}\" at {1} could not be loaded (invalid .tmTheme format). Falling back to the default theme.",
-                    &[name, custom_theme_path_display.as_str()],
-                )
-                .to_string(),
-            );
+            return Some(tr_with(
+                current(),
+                "Custom theme \"{0}\" at {1} could not be loaded (invalid .tmTheme format). Falling back to the default theme.",
+                &[name, custom_theme_path_display.as_str()],
+            ));
         }
     }
-    Some(
-        tr_with(
-            current(),
-            "Theme \"{0}\" not found. Using the default theme. To use a custom theme, place a .tmTheme file at {1}.",
-            &[name, custom_theme_path_display.as_str()],
-        )
-        .to_string(),
-    )
+    Some(tr_with(
+        current(),
+        "Theme \"{0}\" not found. Using the default theme. To use a custom theme, place a .tmTheme file at {1}.",
+        &[name, custom_theme_path_display.as_str()],
+    ))
 }
 
 /// Map a kebab-case theme name to the corresponding `EmbeddedThemeName`.

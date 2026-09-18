@@ -109,7 +109,7 @@ pub(crate) fn migration_copy_for_models(
         content.push(Line::from(tr_with(
             current(),
             "We recommend switching from {0} to {1}.",
-            &[&current_model, &target_model],
+            &[current_model, target_model],
         )));
         content.push(Line::from(""));
     }
@@ -134,7 +134,7 @@ pub(crate) fn migration_copy_for_models(
         content.push(Line::from(tr_with(
             current(),
             "You can continue using {0} if you prefer.",
-            &[&current_model],
+            &[current_model],
         )));
     } else {
         content.push(Line::from(tr(current(), "Press enter to continue").dim()));

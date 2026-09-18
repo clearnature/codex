@@ -21,11 +21,10 @@ impl App {
         let response = crate::config_update::write_config_batch(request_handle, edits).await?;
         if response.status == WriteStatus::OkOverridden {
             self.chat_widget.add_warning_message(tr_with(
-                    current(),
-                    "Saved {0}, but a higher-priority configuration layer overrides the saved value.",
-                    &[setting],
-                    )
-                .to_string());
+                current(),
+                "Saved {0}, but a higher-priority configuration layer overrides the saved value.",
+                &[setting],
+            ));
         }
         Ok(())
     }

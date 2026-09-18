@@ -946,28 +946,22 @@ impl AuthModeWidget {
                     *sign_in_state.write().unwrap() = SignInState::ApiKeyConfigured;
                 }
                 Ok(other) => {
-                    *error.write().unwrap() = Some(
-                        tr_with(
-                            current(),
-                            "Unexpected account/login/start response: {0}",
-                            &[&format!("{other:?}")],
-                        )
-                        .to_string(),
-                    );
+                    *error.write().unwrap() = Some(tr_with(
+                        current(),
+                        "Unexpected account/login/start response: {0}",
+                        &[&format!("{other:?}")],
+                    ));
                     *sign_in_state.write().unwrap() = SignInState::ApiKeyEntry(ApiKeyInputState {
                         value: api_key,
                         prepopulated_from_env: false,
                     });
                 }
                 Err(err) => {
-                    *error.write().unwrap() = Some(
-                        tr_with(
-                            current(),
-                            "Failed to save API key: {0}",
-                            &[&err.to_string()],
-                        )
-                        .to_string(),
-                    );
+                    *error.write().unwrap() = Some(tr_with(
+                        current(),
+                        "Failed to save API key: {0}",
+                        &[&err.to_string()],
+                    ));
                     *sign_in_state.write().unwrap() = SignInState::ApiKeyEntry(ApiKeyInputState {
                         value: api_key,
                         prepopulated_from_env: false,
@@ -1028,14 +1022,11 @@ impl AuthModeWidget {
                 }
                 Ok(other) => {
                     *sign_in_state.write().unwrap() = SignInState::PickMode;
-                    *error.write().unwrap() = Some(
-                        tr_with(
-                            current(),
-                            "Unexpected account/login/start response: {0}",
-                            &[&format!("{other:?}")],
-                        )
-                        .to_string(),
-                    );
+                    *error.write().unwrap() = Some(tr_with(
+                        current(),
+                        "Unexpected account/login/start response: {0}",
+                        &[&format!("{other:?}")],
+                    ));
                 }
                 Err(err) => {
                     *sign_in_state.write().unwrap() = SignInState::PickMode;

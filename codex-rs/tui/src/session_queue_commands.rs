@@ -79,10 +79,7 @@ pub async fn run_session_queue_command(
     Ok(tr_with(
         current(),
         "Queued message {0} for thread {1}.",
-        &[
-            &response.queued_submission.id.to_string(),
-            &thread_id.to_string(),
-        ],
+        &[&response.queued_submission.id, &thread_id.to_string()],
     ))
 }
 
@@ -113,7 +110,7 @@ pub(super) async fn run_session_queue_action_with_app_server(
             eyre!(tr_with(
                 current(),
                 "No active session found matching '{0}'.",
-                &[&target.to_string()],
+                &[target],
             ))
         })?;
         ThreadId::from_string(&thread.id).wrap_err_with(|| {

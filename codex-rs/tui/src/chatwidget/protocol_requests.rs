@@ -41,14 +41,11 @@ impl ChatWidget {
                 match request_permissions_from_params(params) {
                     Ok(event) => self.on_request_permissions(event),
                     Err(err) => {
-                        self.add_error_message(
-                            tr_with(
-                                current(),
-                                "failed to localize requested filesystem paths: {0}",
-                                &[&err.to_string()],
-                            )
-                            .to_string(),
-                        );
+                        self.add_error_message(tr_with(
+                            current(),
+                            "failed to localize requested filesystem paths: {0}",
+                            &[&err.to_string()],
+                        ));
                     }
                 }
             }
@@ -88,14 +85,11 @@ impl ChatWidget {
         let action = match codex_protocol::approvals::GuardianAssessmentAction::try_from(action) {
             Ok(action) => action,
             Err(err) => {
-                self.add_error_message(
-                    tr_with(
-                        current(),
-                        "failed to localize guardian filesystem paths: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.add_error_message(tr_with(
+                    current(),
+                    "failed to localize guardian filesystem paths: {0}",
+                    &[&err.to_string()],
+                ));
                 return;
             }
         };

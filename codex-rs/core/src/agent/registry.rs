@@ -312,7 +312,7 @@ impl AgentRegistry {
             Entry::Occupied(_) => Err(CodexErr::UnsupportedOperation(tr_with(
                 current(),
                 "agent path `{0}` already exists",
-                &[&agent_path.to_string()],
+                &[agent_path.as_ref()],
             ))),
             Entry::Vacant(entry) => {
                 entry.insert(AgentMetadata {

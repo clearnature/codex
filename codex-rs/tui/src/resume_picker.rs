@@ -672,7 +672,7 @@ fn picker_runtime_keymap(config: &crate::local_settings::LocalSettings) -> Resul
         color_eyre::eyre::eyre!(tr_with(
             current(),
             "invalid keymap configuration: {0}",
-            &[&err.to_string()],
+            &[&err],
         ))
     })
 }

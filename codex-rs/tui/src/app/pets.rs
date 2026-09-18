@@ -116,14 +116,11 @@ impl App {
                 tui.frame_requester().schedule_frame();
             }
             Err(err) => {
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to disable pets: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to disable pets: {0}",
+                    &[&err.to_string()],
+                ));
             }
         }
     }
@@ -166,21 +163,20 @@ impl App {
                             .set_tui_pet_loaded(Some(pet_id), ambient_pet);
                     }
                     Err(err) => {
-                        self.chat_widget.add_error_message(
-                            tr_with(
-                                current(),
-                                "Failed to save pet selection: {0}",
-                                &[&err.to_string()],
-                            )
-                            .to_string(),
-                        );
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Failed to save pet selection: {0}",
+                            &[&err.to_string()],
+                        ));
                     }
                 }
             }
             Err(err) => {
-                self.chat_widget.add_error_message(
-                    tr_with(current(), "Failed to load pet: {0}", &[&err.to_string()]).to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to load pet: {0}",
+                    &[&err],
+                ));
             }
         }
         tui.frame_requester().schedule_frame();
@@ -204,14 +200,11 @@ impl App {
                 tui.frame_requester().schedule_frame();
             }
             Err(err) => {
-                self.chat_widget.add_warning_message(
-                    tr_with(
-                        current(),
-                        "Failed to load configured pet: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_warning_message(tr_with(
+                    current(),
+                    "Failed to load configured pet: {0}",
+                    &[&err],
+                ));
             }
         }
     }

@@ -302,7 +302,7 @@ fn theme_picker_subtitle(codex_home: Option<&Path>, terminal_width: Option<u16>)
         let subtitle = tr_with(
             current(),
             "Custom .tmTheme files can be added to the {0} directory.",
-            &[&path.to_string()],
+            &[&path],
         );
         if UnicodeWidthStr::width(subtitle.as_str()) <= available_width {
             return subtitle;

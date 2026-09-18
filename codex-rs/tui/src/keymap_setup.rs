@@ -528,7 +528,7 @@ pub(crate) fn keymap_with_edit(
                     message: tr_with(
                         current(),
                         "No change: `{0}.{1}` already uses `{2}`.",
-                        &[&context, &action, &key],
+                        &[context, action, key],
                     ),
                 });
             }
@@ -541,7 +541,7 @@ pub(crate) fn keymap_with_edit(
                 return Err(tr_with(
                     current(),
                     "`{0}.{1}` no longer uses `{2}`. Reopen /keymap and choose a binding again.",
-                    &[&context, &action, &old_key],
+                    &[context, action, old_key],
                 ));
             }
             let bindings = current_bindings
@@ -563,7 +563,7 @@ pub(crate) fn keymap_with_edit(
             message: tr_with(
                 current(),
                 "No change: `{0}.{1}` already uses `{2}`.",
-                &[&context, &action, &key],
+                &[context, action, key],
             ),
         });
     }
@@ -572,17 +572,17 @@ pub(crate) fn keymap_with_edit(
         KeymapEditIntent::ReplaceAll => tr_with(
             current(),
             "Remapped `{0}.{1}` to `{2}`.",
-            &[&context, &action, &key],
+            &[context, action, key],
         ),
         KeymapEditIntent::AddAlternate => tr_with(
             current(),
             "Added `{0}` to `{1}.{2}`.",
-            &[&key, &context, &action],
+            &[key, context, action],
         ),
         KeymapEditIntent::ReplaceOne { old_key } => tr_with(
             current(),
             "Replaced `{0}` with `{1}` for `{2}.{3}`.",
-            &[&old_key, &key, &context, &action],
+            &[old_key, key, context, action],
         ),
     };
 
@@ -609,7 +609,7 @@ fn keymap_with_bindings(
         tr_with(
             current(),
             "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
-            &[&context, &action],
+            &[context, action],
         )
     })?;
     *slot = Some(match keys {
@@ -645,7 +645,7 @@ pub(crate) fn active_binding_specs(
         tr_with(
             current(),
             "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
-            &[&context, &action],
+            &[context, action],
         )
     })?;
     if let Some(action_id) = action_id
@@ -688,7 +688,7 @@ pub(crate) fn keymap_without_custom_binding(
         tr_with(
             current(),
             "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
-            &[&context, &action],
+            &[context, action],
         )
     })?;
     *slot = None;
@@ -701,7 +701,7 @@ fn has_custom_binding(keymap: &TuiKeymap, context: &str, action: &str) -> Result
         tr_with(
             current(),
             "Unknown keymap action `{0}.{1}`. Reopen /keymap and choose an action.",
-            &[&context, &action],
+            &[context, action],
         )
     })?;
     Ok(slot.is_some())

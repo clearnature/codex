@@ -42,18 +42,18 @@ impl App {
                 Box::new(history_cell::new_warning_event(tr_with(
                     current(),
                     "{0} setting saved on the server for new threads. This thread is unchanged. Project or task settings may override it.",
-                    &[&label],
+                    &[label],
                 )))
             }
             Ok(response) => Box::new(history_cell::new_error_event(tr_with(
                 current(),
                 "{0} setting was saved but is overridden: {1}",
-                &[&label, &overridden_write_message(&response)],
+                &[label, overridden_write_message(&response)],
             ))),
             Err(err) => Box::new(history_cell::new_error_event(tr_with(
                 current(),
                 "Failed to save {0} setting: {1}",
-                &[&label, &crate::config_update::format_config_error(&err)],
+                &[label, &crate::config_update::format_config_error(&err)],
             ))),
         };
         self.insert_history_cell(tui, notice);

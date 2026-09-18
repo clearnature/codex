@@ -249,7 +249,7 @@ impl App {
             AppEvent::ExportTranscript { destination } => {
                 if let Err(error) = self.export_transcript(app_server, destination).await {
                     self.chat_widget
-                        .add_error_message(tr_with(current(), "Export failed: {0}", &[&error.to_string()]));
+                        .add_error_message(tr_with(current(), "Export failed: {0}", &[&error]));
                 }
                 if self.chat_widget.no_modal_or_popup_active() {
                     self.chat_widget
@@ -1774,7 +1774,7 @@ impl App {
                     let error = format_config_error(&err);
                     tracing::error!(error = %error, "failed to persist conversation model");
                     self.chat_widget
-                        .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error.to_string()]));
+                        .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error]));
                 } else {
                     self.chat_widget.add_info_message(
                         tr_with(current(), "Model changed to {0} {1} for this conversation", &[&model, &effort.to_string()]),
@@ -2115,7 +2115,7 @@ impl App {
             AppEvent::WindowsSandboxGrantReadRootCompleted { path, error } => match error {
                 Some(err) => {
                     self.chat_widget
-                        .add_to_history(history_cell::new_error_event(tr_with(current(), "Error: {0}", &[&err.to_string()])));
+                        .add_to_history(history_cell::new_error_event(tr_with(current(), "Error: {0}", &[&err])));
                 }
                 None => {
                     self.chat_widget
@@ -2326,7 +2326,7 @@ impl App {
                             "failed to persist model selection"
                         );
                         self.chat_widget
-                            .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error.to_string()]));
+                            .add_error_message(tr_with(current(), "Failed to save default model: {0}", &[&error]));
                     }
                 }
             }
@@ -2377,7 +2377,7 @@ impl App {
                 {
                     Ok(_) => {
                         let label = Self::personality_label(personality);
-                        let message = tr_with(current(), "Personality set to {0}", &[&label]);
+                        let message = tr_with(current(), "Personality set to {0}", &[label]);
                         self.chat_widget.add_info_message(message, /*hint*/ None);
                     }
                     Err(err) => {
@@ -2420,7 +2420,7 @@ impl App {
                                 "Failed to save default service tier: {0}",
                                 &[&err.to_string()],
                             )
-                            .to_string(),
+                            ,
                         );
                     }
                 }
@@ -2615,7 +2615,7 @@ impl App {
                             "Failed to save Agent mode warning preference: {0}",
                             &[&err.to_string()],
                         )
-                        .to_string(),
+                        ,
                     );
                 }
             }
@@ -2636,7 +2636,7 @@ impl App {
                             "Failed to save rate limit reminder preference: {0}",
                             &[&err.to_string()],
                         )
-                        .to_string(),
+                        ,
                     );
                 }
             }
@@ -2667,7 +2667,7 @@ impl App {
                             "Failed to save Plan mode reasoning effort: {0}",
                             &[&err.to_string()],
                         )
-                        .to_string(),
+                        ,
                     );
                 }
             }
@@ -2690,7 +2690,7 @@ impl App {
                             "Failed to save model migration prompt preference: {0}",
                             &[&err.to_string()],
                         )
-                        .to_string(),
+                        ,
                     );
                 }
             }
@@ -2821,7 +2821,7 @@ impl App {
                     .add_error_message(tr_with(
                 current(),
                 "Failed to start the background server: {0}",
-                &[&error.to_string()],
+                &[&error],
             )),
             },
             AppEvent::OpenAgentPicker => {
@@ -2871,7 +2871,7 @@ impl App {
                                 "Failed to update skill config for {0}: {1}",
                                 &[&path_display.to_string(), &err.to_string()],
                             )
-                            .to_string(),
+                            ,
                         );
                     }
                 }
@@ -3070,7 +3070,7 @@ impl App {
                                 "Failed to save status line settings: {0}",
                                 &[&error],
                             )
-                            .to_string(),
+                            ,
                         );
                     }
                 }
@@ -3115,7 +3115,7 @@ impl App {
                                 "Failed to save terminal title items: {0}",
                                 &[&err.to_string()],
                             )
-                            .to_string(),
+                            ,
                         );
                     }
                 }
@@ -3369,7 +3369,7 @@ impl App {
                 self.chat_widget.add_error_message(tr_with(
                     current(),
                     "Failed to refresh shortcuts: {0}",
-                    &[&err.to_string()],
+                    &[&err],
                 ));
                 return;
             }

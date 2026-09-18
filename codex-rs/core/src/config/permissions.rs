@@ -113,7 +113,7 @@ pub(crate) fn validate_user_permission_profile_names(
                 tr_with(
                     current(),
                     "permissions profile `{0}` uses a reserved built-in profile prefix",
-                    &[&profile_name],
+                    &[profile_name],
                 ),
             ));
         }
@@ -492,7 +492,7 @@ pub(crate) fn reject_unknown_builtin_permission_profile(profile_name: &str) -> i
             tr_with(
                 current(),
                 "default_permissions refers to unknown built-in profile `{0}`",
-                &[&profile_name],
+                &[profile_name],
             ),
         ));
     }
@@ -654,7 +654,7 @@ fn compile_scoped_filesystem_path(
                 tr_with(
                     current(),
                     "filesystem path `{0}` does not support nested entries",
-                    &[&path],
+                    &[path],
                 ),
             )),
         }?;
@@ -684,7 +684,7 @@ fn compile_scoped_filesystem_pattern(
             tr_with(
                 current(),
                 "filesystem glob subpath `{0}` only supports `deny` access",
-                &[&subpath],
+                &[subpath],
             ),
         ));
     }
@@ -702,7 +702,7 @@ fn compile_scoped_filesystem_pattern(
             tr_with(
                 current(),
                 "filesystem path `{0}` does not support nested entries",
-                &[&path],
+                &[path],
             ),
         )),
         None => {
@@ -727,7 +727,7 @@ fn compile_read_write_glob_path(path: &str, access: FileSystemAccessMode) -> io:
         tr_with(
             current(),
             "filesystem glob path `{0}` only supports `deny` access; use an exact path or trailing `/**` for `{1}` subtree access",
-            &[&path, &access.to_string()],
+            &[path, &access.to_string()],
         ),
     ))
 }
@@ -848,7 +848,7 @@ fn parse_absolute_path_for_platform(path: &str, is_windows: bool) -> io::Result<
             tr_with(
                 current(),
                 "filesystem path `{0}` must be absolute, use `~/...`, or start with `:`",
-                &[&path],
+                &[path],
             ),
         ));
     }
@@ -936,7 +936,7 @@ fn missing_filesystem_entries_warning(profile_name: &str) -> String {
     tr_with(
         current(),
         "Permissions profile `{0}` does not define any recognized filesystem entries for this version of Codex. Filesystem access will remain restricted. Upgrade Codex if this profile expects filesystem permissions.",
-        &[&profile_name],
+        &[profile_name],
     )
 }
 
@@ -953,12 +953,12 @@ fn maybe_push_unknown_special_path_warning(
             Some(subpath) => tr_with(
                 current(),
                 "Configured filesystem path `{0}` with nested entry `{1}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
-                &[&path, &subpath],
+                &[path, subpath],
             ),
             None => tr_with(
                 current(),
                 "Configured filesystem path `{0}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
-                &[&path],
+                &[path],
             ),
         },
     );

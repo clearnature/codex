@@ -81,7 +81,7 @@ impl IdeContextError {
                 "{0} Try /ide again.",
                 &[ide_did_not_provide_context_hint()],
             )
-            .to_string(),
+            ,
             IdeContextError::ResponseTooLarge => {
                 tr(
                     current(),

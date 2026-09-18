@@ -212,7 +212,7 @@ impl ChatWidget {
                 self.add_error_message(tr_with(
                     current(),
                     "Cannot list managed worktrees: {0}",
-                    &[&error.to_string()],
+                    &[&error],
                 ));
                 return;
             }

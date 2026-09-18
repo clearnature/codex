@@ -358,11 +358,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         Err(e) => {
             eprintln!(
                 "{}",
-                tr_with(
-                    current(),
-                    "Error parsing -c overrides: {0}",
-                    &[&e.to_string()]
-                )
+                tr_with(current(), "Error parsing -c overrides: {0}", &[&e])
             );
             std::process::exit(1);
         }
@@ -2279,7 +2275,7 @@ impl std::fmt::Display for PromptDecodeError {
                 tr_with(
                     current(),
                     "input looked like {0} but could not be decoded. Convert it to UTF-8 and retry.",
-                    &[&encoding.to_string()],
+                    &[encoding],
                 )
             ),
             PromptDecodeError::UnsupportedBom { encoding } => write!(
@@ -2288,7 +2284,7 @@ impl std::fmt::Display for PromptDecodeError {
                 tr_with(
                     current(),
                     "input appears to be {0}. Convert it to UTF-8 and retry.",
-                    &[&encoding.to_string()],
+                    &[encoding],
                 )
             ),
         }

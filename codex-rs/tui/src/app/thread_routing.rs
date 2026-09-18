@@ -355,7 +355,7 @@ impl App {
                                 "failed to localize requested filesystem paths: {0}",
                                 &[&err.to_string()],
                             )
-                            .to_string(),
+                            ,
                         )
                     })?;
                 Some(ThreadInteractiveRequest::Approval(

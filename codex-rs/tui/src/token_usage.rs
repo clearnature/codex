@@ -70,7 +70,6 @@ impl fmt::Display for TokenUsage {
                 " (+ {0} cached)",
                 &[&format_with_separators(self.cached_input())],
             )
-            .to_string()
         } else {
             String::new()
         };
@@ -80,7 +79,6 @@ impl fmt::Display for TokenUsage {
                 " (reasoning {0})",
                 &[&format_with_separators(self.reasoning_output_tokens)],
             )
-            .to_string()
         } else {
             String::new()
         };

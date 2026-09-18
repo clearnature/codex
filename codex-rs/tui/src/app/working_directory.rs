@@ -535,8 +535,7 @@ impl App {
             current(),
             "Working directory changed to: {0}",
             &[&cwd.display().to_string()],
-        )
-        .to_string();
+        );
         self.chat_widget.add_info_message(message, /*hint*/ None);
         if !self.config.bypass_hook_trust {
             let load_review = crate::startup_hooks_review::load_startup_hooks_review_entry;

@@ -19,11 +19,7 @@ impl ChatWidget {
                     /*hint*/ None,
                 );
             }
-            Err(error) => self.add_error_message(tr_with(
-                current(),
-                "Copy failed: {0}",
-                &[&error.to_string()],
-            )),
+            Err(error) => self.add_error_message(tr_with(current(), "Copy failed: {0}", &[&error])),
         }
     }
 

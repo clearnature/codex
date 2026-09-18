@@ -167,7 +167,7 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
                 .as_ref()
                 .map(|namespace| format!("{namespace}/{tool}"))
                 .unwrap_or_else(|| tool.clone());
-            return bounded_summary(&tr_with(current(), "Tool {0}", &[&tool.to_string()]));
+            return bounded_summary(&tr_with(current(), "Tool {0}", &[&tool]));
         }
         ThreadItem::CollabAgentToolCall { tool, .. } => {
             let action = match tool {
@@ -203,7 +203,7 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
         }
         ThreadItem::ImageView { path, .. } => {
             let path = path.render_for_ui();
-            return bounded_summary(&tr_with(current(), "Viewed {0}", &[&path.to_string()]));
+            return bounded_summary(&tr_with(current(), "Viewed {0}", &[&path]));
         }
         ThreadItem::ImageGeneration(_) => {
             return Some(tr(current(), "Generated an image").to_string());

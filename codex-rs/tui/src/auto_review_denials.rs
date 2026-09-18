@@ -69,7 +69,7 @@ pub(crate) fn action_summary(action: &GuardianAssessmentAction) -> String {
                 tr_with(
                     current(),
                     "apply_patch touching {0}",
-                    &[&files[0].render_for_ui().to_string()],
+                    &[&files[0].render_for_ui()],
                 )
             } else {
                 tr_with(
@@ -89,7 +89,7 @@ pub(crate) fn action_summary(action: &GuardianAssessmentAction) -> String {
             ..
         } => {
             let label = connector_name.as_deref().unwrap_or(server.as_str());
-            tr_with(current(), "MCP {0} on {1}", &[tool_name, &label])
+            tr_with(current(), "MCP {0} on {1}", &[tool_name, label])
         }
         GuardianAssessmentAction::RequestPermissions { reason, .. } => reason
             .as_deref()

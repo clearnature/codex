@@ -49,7 +49,7 @@ impl PendingThreadApprovals {
         for thread in self.threads.iter().take(3) {
             let wrapped = adaptive_wrap_lines(
                 std::iter::once(Line::from(
-                    tr_with(current(), "Approval needed in {0}", &[&thread]).to_string(),
+                    tr_with(current(), "Approval needed in {0}", &[thread]).to_string(),
                 )),
                 RtOptions::new(width as usize)
                     .initial_indent(Line::from(vec!["  ".into(), "!".red().bold(), " ".into()]))

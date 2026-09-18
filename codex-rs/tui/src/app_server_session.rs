@@ -2430,7 +2430,7 @@ async fn thread_session_state_from_thread_response(
         tr_with(
             current(),
             "thread id `{0}` is invalid: {1}",
-            &[&thread_id.to_string(), &err.to_string()],
+            &[thread_id, &err.to_string()],
         )
     })?;
     let forked_from_id = forked_from_id

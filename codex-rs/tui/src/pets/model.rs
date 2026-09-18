@@ -211,7 +211,7 @@ fn load_custom_pet(value: &str, codex_home: Option<&Path>) -> Result<Pet> {
         );
     }
 
-    bail!(tr_with(current(), "unknown pet {0}", &[&value]));
+    bail!(tr_with(current(), "unknown pet {0}", &[value]));
 }
 
 fn load_pet_path(value: &str) -> Result<Pet> {
@@ -520,7 +520,7 @@ fn validate_animation_indices(
             bail!(tr_with(
                 current(),
                 "animation {0} must include at least one frame",
-                &[&name]
+                &[name]
             ));
         }
         for frame in &animation.frames {

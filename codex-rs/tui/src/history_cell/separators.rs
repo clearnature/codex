@@ -35,11 +35,7 @@ impl HistoryCell for FinalMessageSeparator {
             .filter(|seconds| *seconds > 60)
             .map(crate::status_indicator_widget::fmt_elapsed_compact)
         {
-            label_parts.push(tr_with(
-                current(),
-                "Worked for {0}",
-                &[&elapsed_seconds.to_string()],
-            ));
+            label_parts.push(tr_with(current(), "Worked for {0}", &[&elapsed_seconds]));
         }
         if let Some(metrics_label) = self.runtime_metrics.and_then(runtime_metrics_label) {
             label_parts.push(metrics_label);
@@ -67,11 +63,7 @@ impl HistoryCell for FinalMessageSeparator {
             .filter(|seconds| *seconds > 60)
             .map(crate::status_indicator_widget::fmt_elapsed_compact)
         {
-            label_parts.push(tr_with(
-                current(),
-                "Worked for {0}",
-                &[&elapsed_seconds.to_string()],
-            ));
+            label_parts.push(tr_with(current(), "Worked for {0}", &[&elapsed_seconds]));
         }
         if let Some(metrics_label) = self.runtime_metrics.and_then(runtime_metrics_label) {
             label_parts.push(metrics_label);

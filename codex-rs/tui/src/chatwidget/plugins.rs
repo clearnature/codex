@@ -689,19 +689,16 @@ impl ChatWidget {
                             "Upgraded {0} {1}.",
                             &[&upgraded_count.to_string(), noun],
                         ),
-                        Some(
-                            tr_with(
-                                current(),
-                                "Updated roots: {0}",
-                                &[&response
-                                    .upgraded_roots
-                                    .iter()
-                                    .map(|root| root.as_path().display().to_string())
-                                    .collect::<Vec<_>>()
-                                    .join(", ")],
-                            )
-                            .to_string(),
-                        ),
+                        Some(tr_with(
+                            current(),
+                            "Updated roots: {0}",
+                            &[&response
+                                .upgraded_roots
+                                .iter()
+                                .map(|root| root.as_path().display().to_string())
+                                .collect::<Vec<_>>()
+                                .join(", ")],
+                        )),
                     );
                 }
 
@@ -711,23 +708,20 @@ impl ChatWidget {
                     } else {
                         tr(current(), "marketplaces")
                     };
-                    self.add_error_message(
-                        tr_with(
-                            current(),
-                            "Failed to upgrade {0} {1}: {2}",
-                            &[
-                                &error_count.to_string(),
-                                noun,
-                                &response
-                                    .errors
-                                    .iter()
-                                    .map(|err| format!("{}: {}", err.marketplace_name, err.message))
-                                    .collect::<Vec<_>>()
-                                    .join("; "),
-                            ],
-                        )
-                        .to_string(),
-                    );
+                    self.add_error_message(tr_with(
+                        current(),
+                        "Failed to upgrade {0} {1}: {2}",
+                        &[
+                            &error_count.to_string(),
+                            noun,
+                            &response
+                                .errors
+                                .iter()
+                                .map(|err| format!("{}: {}", err.marketplace_name, err.message))
+                                .collect::<Vec<_>>()
+                                .join("; "),
+                        ],
+                    ));
                 }
             }
             Err(err) => {
@@ -805,7 +799,7 @@ impl ChatWidget {
             self.add_error_message(tr_with(
                 codex_i18n::current(),
                 "Failed to update plugin config for {0}: {1}",
-                &[&plugin_id, &err.to_string()],
+                &[&plugin_id, &err],
             ));
             if let PluginsCacheState::Ready(response) = self.plugins_cache_for_current_cwd() {
                 self.refresh_plugins_popup_if_open(&response);

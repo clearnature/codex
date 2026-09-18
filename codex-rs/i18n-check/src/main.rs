@@ -758,13 +758,13 @@ fn extract_tr_calls(text: &str) -> Vec<TrCall> {
             // `(lang, key, args)` shape, so the same "first literal argument"
             // rule applies -- and it has to be seen, because a template that is
             // rendered on every keystroke is not an unused key.
-            if ident == "tr" || ident == "tr_with" {
-                if let Some(key) = parse_tr_call(text, i) {
-                    calls.push(TrCall {
-                        line: line_number(text, start),
-                        key,
-                    });
-                }
+            if (ident == "tr" || ident == "tr_with")
+                && let Some(key) = parse_tr_call(text, i)
+            {
+                calls.push(TrCall {
+                    line: line_number(text, start),
+                    key,
+                });
             }
             continue;
         }
@@ -968,18 +968,18 @@ fn extract_label_literals_in(text: &str, skip_tests: bool) -> Vec<TrCall> {
                 i += 1;
             }
             let ident = &text[start..i];
-            if is_bound_key_field(ident) {
-                if let Some(key) = parse_label_literal(text, i) {
-                    // An empty label is a layout placeholder, not text, so it is
-                    // not a key anybody could translate -- reporting it as
-                    // "rendered without a translation" would be noise that
-                    // trains the reader to ignore the report.
-                    if !key.is_empty() {
-                        calls.push(TrCall {
-                            line: line_number(text, start),
-                            key,
-                        });
-                    }
+            if is_bound_key_field(ident)
+                && let Some(key) = parse_label_literal(text, i)
+            {
+                // An empty label is a layout placeholder, not text, so it is
+                // not a key anybody could translate -- reporting it as
+                // "rendered without a translation" would be noise that
+                // trains the reader to ignore the report.
+                if !key.is_empty() {
+                    calls.push(TrCall {
+                        line: line_number(text, start),
+                        key,
+                    });
                 }
             }
             continue;
@@ -1045,10 +1045,10 @@ fn skip_ignorable(text: &str, i: usize) -> Option<usize> {
         return Some(after);
     }
     // Char literal (`'x'`, `'\n'`, `'\u{1F600}'`), but not a lifetime.
-    if bytes.get(i) == Some(&b'\'') {
-        if let Some(after) = read_char_literal(text, i) {
-            return Some(after);
-        }
+    if bytes.get(i) == Some(&b'\'')
+        && let Some(after) = read_char_literal(text, i)
+    {
+        return Some(after);
     }
     None
 }

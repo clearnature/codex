@@ -220,7 +220,6 @@ fn discovery_error(error: TypedRequestError) -> String {
         "Failed to load permissions: {0}",
         &[&error.to_string()],
     )
-    .to_string()
 }
 
 #[cfg(test)]

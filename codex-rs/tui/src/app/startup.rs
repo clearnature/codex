@@ -658,7 +658,7 @@ impl App {
                 color_eyre::eyre::eyre!(tr_with(
                     current(),
                     "Invalid `tui.keymap` configuration: {0}\nFix the config and retry.\nSee the Codex keymap documentation for supported actions and examples.",
-                    &[&err.to_string()],
+                    &[&err],
                 ))
             })?;
         #[cfg(not(debug_assertions))]

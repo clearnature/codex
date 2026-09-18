@@ -222,7 +222,7 @@ impl AgentControl {
                         CodexErr::InvalidRequest(tr_with(
                             current(),
                             "invalid stored agent path: {0}",
-                            &[&err.to_string()],
+                            &[&err],
                         ))
                     })?;
                 let mut reservation = self.state.reserve_spawn_slot(/*max_threads*/ None)?;
@@ -1276,7 +1276,7 @@ impl AgentControl {
                 CodexErr::InvalidRequest(tr_with(
                     current(),
                     "invalid stored agent path: {0}",
-                    &[&err.to_string()],
+                    &[&err],
                 ))
             })?;
         let resumed_agent_nickname = stored_thread.agent_nickname.clone();

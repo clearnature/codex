@@ -120,7 +120,7 @@ impl ChatWidget {
                 tr_with(
                     current(),
                     "The Windows sandbox cannot guarantee protection in {0}.",
-                    &[&mode_label],
+                    &[mode_label],
                 )
                 .red(),
             ])
@@ -209,7 +209,7 @@ impl ChatWidget {
                 description: Some(tr_with(
                     current(),
                     "Apply {0} for this session",
-                    &[&mode_label],
+                    &[mode_label],
                 )),
                 actions: accept_actions,
                 dismiss_on_select: true,
@@ -221,7 +221,7 @@ impl ChatWidget {
                 description: Some(tr_with(
                     current(),
                     "Enable {0} and remember this choice",
-                    &[&mode_label],
+                    &[mode_label],
                 )),
                 actions: accept_and_remember_actions,
                 dismiss_on_select: true,

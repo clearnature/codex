@@ -341,8 +341,7 @@ pub(crate) fn proper_join<T: AsRef<str>>(items: &[T]) -> String {
             current(),
             "{0} and {1}",
             &[items[0].as_ref(), items[1].as_ref()],
-        )
-        .to_string(),
+        ),
         _ => {
             let last = items[items.len() - 1].as_ref();
             let mut result = String::new();
@@ -354,7 +353,7 @@ pub(crate) fn proper_join<T: AsRef<str>>(items: &[T]) -> String {
                 result.push_str(item.as_ref());
             }
 
-            tr_with(current(), "{0} and {1}", &[&result, last]).to_string()
+            tr_with(current(), "{0} and {1}", &[&result, last])
         }
     }
 }

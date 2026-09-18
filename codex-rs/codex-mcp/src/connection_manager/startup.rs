@@ -109,7 +109,7 @@ pub(super) fn mcp_init_error_display(
         let recovery_hint = if config.is_some_and(|config| !config.is_local_environment()) {
             tr(current(), "Use your client's MCP OAuth sign-in flow.").to_string()
         } else {
-            tr_with(current(), "Run `codex mcp login {0}`.", &[&server_name])
+            tr_with(current(), "Run `codex mcp login {0}`.", &[server_name])
         };
         let auth_status = match reason {
             Some(McpStartupFailureReason::ReauthenticationRequired) => {
@@ -120,7 +120,7 @@ pub(super) fn mcp_init_error_display(
         tr_with(
             current(),
             "The {0} MCP server {1}. {2}",
-            &[&server_name, auth_status, &recovery_hint],
+            &[server_name, auth_status, &recovery_hint],
         )
     } else if matches!(
         error,
@@ -136,13 +136,13 @@ pub(super) fn mcp_init_error_display(
         tr_with(
             current(),
             "MCP client for `{0}` timed out after {1} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{2}]\nstartup_timeout_sec = XX",
-            &[&server_name, &startup_timeout_secs.to_string(), &server_key],
+            &[server_name, &startup_timeout_secs.to_string(), &server_key],
         )
     } else {
         tr_with(
             current(),
             "MCP client for `{0}` failed to start: {1}",
-            &[&server_name, &format!("{error:#}")],
+            &[server_name, &format!("{error:#}")],
         )
     }
 }

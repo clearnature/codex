@@ -3,7 +3,6 @@ use codex_arg0::Arg0DispatchPaths;
 use codex_arg0::arg0_dispatch_or_else;
 use codex_config::LoaderOverrides;
 use codex_i18n::current;
-use codex_i18n::tr;
 use codex_i18n::tr_with;
 use codex_tui::Cli;
 use codex_tui::ExitReason;
@@ -39,7 +38,7 @@ fn main() -> anyhow::Result<()> {
         .await?;
         let is_fatal = match &exit_info.exit_reason {
             ExitReason::Fatal(message) => {
-                eprintln!("{}", tr_with(current(), "ERROR: {0}", &[&message]));
+                eprintln!("{}", tr_with(current(), "ERROR: {0}", &[message]));
                 true
             }
             ExitReason::UserRequested

@@ -81,9 +81,8 @@ fn format_unified_exec_interaction(command: &[String], input: Option<&str>) -> S
                 "Interacted with `{0}`, sent `{1}`",
                 &[&command_display, &preview],
             )
-            .to_string()
         }
-        _ => tr_with(current(), "Waited for `{0}`", &[&command_display]).to_string(),
+        _ => tr_with(current(), "Waited for `{0}`", &[&command_display]),
     }
 }
 
@@ -258,7 +257,6 @@ impl ExecCell {
             "… +{0} lines ({1})",
             &[&omitted.to_string(), transcript_hint()],
         )
-        .to_string()
     }
 
     fn output_ellipsis_line(omitted: usize) -> Line<'static> {

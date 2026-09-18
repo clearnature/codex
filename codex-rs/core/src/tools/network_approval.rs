@@ -1131,14 +1131,11 @@ pub(crate) async fn begin_network_approval(
         })
         .transpose()
         .map_err(|error| {
-            ToolError::Rejected(
-                tr_with(
-                    current(),
-                    "failed to resolve environment network policy: {0}",
-                    &[&error.to_string()],
-                )
-                .to_string(),
-            )
+            ToolError::Rejected(tr_with(
+                current(),
+                "failed to resolve environment network policy: {0}",
+                &[&error.to_string()],
+            ))
         })?;
     let network = if let Some(owner_spec) = owner_spec.as_ref() {
         if controller.is_some() {
@@ -1166,14 +1163,11 @@ pub(crate) async fn begin_network_approval(
                     session.services.network_proxy_audit_metadata.clone(),
                 )
                 .map_err(|error| {
-                    ToolError::Rejected(
-                        tr_with(
-                            current(),
-                            "failed to build environment network policy: {0}",
-                            &[&error.to_string()],
-                        )
-                        .to_string(),
-                    )
+                    ToolError::Rejected(tr_with(
+                        current(),
+                        "failed to build environment network policy: {0}",
+                        &[&error.to_string()],
+                    ))
                 })?;
             NetworkProxy::builder()
                 .state(Arc::new(state))
@@ -1181,14 +1175,11 @@ pub(crate) async fn begin_network_approval(
                 .build()
                 .await
                 .map_err(|error| {
-                    ToolError::Rejected(
-                        tr_with(
-                            current(),
-                            "failed to build execution-scoped network proxy: {0}",
-                            &[&error.to_string()],
-                        )
-                        .to_string(),
-                    )
+                    ToolError::Rejected(tr_with(
+                        current(),
+                        "failed to build execution-scoped network proxy: {0}",
+                        &[&error.to_string()],
+                    ))
                 })?
         }
     } else if let Some(network) = network {

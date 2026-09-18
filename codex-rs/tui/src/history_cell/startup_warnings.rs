@@ -70,8 +70,7 @@ impl HistoryCell for StartupWarningsCell {
             tr_with(current(), "⚠ {0} startup issue", &[&count.to_string()])
         } else {
             tr_with(current(), "⚠ {0} startup issues", &[&count.to_string()])
-        }
-        .to_string();
+        };
         let mut breakdown = Vec::new();
         if mcp_count > 0 && mcp_count < count {
             breakdown.push(tr_with(current(), "{0} MCP", &[&mcp_count.to_string()]));

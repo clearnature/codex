@@ -46,22 +46,21 @@ impl Notification {
                 current(),
                 "Approval requested: {0}",
                 &[&truncate_text(command, /*max_graphemes*/ 30)],
-            )
-            .to_string(),
+            ),
             Notification::EditApprovalRequested { cwd, changes } => {
                 let target = if changes.len() == 1 {
                     #[allow(clippy::unwrap_used)]
                     display_path_for(changes.first().unwrap(), cwd)
                 } else {
-                    tr_with(current(), "{0} files", &[&changes.len().to_string()]).to_string()
+                    tr_with(current(), "{0} files", &[&changes.len().to_string()])
                 };
-                tr_with(current(), "Codex wants to edit {0}", &[&target]).to_string()
+                tr_with(current(), "Codex wants to edit {0}", &[&target])
             }
             Notification::ElicitationRequested { server_name } => {
-                tr_with(current(), "Approval requested by {0}", &[&server_name]).to_string()
+                tr_with(current(), "Approval requested by {0}", &[server_name])
             }
             Notification::PlanModePrompt { title } => {
-                tr_with(current(), "Plan mode prompt: {0}", &[&title]).to_string()
+                tr_with(current(), "Plan mode prompt: {0}", &[title])
             }
         }
     }

@@ -141,14 +141,11 @@ impl App {
         err: impl std::fmt::Display,
     ) {
         self.chat_widget.restore_user_message_to_composer(prompt);
-        self.chat_widget.add_error_message(
-            tr_with(
-                current(),
-                "Failed to branch before the selected prompt: {0}",
-                &[&err.to_string()],
-            )
-            .to_string(),
-        );
+        self.chat_widget.add_error_message(tr_with(
+            current(),
+            "Failed to branch before the selected prompt: {0}",
+            &[&err.to_string()],
+        ));
     }
 
     /// Open transcript overlay (enters alternate screen and shows full transcript).

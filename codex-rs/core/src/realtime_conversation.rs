@@ -1523,7 +1523,7 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) -> 
     Err(CodexErr::InvalidRequest(tr_with(
         current(),
         "realtime voice `{0}` is not supported for {1}; supported voices: {2}",
-        &[voice.wire_name(), &version.to_string(), &allowed],
+        &[voice.wire_name(), version, &allowed],
     )))
 }
 

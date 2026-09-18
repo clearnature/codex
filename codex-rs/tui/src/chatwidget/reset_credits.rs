@@ -44,7 +44,6 @@ pub(super) fn reset_credit_options(
                                 .format("%H:%M on %-d %b %Y")
                                 .to_string()],
                         )
-                        .to_string()
                     })
                     .unwrap_or_else(|| "Expiration unavailable".to_string()),
                 None => "Does not expire".to_string(),

@@ -706,7 +706,7 @@ impl App {
                 .add_to_history(history_cell::new_error_event(tr_with(
                     current(),
                     "Failed to upload feedback: {0}",
-                    &[&err.to_string()],
+                    &[&err],
                 ))),
         }
     }
@@ -788,7 +788,7 @@ impl App {
                 self.chat_widget.add_error_message(tr_with(
                     current(),
                     "Failed to load MCP inventory: {0}",
-                    &[&err.to_string()],
+                    &[&err],
                 ));
                 return;
             }

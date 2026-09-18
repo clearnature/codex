@@ -2211,11 +2211,7 @@ where
         let message = tr_with(
             current(),
             "Configured value for `{0}` is disallowed by requirements; falling back to required value {1}. Details: {2}",
-            &[
-                &field_name,
-                &format!("{fallback_value:?}"),
-                &err.to_string(),
-            ],
+            &[field_name, &format!("{fallback_value:?}"), &err.to_string()],
         );
         startup_warnings.push(message);
 
@@ -2225,7 +2221,7 @@ where
                 tr_with(
                     current(),
                     "configured value for `{0}` is disallowed by requirements ({1}); fallback to a requirement-compliant value also failed ({2})",
-                    &[&field_name, &err.to_string(), &fallback_err.to_string()],
+                    &[field_name, &err.to_string(), &fallback_err.to_string()],
                 ),
             )
         })?;
@@ -2285,7 +2281,7 @@ fn ensure_no_inline_bearer_tokens(value: &TomlValue) -> std::io::Result<()> {
             let message = tr_with(
                 current(),
                 "mcp_servers.{0} uses unsupported `bearer_token`; set `bearer_token_env_var`.",
-                &[&server_name],
+                &[server_name],
             );
             return Err(std::io::Error::new(ErrorKind::InvalidData, message));
         }
@@ -4775,7 +4771,7 @@ fn resolve_default_permissions<'a>(
             startup_warnings.push(tr_with(
                 current(),
                 "Configured value for `permission_profile` is disallowed by requirements; falling back from `{0}` to required value `{1}`.",
-                &[&selected_permissions, &fallback_permissions],
+                &[selected_permissions, fallback_permissions],
             ));
             Ok(Some(fallback_permissions))
         }

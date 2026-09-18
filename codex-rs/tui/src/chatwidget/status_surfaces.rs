@@ -754,12 +754,11 @@ impl ChatWidget {
                 self.status_line_context_remaining_percent()
                     .map(|remaining| {
                         tr_with(current(), "Context {0}% left", &[&remaining.to_string()])
-                            .to_string()
                     })
             }
-            StatusLineItem::ContextUsed => self.status_line_context_used_percent().map(|used| {
-                tr_with(current(), "Context {0}% used", &[&used.to_string()]).to_string()
-            }),
+            StatusLineItem::ContextUsed => self
+                .status_line_context_used_percent()
+                .map(|used| tr_with(current(), "Context {0}% used", &[&used.to_string()])),
             StatusLineItem::FiveHourLimit => {
                 let (window, is_secondary) = self
                     .rate_limit_snapshots_by_limit_id
@@ -777,11 +776,9 @@ impl ChatWidget {
                 self.status_line_limit_display(Some(window), &label)
             }
             StatusLineItem::CodexVersion => Some(CODEX_CLI_VERSION.to_string()),
-            StatusLineItem::ContextWindowSize => {
-                self.status_line_context_window_size().map(|cws| {
-                    tr_with(current(), "{0} window", &[&format_tokens_compact(cws)]).to_string()
-                })
-            }
+            StatusLineItem::ContextWindowSize => self
+                .status_line_context_window_size()
+                .map(|cws| tr_with(current(), "{0} window", &[&format_tokens_compact(cws)])),
             StatusLineItem::TotalInputTokens => (!self.token_usage_pending).then(|| {
                 format!(
                     "{} in",
@@ -798,7 +795,7 @@ impl ChatWidget {
                 .estimated_thread_usage()
                 .map(|usage| usage.estimated_usage_credits_micros)
                 .map(|credits| {
-                    tr_with(current(), "{0} credits", &[&format_credit_micros(credits)]).to_string()
+                    tr_with(current(), "{0} credits", &[&format_credit_micros(credits)])
                 }),
             StatusLineItem::EstimatedThreadCost => self
                 .estimated_thread_usage()
@@ -1086,14 +1083,11 @@ impl ChatWidget {
         if total == 0 {
             return None;
         }
-        Some(
-            tr_with(
-                current(),
-                "Tasks {0}/{1}",
-                &[&completed.to_string(), &total.to_string()],
-            )
-            .to_string(),
-        )
+        Some(tr_with(
+            current(),
+            "Tasks {0}/{1}",
+            &[&completed.to_string(), &total.to_string()],
+        ))
     }
 
     /// Truncates a title segment by grapheme cluster and appends `...` when needed.

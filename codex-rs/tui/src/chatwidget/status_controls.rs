@@ -453,14 +453,11 @@ impl ChatWidget {
     ) -> Option<String> {
         let window = window?;
         let remaining = (100.0f64 - window.used_percent).clamp(0.0f64, 100.0f64);
-        Some(
-            tr_with(
-                current(),
-                "{0} {1}% left",
-                &[label, &format!("{remaining:.0}")],
-            )
-            .to_string(),
-        )
+        Some(tr_with(
+            current(),
+            "{0} {1}% left",
+            &[label, &format!("{remaining:.0}")],
+        ))
     }
 
     pub(super) fn status_line_reasoning_effort_label(

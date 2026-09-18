@@ -375,7 +375,6 @@ impl AgentNavigationState {
             "Select an agent to watch. {0} previous, {1} next.",
             &[&previous.content, &next.content],
         )
-        .to_string()
     }
 
     #[cfg(test)]

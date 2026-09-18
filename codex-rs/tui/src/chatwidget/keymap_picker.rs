@@ -41,14 +41,11 @@ impl ChatWidget {
                 self.bottom_pane.show_selection_view(params);
             }
             Err(err) => {
-                self.add_error_message(
-                    tr_with(
-                        current(),
-                        "Invalid `tui.keymap` configuration: {0}",
-                        &[&err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.add_error_message(tr_with(
+                    current(),
+                    "Invalid `tui.keymap` configuration: {0}",
+                    &[&err],
+                ));
             }
         }
     }

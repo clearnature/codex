@@ -128,8 +128,7 @@ pub(super) async fn load_export_transcript(
                 current(),
                 "could not load conversation history: {0}",
                 &[&error.to_string()],
-            )
-            .to_string());
+            ));
         }
     }
     let mut cells: Vec<Arc<dyn HistoryCell>> = Vec::new();

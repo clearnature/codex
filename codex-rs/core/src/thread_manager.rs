@@ -2248,7 +2248,7 @@ fn thread_store_metadata_update_error(thread_id: ThreadId, err: ThreadStoreError
         ThreadStoreError::Unsupported { operation } => CodexErr::UnsupportedOperation(tr_with(
             current(),
             "thread metadata update is not supported by this store: {0}",
-            &[&operation],
+            &[operation],
         )),
         err => CodexErr::Fatal(tr_with(
             current(),

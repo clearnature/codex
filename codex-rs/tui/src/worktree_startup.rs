@@ -177,7 +177,7 @@ pub(super) async fn prepare(
                     color_eyre::eyre::eyre!(tr_with(
                         current(),
                         "Session not found: {0}",
-                        &[&id_or_name.to_string()],
+                        &[id_or_name],
                     ))
                 })?;
             lookup

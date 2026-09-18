@@ -86,10 +86,10 @@ pub fn placeholders(template: &str) -> Vec<usize> {
         let Some(end) = after_brace.find('}') else {
             break;
         };
-        if let Ok(index) = after_brace[..end].parse::<usize>() {
-            if !found.contains(&index) {
-                found.push(index);
-            }
+        if let Ok(index) = after_brace[..end].parse::<usize>()
+            && !found.contains(&index)
+        {
+            found.push(index);
         }
         rest = &after_brace[end + 1..];
     }

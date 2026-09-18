@@ -59,7 +59,7 @@ fn combined_description(
 ) -> Option<String> {
     match (&row.description, &row.disabled_reason) {
         (Some(desc), Some(reason)) => {
-            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]).to_string())
+            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]))
         }
         (Some(desc), None) => Some(desc.clone()),
         (None, Some(reason))
@@ -70,7 +70,7 @@ fn combined_description(
         {
             Some(reason.clone())
         }
-        (None, Some(reason)) => Some(tr_with(current(), "disabled: {0}", &[reason]).to_string()),
+        (None, Some(reason)) => Some(tr_with(current(), "disabled: {0}", &[reason])),
         (None, None) => None,
     }
 }
@@ -78,7 +78,7 @@ fn combined_description(
 fn stacked_description(row: &GenericDisplayRow) -> Option<String> {
     match (&row.description, &row.disabled_reason) {
         (Some(desc), Some(reason)) => {
-            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]).to_string())
+            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]))
         }
         (Some(desc), None) => Some(desc.clone()),
         (None, Some(reason)) => Some(reason.clone()),

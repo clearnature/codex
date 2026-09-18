@@ -1806,7 +1806,7 @@ impl RuntimeKeymap {
                 return Err(tr_with(
                     current(),
                     "tui.keymap.chat.{0}: printable keys are reserved for text input",
-                    &[&action.to_string()],
+                    &[action],
                 ));
             }
         }
@@ -2129,7 +2129,7 @@ impl RuntimeKeymap {
                 return Err(tr_with(
                     current(),
                     "tui.keymap.agents.{0}: ctrl-z is reserved for suspend",
-                    &[&action.to_string()],
+                    &[action],
                 ));
             }
             if bindings.iter().any(|binding| {
@@ -2142,7 +2142,7 @@ impl RuntimeKeymap {
                 return Err(tr_with(
                     current(),
                     "tui.keymap.agents.{0}: printable keys and backspace are reserved for task input",
-                    &[&action.to_string()],
+                    &[action],
                 ));
             }
         }
@@ -2166,7 +2166,7 @@ impl RuntimeKeymap {
                     return Err(tr_with(
                         current(),
                         "Ambiguous approval overlay keymap bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
-                        &[&previous.to_string(), &action.to_string()],
+                        &[previous, action],
                     ));
                 }
             }
@@ -2192,11 +2192,7 @@ fn validate_unique<'a>(
                 return Err(tr_with(
                     current(),
                     "Ambiguous `tui.keymap.{2}` bindings: `{0}` and `{1}` use the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
-                    &[
-                        &previous.to_string(),
-                        &action.to_string(),
-                        &context.to_string(),
-                    ],
+                    &[previous, action, context],
                 ));
             }
         }
@@ -2232,11 +2228,7 @@ fn validate_no_shadow_with_allowed_overlaps<const N: usize, const M: usize, cons
                 return Err(tr_with(
                     current(),
                     "Ambiguous `tui.keymap.{2}` bindings: `{0}` shadows `{1}` with the same key. Set unique keys in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
-                    &[
-                        &previous.to_string(),
-                        &action.to_string(),
-                        &context.to_string(),
-                    ],
+                    &[previous, action, context],
                 ));
             }
         }
@@ -2270,8 +2262,7 @@ fn validate_no_reserved<'a, const A: usize>(
                     current(),
                     "Ambiguous `tui.keymap.{0}` bindings: `{1}` uses a key reserved by `{2}`. Set a different key in `~/.codex/config.toml` and retry. See the Codex keymap documentation for supported actions and examples.",
                     &[context, action, reserved_action],
-                )
-                .to_string());
+                ));
             }
         }
     }
@@ -2454,7 +2445,7 @@ fn parse_bindings(spec: &KeybindingsSpec, path: &str) -> Result<Vec<KeyBinding>,
             tr_with(
                 current(),
                 "Invalid `{0}` = `{1}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. See the Codex keymap documentation for supported actions and examples.",
-                &[&path.to_string(), &raw.as_str().to_string()],
+                &[path, raw.as_str()],
             )
         })?;
 

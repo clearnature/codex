@@ -6531,6 +6531,20 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Apps", "应用"),
     ("Auth", "认证"),
     ("Quit", "退出"),
+    // Rate-limit reset popups (`chatwidget/usage.rs`). These sit one line away
+    // from a `tr(..)` call, so the lenient "is this literal wrapped" lookback in
+    // `scripts/i18n_todo.py` never listed them; the `--precise` rule did.
+    ("Resetting your usage...", "正在重置你的用量…"),
+    ("Using a reset...", "正在使用一次重置…"),
+    (
+        "Couldn't reset usage. Please try again.",
+        "无法重置用量，请重试。",
+    ),
+    (
+        "Usage reset. Checking your remaining resets...",
+        "用量已重置。正在检查剩余的重置次数…",
+    ),
+    ("Refreshing...", "刷新中…"),
 ];
 
 /// English source text -> Simplified Chinese.

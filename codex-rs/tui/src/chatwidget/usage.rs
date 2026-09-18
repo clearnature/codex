@@ -327,7 +327,7 @@ impl ChatWidget {
             subtitle: Some(message.to_string()),
             items: vec![
                 SelectionItem {
-                    name: "Try again".to_string(),
+                    name: tr(current(), "Try again").to_string(),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::OpenRateLimitResetCredits);
                     })],
@@ -357,9 +357,9 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
             title: Some(tr(current(), "Usage limit resets").to_string()),
-            subtitle: Some("Resetting your usage...".to_string()),
+            subtitle: Some(tr(current(), "Resetting your usage...").to_string()),
             items: vec![SelectionItem {
-                name: "Using a reset...".to_string(),
+                name: tr(current(), "Using a reset...").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],
@@ -422,10 +422,12 @@ impl ChatWidget {
                 self.replace_rate_limit_reset_popup(SelectionViewParams {
                     view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
                     title: Some(tr(current(), "Usage limit resets").to_string()),
-                    subtitle: Some("Couldn't reset usage. Please try again.".to_string()),
+                    subtitle: Some(
+                        tr(current(), "Couldn't reset usage. Please try again.").to_string(),
+                    ),
                     items: vec![
                         SelectionItem {
-                            name: "Try again".to_string(),
+                            name: tr(current(), "Try again").to_string(),
                             actions: vec![Box::new(move |tx| {
                                 tx.send(AppEvent::ConsumeRateLimitResetCredit {
                                     idempotency_key: idempotency_key.clone(),
@@ -482,9 +484,11 @@ impl ChatWidget {
         SelectionViewParams {
             view_id: Some(RATE_LIMIT_RESET_VIEW_ID),
             title: Some(tr(current(), "Usage limit resets").to_string()),
-            subtitle: Some("Usage reset. Checking your remaining resets...".to_string()),
+            subtitle: Some(
+                tr(current(), "Usage reset. Checking your remaining resets...").to_string(),
+            ),
             items: vec![SelectionItem {
-                name: "Refreshing...".to_string(),
+                name: tr(current(), "Refreshing...").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],

@@ -88,7 +88,14 @@ SCOPES: dict[str, dict[str, str]] = {
     },
 }
 
-TEST_LINE = re.compile(r"^test (\S+) \.\.\. (ok|FAILED|ignored)$")
+# The TUI tests render escape sequences onto the same terminal line as the
+# harness's own `test <name> ... ok|FAILED` line, so an anchored match misses
+# them: a negative control on the `tui-lib` scope showed `failed=3` in the
+# summary while the parsed failure set stayed empty (`fail_hash` was the hash of
+# the empty string). Strip the escapes, split on \r as well (the TUI uses it for
+# redraws), and take the last match on each fragment.
+ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+TEST_EVENT = re.compile(r"test (\S+) \.\.\. (ok|FAILED|ignored)")
 SUMMARY = re.compile(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored")
 
 
@@ -128,16 +135,19 @@ def run_scope(name: str, spec: dict[str, str]) -> dict:
     )
     output = proc.stdout + proc.stderr
     passed, failed = [], []
-    for line in output.splitlines():
-        match = TEST_LINE.match(line.strip())
-        if not match:
+    output = proc.stdout + proc.stderr
+    cleaned = ANSI.sub("", output)
+    for fragment in re.split(r"[\r\n]", cleaned):
+        events = list(TEST_EVENT.finditer(fragment))
+        if not events:
             continue
-        if match.group(2) == "ok":
-            passed.append(match.group(1))
-        elif match.group(2) == "FAILED":
-            failed.append(match.group(1))
+        name, status = events[-1].group(1), events[-1].group(2)
+        if status == "ok":
+            passed.append(name)
+        elif status == "FAILED":
+            failed.append(name)
     counts = None
-    for line in output.splitlines():
+    for line in cleaned.splitlines():
         match = SUMMARY.match(line.strip())
         if match:
             counts = {
@@ -260,7 +270,14 @@ def main(argv: list[str]) -> int:
         if args.update:
             entry = dict(observed)
             entry.pop("tail", None)
-            entry["flaky"] = (recorded or {}).get("flaky", [])
+            # Annotations are hand-written and must survive re-recording: a bare
+            # `dict(observed)` silently dropped `flaky_notes` and `note`, which
+            # is how a scope loses the evidence behind its tolerated failures.
+            previous = recorded or {}
+            entry["flaky"] = previous.get("flaky", [])
+            for key in ("flaky_notes", "note"):
+                if key in previous:
+                    entry[key] = previous[key]
             data[name] = entry
     if args.update:
         save(args.baseline, data)

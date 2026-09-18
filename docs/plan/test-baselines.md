@@ -87,21 +87,27 @@
   （单独跑通过、整批失败 ⇒ 顺序/全局 tracing 状态相关）。
 - `core-stdin-approval` 声明 1 条 flaky：`unified_exec::tests::stdin_approval_preserves_the_reviewed_terminal`
   （4 次同过滤观测：1 次 7/1、3 次 8/0；单独运行 2 次均通过；耗时约 6s ⇒ 时序相关）。
-- `tui-lib` 的失败集**不稳定**：同一命令同一二进制**五次**观测得到五种组合 ——
+- `tui-lib` 的失败集**不稳定**：同一命令同一二进制**七次**观测得到七种组合 ——
 
   | # | 结果 | 失败集合 |
   | --- | --- | --- |
   | 1 | 4285P/2F | `agents_overview_acknowledges_inactive_steer_before_interrupt`、`cached_legacy_resume_revalidates_history_across_migration_settings` |
-  | 2 | 4284P/2F | `agents_overview…`、`startup_draft_preserves_non_bracketed_multiline_pastes_without_submitting`（门禁回执 `r-mu7g6yu2-9s9yb6`） |
+  | 2 | 4285P/2F | `agents_overview…`、`startup_draft_preserves_non_bracketed_multiline_pastes_without_submitting`（门禁回执 `r-mu7g6yu2-9s9yb6`） |
   | 3 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`startup_draft_…` |
   | 4 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`background_exit_tests::exit_interrupts_before_requesting_shutdown`（回执 `r-mu7gb1vo-a7j2s3`） |
   | 5 | 4286P/1F | 只有 `agents_overview…` |
+  | 6 | 4284P/3F | 同 #4（另有 1 条未解析，见 §8.5） |
+  | 7 | 4285P/2F | `background_exit_tests::exit_interrupts…`、`safety_buffering::active_turn_interrupt_is_nonblocking_and_coalesces_repeated_requests`、`cached_legacy_resume…`（第 5 条名字首次出现） |
 
-  因此该 scope 的 `fail` 集记为**空**，四条名字（含第 5 次只出现一次的那个）都进 `flaky` 并各带
-  `flaky_notes`：三条做过 `--exact` 单独复跑，各 3/3 通过（回执 `r-mu7g7zxc-hcn57x`）⇒ 是并行/时序相关，
-  不是确定性失败。`agents_overview…` 五次全失败却单独跑 3/3 通过，是这批里最稳定的「不稳定项」。
+  因此该 scope 的 `fail` 集记为**空**，五条名字都进 `flaky` 并各带 `flaky_notes`：
+  五条全部做过 `--exact` 单独复跑，各 3/3 通过（回执 `r-mu7g7zxc-hcn57x`、`r-mu7gtx5c-8gi9yi`）
+  ⇒ 是并行/时序相关，不是确定性失败。`agents_overview…` 七次里失败五次却单独跑 3/3 通过，
+  是这批里最稳定的「不稳定项」。
   **判据**：失败集合是否稳定，而不是「有没有失败」——同一命令两次失败集合不同即判 flaky，
   处置是**如实标注**，不是重试到绿、更不是改快照或 `#[ignore]`。
+- 该 scope 的声明是**承重的**：删掉四条（当时）声明后 `--check` 报
+  `NEW FAILURES: agents_overview…` 且 exit 1（负向控制回执 `r-mu7gwyhv-kg7qp1`）。
+  ⚠ 这个控制是**第三次**才有效的 —— 前两次「无效」各自暴露了一个真问题，见 §8.5。
 
 ## 7. 数据是"本机"的
 
@@ -109,7 +115,7 @@
 应从该环境重新 `--update` 建立，而不是照搬；跨机器比较失败集时先确认命令与 `cwd` 一致
 （`state_hash` 已把 command 纳入，因此两台机器上同名 scope 的 `state_hash` 不同是**预期**行为）。
 
-## 8. 三条来自实战的补则
+## 8. 来自实战的补则（8.1–8.5）
 
 ### 8.1 flaky 要在**每个**匹配它的 scope 里声明
 
@@ -152,3 +158,24 @@ cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pi
 所以负向控制不能只盯一个报表数数：**先确认该站点落哪个桶，再断言那个报表**（或断言多个报表的并集里
 出现它）。本轮实测教训：我按「候选报表应报 3 条」断言，实际候选侧只报 2 条 + `--suspect` 报 1 条 ⇒
 控制被判成"没红"，而这**不是**工具失灵，是断言盯错了报表。
+
+### 8.5 报表**看不见**的失败 = 没有失败（`tui-lib` 的解析器 bug）
+
+`tui-lib` 这条 scope 第一次接入时，`--check` 对它是**空洞通过**的：
+
+- 症状：摘要行说 `failed=3`，而解析出来的失败集是空的 —— `fail_hash` 等于
+  `sha1("") == da39a3ee5e6b4b0d3255bfef95601890afd80709`。**空哈希就是这次的自证**。
+- 根因：TUI 测试把 ANSI 转义序列渲染到与测试框架自己那行 `test <名字> ... FAILED` **同一行**上，
+  而解析用的是锚定正则 `^test (\S+) \.\.\. (FAILED)$`（`line.strip()` 之后仍带转义前缀）⇒ 一条也匹配不上。
+  摘要行没被污染，所以计数是对的、名字是全丢的。
+- 修法：先剥 ANSI（`\x1b\[[0-9;?]*[ -/]*[@-~]`），再按 `\r`/`\n` 切分（TUI 用 `\r` 重画），
+  每段取**最后一个** `test … ok|FAILED` 事件，而不是锚定整行。
+- **发现方式**：负向控制（删掉 flaky 声明 ⇒ 应报 `NEW FAILURES`）**没红**。当时第一反应是
+  「flaky 恰好全过」，但连删四次声明仍不红 ⇒ 才去查解析路径，撞上上面的空哈希。
+  **控制没红时，先假设是尺子坏了，再假设是被测对象没问题** —— 这次的顺序反了，白跑两轮。
+- 另一个同类坑：`set -e` + `out=$(cmd)` —— **赋值语句的退出码就是命令的退出码**，
+  于是「命令非零 ⇒ 脚本立刻终止」，后续的断言与 `echo "exit=$rc"` 一行都不执行，
+  看起来像"什么也没发生"。要捕获退出码就写 `rc=0; out=$(cmd) || rc=$?`。
+
+配套的另一个教训：`--update` 曾用 `dict(observed)` 覆盖整条记录，**把 `flaky_notes`/`note` 手写注记
+一起抹掉**（= 一个 scope 悄悄失去「为什么容忍这些失败」的证据）。现在是显式保留这些字段。

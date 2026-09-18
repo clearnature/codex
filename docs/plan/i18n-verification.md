@@ -1431,3 +1431,29 @@ core 全量甄别存量：**413 → 78 → 40**（`session/turn.rs` 6 → 0）�
 telemetry 情形区分开）判译；`FunctionCallError::RespondToModel`、`JsonValue::String(..)` 工具负载、
 tracing target/span 名、ID 模板、模型提示词结构、`## Planning` 这类**比对键**判不译。
 现状（本批收尾）：候选 **673**、`--suspect` **0**、`lenient-hidden` **0**。
+
+### 12.34 第 30 轮：**匹配键陷阱**（第四类隐形）—— 而且它是「翻译动作本身」造出来的
+
+前三类隐形（§12.32 的候选桶、§12.33 的宽松规则连带）都是「**没看到**某个该译的字面量」。
+这一类相反：**比较用的字符串**必须**永远不译**，但它的**生产方**是普通候选 —— 一旦有批次把生产方
+译了，比较就静默失效。风险不在「漏译」，而在「译错」。
+
+**为什么看不见**：比对值的桶是 `internal:match`（`STRING_MATCH` 认 `== "..."`、`.contains("...")` 等），
+既不进候选桶，也不进 `--suspect` 的两个桶；而它的生产方（另一处普通字面量）**是**候选。
+
+**审计方法（可复现）**：取所有 `bucket == "internal:match"` 的值（core 内 57 个），
+再找**未包且未登记**的候选站点里值与之相同的 ⇒ 这些就是陷阱。本轮结果 **2 个**：
+
+| 匹配键 | 比较处 | 生产处 | 处置 |
+| --- | --- | --- | --- |
+| `rejected by user` | `tools/events.rs:441`（`msg == "rejected by user"` ⇒ 归一化成 exec/patch 专属说法给用户看） | `tools/approvals.rs:454`、`tools/network_approval.rs` 3 处 | 按值登记；**并回退了早先对 3 处生产方的误译** |
+| `thread manager dropped` | `tools/handlers/multi_agents_common.rs:86`（`message == …` ⇒ 选 collab manager unavailable 分支） | `agent/control.rs:775`、`app-server/extensions.rs:318/336`、`ext/agent/src/lib.rs:64` | 按值登记（生产方均未译） |
+
+**一处真实纠正**：`rejected by user` 的生产方在 `tools/network_approval.rs` 被更早的批次
+（commit `68e536526`）包了 `tr` —— 英文下无影响（key 即原文），但 **zh 下**归一化分支不再命中，
+用户看到的是被跳过的通用说法。本批把那 3 处回退成原字符串、并删掉字典里的 `("rejected by user", 被用户拒绝)`，
+使归一化在两种语下都成立（`events.rs` 的两条归一化产物各自仍会在它自己的批次里被译）。
+i18n-check 复跑后 `[unused]` 仍为 0（无悬挂词条）。
+
+**保护机制**：登记**值**（`key<TAB>site<TAB>reason`）即等于给所有生产处上锁 —— 已登记的值不会再
+出现在候选清单里，因此后续批次不会去译它。这也是处理「必须保持英文的哨兵」的标准动作。

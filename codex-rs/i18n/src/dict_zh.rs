@@ -6792,7 +6792,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0} is not in the allowed_domains",
         "{0}不在allowed_domains中",
     ),
-    ("rejected by user", "被用户拒绝"),
     (
         "Error while requesting approval: {0}",
         "请求审批时出错：{0}",

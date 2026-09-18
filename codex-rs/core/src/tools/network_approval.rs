@@ -841,7 +841,7 @@ impl NetworkApprovalService {
                         err.details(),
                         codex_protocol::error::CodexErrorDetails::TurnAborted
                     ) {
-                        tr(current(), "rejected by user").to_string()
+                        "rejected by user".to_string()
                     } else {
                         tr_with(
                             current(),
@@ -870,10 +870,8 @@ impl NetworkApprovalService {
         {
             // Preserve the denial before waiting for the policy commit. Defer
             // cancellation until after saving so it cannot interrupt persistence.
-            let _ = self.store_call_outcome(
-                &owner_call.registration_id,
-                tr(current(), "rejected by user").to_string(),
-            );
+            let _ = self
+                .store_call_outcome(&owner_call.registration_id, "rejected by user".to_string());
         }
 
         let _session_policy_commit_guard = if matches!(
@@ -1011,7 +1009,7 @@ impl NetworkApprovalService {
                     if let Some(owner_call) = owner_call.as_ref() {
                         self.record_call_outcome(
                             &owner_call.registration_id,
-                            tr(current(), "rejected by user").to_string(),
+                            "rejected by user".to_string(),
                         );
                     }
                     {

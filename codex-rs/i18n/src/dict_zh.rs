@@ -7096,6 +7096,35 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "序列化{0}响应失败：{1}",
     ),
     ("failed to sleep: {0}", "休眠失败：{0}"),
+    (
+        "Automatic approval review timed out while evaluating the requested approval.",
+        "自动审批复核在评估所请求的批准前超时。",
+    ),
+    ("guardian review failed", "guardian复核失败"),
+    (
+        "Automatic approval review failed: {0}",
+        "自动审批复核失败：{0}",
+    ),
+    (
+        "Automatic approval review {0} (risk: {1}, authorization: {2}): {3}",
+        "自动审批复核{0}（风险：{1}，授权：{2}）：{3}",
+    ),
+    (
+        "Auto-reviewer denied the action without a specific rationale.",
+        "自动复核器拒绝了该操作，但未给出具体理由。",
+    ),
+    (
+        "This action was rejected due to unacceptable risk.\nReason: {0}\n{1}",
+        "该操作因不可接受的风险被拒绝。\n理由：{0}\n{1}",
+    ),
+    (
+        "guardian review session could not preserve REPL developer policy: {0}",
+        "guardian复核会话无法保留REPL开发者策略：{0}",
+    ),
+    (
+        "guardian review completed without an assessment payload",
+        "guardian复核完成但没有评估负载",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

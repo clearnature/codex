@@ -10,6 +10,7 @@ use codex_core_plugins::PluginCommandAttribution;
 use codex_extension_api::ThreadIdleCause;
 use codex_features::Feature;
 use codex_i18n::current;
+use codex_i18n::tr;
 use codex_i18n::tr_with;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::openai_models::MODEL_SPECIALTY_CYBER;
@@ -577,130 +578,135 @@ pub(super) async fn run_synchronous_review(
                 matches!(assessment.outcome, GuardianAssessmentOutcome::Deny);
             (assessment, count_denial_for_circuit_breaker)
         }
-        GuardianReviewOutcome::Error(error) => match error {
-            GuardianReviewError::Timeout => {
-                let rationale =
-                    "Automatic approval review timed out while evaluating the requested approval."
-                        .to_string();
-                track_guardian_review(
-                    session.as_ref(),
-                    &review_tracking,
-                    approval_request_source,
-                    &reviewed_action,
-                    GuardianReviewAnalyticsResult {
-                        decision: GuardianReviewDecision::Denied,
-                        terminal_status: GuardianReviewTerminalStatus::TimedOut,
-                        failure_reason: Some(error.failure_reason()),
-                        ..analytics_result
-                    },
-                    completed_at_ms.try_into().unwrap_or_default(),
-                );
-                session
-                    .send_event(
-                        turn.as_ref(),
-                        EventMsg::GuardianWarning(WarningEvent {
-                            message: rationale.clone(),
-                        }),
+        GuardianReviewOutcome::Error(error) => {
+            match error {
+                GuardianReviewError::Timeout => {
+                    let rationale =
+                    tr(current(), "Automatic approval review timed out while evaluating the requested approval.").to_string();
+                    track_guardian_review(
+                        session.as_ref(),
+                        &review_tracking,
+                        approval_request_source,
+                        &reviewed_action,
+                        GuardianReviewAnalyticsResult {
+                            decision: GuardianReviewDecision::Denied,
+                            terminal_status: GuardianReviewTerminalStatus::TimedOut,
+                            failure_reason: Some(error.failure_reason()),
+                            ..analytics_result
+                        },
+                        completed_at_ms.try_into().unwrap_or_default(),
+                    );
+                    session
+                        .send_event(
+                            turn.as_ref(),
+                            EventMsg::GuardianWarning(WarningEvent {
+                                message: rationale.clone(),
+                            }),
+                        )
+                        .await;
+                    session
+                        .send_event(
+                            turn.as_ref(),
+                            EventMsg::GuardianAssessment(GuardianAssessmentEvent {
+                                review_reason: Some(review_reason),
+                                id: review_id,
+                                target_item_id,
+                                plugin_id: plugin_id.clone(),
+                                script_path: script_path.clone(),
+                                turn_id: assessment_turn_id.clone(),
+                                started_at_ms,
+                                completed_at_ms: Some(completed_at_ms),
+                                status: GuardianAssessmentStatus::TimedOut,
+                                risk_level: None,
+                                user_authorization: None,
+                                rationale: Some(rationale),
+                                decision_source: Some(GuardianAssessmentDecisionSource::Agent),
+                                action: terminal_action,
+                            }),
+                        )
+                        .await;
+                    record_guardian_non_denial(&session, &assessment_turn_id).await;
+                    return ReviewDecision::TimedOut;
+                }
+                GuardianReviewError::Cancelled => {
+                    track_guardian_review(
+                        session.as_ref(),
+                        &review_tracking,
+                        approval_request_source,
+                        &reviewed_action,
+                        GuardianReviewAnalyticsResult {
+                            decision: GuardianReviewDecision::Aborted,
+                            terminal_status: GuardianReviewTerminalStatus::Aborted,
+                            failure_reason: Some(error.failure_reason()),
+                            ..analytics_result
+                        },
+                        completed_at_ms.try_into().unwrap_or_default(),
+                    );
+                    session
+                        .send_event(
+                            turn.as_ref(),
+                            EventMsg::GuardianAssessment(GuardianAssessmentEvent {
+                                review_reason: Some(review_reason),
+                                id: review_id,
+                                target_item_id,
+                                plugin_id: plugin_id.clone(),
+                                script_path: script_path.clone(),
+                                turn_id: assessment_turn_id.clone(),
+                                started_at_ms,
+                                completed_at_ms: Some(completed_at_ms),
+                                status: GuardianAssessmentStatus::Aborted,
+                                risk_level: None,
+                                user_authorization: None,
+                                rationale: None,
+                                decision_source: Some(GuardianAssessmentDecisionSource::Agent),
+                                action: action_summary,
+                            }),
+                        )
+                        .await;
+                    record_guardian_non_denial(&session, &assessment_turn_id).await;
+                    return ReviewDecision::Abort;
+                }
+                GuardianReviewError::PromptBuild { .. }
+                | GuardianReviewError::Session { .. }
+                | GuardianReviewError::Parse { .. } => {
+                    let message = match &error {
+                        GuardianReviewError::PromptBuild { message }
+                        | GuardianReviewError::Session { message, .. }
+                        | GuardianReviewError::Parse { message } => message,
+                        GuardianReviewError::Timeout | GuardianReviewError::Cancelled => {
+                            tr(current(), "guardian review failed")
+                        }
+                    };
+                    let rationale = tr_with(
+                        current(),
+                        "Automatic approval review failed: {0}",
+                        &[message],
+                    );
+                    track_guardian_review(
+                        session.as_ref(),
+                        &review_tracking,
+                        approval_request_source,
+                        &reviewed_action,
+                        GuardianReviewAnalyticsResult {
+                            decision: GuardianReviewDecision::Denied,
+                            terminal_status: GuardianReviewTerminalStatus::FailedClosed,
+                            failure_reason: Some(error.failure_reason()),
+                            ..analytics_result
+                        },
+                        completed_at_ms.try_into().unwrap_or_default(),
+                    );
+                    (
+                        GuardianAssessment {
+                            risk_level: GuardianRiskLevel::High,
+                            user_authorization: GuardianUserAuthorization::Unknown,
+                            outcome: GuardianAssessmentOutcome::Deny,
+                            rationale,
+                        },
+                        false,
                     )
-                    .await;
-                session
-                    .send_event(
-                        turn.as_ref(),
-                        EventMsg::GuardianAssessment(GuardianAssessmentEvent {
-                            review_reason: Some(review_reason),
-                            id: review_id,
-                            target_item_id,
-                            plugin_id: plugin_id.clone(),
-                            script_path: script_path.clone(),
-                            turn_id: assessment_turn_id.clone(),
-                            started_at_ms,
-                            completed_at_ms: Some(completed_at_ms),
-                            status: GuardianAssessmentStatus::TimedOut,
-                            risk_level: None,
-                            user_authorization: None,
-                            rationale: Some(rationale),
-                            decision_source: Some(GuardianAssessmentDecisionSource::Agent),
-                            action: terminal_action,
-                        }),
-                    )
-                    .await;
-                record_guardian_non_denial(&session, &assessment_turn_id).await;
-                return ReviewDecision::TimedOut;
+                }
             }
-            GuardianReviewError::Cancelled => {
-                track_guardian_review(
-                    session.as_ref(),
-                    &review_tracking,
-                    approval_request_source,
-                    &reviewed_action,
-                    GuardianReviewAnalyticsResult {
-                        decision: GuardianReviewDecision::Aborted,
-                        terminal_status: GuardianReviewTerminalStatus::Aborted,
-                        failure_reason: Some(error.failure_reason()),
-                        ..analytics_result
-                    },
-                    completed_at_ms.try_into().unwrap_or_default(),
-                );
-                session
-                    .send_event(
-                        turn.as_ref(),
-                        EventMsg::GuardianAssessment(GuardianAssessmentEvent {
-                            review_reason: Some(review_reason),
-                            id: review_id,
-                            target_item_id,
-                            plugin_id: plugin_id.clone(),
-                            script_path: script_path.clone(),
-                            turn_id: assessment_turn_id.clone(),
-                            started_at_ms,
-                            completed_at_ms: Some(completed_at_ms),
-                            status: GuardianAssessmentStatus::Aborted,
-                            risk_level: None,
-                            user_authorization: None,
-                            rationale: None,
-                            decision_source: Some(GuardianAssessmentDecisionSource::Agent),
-                            action: action_summary,
-                        }),
-                    )
-                    .await;
-                record_guardian_non_denial(&session, &assessment_turn_id).await;
-                return ReviewDecision::Abort;
-            }
-            GuardianReviewError::PromptBuild { .. }
-            | GuardianReviewError::Session { .. }
-            | GuardianReviewError::Parse { .. } => {
-                let message = match &error {
-                    GuardianReviewError::PromptBuild { message }
-                    | GuardianReviewError::Session { message, .. }
-                    | GuardianReviewError::Parse { message } => message,
-                    GuardianReviewError::Timeout | GuardianReviewError::Cancelled => {
-                        "guardian review failed"
-                    }
-                };
-                let rationale = format!("Automatic approval review failed: {message}");
-                track_guardian_review(
-                    session.as_ref(),
-                    &review_tracking,
-                    approval_request_source,
-                    &reviewed_action,
-                    GuardianReviewAnalyticsResult {
-                        decision: GuardianReviewDecision::Denied,
-                        terminal_status: GuardianReviewTerminalStatus::FailedClosed,
-                        failure_reason: Some(error.failure_reason()),
-                        ..analytics_result
-                    },
-                    completed_at_ms.try_into().unwrap_or_default(),
-                );
-                (
-                    GuardianAssessment {
-                        risk_level: GuardianRiskLevel::High,
-                        user_authorization: GuardianUserAuthorization::Unknown,
-                        outcome: GuardianAssessmentOutcome::Deny,
-                        rationale,
-                    },
-                    false,
-                )
-            }
-        },
+        }
     };
 
     let approved = match assessment.outcome {
@@ -714,10 +720,15 @@ pub(super) async fn run_synchronous_review(
         GuardianUserAuthorization::Medium => "medium",
         GuardianUserAuthorization::High => "high",
     };
-    let warning = format!(
-        "Automatic approval review {verdict} (risk: {}, authorization: {user_authorization}): {}",
-        guardian_risk_level_str(assessment.risk_level),
-        assessment.rationale
+    let warning = tr_with(
+        current(),
+        "Automatic approval review {0} (risk: {1}, authorization: {2}): {3}",
+        &[
+            verdict,
+            guardian_risk_level_str(assessment.risk_level),
+            user_authorization,
+            &assessment.rationale,
+        ],
     );
     session
         .send_event(
@@ -774,7 +785,10 @@ pub(super) async fn run_synchronous_review(
         ReviewDecision::Approved
     } else {
         let rationale = if assessment.rationale.trim().is_empty() {
-            "Auto-reviewer denied the action without a specific rationale."
+            tr(
+                current(),
+                "Auto-reviewer denied the action without a specific rationale.",
+            )
         } else {
             assessment.rationale.trim()
         };
@@ -785,8 +799,10 @@ pub(super) async fn run_synchronous_review(
             .and_then(|messages| messages.auto_review.as_ref())
             .and_then(|messages| messages.rejection_instructions.as_deref())
             .unwrap_or(GUARDIAN_REJECTION_INSTRUCTIONS);
-        ReviewDecision::denied(format!(
-            "This action was rejected due to unacceptable risk.\nReason: {rationale}\n{rejection_instructions}"
+        ReviewDecision::denied(tr_with(
+            current(),
+            "This action was rejected due to unacceptable risk.\nReason: {0}\n{1}",
+            &[rationale, rejection_instructions],
         ))
     }
 }
@@ -896,9 +912,11 @@ pub(super) async fn guardian_review_session_config(
             .features
             .enable(Feature::RetainClientDeveloperMessages)
             .map_err(|error| {
-                anyhow::anyhow!(
-                    "guardian review session could not preserve REPL developer policy: {error}"
-                )
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "guardian review session could not preserve REPL developer policy: {0}",
+                    &[&error.to_string()]
+                ))
             })?;
     }
     if guardian_model != turn.model_info().slug {
@@ -997,9 +1015,10 @@ async fn run_guardian_review_session_before_deadline(
                 }
             }
             None => (
-                GuardianReviewOutcome::Error(GuardianReviewError::session(anyhow::anyhow!(
+                GuardianReviewOutcome::Error(GuardianReviewError::session(anyhow::anyhow!(tr(
+                    current(),
                     "guardian review completed without an assessment payload"
-                ))),
+                )))),
                 session_analytics_result,
             ),
         },

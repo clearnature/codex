@@ -1072,7 +1072,11 @@ internal                  : 23509
 *证据*：`just i18n-check` 退出码 0，回执 `r-mu4lwag5-j2q2h0`；
 `cargo test -p codex-i18n-check` 20 passed（其中新增 5 条）；`fmt-check` 回执 `r-mu4lwsxw-v3qcmc`。
 
-### 12.30 第 245 轮：core 剩余候选的**分诊表**（178 文件有活，725 个候选）
+### 12.30 core 剩余候选的**分诊表**（快照，本轮刷新于第 264 轮：177 文件有活，710 个候选）
+
+> **这是一份快照，不是实时计数器。** 每次做完一批，本节的数字就会过期；
+> 推进过程记在台账 `i18n.rollout.core.*`，需要新快照时按下面的方法重生（生成器带自检）。
+> 判据：快照内部必须自洽（行数 = 去重文件数、合计 == 生成时刻的工具输出）。
 
 **为什么要先列表**：`realtime_conversation.rs`（23 译 / 17 不译）与 `realtime_context.rs`（26 全不译）
 是**同一功能的两半、判定相反**，所以「按目录/文件名批量豁免」是错的；而逐文件从头读又太慢。
@@ -1080,32 +1084,27 @@ internal                  : 23509
 
 **用户可见标记（第 248 轮修订）**：`add_error_message` / `add_info_message` / `add_warning_message` /
 `EventMsg::Warning` / `ToolError` / `CodexErr` / `Line::from` / `Span::from` /
-**`FunctionCallError::Fatal`**。最后一项是本轮补的，理由可复核：`tools/parallel.rs:85`
-把它映射成 `CodexErr::Fatal(message)` —— 即**同一个用户可见错误**；而它的兄弟变体
-`FunctionCallError::RespondToModel`（`codex-rs/tools/src/function_call_error.rs:7`）明确回给模型，属不译。
-第一版表漏了 `::Fatal`，导致 6 个文件被错分进桶 A（本轮已修，见 §12.31 的「修正记录」）。
+**`FunctionCallError::Fatal`**（`tools/parallel.rs:85` 把它映射成 `CodexErr::Fatal`，见 §12.31 修正记录）。
+
+**本表的已知盲区（第 264 轮，见 §12.32）**：本表只统计 `candidates` 桶，而
+`internal:assert` / `internal:log` 桶里也可能藏着**用户可见**文案 ⇒ 每批还要跑一次
+`i18n_todo --suspect`（该桶在 core 里现有 413 个未决项待甄别）。
 
 **方法（可复现）**：import `scripts/i18n_todo.py`，对 `scripts/i18n_scan.py` 的 `candidates` 桶
 逐个套用**与该脚本相同的两道过滤**——`is_wrapped(lines, line)` 与
 `not-translated-unwrapped.tsv` 的键/站点——再按文件计数。
 **自检**：本表合计必须**逐字等于** `python3 scripts/i18n_todo.py --root codex-rs/core` 的
-`unwrapped candidates`（差一个数就说明过滤没对齐）。
+`unwrapped candidates`。
 
 > ⚠ **一个 22% 的测量坑（第 245 轮实测）**：只 import `i18n_scan.py` 而**不**套 `is_wrapped`，
-> 合计会是 972 而不是当时的 798 —— 扫描器的 `candidates` 桶按**形状**分类，
-> 「有没有被 `tr(` 包住」是 `i18n_todo.py` 之后才施加的第二道过滤
-> （脚本自己在 `LOOKBACK` 注释里写过：只看同行会虚高约 15%）。与 §12.25 同族。
+> 合计会是 972 而不是当时的 798 —— 扫描器的桶按**形状**分类（与 §12.25 同族）。
 
 #### 桶 A：**0 个用户可见调用点** —— 127 文件 / 447 候选（**疑似不译，但必须逐文件给判据**）
 
-「0 个用户可见调用点」只是**反证的必要条件**，不是充分条件：本桶里至少有四种真实形态，
-判据各不相同（文件可能同时属于多种，逐文件看）：
-① 工具定义 / JSON schema（`tools/handlers/*_spec.rs` 等，§4 决策 3 / §12.2）；
-② 注入模型的上线上下文与提示词（§12.2）；
-③ `Result<_, String>` / `FunctionCallError::RespondToModel` 这类**回给模型或 app-server** 的工具错误（§12.11）；
-④ 走 `eyre`/`anyhow`/`tracing` 内部链、到不了 UI 的诊断（§12.3）。
-**反例警示**：桶 A 里出现过「本该译」的文件（§12.31 的修正记录就是一例）——所以本桶的每一批
-仍要跑「文件级反证 + 一次负向控制」，不能只看本表就豁免。
+判据形态：① 工具定义 / JSON schema；② 注入模型的上线上下文与提示词；③ `Result<_, String>` /
+`FunctionCallError::RespondToModel` 这类回给模型或 app-server 的工具错误（§12.11）；
+④ 走 `eyre`/`anyhow`/`tracing` 内部链的诊断（§12.3）。
+**反例警示**：桶 A 里出现过「本该译」的文件（§12.31 修正记录）——每批仍要跑文件级反证 + 一次负向控制。
 
 | 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
 | ---: | ---: | --- |
@@ -1237,12 +1236,11 @@ internal                  : 23509
 | 1 | 0 | `core/src/tools/handlers/new_context_window_spec.rs` |
 | 1 | 0 | `core/src/turn_diff_tracker.rs` |
 
-#### 桶 B：**有用户可见调用点** —— 51 文件 / 278 候选（**逐站点甄别**）
+#### 桶 B：**有用户可见调用点** —— 50 文件 / 263 候选（**逐站点甄别**）
 
 | 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
 | ---: | ---: | --- |
 | 18 | 9 | `core/src/tools/handlers/multi_agents_common.rs` |
-| 15 | 15 | `core/src/guardian/review.rs` |
 | 13 | 2 | `core/src/unified_exec/stdin_approval.rs` |
 | 12 | 24 | `core/src/session/mod.rs` |
 | 11 | 7 | `core/src/codex_thread.rs` |
@@ -1340,3 +1338,36 @@ request_plugin_install / request_user_input_spec / sleep / view_image），共 6
 `i18n-todo` 总数 798 → **725**（本批 64 个站点，另有 8 个**同值**站点因按值登记而连带豁免——
 全部落在同一家族（`tools/handlers/` 与 `tools/code_mode/wait_handler.rs`，都是 0 处渲染路径）。
 「按值登记」的这个连带效果是本机制的固有性质，已在 §12.30 的桶说明里点明）。
+
+### 12.32 第 264 轮：候选桶的**盲区**（`internal:assert` / `internal:log`）与 `--suspect` 扫描
+
+**症状**：`i18n_todo` 报 `0 unwrapped candidates`，但文件里仍有**用户可见**且未包的文案。
+
+**机制**：`scripts/i18n_scan.py` 的 `classify()` 会在字面量**上方 3 行**（`CONTEXT_LOOKBACK = 3`）内
+看到 `unwrap*()` / `assert*()` / `panic!` / `expect(`（`ASSERT_CALL`）或日志宏（`LOG_CALL`：
+`tracing::` / `info!` / `.warn(` …）时，把这个字面量分到 `internal:assert` / `internal:log`。
+这两类**不进候选桶**，于是既不出现在 `unwrapped candidates` 里，也不进分诊表（§12.30）。
+
+**实例（可复核）**：`core/src/guardian/review.rs` 的
+`ReviewDecision::denied(format!("This action was rejected due to unacceptable risk.\nReason: {rationale}\n{rejection_instructions}"))`
+紧跟在 `.unwrap_or(GUARDIAN_REJECTION_INSTRUCTIONS)` 之后 1 行 ⇒ 被判 `internal:assert`；
+而它经 `tools/approvals.rs:456`（`ReviewDecision::Denied { rejection } => Err(ToolError::Rejected(rejection))`）
+**是用户可见的**。
+
+**负向控制（机器证据）**：把该处还原成未包状态后，
+候选侧**仍然报 `0 unwrapped candidates`**（盲），而 `--suspect` 侧报
+`1 undecided literals in internal:assert/internal:log` 并点名 `:804`
+（回执 `r-mu777s3q-n9dfp2`）。这条同时是「**窄检查撑不起宽主张**」的又一例：
+「0 候选」不能推「没有该译的了」。
+
+**处置（已落地为工具）**：`scripts/i18n_todo.py --suspect [--file X] [--root …]`
+列出这两个桶里**未决**的字面量（已包 / 已登记的不列，`< 8` 字符的不列），
+`0 undecided literals …` 才是「这一侧也干净了」。**每批收尾时对本批文件跑一次**，
+判据是逐条判「日志/断言（不译，登记）」还是「用户可见（译）」。
+
+**存量规模（如实记录）**：core 全量扫出 **413** 个未决项 —— 这是**待甄别的存量**，
+不等于 413 个缺陷（多数应是 `tracing`/`anyhow` 链；本例那样混在里面的用户可见文案才是缺陷）。
+它已作为后续批次的工作列出，不假装已清。
+
+*证据*：`--suspect` 的负向控制回执 `r-mu777s3q-n9dfp2`；本批文件两侧都干净的回执 `r-mu776u2z-3xk5ee`；
+本批把 `:395`（tracing 日志）与 `:1079`（`assert!` 不变量）逐条判为不译并登记。

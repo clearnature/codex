@@ -170,6 +170,16 @@ def main(argv: list[str]) -> int:
         ),
     )
     parser.add_argument(
+        "--suspect",
+        action="store_true",
+        help=(
+            "list the undecided literals the candidate bucket hides "
+            "(internal:assert / internal:log); a `unwrap*()`/`assert*()`/log macro "
+            "in the three lines above demotes a user-visible literal out of the "
+            "candidate bucket, so this is the sweep that catches that blind spot"
+        ),
+    )
+    parser.add_argument(
         "--root",
         type=Path,
         action="append",
@@ -184,9 +194,8 @@ def main(argv: list[str]) -> int:
     # this script first produced a headline number that was 20x the real one.
     # Widening it later (cli / exec / core) means adding roots here on purpose.
     roots = args.root or [scanner.DEFAULT_ROOT]
-    findings = [
-        f for fs in roots for f in scanner.scan(fs) if f["bucket"] == "candidates"
-    ]
+    scanned = [f for fs in roots for f in scanner.scan(fs)]
+    findings = [f for f in scanned if f["bucket"] == "candidates"]
     findings = [f for f in findings if "/dict_zh.rs" not in f["path"]]
 
     # Judged-not-translatable literals, same shape as
@@ -224,6 +233,35 @@ def main(argv: list[str]) -> int:
         if args.precise and lenient:
             hidden.append(finding)
 
+    if args.suspect:
+        suspects = []
+        for finding in scanned:
+            if finding["bucket"] not in ("internal:assert", "internal:log"):
+                continue
+            path = finding["path"]
+            if path not in cache:
+                source = (REPO / path).read_text(encoding="utf-8", errors="replace")
+                cache[path] = (source, scanner.mask_source(source), source.splitlines())
+            _source, _masked, lines = cache[path]
+            if is_wrapped(lines, finding["line"]):
+                continue
+            site = f"{finding['path']}:{finding['line']}"
+            if finding["value"] in not_translated[0] or site in not_translated[1]:
+                continue
+            if len(finding["value"].strip()) < scanner.MIN_CANDIDATE_LEN:
+                continue
+            suspects.append(finding)
+        wanted_suspects = [
+            f for f in suspects if not args.file or f["path"].endswith(args.file)
+        ]
+        scope = f"*{args.file}" if args.file else "the scanned roots"
+        print(
+            f"{len(wanted_suspects)} undecided literals in internal:assert/internal:log ({scope})"
+        )
+        for finding in wanted_suspects:
+            print(f"  {finding['path']}:{finding['line']}: {finding['value'][:90]!r}")
+        return 0
+
     if args.file:
         wanted = [f for f in remaining if f["path"].endswith(args.file)]
         # Report the exemptions *per file* too: without it, a file whose
@@ -256,6 +294,15 @@ def main(argv: list[str]) -> int:
 
     by_file = Counter(f["path"] for f in remaining)
     by_module = Counter(f["module"] for f in remaining)
+
+    # Literals the *candidate* bucket hides. `classify` rejects a literal when a
+    # `unwrap*()`/`assert*()`/log macro appears in the three lines above it, so a
+    # genuinely user-visible string can land in `internal:assert` / `internal:log`
+    # and never show up as a candidate -- "0 unwrapped candidates" then does not
+    # mean "nothing left to look at". Measured on `guardian/review.rs`: the
+    # `ReviewDecision::denied(..)` reason sat right under an `unwrap_or(..)` and
+    # reaches the user through `ToolError::Rejected` (tools/approvals.rs:456).
+    # This lists the ones still undecided (not wrapped, not declared).
     print(f"unwrapped candidates : {len(remaining)}")
     print(
         f"declared not-translatable (skipped): {len(not_translated[0]) + len(not_translated[1])}"

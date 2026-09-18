@@ -1457,3 +1457,36 @@ i18n-check 复跑后 `[unused]` 仍为 0（无悬挂词条）。
 
 **保护机制**：登记**值**（`key<TAB>site<TAB>reason`）即等于给所有生产处上锁 —— 已登记的值不会再
 出现在候选清单里，因此后续批次不会去译它。这也是处理「必须保持英文的哨兵」的标准动作。
+
+#### 后续项（第 31 轮）：`--traps` 已固化为常规口径，并全仓跑通
+
+上一轮（§12.34 主体）的审计是一次性脚本；本轮把它做成 `scripts/i18n_todo.py --traps`：
+
+```
+python3 scripts/i18n_todo.py --root codex-rs/core --traps          # 0（core 已上锁）
+python3 scripts/i18n_todo.py --root codex-rs/core --root codex-rs/tui --root codex-rs/exec \
+    --root codex-rs/app-server --root codex-rs/protocol --root codex-rs/codex-mcp --traps
+#   修前：10 个未上锁的生产方（扫到 243 个比对值）；修后：0
+```
+
+它的输出给出「生产处 : 值 : **比对处**」三件套，所以每个陷阱都可直接复核。全仓修前 10 处：
+
+| 值 | 生产处 | 比对处（为什么不能译） |
+| --- | --- | --- |
+| `reasoning effort` | `exec/src/event_processor_with_human_output.rs:479` | `tui/src/status/helpers.rs:25` 用 `*k == "reasoning effort"` **查表**（entries 的键） |
+| `plugin sharing is disabled`（×3） | `app-server/src/request_processors/plugins.rs:1248/1311/1387` | `tui/src/app/background_requests.rs:1102` `contains(..)` |
+| `plugin sharing is not enabled` | 同上 `:1449` | 同上 `:1103` |
+| `paginated threads require thread/turns/list and thread/items/list support` | `app-server/.../thread_processor.rs:1164` | `exec/src/lib.rs:1439` |
+| `ephemeral threads do not support includeTurns` | `app-server/.../thread_processor.rs:3004` | `tui/src/app/session_lifecycle.rs:247` |
+| `no active turn to steer`（×2） | `app-server/.../turn_processor.rs:1063/1122` | `tui/src/app.rs:764` |
+| `request timed out` | `protocol/src/error.rs:111`（`#[error(...)]`） | `codex-mcp/src/connection_manager/startup.rs:128` `contains(..)` |
+
+全部**按值登记**（登记即上锁，且这些值本就是哨兵）。注意其中 `request timed out` 是 thiserror 字面量
+（§12.4：不能包 `tr`）—— 但 §12.4 记录过「改为手写 Display」的先例，所以手写化之后这个陷阱就活了，
+现在先上锁。
+
+**更根本的修法（建议，超出本 i18n 任务范围）**：这些比对都在比**人类可读的消息文本**；
+正确做法是让代码比**稳定的错误码**（或结构化字段），消息文本才可自由本地化。
+`docs/plan/i18n-verification.md` 的这条建议与人类待裁决项同源，暂不实施。
+
+**四口径现状（core）**：候选 **652**、`--suspect` **0**、`--precise` 的 lenient-hidden **0**、`--traps` **0**（全仓也是 0）。

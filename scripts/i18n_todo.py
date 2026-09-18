@@ -255,6 +255,16 @@ def main(argv: list[str]) -> int:
         ),
     )
     parser.add_argument(
+        "--traps",
+        action="store_true",
+        help=(
+            "list match-key traps: values that some code compares against "
+            "(`internal:match`) but whose producers are still untranslated "
+            "candidates. Translating such a producer silently disables the "
+            "comparison, and only in non-English runs -- no gate sees it"
+        ),
+    )
+    parser.add_argument(
         "--root",
         type=Path,
         action="append",
@@ -307,6 +317,48 @@ def main(argv: list[str]) -> int:
         remaining.append(finding)
         if args.precise and lenient:
             hidden.append(finding)
+
+    if args.traps:
+        # Match-key traps: a value that some code *compares* against
+        # (`internal:match`: `== ".."`, `.contains("..")`, ...) must never be
+        # translated, but its *producers* are ordinary candidates. Translating a
+        # producer silently disables the comparison -- and only in non-English
+        # runs, which no gate exercises (En returns the key verbatim), so neither
+        # the tests nor i18n-check can see it. Registering the value is the lock:
+        # a registered value never shows up as a candidate again.
+        match_sites = {}
+        for finding in scanned:
+            if finding["bucket"] == "internal:match":
+                match_sites.setdefault(finding["value"], []).append(
+                    f"{finding['path']}:{finding['line']}"
+                )
+        traps = []
+        for finding in scanned:
+            if finding["bucket"] != "candidates" or finding["value"] not in match_sites:
+                continue
+            path = finding["path"]
+            if path not in cache:
+                source = (REPO / path).read_text(encoding="utf-8", errors="replace")
+                cache[path] = (source, scanner.mask_source(source), source.splitlines())
+            source, _masked, lines = cache[path]
+            if is_wrapped(lines, finding["line"]):
+                continue
+            site = f"{finding['path']}:{finding['line']}"
+            if finding["value"] in not_translated[0] or site in not_translated[1]:
+                continue
+            traps.append((finding, site))
+        wanted_traps = [
+            (f, s) for f, s in traps if not args.file or f["path"].endswith(args.file)
+        ]
+        scope = f"*{args.file}" if args.file else "the scanned roots"
+        print(
+            f"{len(wanted_traps)} unregistered match-key producers "
+            f"({len(match_sites)} compared values scanned) ({scope})"
+        )
+        for finding, site in wanted_traps:
+            compared_at = ", ".join(match_sites[finding["value"]][:3])
+            print(f"  {site}: {finding['value'][:70]!r}  [compared at {compared_at}]")
+        return 0
 
     if args.suspect:
         suspects = []

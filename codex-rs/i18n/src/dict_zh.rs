@@ -7391,6 +7391,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "remote exec-server does not support inherited file descriptors",
         "远程exec-server不支持继承的文件描述符",
     ),
+    (
+        "MCP tool call requires approval, but approval policy is never",
+        "MCP工具调用需要审批，但审批策略是never",
+    ),
+    ("user rejected MCP tool call", "用户拒绝了MCP工具调用"),
 ];
 
 /// English source text -> Simplified Chinese.

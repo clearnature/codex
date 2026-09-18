@@ -1539,9 +1539,10 @@ pub(crate) async fn request_mcp_tool_user_approval(
     };
 
     if *approval_policy == AskForApproval::Never {
-        return ReviewDecision::denied(
+        return ReviewDecision::denied(tr(
+            current(),
             "MCP tool call requires approval, but approval policy is never",
-        );
+        ));
     }
 
     let tool_call_mcp_elicitation_enabled = turn_context
@@ -2036,7 +2037,9 @@ fn parse_mcp_tool_approval_elicitation_response(
                 decision => decision,
             }
         }
-        ElicitationAction::Decline => ReviewDecision::denied("user rejected MCP tool call"),
+        ElicitationAction::Decline => {
+            ReviewDecision::denied(tr(current(), "user rejected MCP tool call"))
+        }
         ElicitationAction::Cancel => ReviewDecision::Abort,
         _ => ReviewDecision::Abort,
     }

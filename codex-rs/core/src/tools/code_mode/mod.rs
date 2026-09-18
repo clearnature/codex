@@ -17,6 +17,9 @@ use codex_code_mode::CodeModeSession;
 use codex_code_mode::CodeModeSessionProvider;
 use codex_code_mode::CodeModeToolKind;
 use codex_code_mode::RuntimeResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::models::FunctionCallOutputContentItem;
 use futures::future::join_all;
 use serde_json::Value as JsonValue;
@@ -102,16 +105,16 @@ impl CodeModeService {
     pub(crate) fn take_unavailable_warning(&self, tool_mode: ToolMode) -> Option<String> {
         let error = self.availability.as_ref().err()?;
         let behavior = match tool_mode {
-            ToolMode::Direct => "Falling back to direct tools",
-            ToolMode::CodeMode | ToolMode::CodeModeOnly => "Code mode will fail closed",
+            ToolMode::Direct => tr(current(), "Falling back to direct tools"),
+            ToolMode::CodeMode | ToolMode::CodeModeOnly => {
+                tr(current(), "Code mode will fail closed")
+            }
         };
         (!self
             .unavailable_warning_emitted
             .swap(true, Ordering::Relaxed))
         .then(|| {
-            format!(
-                "Code Mode is unavailable because {error}. {behavior}; enable `features.code_mode_host` and install `codex-code-mode-host`."
-            )
+            tr_with(current(), "Code Mode is unavailable because {0}. {1}; enable `features.code_mode_host` and install `codex-code-mode-host`.", &[&error.to_string(), behavior])
         })
     }
 

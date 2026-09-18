@@ -674,3 +674,14 @@ paginated threads require thread/turns/list and thread/items/list support	codex-
 ephemeral threads do not support includeTurns	codex-rs/app-server/src/request_processors/thread_processor.rs	**匹配键**：被 tui/src/app/session_lifecycle.rs:247 比对 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
 no active turn to steer	codex-rs/app-server/src/request_processors/turn_processor.rs	**匹配键**：被 tui/src/app.rs:764 比对（本值在该文件出现 2 处）⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
 request timed out	codex-rs/protocol/src/error.rs	**匹配键**：`#[error("request timed out")] RequestTimeout` 的 Display 文本被 codex-mcp/src/connection_manager/startup.rs:128 用 `contains(..)` 识别为「启动超时」—— 该处是 thiserror 字面量（§12.4：不能包 tr），但 §12.4 记录过「改为手写 Display」的先例 ⇒ 仍需上锁 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
+code mode session is shutting down	codex-rs/core/src/tools/code_mode/mod.rs	code-mode 的**工具负载/错误**：经 handlers 的 `FunctionCallError::RespondToModel(..)` 回给模型（execute_handler.rs / wait_handler.rs 逐处 `.map_err(FunctionCallError::RespondToModel)`）⇒ §12.11（会话获取的 Result<_, String>，5 处）（docs/plan/i18n-verification.md）
+Script error:\n{error_text}	codex-rs/core/src/tools/code_mode/mod.rs	脚本输出的 `FunctionCallOutputContentItem::InputText` —— **模型可见的工具输出** ⇒ §12.11（docs/plan/i18n-verification.md）
+Script running with cell ID {cell_id}	codex-rs/core/src/tools/code_mode/mod.rs	脚本状态行（同上，进工具输出）⇒ §12.11（docs/plan/i18n-verification.md）
+Script terminated	codex-rs/core/src/tools/code_mode/mod.rs	脚本状态行（同上）⇒ §12.11（docs/plan/i18n-verification.md）
+Script completed	codex-rs/core/src/tools/code_mode/mod.rs	脚本状态行（同上）⇒ §12.11（docs/plan/i18n-verification.md）
+Script failed	codex-rs/core/src/tools/code_mode/mod.rs	脚本状态行（同上）⇒ §12.11（docs/plan/i18n-verification.md）
+{status}\nWall time {wall_time_seconds:.1} seconds\nOutput:\n	codex-rs/core/src/tools/code_mode/mod.rs	工具输出表头（同上）⇒ §12.11（docs/plan/i18n-verification.md）
+{PUBLIC_TOOL_NAME} cannot invoke itself	codex-rs/core/src/tools/code_mode/mod.rs	FunctionCallError::RespondToModel(..) ⇒ §12.11（docs/plan/i18n-verification.md）
+failed to serialize tool `{tool_name}` arguments: {err}	codex-rs/core/src/tools/code_mode/mod.rs	code-mode 参数序列化错误（Result<_, String> 回给模型）⇒ §12.11（docs/plan/i18n-verification.md）
+tool `{tool_name}` expects a JSON object for arguments	codex-rs/core/src/tools/code_mode/mod.rs	同上：参数校验错误回给模型 ⇒ §12.11（docs/plan/i18n-verification.md）
+tool `{tool_name}` expects a string input	codex-rs/core/src/tools/code_mode/mod.rs	同上 ⇒ §12.11（docs/plan/i18n-verification.md）

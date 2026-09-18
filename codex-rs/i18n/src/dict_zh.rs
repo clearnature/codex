@@ -7265,6 +7265,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "其cwd是启动目录；终端的当前目录与状态可能已改变。",
     ),
     (" Retained grants: {0}.", "保留的授权：{0}。"),
+    ("Falling back to direct tools", "回退到直接工具"),
+    ("Code mode will fail closed", "Code mode将失败关闭"),
+    (
+        "Code Mode is unavailable because {0}. {1}; enable `features.code_mode_host` and install `codex-code-mode-host`.",
+        "Code Mode不可用，原因：{0}。{1}；请启用`features.code_mode_host`并安装`codex-code-mode-host`。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

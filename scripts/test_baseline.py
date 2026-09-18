@@ -75,6 +75,7 @@ SCOPES: dict[str, dict[str, str]] = {
         "filter": "handlers",
     },
     "core-exec": {"cwd": "codex-rs", "pkg": "codex-core", "filter": "exec"},
+    "core-code-mode": {"cwd": "codex-rs", "pkg": "codex-core", "filter": "code_mode"},
 }
 
 TEST_LINE = re.compile(r"^test (\S+) \.\.\. (ok|FAILED|ignored)$")

@@ -14,6 +14,21 @@
     "pass_hash": "244952fb59b13947111f2493d304c81271825ca7",
     "state_hash": "576b0970f697d21ea95c827b7faeeffc5be8949d"
   },
+  "core-code-mode": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib code_mode",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 35
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 35,
+    "pass_hash": "2407daf30e915f11f580e683e48a09bc3ba288b2",
+    "state_hash": "5a426dad27e698fe6bf668e9e9373035308f89a2"
+  },
   "core-exec": {
     "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib exec",
     "counts": {

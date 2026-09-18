@@ -71,6 +71,7 @@
 | `core-thread-manager` | `… --lib thread_manager` |
 | `core-tools-handlers` | `… --lib handlers` |
 | `core-exec` | `… --lib exec` |
+| `core-code-mode` | `… --lib code_mode` |
 
 全部带 `RUST_MIN_STACK=16777216`（默认 2 MiB 线程栈会让部分测试 SIGABRT）。
 加 scope 就在 `SCOPES` 表里加一行；跨 crate 的 scope（`just test -p codex-tui`）尚未纳入

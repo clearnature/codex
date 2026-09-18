@@ -72,12 +72,21 @@ def main(argv: list[str]) -> int:
 
         # Containment, not a prefix: a 40-character prefix matches unrelated
         # lines and silently "confirms" a row that has in fact drifted.
-        wanted = unescape(key)
-        if line <= len(source) and wanted in source[line - 1]:
+        #
+        # Search both the unescaped value and the raw text as written: XML
+        # markup rows keep their `\"` escapes verbatim in the dossier *and* in
+        # the Rust source, so unescaping alone left the whole markup family
+        # undecidable (10 rows on the day this was written).
+        forms = {unescape(key), key}
+        if line <= len(source) and any(form in source[line - 1] for form in forms):
             in_place += 1
             output.append(raw)
             continue
-        found = [index + 1 for index, text in enumerate(source) if wanted in text]
+        found = [
+            index + 1
+            for index, text in enumerate(source)
+            if any(form in text for form in forms)
+        ]
         if len(found) == 1:
             cells[1] = f"{path}:{found[0]}"
             corrected.append((site, cells[1], key[:44]))

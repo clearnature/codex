@@ -170,7 +170,7 @@ link: {}	codex-rs/tui/src/app/transcript_export.rs:195	markdown **导出正文**
 structured result: {content}	codex-rs/tui/src/app/transcript_export.rs:201	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 error: {}	codex-rs/tui/src/app/transcript_export.rs:205	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 	codex-rs/tui/src/app/transcript_export.rs:241	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-\n## {heading}\n\n	codex-rs/tui/src/app/transcript_export.rs:289	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+\n## {heading}\n\n	codex-rs/tui/src/app/transcript_export.rs:288	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 	codex-rs/tui/src/app/transcript_export.rs:300	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 fn greet(name: &str) -> String {	codex-rs/tui/src/theme_picker.rs:68	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
     format!(\"Hello, {}!\", name)	codex-rs/tui/src/theme_picker.rs:73	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
@@ -276,7 +276,7 @@ previous turn {} is still in progress	codex-rs/tui/src/app/safety_buffering.rs:3
 closing the session picker	codex-rs/tui/src/app/session_picker.rs:139	同上 log_message（本次复核 :145）
 tui startup initial frame scheduled	codex-rs/tui/src/app/startup.rs:880	tracing 消息（本次复核 :880）
     {display_index}. {folder}\n	codex-rs/tui/src/app/startup_prompts.rs:105	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
-       {reason}\n	codex-rs/tui/src/app/startup_prompts.rs:109	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
+       {reason}\n	codex-rs/tui/src/app/startup_prompts.rs:106	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
 expected active turn id `	codex-rs/tui/src/app.rs:770	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
 ` but found `	codex-rs/tui/src/app.rs:771	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
 expected active turn id 	codex-rs/tui/src/app.rs:789	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用

@@ -7125,6 +7125,43 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "guardian review completed without an assessment payload",
         "guardian复核完成但没有评估负载",
     ),
+    ("failed to load rules: {0}", "加载规则失败：{0}"),
+    (
+        "Configured service tier `{0}` is not advertised as supported for model `{1}` and will be omitted from requests.",
+        "配置的服务层级`{0}`未声明为模型`{1}`所支持，将从请求中省略。",
+    ),
+    (
+        "Session persistence is disabled; cannot {0}.",
+        "会话持久化已禁用；无法{0}。",
+    ),
+    (
+        "This session was recorded with model `{0}` but is resuming with `{1}`. Consider switching back to `{0}` as it may affect Codex performance.",
+        "本会话记录时使用的模型是`{0}`，但正以`{1}`恢复。建议切回`{0}`，否则可能影响Codex性能。",
+    ),
+    (
+        "managed network proxy refresh semaphore closed",
+        "托管网络代理刷新信号量已关闭",
+    ),
+    (
+        "failed to update runtime allowlist: {0}",
+        "更新运行时允许列表失败：{0}",
+    ),
+    (
+        "failed to update runtime denylist: {0}",
+        "更新运行时拒绝列表失败：{0}",
+    ),
+    (
+        "failed to persist network policy amendment to execpolicy: {0}",
+        "将网络策略修订持久化到execpolicy失败：{0}",
+    ),
+    (
+        "network policy amendment host '{0}' does not match approved host '{1}'",
+        "网络策略修订主机'{0}'与已批准主机'{1}'不一致",
+    ),
+    (
+        "Your account was flagged for potentially high-risk cyber activity and this request was routed to gpt-5.2 as a fallback. To regain access to gpt-5.3-codex, apply for trusted access: {0} or learn more: {1}",
+        "你的账号因可能存在高风险网络活动被标记，本次请求已回退路由到gpt-5.2。要恢复对gpt-5.3-codex的访问，请申请可信访问：{0}，或了解详情：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

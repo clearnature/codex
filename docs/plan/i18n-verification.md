@@ -1371,3 +1371,21 @@ request_plugin_install / request_user_input_spec / sleep / view_image），共 6
 
 *证据*：`--suspect` 的负向控制回执 `r-mu777s3q-n9dfp2`；本批文件两侧都干净的回执 `r-mu776u2z-3xk5ee`；
 本批把 `:395`（tracing 日志）与 `:1079`（`assert!` 不变量）逐条判为不译并登记。
+
+#### 第 270 轮补：`--suspect` 的**外围宏**判定（把 413 条噪音压到 78 条）
+
+首版 `--suspect` 把「落在这两个桶里且未决」的字面量**全列出来**，实测 `session/mod.rs` 报了 57 条，
+其中 **56 条是良性的**（真在 `warn!`/`debug!`/`error!` 里的日志串、`assert_eq!`/`unreachable!` 的
+不变量文本、`#[instrument(name = "…")]` 的 span 名、clippy `reason = "…"` 的说明），
+只有 1 条（`EventMsg::ModelReroute` 的那句账号提示）是真缺陷 —— **噪音盖过了信号**。
+
+现在 `--suspect` 会算出每个字面量的**最内层外围宏**（`enclosing_macro`，按括号配平），
+并跳过三类良性形态：日志宏（`debug/info/warn/error/trace`）、断言宏（`assert*`/`panic`/`unreachable`/
+`expect`/`matches`）、span 名（`instrument`/`span`/`event`），以及**属性内部**的字面量
+（`is_inside_attribute`：`#[instrument(name=…)]` 与 `#[allow(…, reason=…)]`）。
+结果：core 全量 **413 → 78**，`session/mod.rs` **57 → 1**（正是那条真缺陷）。
+
+*过程中的自伤 bug（已修，留档）*：缓存命中分支里绑的是 `_source`，而外围宏判定读的是 `source` ——
+于是除首个文件外，判定都在拿**上一个文件**的文本做括号配平，全部退化成
+`<attribute/proximity>`。修法是让两处用同一个变量；这个 bug 的现象（判定"总是找不到外围宏"）
+比原因更早被发现，正是因为它让 57 条一条都没被过滤掉、与预期不符。

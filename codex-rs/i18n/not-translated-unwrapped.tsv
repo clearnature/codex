@@ -609,3 +609,6 @@ Do not assume the action is unsafe based on the timeout alone. 	codex-rs/core/sr
 You may retry once, or ask the user for guidance or explicit approval.	codex-rs/core/src/guardian/review.rs	模型指令的**默认回退**：`model_messages.auto_review.timeout_instructions.` 的兜底文本（:139/:787 处 unwrap_or），且是 `concat!` 的**分片**（单片翻译会拼出错误句子）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
 Guardian plugin attribution timed out	codex-rs/core/src/guardian/review.rs	`tracing::warn!` 的日志串（内部诊断，到不了 UI）⇒ §12.3 诊断（docs/plan/i18n-verification.md）
 guardian review must run at least once	codex-rs/core/src/guardian/review.rs	`assert!` 的不变量消息（开发者面向，panic 文本）⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+replaced unavailable requested model with provider default	codex-rs/core/src/session/mod.rs	`tracing::warn!` 的日志串（字段 requested_model/fallback_model），只在日志里出现 ⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+failed to start managed network proxy: {err}	codex-rs/core/src/session/mod.rs	`start_managed_network_proxy` 的错误串：唯一生产调用点是本文件 :1200 的 sandbox-change 路径，那里只 `warn!(...)`（:1219）⇒ 到不了 UI，§12.3 诊断（docs/plan/i18n-verification.md）
+item completed without a recorded start timestamp	codex-rs/core/src/session/mod.rs	`tracing::warn!` 的日志串（item 完成但无起始时间戳）⇒ §12.3 诊断（docs/plan/i18n-verification.md）

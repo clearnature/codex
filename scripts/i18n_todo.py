@@ -128,6 +128,74 @@ def is_wrapped_precise(
     return False
 
 
+# Macros whose string literals are legitimately internal: a literal *really*
+# inside one of these is not a hidden user-visible message, so `--suspect`
+# must not report it. Names are matched without their path (`tracing::warn`
+# and `warn` are the same macro here).
+BENIGN_ENCLOSING = re.compile(
+    r"^(?:debug|info|warn|error|trace)$"  # log macros (incl. tracing::)
+    r"|^(?:assert|assert_eq|assert_ne|debug_assert|debug_assert_eq|debug_assert_ne"
+    r"|panic|unreachable|expect|matches)$"  # invariant / assertion text
+    r"|^(?:instrument|span|event)$"  # span names
+)
+
+
+def literal_offset(lines: list[str], line_number: int, source: str = "") -> int:
+    """Offset of the literal that starts on `line_number` (1-based).
+
+    The opening quote, not the line start: a macro written as
+    `warn!("...")` puts its `(` *before* the quote on the same line, and
+    `enclosing_macro` searches only the text before this offset -- using the
+    line start would hide exactly the macro we are trying to identify.
+    """
+    start = sum(len(line) + 1 for line in lines[: line_number - 1])
+    if source:
+        quote = source.find('"', start)
+        if 0 <= quote - start <= 400:
+            return quote
+    return start
+
+
+def enclosing_macro(text: str, pos: int) -> str | None:
+    """Name of the innermost `ident!(...)` whose parentheses span `pos`.
+
+    `None` when the literal is not inside any macro invocation (a plain
+    `format!(..)` argument reaches its own macro, an attribute `#[allow(..,
+    reason = "..")]` reaches none and is reported as `<attribute/proximity>`).
+    """
+    best: tuple[int, str] | None = None
+    for match in re.finditer(r"([A-Za-z_][\w:]*)\s*!\s*\(", text[:pos]):
+        start = match.end() - 1
+        depth = 0
+        index = start
+        while index < len(text):
+            if text[index] == "(":
+                depth += 1
+            elif text[index] == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+            index += 1
+        if start < pos < index and (best is None or start > best[0]):
+            best = (start, match.group(1).split("::")[-1])
+    return best[1] if best else None
+
+
+def is_inside_attribute(text: str, pos: int) -> bool:
+    """True when `pos` sits inside a `#[...]` attribute.
+
+    `#[instrument(name = "session.flush_rollout")]` and clippy's
+    `#[allow(.., reason = "..")]` carry string literals that are span names and
+    lint justifications -- developer-facing, never rendered -- yet they land in
+    the demoted buckets because `classify` matches macro-shaped context around
+    them. Reported as `enclosing=<attribute/proximity>` otherwise.
+    """
+    opened = text.rfind("#[", 0, pos)
+    if opened < 0:
+        return False
+    return text.rfind("]", opened, pos) < 0
+
+
 def read_not_translated(path: Path) -> tuple[set[str], set[str]]:
     """Returns (keys, sites): rows are `key<TAB>site<TAB>reason`.
 
@@ -242,7 +310,7 @@ def main(argv: list[str]) -> int:
             if path not in cache:
                 source = (REPO / path).read_text(encoding="utf-8", errors="replace")
                 cache[path] = (source, scanner.mask_source(source), source.splitlines())
-            _source, _masked, lines = cache[path]
+            source, _masked, lines = cache[path]
             if is_wrapped(lines, finding["line"]):
                 continue
             site = f"{finding['path']}:{finding['line']}"
@@ -250,16 +318,37 @@ def main(argv: list[str]) -> int:
                 continue
             if len(finding["value"].strip()) < scanner.MIN_CANDIDATE_LEN:
                 continue
-            suspects.append(finding)
+            # Only *proximity* demotions are interesting. A literal that really is
+            # inside a log macro / assert / `#[instrument]` name / clippy
+            # `reason = ".."` is legitimately internal, and listing those drowned
+            # the signal (56 of 57 in `session/mod.rs` were of that shape, against
+            # exactly one real find). `enclosing_macro` names the innermost
+            # `ident!(...)` spanning the literal.
+            macro = enclosing_macro(
+                source, literal_offset(lines, finding["line"], source)
+            )
+            inside_attribute = is_inside_attribute(
+                source, literal_offset(lines, finding["line"], source)
+            )
+            if inside_attribute:
+                continue
+            if macro is not None and BENIGN_ENCLOSING.match(macro):
+                continue
+            suspects.append((finding, macro))
         wanted_suspects = [
-            f for f in suspects if not args.file or f["path"].endswith(args.file)
+            (f, m)
+            for f, m in suspects
+            if not args.file or f["path"].endswith(args.file)
         ]
         scope = f"*{args.file}" if args.file else "the scanned roots"
         print(
             f"{len(wanted_suspects)} undecided literals in internal:assert/internal:log ({scope})"
         )
-        for finding in wanted_suspects:
-            print(f"  {finding['path']}:{finding['line']}: {finding['value'][:90]!r}")
+        for finding, macro in wanted_suspects:
+            where = f"enclosing={macro or '<attribute/proximity>'}"
+            print(
+                f"  {finding['path']}:{finding['line']}: {finding['value'][:80]!r}  [{where}]"
+            )
         return 0
 
     if args.file:

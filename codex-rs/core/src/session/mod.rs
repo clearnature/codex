@@ -76,6 +76,9 @@ use codex_features::unstable_features_warning_event;
 use codex_history::RolloutItem;
 use codex_hooks::Hooks;
 use codex_hooks::HooksConfig;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
 use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
@@ -606,7 +609,13 @@ impl Session {
             Arc::new(
                 ExecPolicyManager::load(&config.config_layer_stack)
                     .await
-                    .map_err(|err| CodexErr::Fatal(format!("failed to load rules: {err}")))?,
+                    .map_err(|err| {
+                        CodexErr::Fatal(tr_with(
+                            current(),
+                            "failed to load rules: {0}",
+                            &[&err.to_string()],
+                        ))
+                    })?,
             )
         };
 
@@ -1005,9 +1014,10 @@ fn unsupported_service_tier_warning(
             && *service_tier != SERVICE_TIER_DEFAULT_REQUEST_VALUE
             && !model_info.supports_service_tier(service_tier)
     })?;
-    Some(format!(
-        "Configured service tier `{service_tier}` is not advertised as supported for model `{}` and will be omitted from requests.",
-        model_info.slug
+    Some(tr_with(
+        current(),
+        "Configured service tier `{0}` is not advertised as supported for model `{1}` and will be omitted from requests.",
+        &[service_tier, &model_info.slug],
     ))
 }
 
@@ -1251,8 +1261,13 @@ impl Session {
         &self,
         operation: &str,
     ) -> anyhow::Result<&LiveThread> {
-        self.live_thread()
-            .ok_or_else(|| anyhow::anyhow!("Session persistence is disabled; cannot {operation}."))
+        self.live_thread().ok_or_else(|| {
+            anyhow::anyhow!(tr_with(
+                current(),
+                "Session persistence is disabled; cannot {0}.",
+                &[operation]
+            ))
+        })
     }
 
     pub(crate) fn live_thread(&self) -> Option<&LiveThread> {
@@ -1452,10 +1467,7 @@ impl Session {
                     self.send_event(
                         &turn_context,
                         EventMsg::Warning(WarningEvent {
-                            message: format!(
-                                "This session was recorded with model `{prev}` but is resuming with `{curr}`. \
-                         Consider switching back to `{prev}` as it may affect Codex performance."
-                            ),
+                            message: tr_with(current(), "This session was recorded with model `{0}` but is resuming with `{1}`. Consider switching back to `{0}` as it may affect Codex performance.", &[prev, curr]),
                         }),
                     )
                     .await;
@@ -2539,7 +2551,12 @@ impl Session {
             .managed_network_proxy_refresh_lock
             .acquire()
             .await
-            .map_err(|_| anyhow::anyhow!("managed network proxy refresh semaphore closed"))?;
+            .map_err(|_| {
+                anyhow::anyhow!(tr(
+                    current(),
+                    "managed network proxy refresh semaphore closed"
+                ))
+            })?;
         let host =
             Self::validated_network_policy_amendment_host(amendment, network_approval_context)?;
         let codex_home = self
@@ -2556,14 +2573,24 @@ impl Session {
         if let Some(started_network_proxy) = self.services.network_proxy.load_full() {
             let proxy = started_network_proxy.proxy();
             match amendment.action {
-                NetworkPolicyRuleAction::Allow => proxy
-                    .add_allowed_domain(&host)
-                    .await
-                    .map_err(|err| anyhow::anyhow!("failed to update runtime allowlist: {err}"))?,
-                NetworkPolicyRuleAction::Deny => proxy
-                    .add_denied_domain(&host)
-                    .await
-                    .map_err(|err| anyhow::anyhow!("failed to update runtime denylist: {err}"))?,
+                NetworkPolicyRuleAction::Allow => {
+                    proxy.add_allowed_domain(&host).await.map_err(|err| {
+                        anyhow::anyhow!(tr_with(
+                            current(),
+                            "failed to update runtime allowlist: {0}",
+                            &[&err.to_string()]
+                        ))
+                    })?
+                }
+                NetworkPolicyRuleAction::Deny => {
+                    proxy.add_denied_domain(&host).await.map_err(|err| {
+                        anyhow::anyhow!(tr_with(
+                            current(),
+                            "failed to update runtime denylist: {0}",
+                            &[&err.to_string()]
+                        ))
+                    })?
+                }
             }
             // Active enforcement changed successfully. Notify the owner before
             // the next fallible await so cancellation cannot contradict it.
@@ -2583,7 +2610,11 @@ impl Session {
             )
             .await
             .map_err(|err| {
-                anyhow::anyhow!("failed to persist network policy amendment to execpolicy: {err}")
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "failed to persist network policy amendment to execpolicy: {0}",
+                    &[&err.to_string()]
+                ))
             })?;
 
         // Without a running proxy, persistence is the first effective policy change.
@@ -2601,11 +2632,11 @@ impl Session {
         let approved_host = normalize_host(&network_approval_context.host);
         let amendment_host = normalize_host(&amendment.host);
         if amendment_host != approved_host {
-            return Err(anyhow::anyhow!(
-                "network policy amendment host '{}' does not match approved host '{}'",
-                amendment.host,
-                network_approval_context.host
-            ));
+            return Err(anyhow::anyhow!(tr_with(
+                current(),
+                "network policy amendment host '{0}' does not match approved host '{1}'",
+                &[&amendment.host, &network_approval_context.host]
+            )));
         }
         Ok(approved_host)
     }
@@ -3713,8 +3744,10 @@ impl Session {
 
         warn!("server reported model {server_model} while requested model was {requested_model}");
 
-        let warning_message = format!(
-            "Your account was flagged for potentially high-risk cyber activity and this request was routed to gpt-5.2 as a fallback. To regain access to gpt-5.3-codex, apply for trusted access: {CYBER_VERIFY_URL} or learn more: {CYBER_SAFETY_URL}"
+        let warning_message = tr_with(
+            current(),
+            "Your account was flagged for potentially high-risk cyber activity and this request was routed to gpt-5.2 as a fallback. To regain access to gpt-5.3-codex, apply for trusted access: {0} or learn more: {1}",
+            &[CYBER_VERIFY_URL, CYBER_SAFETY_URL],
         );
 
         self.send_event(

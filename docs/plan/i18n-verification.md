@@ -1071,3 +1071,231 @@ internal                  : 23509
 
 *证据*：`just i18n-check` 退出码 0，回执 `r-mu4lwag5-j2q2h0`；
 `cargo test -p codex-i18n-check` 20 passed（其中新增 5 条）；`fmt-check` 回执 `r-mu4lwsxw-v3qcmc`。
+
+### 12.30 第 245 轮：core 剩余候选的**分诊表**（193 文件 → 185 有活，798 个候选）
+
+**为什么要先列表**：`realtime_conversation.rs`（23 译 / 17 不译）与 `realtime_context.rs`（26 全不译）
+是**同一功能的两半、判定相反**，所以「按目录/文件名批量豁免」是错的；而逐文件从头读又太慢。
+两列即可把 798 分成两类可操作的工作：**候选数**与**用户可见调用点出现次数**
+（`add_error_message` / `add_info_message` / `add_warning_message` / `EventMsg::Warning` /
+`ToolError` / `CodexErr` / `Line::from` / `Span::from`）。
+
+**方法（可复现）**：import `scripts/i18n_todo.py`，对 `scripts/i18n_scan.py` 的 `candidates` 桶
+逐个套用**与该脚本相同的两道过滤**——`is_wrapped(lines, line)` 与
+`not-translated-unwrapped.tsv` 的键/站点——再按文件计数。
+**自检**：本表合计 **798**，与 `python3 scripts/i18n_todo.py --root codex-rs/core` 的
+`unwrapped candidates` 逐字相同（差一个数就说明过滤没对齐）。
+
+> ⚠ **一个 22% 的测量坑（本轮实测）**：只 import `i18n_scan.py` 而**不**套 `is_wrapped`，
+> 合计会是 **972** 而不是 798 —— 因为扫描器的 `candidates` 桶按**形状**分类，
+> 「有没有被 `tr(` 包住」是 `i18n_todo.py` 之后才施加的第二道过滤
+> （脚本自己在 `LOOKBACK` 的注释里写过：只看同行会把已包的误报成剩余，实测虚高约 15%）。
+> 这类「口径差一层」的坑与 §12.25 是同一个家族。
+
+#### 桶 A：**0 个用户可见调用点** —— 140 文件 / 544 候选（**疑似不译，但必须逐文件给判据**）
+
+「0 个用户可见调用点」只是**反证的必要条件**，不是充分条件：本桶里至少有四种真实形态，
+判据各不相同（文件可能同时属于多种，逐文件看）：
+① 工具定义 / JSON schema（`tools/handlers/*_spec.rs` 等，§4 决策 3 / §12.2）；
+② 注入模型的上线上下文与提示词（§12.2）；
+③ `Result<_, String>` 回给模型或 app-server 的工具参数校验错误（§12.3 / §12.11）；
+④ 走 `eyre`/`anyhow`/`tracing` 内部链、到不了 UI 的诊断（§12.3）。
+**反例警示**：桶 A 里出现过「本该译」的文件（例如 `shell_snapshot.rs` 之类把文案塞进结构体字段、
+由 TUI 渲染的路径就不经过上面那八个 API）——所以本桶的每一批仍要跑
+「文件级反证 + 一次负向控制」，不能只看本表就豁免。
+
+| 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
+| ---: | ---: | --- |
+| 18 | 0 | `core/src/tools/code_mode/mod.rs` |
+| 15 | 0 | `core/src/session/step_activation.rs` |
+| 14 | 0 | `core/src/tools/handlers/request_user_input_spec.rs` |
+| 12 | 0 | `core/src/tools/handlers/unified_exec/exec_command.rs` |
+| 11 | 0 | `core/src/agent/role.rs` |
+| 11 | 0 | `core/src/context/world_state/environment.rs` |
+| 11 | 0 | `core/src/session/mcp.rs` |
+| 11 | 0 | `core/src/shell_snapshot.rs` |
+| 11 | 0 | `core/src/tools/handlers/mod.rs` |
+| 10 | 0 | `core/src/config/network_proxy_spec.rs` |
+| 10 | 0 | `core/src/context/environment_context.rs` |
+| 10 | 0 | `core/src/context/node_repl_review_evidence.rs` |
+| 10 | 0 | `core/src/tools/handlers/apply_patch.rs` |
+| 10 | 0 | `core/src/tools/handlers/request_permissions.rs` |
+| 10 | 0 | `core/src/tools/handlers/request_plugin_install.rs` |
+| 10 | 0 | `core/src/tools/handlers/sleep.rs` |
+| 10 | 0 | `core/src/tools/handlers/view_image.rs` |
+| 9 | 0 | `core/src/tools/code_mode/delegate.rs` |
+| 9 | 0 | `core/src/tools/handlers/mcp_resource_spec.rs` |
+| 8 | 0 | `core/src/mcp_openai_file.rs` |
+| 8 | 0 | `core/src/network_policy_decision.rs` |
+| 8 | 0 | `core/src/tools/context.rs` |
+| 8 | 0 | `core/src/tools/handlers/request_plugin_install_spec.rs` |
+| 7 | 0 | `core/src/mcp_skill_dependencies.rs` |
+| 7 | 0 | `core/src/plugins/render.rs` |
+| 7 | 0 | `core/src/tools/handlers/mcp_resource.rs` |
+| 7 | 0 | `core/src/tools/handlers/request_user_input_async.rs` |
+| 7 | 0 | `core/src/tools/registry.rs` |
+| 7 | 0 | `core/src/tools/runtimes/mod.rs` |
+| 6 | 0 | `core/src/context/token_budget_context.rs` |
+| 6 | 0 | `core/src/session/multi_agents.rs` |
+| 6 | 0 | `core/src/windows_sandbox.rs` |
+| 5 | 0 | `core/src/context/guardian_followup_review_reminder.rs` |
+| 5 | 0 | `core/src/context/world_state/tools.rs` |
+| 5 | 0 | `core/src/context_manager/normalize.rs` |
+| 5 | 0 | `core/src/image_preparation.rs` |
+| 5 | 0 | `core/src/tools/code_mode/wait_spec.rs` |
+| 5 | 0 | `core/src/tools/handlers/dynamic.rs` |
+| 5 | 0 | `core/src/tools/handlers/multi_agents_v2/wait.rs` |
+| 5 | 0 | `core/src/tools/handlers/plan_spec.rs` |
+| 5 | 0 | `core/src/tools/handlers/request_user_input.rs` |
+| 5 | 0 | `core/src/tools/handlers/tool_search_spec.rs` |
+| 5 | 0 | `core/src/tools/handlers/wait_for_environment.rs` |
+| 4 | 0 | `core/src/config/requirements.rs` |
+| 4 | 0 | `core/src/context/available_plugins_instructions.rs` |
+| 4 | 0 | `core/src/context/update_plan_instructions.rs` |
+| 4 | 0 | `core/src/guardian/assessment.rs` |
+| 4 | 0 | `core/src/lib.rs` |
+| 4 | 0 | `core/src/responses_metadata.rs` |
+| 4 | 0 | `core/src/session_prefix.rs` |
+| 4 | 0 | `core/src/tools/handlers/current_time.rs` |
+| 4 | 0 | `core/src/tools/handlers/mcp.rs` |
+| 4 | 0 | `core/src/tools/handlers/multi_agents.rs` |
+| 4 | 0 | `core/src/tools/handlers/multi_agents_v2/spawn.rs` |
+| 4 | 0 | `core/src/tools/handlers/plan.rs` |
+| 4 | 0 | `core/src/tools/handlers/send_message_to_user_async.rs` |
+| 4 | 0 | `core/src/tools/mod.rs` |
+| 3 | 0 | `core/src/agents_md.rs` |
+| 3 | 0 | `core/src/context/image_resize_notice.rs` |
+| 3 | 0 | `core/src/context/internal_model_context.rs` |
+| 3 | 0 | `core/src/context/realtime_delegation.rs` |
+| 3 | 0 | `core/src/context/world_state/managed_developer_instructions.rs` |
+| 3 | 0 | `core/src/context/world_state/persistent_mode.rs` |
+| 3 | 0 | `core/src/guardian/reviewer_config.rs` |
+| 3 | 0 | `core/src/safety.rs` |
+| 3 | 0 | `core/src/tasks/user_shell.rs` |
+| 3 | 0 | `core/src/tools/handlers/apply_patch_spec.rs` |
+| 3 | 0 | `core/src/tools/handlers/multi_agents/resume_agent.rs` |
+| 3 | 0 | `core/src/tools/handlers/multi_agents_v2/message_tool.rs` |
+| 3 | 0 | `core/src/tools/handlers/tool_search.rs` |
+| 3 | 0 | `core/src/tools/handlers/view_image_spec.rs` |
+| 2 | 0 | `core/src/config/edit.rs` |
+| 2 | 0 | `core/src/config/managed_features.rs` |
+| 2 | 0 | `core/src/context/current_time_reminder.rs` |
+| 2 | 0 | `core/src/context/multi_agent_mode_instructions.rs` |
+| 2 | 0 | `core/src/context/turn_aborted.rs` |
+| 2 | 0 | `core/src/context/unsupported_media.rs` |
+| 2 | 0 | `core/src/context/user_instructions.rs` |
+| 2 | 0 | `core/src/context/world_state/agents_md.rs` |
+| 2 | 0 | `core/src/context/world_state/context_window_guidance.rs` |
+| 2 | 0 | `core/src/guardian/review_session_context.rs` |
+| 2 | 0 | `core/src/tools/code_mode/wait_handler.rs` |
+| 2 | 0 | `core/src/tools/handlers/list_available_plugins_to_install.rs` |
+| 2 | 0 | `core/src/tools/handlers/multi_agents/spawn.rs` |
+| 2 | 0 | `core/src/tools/handlers/new_context_window.rs` |
+| 2 | 0 | `core/src/tools/handlers/unified_exec.rs` |
+| 2 | 0 | `core/src/tools/router.rs` |
+| 2 | 0 | `core/src/unified_exec/oneshot.rs` |
+| 2 | 0 | `core/src/unified_exec/process.rs` |
+| 1 | 0 | `core/src/agent_communication.rs` |
+| 1 | 0 | `core/src/apply_patch.rs` |
+| 1 | 0 | `core/src/config/edit/document_helpers.rs` |
+| 1 | 0 | `core/src/config/otel.rs` |
+| 1 | 0 | `core/src/config/permission_profile_catalog.rs` |
+| 1 | 0 | `core/src/context/approved_command_prefix_saved.rs` |
+| 1 | 0 | `core/src/context/apps_instructions.rs` |
+| 1 | 0 | `core/src/context/environments_instructions.rs` |
+| 1 | 0 | `core/src/context/guardian_approved_action.rs` |
+| 1 | 0 | `core/src/context/guardian_review_evidence.rs` |
+| 1 | 0 | `core/src/context/inter_agent_completion_message.rs` |
+| 1 | 0 | `core/src/context/inter_agent_message.rs` |
+| 1 | 0 | `core/src/context/legacy_model_mismatch_warning.rs` |
+| 1 | 0 | `core/src/context/legacy_unified_exec_process_limit_warning.rs` |
+| 1 | 0 | `core/src/context/model_switch_instructions.rs` |
+| 1 | 0 | `core/src/context/network_rule_saved.rs` |
+| 1 | 0 | `core/src/context/personality_spec_instructions.rs` |
+| 1 | 0 | `core/src/context/recommended_plugins_instructions.rs` |
+| 1 | 0 | `core/src/context/rollout_budget.rs` |
+| 1 | 0 | `core/src/context/user_shell_command.rs` |
+| 1 | 0 | `core/src/context/user_verification_notice.rs` |
+| 1 | 0 | `core/src/current_time.rs` |
+| 1 | 0 | `core/src/environment_selection.rs` |
+| 1 | 0 | `core/src/event_mapping.rs` |
+| 1 | 0 | `core/src/guardian/approval_request.rs` |
+| 1 | 0 | `core/src/guardian/decision.rs` |
+| 1 | 0 | `core/src/guardian/feedback.rs` |
+| 1 | 0 | `core/src/guardian/runtime.rs` |
+| 1 | 0 | `core/src/hook_mcp_executor.rs` |
+| 1 | 0 | `core/src/mcp.rs` |
+| 1 | 0 | `core/src/mcp_tool_call/account.rs` |
+| 1 | 0 | `core/src/realtime_history/presentation.rs` |
+| 1 | 0 | `core/src/rollout.rs` |
+| 1 | 0 | `core/src/session/code_mode_warning.rs` |
+| 1 | 0 | `core/src/session/input_queue.rs` |
+| 1 | 0 | `core/src/session/realtime_history.rs` |
+| 1 | 0 | `core/src/session/review.rs` |
+| 1 | 0 | `core/src/shell.rs` |
+| 1 | 0 | `core/src/tasks/review.rs` |
+| 1 | 0 | `core/src/tools/code_mode/execute_handler.rs` |
+| 1 | 0 | `core/src/tools/code_mode/execute_spec.rs` |
+| 1 | 0 | `core/src/tools/code_mode/telemetry.rs` |
+| 1 | 0 | `core/src/tools/handlers/get_context_remaining.rs` |
+| 1 | 0 | `core/src/tools/handlers/get_context_remaining_spec.rs` |
+| 1 | 0 | `core/src/tools/handlers/list_available_plugins_to_install_spec.rs` |
+| 1 | 0 | `core/src/tools/handlers/mcp_resource/list_mcp_resource_templates.rs` |
+| 1 | 0 | `core/src/tools/handlers/mcp_resource/list_mcp_resources.rs` |
+| 1 | 0 | `core/src/tools/handlers/mcp_resource/read_mcp_resource.rs` |
+| 1 | 0 | `core/src/tools/handlers/multi_agents/send_input.rs` |
+| 1 | 0 | `core/src/tools/handlers/new_context_window_spec.rs` |
+| 1 | 0 | `core/src/turn_diff_tracker.rs` |
+
+#### 桶 B：**有用户可见调用点** —— 45 文件 / 254 候选（**逐站点甄别**）
+
+| 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
+| ---: | ---: | --- |
+| 18 | 9 | `core/src/tools/handlers/multi_agents_common.rs` |
+| 15 | 15 | `core/src/guardian/review.rs` |
+| 13 | 2 | `core/src/unified_exec/stdin_approval.rs` |
+| 12 | 24 | `core/src/session/mod.rs` |
+| 11 | 7 | `core/src/codex_thread.rs` |
+| 11 | 18 | `core/src/exec.rs` |
+| 11 | 19 | `core/src/session/turn.rs` |
+| 11 | 12 | `core/src/tools/runtimes/zsh_fork/unix_escalation.rs` |
+| 10 | 3 | `core/src/mcp_tool_call.rs` |
+| 10 | 9 | `core/src/session/environment.rs` |
+| 10 | 12 | `core/src/session/handlers.rs` |
+| 9 | 1 | `core/src/unified_exec/errors.rs` |
+| 8 | 25 | `core/src/tools/runtimes/unified_exec.rs` |
+| 7 | 7 | `core/src/session_rollout_init_error.rs` |
+| 6 | 7 | `core/src/session/turn_suspension.rs` |
+| 6 | 7 | `core/src/thread_rollout_truncation.rs` |
+| 6 | 12 | `core/src/tools/approvals.rs` |
+| 6 | 22 | `core/src/tools/orchestrator.rs` |
+| 6 | 15 | `core/src/unified_exec/process_manager.rs` |
+| 5 | 9 | `core/src/agent/control.rs` |
+| 5 | 4 | `core/src/client.rs` |
+| 5 | 3 | `core/src/hook_runtime.rs` |
+| 5 | 7 | `core/src/responses_retry.rs` |
+| 4 | 2 | `core/src/guardian/review_session.rs` |
+| 4 | 2 | `core/src/session/session.rs` |
+| 4 | 3 | `core/src/tools/handlers/unified_exec/write_stdin.rs` |
+| 4 | 3 | `core/src/tools/parallel.rs` |
+| 3 | 14 | `core/src/compact.rs` |
+| 3 | 7 | `core/src/compact_remote_v2.rs` |
+| 3 | 7 | `core/src/session/turn_input.rs` |
+| 3 | 14 | `core/src/tools/events.rs` |
+| 3 | 3 | `core/src/tools/handlers/multi_agents_v2/interrupt_agent.rs` |
+| 2 | 6 | `core/src/agent/registry.rs` |
+| 2 | 3 | `core/src/compact_remote.rs` |
+| 2 | 6 | `core/src/session/turn_context.rs` |
+| 2 | 2 | `core/src/tools/handlers/multi_agents/wait.rs` |
+| 1 | 8 | `core/src/agent/control/legacy.rs` |
+| 1 | 5 | `core/src/codex_delegate.rs` |
+| 1 | 11 | `core/src/compact_model_fallback.rs` |
+| 1 | 4 | `core/src/sandboxing/mod.rs` |
+| 1 | 2 | `core/src/session/thread_settings.rs` |
+| 1 | 2 | `core/src/session/time_reminder.rs` |
+| 1 | 2 | `core/src/session/world_state.rs` |
+| 1 | 2 | `core/src/tools/handlers/multi_agents/close_agent.rs` |
+| 1 | 8 | `core/src/tools/sandboxing.rs` |
+
+*证据*：分诊表合计 798 与 `i18n_todo` 输出一致（自检内建于生成脚本，assert 失败即中止）；
+本轮据此完成的批次见台账 `i18n.rollout.core.*`；`fmt-check` 回执 `r-mu762buk-etm7n4`。

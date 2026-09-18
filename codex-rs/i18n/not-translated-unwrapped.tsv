@@ -259,3 +259,105 @@ Enterprise (Automation)	codex-rs/tui/src/status/helpers.rs:112	套餐/层级**�
 Business Premium	codex-rs/tui/src/status/helpers.rs:114	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
 Pro Lite	codex-rs/tui/src/status/helpers.rs:120	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
 Edu Plus	codex-rs/tui/src/status/helpers.rs:122	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
+MCP {server}/{tool}	codex-rs/tui/src/app/agent_status_feed.rs:161	`MCP {server}/{tool}` 标识符（§12.9）；本次复核 render=0
+TUI task tools require the approval-gated MCP server	codex-rs/tui/src/app/app_server_events.rs:416	协议回包：`dynamic_tools::failure_response(…)` 与 `reject_app_server_request(…)`（本次复核：该文件两处 add_error_message 用的是变量，不是这些字面量）
+TUI dynamic tools require an active external task	codex-rs/tui/src/app/app_server_events.rs:418	协议回包：`dynamic_tools::failure_response(…)` 与 `reject_app_server_request(…)`（本次复核：该文件两处 add_error_message 用的是变量，不是这些字面量）
+side conversation was closed	codex-rs/tui/src/app/app_server_events.rs:490	协议回包：`dynamic_tools::failure_response(…)` 与 `reject_app_server_request(…)`（本次复核：该文件两处 add_error_message 用的是变量，不是这些字面量）
+loading older transcript history page	codex-rs/tui/src/app/history_pagination.rs:30	tracing 进度消息；本次复核 render=0
+	codex-rs/tui/src/app/history_ui.rs:422	值写不进单行按值形态（跨行/以`#`开头/含制表符）⇒ 按位置豁免；PowerShell 脚本片段（要原样执行）
+unknown built-in permission profile	codex-rs/tui/src/app/permission_shortcuts.rs:30	内部错误；本次复核 render=0
+refilling underfilled terminal scrollback from paginated history	codex-rs/tui/src/app/resize_reflow.rs:535	tracing 消息（本次复核 :533-535 的宏调用）
+resuming a thread	codex-rs/tui/src/app/resume_config.rs:18	`refresh_in_memory_config_from_disk_best_effort` 的 log_message：只进 tracing::warn!（与既有注册行同模式）
+previous turn {} is still in progress	codex-rs/tui/src/app/safety_buffering.rs:303	内部前进条件校验的 eyre 错误（本次复核 :303 是 eyre!）
+closing the session picker	codex-rs/tui/src/app/session_picker.rs:145	同上 log_message（本次复核 :145）
+tui startup initial frame scheduled	codex-rs/tui/src/app/startup.rs:880	tracing 消息（本次复核 :880）
+    {display_index}. {folder}\n	codex-rs/tui/src/app/startup_prompts.rs:108	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
+       {reason}\n	codex-rs/tui/src/app/startup_prompts.rs:109	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
+expected active turn id `	codex-rs/tui/src/app.rs:770	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
+` but found `	codex-rs/tui/src/app.rs:771	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
+expected active turn id 	codex-rs/tui/src/app.rs:789	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
+ but found 	codex-rs/tui/src/app.rs:790	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
+the selected prompt is a steer and cannot be branched independently	codex-rs/tui/src/app_backtrack.rs:495	分支失败内部原因（Result 控制流，§12.9）
+the selected prompt belongs to a turn that is still in progress	codex-rs/tui/src/app_backtrack.rs:498	分支失败内部原因（Result 控制流，§12.9）
+the selected transcript prompt no longer matches the persisted thread	codex-rs/tui/src/app_backtrack.rs:507	分支失败内部原因（Result 控制流，§12.9）
+the selected prompt was not found in the persisted thread	codex-rs/tui/src/app_backtrack.rs:515	分支失败内部原因（Result 控制流，§12.9）
+embedded sessions have no remote connection	codex-rs/tui/src/app_server_connection.rs:20	内部错误；本次复核 render=0
+failed to load a bounded thread item page	codex-rs/tui/src/app_server_session/history.rs:130	分页历史加载的 eyre 上下文（§12.10）；本次复核 render=0
+failed to load a bounded thread history page	codex-rs/tui/src/app_server_session/history.rs:151	分页历史加载的 eyre 上下文（§12.10）；本次复核 render=0
+invalid thread id in bounded history response	codex-rs/tui/src/app_server_session/history.rs:208	分页历史加载的 eyre 上下文（§12.10）；本次复核 render=0
+failed to read stdin: {err}	codex-rs/tui/src/bin/md-events.rs:7	调试用二进制的诊断输出（§12.9）
+  ───────────────────────	codex-rs/tui/src/bottom_pane/multi_select_picker.rs:92	分隔线（布局）
+Accept: application/vnd.github+json	codex-rs/tui/src/branch_summary.rs:378	HTTP 头 `Accept: application/vnd.github+json`
+{} / {} tokens	codex-rs/tui/src/chatwidget/goal_status.rs:87	`{} tokens`：唯一英文词 tokens 在不译清单（glossary:37 / §12.9）
+{} tokens	codex-rs/tui/src/chatwidget/goal_status.rs:100	`{} tokens`：唯一英文词 tokens 在不译清单（glossary:37 / §12.9）
+Implement the plan in a fresh context. Treat the plan as the source of 	codex-rs/tui/src/chatwidget/plan_implementation.rs:30	喂模型的提示词（:54/:77 拼进请求）
+user intent, re-read files as needed, and carry the work through 	codex-rs/tui/src/chatwidget/plan_implementation.rs:31	喂模型的提示词（:54/:77 拼进请求）
+implementation and verification.	codex-rs/tui/src/chatwidget/plan_implementation.rs:32	喂模型的提示词（:54/:77 拼进请求）
+%H:%M on %-d %b %Y	codex-rs/tui/src/chatwidget/reset_credits.rs:44	strftime 格式串（§12.10）
+MCP tool call completed without a result	codex-rs/tui/src/chatwidget/tool_lifecycle.rs:227	工具结果缺失的内部 Err(String)（§12.10）
+Invalid prompt: we've limited access to this content for safety reasons.	codex-rs/tui/src/chatwidget/turn_runtime.rs:15	源码注释明写：与服务器英文错误文本做 starts_with 匹配，译了会静默失效（§9.1.5）
+This content was flagged for possible biological risk.	codex-rs/tui/src/chatwidget/turn_runtime.rs:17	源码注释明写：与服务器英文错误文本做 starts_with 匹配，译了会静默失效（§9.1.5）
+[Pasted Content {} chars]	codex-rs/tui/src/chatwidget/user_messages.rs:304	`[Pasted Content {} chars]` 进的是发给模型的用户消息（§12.10）
+Model metadata for `	codex-rs/tui/src/chatwidget/warnings.rs:3	`strip_prefix`/`strip_suffix` 的匹配串（本次复核 :23-24）
+` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.	codex-rs/tui/src/chatwidget/warnings.rs:5	`strip_prefix`/`strip_suffix` 的匹配串（本次复核 :23-24）
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $img = Get-Clipboard -Format Image; if ($img -ne $null) { $p=[System.IO.Path]::GetTempFileName(); $p = [System.IO.Path]::ChangeExtension($p,'png'); $img.Save($p,[System.Drawing.Imaging.ImageFormat]::Png); Write-Output $p } else { exit 1 }	codex-rs/tui/src/clipboard_paste.rs:219	PowerShell 脚本片段
+Bearer {}	codex-rs/tui/src/dynamic_tools_mcp.rs:116	HTTP 头 + 内部错误；本次复核 render=0
+managed MCP requirements do not permit the TUI task-tools server	codex-rs/tui/src/dynamic_tools_mcp.rs:137	HTTP 头 + 内部错误；本次复核 render=0
+missing task metadata	codex-rs/tui/src/dynamic_tools_mcp.rs:264	HTTP 头 + 内部错误；本次复核 render=0
+failed to detect external agent config migrations	codex-rs/tui/src/external_agent_config_migration/flow.rs:335	tracing::warn!（§12.10）；本次复核 render=0
+Import {rest}	codex-rs/tui/src/external_agent_config_migration/mod.rs:208	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
+Import enabled plugins from {}	codex-rs/tui/src/external_agent_config_migration/mod.rs:248	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
+Claude Code	codex-rs/tui/src/external_agent_config_migration/source.rs:43	产品名 `Claude Code`（§12.6）
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:137	git 子进程失败诊断；本次复核 render=0
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:157	git 子进程失败诊断；本次复核 render=0
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:180	git 子进程失败诊断；本次复核 render=0
+[P{priority}] {title}	codex-rs/tui/src/git_action_directives.rs:109	喂模型的指令载荷
+{indent}- {title} — {location}\n{indent}  {body}{suffix}	codex-rs/tui/src/git_action_directives.rs:127	喂模型的指令载荷
+unexpected WaitForSingleObject result: {other}	codex-rs/tui/src/ide_context/windows_pipe.rs:186	Windows 命名管道内部错误（WinAPI）（§12.9）
+token user buffer is too small	codex-rs/tui/src/ide_context/windows_pipe.rs:255	Windows 命名管道内部错误（WinAPI）（§12.9）
+{markdown_label}  \n[{markdown_destination_label}]({placeholder})	codex-rs/tui/src/inline_visualization.rs:239	markdown 链接模板（结构与占位符）
+code={:?}, modifiers={}, kind={:?}	codex-rs/tui/src/keymap_setup/debug.rs:238	调试转储格式串
+debug inspect keypress key terminal detected actions	codex-rs/tui/src/keymap_setup/picker.rs:365	快捷键关键字列表（匹配用）
+:\d+(?::\d+)?(?:[-–]\d+(?::\d+)?)?$	codex-rs/tui/src/markdown_render/local_links.rs:19	正则表达式
+Luna Reserve	codex-rs/tui/src/model_catalog.rs:12	模型代号 `Luna Reserve`（产品名）
+tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/bel.rs:29	WinAPI 未实现提示（§12.9 同类）
+tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/osc9.rs:59	WinAPI 未实现提示（§12.9 同类）
+Null Signal	codex-rs/tui/src/pets/catalog.rs:80	名称 `Null Signal`（产品/作品名）
+disable disabled hide hidden off none	codex-rs/tui/src/pets/picker.rs:94	关键字列表（匹配用）
+legacy transcript preview exceeded its scan budget	codex-rs/tui/src/resume_picker_transcript_preview.rs:221	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
+{}  \n[{}]({placeholder})	codex-rs/tui/src/resume_picker_transcript_preview.rs:294	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
+{}  \n{}	codex-rs/tui/src/resume_picker_transcript_preview.rs:297	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
+Invalid request: unknown variant `thread/queue/add`	codex-rs/tui/src/session_queue_commands.rs:155	与入站错误文本比对的变体名（§12.1）
+failed to determine the working directory recorded for the selected session	codex-rs/tui/src/session_resume.rs:76	会话恢复内部错误；本次复核 render=0
+session {} is archived. 	codex-rs/tui/src/session_start.rs:72	`starts_with` 匹配服务端错误文本（本次复核 :72）
+startup cancelled	codex-rs/tui/src/startup_draft.rs:72	启动取消/输入流关闭的内部原因（§12.9）
+terminal input stream closed during startup	codex-rs/tui/src/startup_draft.rs:221	启动取消/输入流关闭的内部原因（§12.9）
+Extra High	codex-rs/tui/src/status/thread_usage.rs:28	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
+Fast mode	codex-rs/tui/src/status/thread_usage.rs:37	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
+Extra High	codex-rs/tui/src/status/thread_usage.rs:223	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
+Fast mode	codex-rs/tui/src/status/thread_usage.rs:231	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
+{minutes}m {seconds:02}s	codex-rs/tui/src/status_indicator_widget.rs:80	时间格式串 `{minutes}m {seconds:02}s`
+{hours}h {minutes:02}m {seconds:02}s	codex-rs/tui/src/status_indicator_widget.rs:85	时间格式串 `{minutes}m {seconds:02}s`
+stream chunking mode transition	codex-rs/tui/src/streaming/commit_tick.rs:138	tracing 消息（§12.9 同类）
+table holdback decision	codex-rs/tui/src/streaming/controller.rs:411	tracing::trace!（本次复核 :409-413；§12.9）
+table holdback stable-prefix cache hit	codex-rs/tui/src/streaming/controller.rs:444	tracing::trace!（本次复核 :409-413；§12.9）
+table holdback stable-prefix render	codex-rs/tui/src/streaming/controller.rs:463	tracing::trace!（本次复核 :409-413；§12.9）
+table holdback incremental scan	codex-rs/tui/src/streaming/table_holdback.rs:114	tracing 消息
+	codex-rs/tui/src/task_mentions.rs:35	值写不进单行按值形态（跨行/以`#`开头/含制表符）⇒ 按位置豁免；解析契约分隔符 `## My request for Codex:` 与喂模型的引用段（§12.14 同类）
+	codex-rs/tui/src/task_mentions.rs:266	值写不进单行按值形态（跨行/以`#`开头/含制表符）⇒ 按位置豁免；解析契约分隔符 `## My request for Codex:` 与喂模型的引用段（§12.14 同类）
+tried to execute SetWindowTitle using WinAPI; use ANSI instead	codex-rs/tui/src/terminal_title.rs:96	WinAPI 未实现提示（§12.9）
+	codex-rs/tui/src/terminal_visualization_instructions.rs:4	值写不进单行按值形态（跨行/以`#`开头/含制表符）⇒ 按位置豁免；喂模型的格式提示资产
+timed out discarding buffered terminal input	codex-rs/tui/src/tui/input_boundary.rs:38	io::Error 诊断（§12.9）
+terminal input poll failed with events {:#x}	codex-rs/tui/src/tui/input_boundary.rs:92	io::Error 诊断（§12.9）
+terminal input handle is unavailable	codex-rs/tui/src/tui/input_boundary.rs:109	io::Error 诊断（§12.9）
+set TERM_PROGRAM	codex-rs/tui/src/tui/keyboard_modes.rs:110	cmd.exe 参数与 legacy Windows API 未实现（§12.9）
+keyboard enhancement reset is not implemented for the legacy Windows API	codex-rs/tui/src/tui/keyboard_modes.rs:262	cmd.exe 参数与 legacy Windows API 未实现（§12.9）
+modifyOtherKeys enable is not implemented for the legacy Windows API	codex-rs/tui/src/tui/keyboard_modes.rs:284	cmd.exe 参数与 legacy Windows API 未实现（§12.9）
+modifyOtherKeys reset is not implemented for the legacy Windows API	codex-rs/tui/src/tui/keyboard_modes.rs:306	cmd.exe 参数与 legacy Windows API 未实现（§12.9）
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh	codex-rs/tui/src/update_action.rs:56	安装脚本命令（要原样执行）
+$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex	codex-rs/tui/src/update_action.rs:65	安装脚本命令（要原样执行）
+Failed to parse latest tag name '{latest_tag_name}'	codex-rs/tui/src/update_versions.rs:12	版本标签解析错误；本次复核 render=0
+path must be absolute: {}	codex-rs/tui/src/windows_sandbox.rs:127	路径校验错误；本次复核 render=0
+path does not exist: {}	codex-rs/tui/src/windows_sandbox.rs:130	路径校验错误；本次复核 render=0
+path must be a directory: {}	codex-rs/tui/src/windows_sandbox.rs:133	路径校验错误；本次复核 render=0
+wrap_ranges: could not fully map owned line; returning partial source range	codex-rs/tui/src/wrapping.rs:392	tracing 消息（本次复核 :390-392）

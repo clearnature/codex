@@ -146,3 +146,59 @@ read should time out at the request deadline	codex-rs/tui/src/ide_context/ipc.rs
 	codex-rs/tui/src/ide_context/prompt.rs:16	值以 `#` 开头（注册表按行首 `#` 判注释，无法用值豁免）⇒ 按位置豁免；**解析契约分隔符**：源码注释要求与桌面端/IDE 扩展逐字一致，且 transcript 渲染靠它切分（译了同时破坏互操作与回放）⇒ §12.14
 	codex-rs/tui/src/ide_context/prompt.rs:182	值以 `#` 开头（注册表按行首 `#` 判注释，无法用值豁免）⇒ 按位置豁免；注入模型的 IDE 上下文提示词（喂模型会改变行为）⇒ §12.2 / §12.14
   ✨\u{200A}	codex-rs/tui/src/update_prompt.rs:200	emoji + U+200A（窄空格），零宽字符不适合翻译 ⇒ §12.10 / §12.7
+thread name	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:55	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+thread title	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:56	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+Context 0% left	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:62	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+Context 0% used	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:63	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+primary 0%	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:64	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+secondary 0%	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:65	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+0 window	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:67	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+5.2 credits	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:71	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+raw output	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:75	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+Workspace headline	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:76	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+gpt-5.2-codex medium	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:78	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+Tasks 0/0	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:80	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
+file changes: {status:?} · {} changes	codex-rs/tui/src/app/transcript_export.rs:158	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+mcp tool: {server}/{tool}({arguments}) · {status:?}	codex-rs/tui/src/app/transcript_export.rs:175	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+<image content>	codex-rs/tui/src/app/transcript_export.rs:183	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+<audio content>	codex-rs/tui/src/app/transcript_export.rs:186	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+link: {}	codex-rs/tui/src/app/transcript_export.rs:196	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+structured result: {content}	codex-rs/tui/src/app/transcript_export.rs:202	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+error: {}	codex-rs/tui/src/app/transcript_export.rs:206	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+	codex-rs/tui/src/app/transcript_export.rs:241	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+\n## {heading}\n\n	codex-rs/tui/src/app/transcript_export.rs:289	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+	codex-rs/tui/src/app/transcript_export.rs:300	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+fn greet(name: &str) -> String {	codex-rs/tui/src/theme_picker.rs:68	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    format!(\"Hello, {}!\", name)	codex-rs/tui/src/theme_picker.rs:73	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    format!(\"Hello, {name}!\")	codex-rs/tui/src/theme_picker.rs:78	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+fn summarize(users: &[User]) -> String {	codex-rs/tui/src/theme_picker.rs:93	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    let active = users.iter().filter(|u| u.is_active).count();	codex-rs/tui/src/theme_picker.rs:98	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    let active = users.iter().filter(|u| u.is_active()).count();	codex-rs/tui/src/theme_picker.rs:103	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    let names: Vec<&str> = users.iter().map(User::name).take(3).collect();	codex-rs/tui/src/theme_picker.rs:108	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    format!(\"{} active: {}\", active, names.join(\", \"))	codex-rs/tui/src/theme_picker.rs:113	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+    format!(\"{active} active users: {}\", names.join(\", \"))	codex-rs/tui/src/theme_picker.rs:118	语法高亮预览的**代码样本**（`PreviewRow.code`）⇒ §12.7 代码样本
+terminal stderr suppression is already active	codex-rs/tui/src/tui/terminal_stderr.rs:80	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+terminal stderr suppression lock poisoned	codex-rs/tui/src/tui/terminal_stderr.rs:142	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+hidden while active\n	codex-rs/tui/src/tui/terminal_stderr.rs:261	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+visible while paused\n	codex-rs/tui/src/tui/terminal_stderr.rs:263	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+hidden after resume\n	codex-rs/tui/src/tui/terminal_stderr.rs:265	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+visible after finish\n	codex-rs/tui/src/tui/terminal_stderr.rs:267	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+hidden after caught panic\n	codex-rs/tui/src/tui/terminal_stderr.rs:269	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+visible after recovered ownership\n	codex-rs/tui/src/tui/terminal_stderr.rs:271	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+visible while redirected\n	codex-rs/tui/src/tui/terminal_stderr.rs:291	终端 stderr 抑制状态机的**内部错误与测试断言载荷**：`:80`/`:142` 是 `io::Error` 消息（无渲染路径）；`:261-291` 的 `\n` 串是 `#[test]` 里写进临时文件并由 `assert_eq!` **按值比对**的标记（译了测试就红）⇒ §12.3 + §12.1
+    - HTTP_PROXY  = http://{http_addr}	codex-rs/tui/src/debug_config.rs:53	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+    - ALL_PROXY   = {all_proxy}	codex-rs/tui/src/debug_config.rs:54	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+  - enabled = {}	codex-rs/tui/src/debug_config.rs:64	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+  - max_concurrent_threads_per_session = {}	codex-rs/tui/src/debug_config.rs:66	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+  - default_subagent_model = {}	codex-rs/tui/src/debug_config.rs:77	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+  - default_subagent_reasoning_effort = {}	codex-rs/tui/src/debug_config.rs:82	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+  - interrupt_message = {}	codex-rs/tui/src/debug_config.rs:87	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+header_injections={} hosts={{{hosts}}}	codex-rs/tui/src/debug_config.rs:655	调试转储的配置行（`- key = value` 形态，含 HTTP_PROXY/header_injections 等），不是 UI 文案 ⇒ §12.7 调试转储
+Read the Codex goal objective file at 	codex-rs/tui/src/goal_files.rs:21	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+ before continuing.	codex-rs/tui/src/goal_files.rs:22	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+pasted text file: {path}. Read this file before continuing.	codex-rs/tui/src/goal_files.rs:79	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+- [Image #{}]: {path}	codex-rs/tui/src/goal_files.rs:107	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+image file: {path}	codex-rs/tui/src/goal_files.rs:109	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+Referenced image files:	codex-rs/tui/src/goal_files.rs:116	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+Referenced image URLs:	codex-rs/tui/src/goal_files.rs:120	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16
+- [Image #{}]: {url}	codex-rs/tui/src/goal_files.rs:125	拼进**发给模型的目标文本**：`GOAL_FILE_PREFIX`/`SUFFIX` 包住目标文件说明、`Referenced image files:` 等是附件清单段（经 append_section 进入 objective）⇒ §12.2 / §12.16

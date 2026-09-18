@@ -1153,7 +1153,7 @@ async fn exec_approval_requirement_respects_approval_policy() {
             prefix_rule: None,
         },
         ExecApprovalRequirement::Forbidden {
-            reason: PROMPT_CONFLICT_REASON.to_string(),
+            reason: prompt_conflict_reason().to_string(),
         },
     )
     .await;
@@ -1368,7 +1368,7 @@ async fn exec_approval_requirement_rejects_known_safe_escalation_when_granular_s
             prefix_rule: None,
         },
         ExecApprovalRequirement::Forbidden {
-            reason: REJECT_SANDBOX_APPROVAL_REASON.to_string(),
+            reason: reject_sandbox_approval_reason().to_string(),
         },
     )
     .await;
@@ -1393,7 +1393,7 @@ async fn exec_approval_requirement_rejects_unmatched_sandbox_escalation_when_gra
             prefix_rule: None,
         },
         ExecApprovalRequirement::Forbidden {
-            reason: REJECT_SANDBOX_APPROVAL_REASON.to_string(),
+            reason: reject_sandbox_approval_reason().to_string(),
         },
     )
     .await;
@@ -1403,10 +1403,10 @@ async fn exec_approval_requirement_rejects_unmatched_sandbox_escalation_when_gra
 fn other_danger_preserves_rejected_prompt_reason() {
     assert_eq!(
         derive_rejected_prompt_reason(
-            REJECT_SANDBOX_APPROVAL_REASON,
+            reject_sandbox_approval_reason(),
             Some(DangerousCommandMatch::Other),
         ),
-        REJECT_SANDBOX_APPROVAL_REASON
+        reject_sandbox_approval_reason()
     );
 }
 
@@ -1414,7 +1414,7 @@ fn other_danger_preserves_rejected_prompt_reason() {
 fn forced_rm_rejected_prompt_reason_does_not_repeat_command() {
     assert_eq!(
         derive_rejected_prompt_reason(
-            REJECT_SANDBOX_APPROVAL_REASON,
+            reject_sandbox_approval_reason(),
             Some(DangerousCommandMatch::ForcedRm),
         ),
         "rm -f style commands are not permitted. Use a safer approach"
@@ -1496,7 +1496,7 @@ async fn forced_rm_preserves_rule_rejection_when_granular_rules_are_disabled() {
     assert_eq!(
         requirement,
         ExecApprovalRequirement::Forbidden {
-            reason: REJECT_RULES_APPROVAL_REASON.to_string(),
+            reason: reject_rules_approval_reason().to_string(),
         }
     );
 }

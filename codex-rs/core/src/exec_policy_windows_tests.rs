@@ -18,7 +18,7 @@ async fn evaluates_powershell_inner_commands_against_prompt_rules() {
             prefix_rule: None,
         },
         ExecApprovalRequirement::Forbidden {
-            reason: PROMPT_CONFLICT_REASON.to_string(),
+            reason: prompt_conflict_reason().to_string(),
         },
     )
     .await;

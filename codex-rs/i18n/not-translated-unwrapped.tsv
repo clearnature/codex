@@ -377,3 +377,14 @@ failed to read {context} {}: {e}	codex-rs/core/src/config/mod.rs:4497	小写 I/O
 {context} is empty: {}	codex-rs/core/src/config/mod.rs:4505	小写 I/O 诊断模板
 failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4562	小写 I/O 诊断
 failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4591	小写 I/O 诊断
+failed to read rules files from {dir}: {source}	codex-rs/core/src/exec_policy.rs:262	规则文件 I/O 诊断
+failed to read rules file {path}: {source}	codex-rs/core/src/exec_policy.rs:268	同上
+failed to parse rules file {path}: {source}	codex-rs/core/src/exec_policy.rs:274	同上
+failed to update rules file {path}: {source}	codex-rs/core/src/exec_policy.rs:283	同上
+failed to join blocking rules update task: {source}	codex-rs/core/src/exec_policy.rs:286	任务 join 诊断
+failed to update in-memory rules: {source}	codex-rs/core/src/exec_policy.rs:289	内存规则更新诊断
+exec policy update semaphore closed	codex-rs/core/src/exec_policy.rs:495	内部并发状态（semaphore 关闭）
+exec policy update semaphore closed	codex-rs/core/src/exec_policy.rs:548	内部并发状态（semaphore 关闭）
+: starlark error: 	codex-rs/core/src/exec_policy.rs:603	Starlark 解析错误拼装（内部诊断）
+: starlark error:	codex-rs/core/src/exec_policy.rs:618	同上
+{}:{}: {} (problem is on or around line {})	codex-rs/core/src/exec_policy.rs:651	Starlark 错误定位格式串

@@ -19,6 +19,9 @@ use codex_execpolicy::RequirementsExecPolicy;
 use codex_execpolicy::RuleMatch;
 use codex_execpolicy::blocking_append_allow_prefix_rule;
 use codex_execpolicy::blocking_append_network_rule;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::approvals::ExecPolicyAmendment;
 use codex_protocol::config_types::WindowsSandboxLevel;
 use codex_protocol::models::PermissionProfile;
@@ -45,12 +48,29 @@ mod model_policy;
 
 pub(crate) use model_policy::AllowPrefixRules;
 
-const PROMPT_CONFLICT_REASON: &str =
-    "approval required by policy, but AskForApproval is set to Never";
-const REJECT_SANDBOX_APPROVAL_REASON: &str =
-    "approval required by policy, but AskForApproval::Granular.sandbox_approval is false";
-const REJECT_RULES_APPROVAL_REASON: &str =
-    "approval required by policy rule, but AskForApproval::Granular.rules is false";
+// `const` cannot call `tr`, so each reason is a function (design §3.6). These
+// values reach the user through the approval request's `reason`, which the TUI
+// renders as a span (`bottom_pane/approval_overlay.rs:735`).
+fn prompt_conflict_reason() -> &'static str {
+    tr(
+        current(),
+        "approval required by policy, but AskForApproval is set to Never",
+    )
+}
+
+fn reject_sandbox_approval_reason() -> &'static str {
+    tr(
+        current(),
+        "approval required by policy, but AskForApproval::Granular.sandbox_approval is false",
+    )
+}
+
+fn reject_rules_approval_reason() -> &'static str {
+    tr(
+        current(),
+        "approval required by policy rule, but AskForApproval::Granular.rules is false",
+    )
+}
 const RULES_DIR_NAME: &str = "rules";
 const RULE_EXTENSION: &str = "rules";
 const DEFAULT_POLICY_FILE: &str = "default.rules";
@@ -218,18 +238,18 @@ pub(crate) fn prompt_is_rejected_by_policy(
     prompt_is_rule: bool,
 ) -> Option<&'static str> {
     match approval_policy {
-        AskForApproval::Never => Some(PROMPT_CONFLICT_REASON),
+        AskForApproval::Never => Some(prompt_conflict_reason()),
         AskForApproval::OnRequest => None,
         AskForApproval::UnlessTrusted => None,
         AskForApproval::Granular(granular_config) => {
             if prompt_is_rule {
                 if !granular_config.allows_rules_approval() {
-                    Some(REJECT_RULES_APPROVAL_REASON)
+                    Some(reject_rules_approval_reason())
                 } else {
                     None
                 }
             } else if !granular_config.allows_sandbox_approval() {
-                Some(REJECT_SANDBOX_APPROVAL_REASON)
+                Some(reject_sandbox_approval_reason())
             } else {
                 None
             }
@@ -1038,12 +1058,16 @@ fn derive_prompt_reason(command_args: &[String], evaluation: &Evaluation) -> Opt
         .max_by_key(|(matched_prefix_len, _)| *matched_prefix_len);
 
     match most_specific_prompt {
-        Some((_matched_prefix_len, Some(justification))) => {
-            Some(format!("`{command}` requires approval: {justification}"))
-        }
-        Some((_matched_prefix_len, None)) => {
-            Some(format!("`{command}` requires approval by policy"))
-        }
+        Some((_matched_prefix_len, Some(justification))) => Some(tr_with(
+            current(),
+            "`{0}` requires approval: {1}",
+            &[&command, justification],
+        )),
+        Some((_matched_prefix_len, None)) => Some(tr_with(
+            current(),
+            "`{0}` requires approval by policy",
+            &[&command],
+        )),
         None => None,
     }
 }
@@ -1078,18 +1102,22 @@ fn derive_forbidden_reason(
 
     match most_specific_forbidden {
         Some((_matched_prefix, Some(justification))) => {
-            format!("`{command}` rejected: {justification}")
+            tr_with(current(), "`{0}` rejected: {1}", &[&command, justification])
         }
         Some((matched_prefix, None)) => {
             let prefix = render_shlex_command(matched_prefix);
-            format!("`{command}` rejected: policy forbids commands starting with `{prefix}`")
+            tr_with(
+                current(),
+                "`{0}` rejected: policy forbids commands starting with `{1}`",
+                &[&command, &prefix],
+            )
         }
         None => {
             if let Some(dangerous_command_match) = dangerous_command_match {
                 let reason = dangerous_command_rejection_reason(dangerous_command_match);
-                format!("`{command}` rejected: {reason}")
+                tr_with(current(), "`{0}` rejected: {1}", &[&command, reason])
             } else {
-                format!("`{command}` rejected: blocked by policy")
+                tr_with(current(), "`{0}` rejected: blocked by policy", &[&command])
             }
         }
     }
@@ -1111,10 +1139,11 @@ fn dangerous_command_rejection_reason(
     dangerous_command_match: DangerousCommandMatch,
 ) -> &'static str {
     match dangerous_command_match {
-        DangerousCommandMatch::ForcedRm => {
-            "rm -f style commands are not permitted. Use a safer approach"
-        }
-        DangerousCommandMatch::Other => "blocked by policy",
+        DangerousCommandMatch::ForcedRm => tr(
+            current(),
+            "rm -f style commands are not permitted. Use a safer approach",
+        ),
+        DangerousCommandMatch::Other => tr(current(), "blocked by policy"),
     }
 }
 

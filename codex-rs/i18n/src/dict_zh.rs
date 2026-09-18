@@ -6739,6 +6739,40 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "requirements.toml default_permissions `{0}` must be allowed by allowed_permission_profiles",
         "requirements.toml的default_permissions`{0}`必须被allowed_permission_profiles允许",
     ),
+    // Exec-policy approval/rejection reasons (`core/src/exec_policy.rs`). These
+    // reach the user: the TUI renders the approval request's `reason` as a
+    // span (bottom_pane/approval_overlay.rs:735), and the same value flows
+    // through orchestrator.rs:209/212/418.
+    ("`{0}` requires approval: {1}", "`{0}`需要审批：{1}"),
+    ("`{0}` requires approval by policy", "`{0}`根据策略需要审批"),
+    ("`{0}` rejected: {1}", "`{0}`被拒绝：{1}"),
+    (
+        "`{0}` rejected: policy forbids commands starting with `{1}`",
+        "`{0}`被拒绝：策略禁止以`{1}`开头的命令",
+    ),
+    (
+        "`{0}` rejected: blocked by policy",
+        "`{0}`被拒绝：被策略阻止",
+    ),
+    (
+        "rm -f style commands are not permitted. Use a safer approach",
+        "不允许使用rm -f风格的命令。请改用更安全的方式",
+    ),
+    ("blocked by policy", "被策略阻止"),
+    // Exec-policy approval-policy conflict reasons (same render path as the
+    // rejected/requires-approval messages above).
+    (
+        "approval required by policy, but AskForApproval is set to Never",
+        "策略要求审批，但AskForApproval被设为Never",
+    ),
+    (
+        "approval required by policy, but AskForApproval::Granular.sandbox_approval is false",
+        "策略要求审批，但AskForApproval::Granular.sandbox_approval为false",
+    ),
+    (
+        "approval required by policy rule, but AskForApproval::Granular.rules is false",
+        "策略规则要求审批，但AskForApproval::Granular.rules为false",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

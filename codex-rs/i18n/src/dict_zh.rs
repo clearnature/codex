@@ -6822,6 +6822,65 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "environment network policy requires its configured controller proxy",
         "环境网络策略需要其已配置的控制器代理",
     ),
+    // core permissions-config validation (`core/src/config/permissions.rs`):
+    // the same class as the 47 messages already wrapped in config/mod.rs, all
+    // returned through io::Error::new(InvalidInput, ..) or startup warnings.
+    (
+        "permissions profile `{0}` uses a reserved built-in profile prefix",
+        "权限配置`{0}`使用了保留的内置配置前缀",
+    ),
+    (
+        "default_permissions requires a `[permissions]` table",
+        "default_permissions需要`[permissions]`表",
+    ),
+    (
+        "Filesystem glob `{0}` uses `read` or `write` access, which is not fully supported by this platform's sandboxing. Use an exact path or trailing `/**` subtree rule instead. `deny` globs are supported.",
+        "文件系统通配`{0}`使用了`read`或`write`访问，本平台沙箱对此支持不完整。请改用精确路径或尾部`/**`的子树规则。`deny`通配是受支持的。",
+    ),
+    (
+        "Filesystem deny-read glob `{0}` uses `**`. Non-macOS sandboxing does not support unbounded `**` natively; set `glob_scan_max_depth` in this filesystem profile to cap Linux glob expansion and silence this warning, or enumerate explicit depths such as `*.env`, `*/*.env`, and `*/*/*.env`.",
+        "文件系统deny-read通配`{0}`使用了`**`。非macOS沙箱不原生支持无界的`**`；请在该文件系统配置里设置`glob_scan_max_depth`以限制Linux通配展开并消除此警告，或显式列出深度，例如`*.env`、`*/*.env`、`*/*/*.env`。",
+    ),
+    (
+        "default_permissions refers to unknown built-in profile `{0}`",
+        "default_permissions引用了未知的内置配置`{0}`",
+    ),
+    (
+        "filesystem path `{0}` does not support nested entries",
+        "文件系统路径`{0}`不支持嵌套条目",
+    ),
+    (
+        "filesystem glob subpath `{0}` only supports `deny` access",
+        "文件系统通配子路径`{0}`只支持`deny`访问",
+    ),
+    (
+        "filesystem glob path `{0}` only supports `deny` access; use an exact path or trailing `/**` for `{1}` subtree access",
+        "文件系统通配路径`{0}`只支持`deny`访问；如需`{1}`子树访问，请改用精确路径或尾部`/**`",
+    ),
+    (
+        "filesystem path `{0}` must be absolute, use `~/...`, or start with `:`",
+        "文件系统路径`{0}`必须是绝对路径、使用`~/...`，或以`:`开头",
+    ),
+    (
+        "filesystem subpath `{0}` must be a descendant path without `.` or `..` components",
+        "文件系统子路径`{0}`必须是不含`.`或`..`成分的后代路径",
+    ),
+    (
+        "Permissions profile `{0}` does not define any recognized filesystem entries for this version of Codex. Filesystem access will remain restricted. Upgrade Codex if this profile expects filesystem permissions.",
+        "权限配置`{0}`未定义本版Codex可识别的任何文件系统条目。文件系统访问将保持受限。若该配置本应包含文件系统权限，请升级Codex。",
+    ),
+    (
+        "Configured filesystem path `{0}` with nested entry `{1}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
+        "配置的文件系统路径`{0}`（含嵌套条目`{1}`）不被本版Codex识别，将被忽略。若确实需要该路径，请升级Codex。",
+    ),
+    (
+        "Configured filesystem path `{0}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
+        "配置的文件系统路径`{0}`不被本版Codex识别，将被忽略。若确实需要该路径，请升级Codex。",
+    ),
+    (
+        "glob_scan_max_depth must be at least 1",
+        "glob_scan_max_depth至少为1",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

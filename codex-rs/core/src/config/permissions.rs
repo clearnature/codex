@@ -20,6 +20,9 @@ use codex_features::NetworkProxyConfigToml;
 use codex_features::NetworkProxyDomainPermissionToml;
 use codex_features::NetworkProxyModeToml;
 use codex_features::NetworkProxyUnixSocketPermissionToml;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::NetworkMode;
 use codex_network_proxy::NetworkProxyConfig;
 #[cfg(test)]
@@ -107,8 +110,10 @@ pub(crate) fn validate_user_permission_profile_names(
         if profile_name.starts_with(':') {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!(
-                    "permissions profile `{profile_name}` uses a reserved built-in profile prefix"
+                tr_with(
+                    current(),
+                    "permissions profile `{0}` uses a reserved built-in profile prefix",
+                    &[&profile_name],
                 ),
             ));
         }
@@ -339,7 +344,10 @@ pub(crate) fn network_proxy_config_for_profile_selection(
     let permissions = permissions.ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "default_permissions requires a `[permissions]` table",
+            tr(
+                current(),
+                "default_permissions requires a `[permissions]` table",
+            ),
         )
     })?;
     let profile = resolve_permission_profile(permissions, profile_name)?;
@@ -368,16 +376,20 @@ pub fn compile_permission_profile(
                 for pattern in unsupported_read_write_glob_paths(filesystem) {
                     push_warning(
                         startup_warnings,
-                        format!(
-                            "Filesystem glob `{pattern}` uses `read` or `write` access, which is not fully supported by this platform's sandboxing. Use an exact path or trailing `/**` subtree rule instead. `deny` globs are supported."
+                        tr_with(
+                            current(),
+                            "Filesystem glob `{0}` uses `read` or `write` access, which is not fully supported by this platform's sandboxing. Use an exact path or trailing `/**` subtree rule instead. `deny` globs are supported.",
+                            &[&pattern],
                         ),
                     );
                 }
                 for pattern in unbounded_unreadable_globstar_paths(filesystem) {
                     push_warning(
                         startup_warnings,
-                        format!(
-                            "Filesystem deny-read glob `{pattern}` uses `**`. Non-macOS sandboxing does not support unbounded `**` natively; set `glob_scan_max_depth` in this filesystem profile to cap Linux glob expansion and silence this warning, or enumerate explicit depths such as `*.env`, `*/*.env`, and `*/*/*.env`."
+                        tr_with(
+                            current(),
+                            "Filesystem deny-read glob `{0}` uses `**`. Non-macOS sandboxing does not support unbounded `**` natively; set `glob_scan_max_depth` in this filesystem profile to cap Linux glob expansion and silence this warning, or enumerate explicit depths such as `*.env`, `*/*.env`, and `*/*/*.env`.",
+                            &[&pattern],
                         ),
                     );
                 }
@@ -426,7 +438,10 @@ pub(crate) fn compile_permission_profile_selection(
     let permissions = permissions.ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "default_permissions requires a `[permissions]` table",
+            tr(
+                current(),
+                "default_permissions requires a `[permissions]` table",
+            ),
         )
     })?;
     compile_permission_profile(permissions, profile_name, startup_warnings)
@@ -445,7 +460,10 @@ pub(crate) fn compile_permission_profile_workspace_roots(
     let permissions = permissions.ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "default_permissions requires a `[permissions]` table",
+            tr(
+                current(),
+                "default_permissions requires a `[permissions]` table",
+            ),
         )
     })?;
     let profile = resolve_permission_profile(permissions, profile_name)?;
@@ -471,7 +489,11 @@ pub(crate) fn reject_unknown_builtin_permission_profile(profile_name: &str) -> i
     if profile_name.starts_with(':') {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("default_permissions refers to unknown built-in profile `{profile_name}`"),
+            tr_with(
+                current(),
+                "default_permissions refers to unknown built-in profile `{0}`",
+                &[&profile_name],
+            ),
         ));
     }
 
@@ -629,7 +651,11 @@ fn compile_scoped_filesystem_path(
             }),
             _ => Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!("filesystem path `{path}` does not support nested entries"),
+                tr_with(
+                    current(),
+                    "filesystem path `{0}` does not support nested entries",
+                    &[&path],
+                ),
             )),
         }?;
         if let FileSystemPath::Special { value } = &special {
@@ -655,7 +681,11 @@ fn compile_scoped_filesystem_pattern(
     if access != FileSystemAccessMode::Deny {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("filesystem glob subpath `{subpath}` only supports `deny` access"),
+            tr_with(
+                current(),
+                "filesystem glob subpath `{0}` only supports `deny` access",
+                &[&subpath],
+            ),
         ));
     }
     let subpath = parse_relative_subpath(subpath)?;
@@ -669,7 +699,11 @@ fn compile_scoped_filesystem_pattern(
         }
         Some(_) => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("filesystem path `{path}` does not support nested entries"),
+            tr_with(
+                current(),
+                "filesystem path `{0}` does not support nested entries",
+                &[&path],
+            ),
         )),
         None => {
             let base = parse_absolute_path(path)?;
@@ -690,8 +724,10 @@ fn compile_read_write_glob_path(path: &str, access: FileSystemAccessMode) -> io:
 
     Err(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!(
-            "filesystem glob path `{path}` only supports `deny` access; use an exact path or trailing `/**` for `{access}` subtree access"
+        tr_with(
+            current(),
+            "filesystem glob path `{0}` only supports `deny` access; use an exact path or trailing `/**` for `{1}` subtree access",
+            &[&path, &access.to_string()],
         ),
     ))
 }
@@ -751,7 +787,7 @@ fn validate_glob_scan_max_depth(max_depth: Option<usize>) -> io::Result<Option<u
     match max_depth {
         Some(0) => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "glob_scan_max_depth must be at least 1",
+            tr(current(), "glob_scan_max_depth must be at least 1"),
         )),
         _ => Ok(max_depth),
     }
@@ -809,7 +845,11 @@ fn parse_absolute_path_for_platform(path: &str, is_windows: bool) -> io::Result<
     {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("filesystem path `{path}` must be absolute, use `~/...`, or start with `:`"),
+            tr_with(
+                current(),
+                "filesystem path `{0}` must be absolute, use `~/...`, or start with `:`",
+                &[&path],
+            ),
         ));
     }
     AbsolutePathBuf::from_absolute_path(path_ref.as_ref())
@@ -879,9 +919,10 @@ fn parse_relative_subpath(subpath: &str) -> io::Result<PathBuf> {
 
     Err(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!(
-            "filesystem subpath `{}` must be a descendant path without `.` or `..` components",
-            path.display()
+        tr_with(
+            current(),
+            "filesystem subpath `{0}` must be a descendant path without `.` or `..` components",
+            &[&path.display().to_string()],
         ),
     ))
 }
@@ -892,8 +933,10 @@ fn push_warning(startup_warnings: &mut Vec<String>, message: String) {
 }
 
 fn missing_filesystem_entries_warning(profile_name: &str) -> String {
-    format!(
-        "Permissions profile `{profile_name}` does not define any recognized filesystem entries for this version of Codex. Filesystem access will remain restricted. Upgrade Codex if this profile expects filesystem permissions."
+    tr_with(
+        current(),
+        "Permissions profile `{0}` does not define any recognized filesystem entries for this version of Codex. Filesystem access will remain restricted. Upgrade Codex if this profile expects filesystem permissions.",
+        &[&profile_name],
     )
 }
 
@@ -907,11 +950,15 @@ fn maybe_push_unknown_special_path_warning(
     push_warning(
         startup_warnings,
         match subpath.as_deref() {
-            Some(subpath) => format!(
-                "Configured filesystem path `{path}` with nested entry `{subpath}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required."
+            Some(subpath) => tr_with(
+                current(),
+                "Configured filesystem path `{0}` with nested entry `{1}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
+                &[&path, &subpath],
             ),
-            None => format!(
-                "Configured filesystem path `{path}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required."
+            None => tr_with(
+                current(),
+                "Configured filesystem path `{0}` is not recognized by this version of Codex and will be ignored. Upgrade Codex if this path is required.",
+                &[&path],
             ),
         },
     );

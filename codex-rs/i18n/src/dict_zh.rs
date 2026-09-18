@@ -6957,6 +6957,83 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to update thread metadata {0}: {1}",
         "更新线程元数据{0}失败：{1}",
     ),
+    (
+        "invalid stored agent path: {0}",
+        "无效的已存储代理路径：{0}",
+    ),
+    (
+        "multi-agent v2 child {0} is not owned by its loaded parent",
+        "多代理v2子线程{0}不属于其已加载的父线程",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0} with the current parent settings",
+        "无法使用当前父线程设置恢复多代理v2子线程{0}",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0}: parent ownership is unavailable; resume the parent first",
+        "无法恢复多代理v2子线程{0}：父线程所有权不可用；请先恢复父线程",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0}: recorded parent ownership is inconsistent",
+        "无法恢复多代理v2子线程{0}：记录的父线程所有权不一致",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0}: parent execution policy has changed; retry through the parent",
+        "无法恢复多代理v2子线程{0}：父线程执行策略已变更；请通过父线程重试",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0}: cached environment {1} {2}",
+        "无法恢复多代理v2子线程{0}：缓存环境{1}：{2}",
+    ),
+    (
+        "approval_policy is invalid: {0}",
+        "approval_policy无效：{0}",
+    ),
+    (
+        "permission_profile is invalid: {0}",
+        "permission_profile无效：{0}",
+    ),
+    (
+        "permissions cannot be intersected safely: {0}",
+        "无法安全求交权限：{0}",
+    ),
+    (
+        "parent thread history unavailable for fork: {0}",
+        "分叉时父线程历史不可用：{0}",
+    ),
+    (
+        "no longer matches a ready parent environment",
+        "不再匹配任何就绪的父环境",
+    ),
+    ("configuration is not ready", "配置尚未就绪"),
+    (
+        "configuration differs from the current parent",
+        "配置与当前父线程不同",
+    ),
+    (
+        "permissions changed on a remote executor",
+        "权限在远程执行器上发生了变更",
+    ),
+    (
+        "working directory is not a local absolute path",
+        "工作目录不是本地绝对路径",
+    ),
+    (
+        "workspace roots are not local absolute paths",
+        "工作区根目录不是本地绝对路径",
+    ),
+    (
+        "spawn_agent fork requires a parent spawn call id",
+        "spawn_agent分叉需要父spawn调用ID",
+    ),
+    (
+        "spawn_agent fork requires a fork mode",
+        "spawn_agent分叉需要分叉模式",
+    ),
+    (
+        "spawn_agent fork requires a thread-spawn session source",
+        "spawn_agent分叉需要线程派生会话来源",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -17,6 +17,9 @@ use codex_context_fragments::set_annotated_content;
 use codex_context_fragments::to_annotated_content;
 use codex_extension_api::ExtensionDataInit;
 use codex_history::ResponseItemEnvelope;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::intersect_effective_permission_profiles;
 use codex_protocol::protocol::EnvironmentConfigState;
 use codex_utils_path_uri::PathUri;
@@ -216,7 +219,11 @@ impl AgentControl {
                     .map(AgentPath::try_from)
                     .transpose()
                     .map_err(|err| {
-                        CodexErr::InvalidRequest(format!("invalid stored agent path: {err}"))
+                        CodexErr::InvalidRequest(tr_with(
+                            current(),
+                            "invalid stored agent path: {0}",
+                            &[&err.to_string()],
+                        ))
                     })?;
                 let mut reservation = self.state.reserve_spawn_slot(/*max_threads*/ None)?;
                 let mut metadata = self.prepare_agent_metadata(
@@ -305,9 +312,10 @@ impl AgentControl {
         {
             return Ok(());
         }
-        Err(CodexErr::InvalidRequest(format!(
-            "multi-agent v2 child {} is not owned by its loaded parent",
-            thread.session.thread_id
+        Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "multi-agent v2 child {0} is not owned by its loaded parent",
+            &[&thread.session.thread_id.to_string()],
         )))
     }
 
@@ -323,8 +331,10 @@ impl AgentControl {
             let parent_thread_id = parent.session.thread_id;
             let turn = parent.session.new_default_turn().await;
             config = build_agent_resume_config(&turn).map_err(|_| {
-                CodexErr::InvalidRequest(format!(
-                    "cannot resume multi-agent v2 child {thread_id} with the current parent settings"
+                CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "cannot resume multi-agent v2 child {0} with the current parent settings",
+                    &[&thread_id.to_string()],
                 ))
             })?;
             let registered_parent = state.get_thread(parent_thread_id).await.ok();
@@ -335,8 +345,10 @@ impl AgentControl {
                 || parent.multi_agent_version() != Some(MultiAgentVersion::V2)
                 || !Arc::ptr_eq(&self.state, &parent.session.services.agent_control.state)
             {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "cannot resume multi-agent v2 child {thread_id}: parent ownership is unavailable; resume the parent first"
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "cannot resume multi-agent v2 child {0}: parent ownership is unavailable; resume the parent first",
+                    &[&thread_id.to_string()],
                 )));
             }
             Some((parent, turn.environments.clone()))
@@ -387,8 +399,10 @@ impl AgentControl {
                 || stored_parent_thread_id
                     .is_some_and(|recorded_parent| recorded_parent != parent_thread_id)
             {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "cannot resume multi-agent v2 child {thread_id}: recorded parent ownership is inconsistent"
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "cannot resume multi-agent v2 child {0}: recorded parent ownership is inconsistent",
+                    &[&thread_id.to_string()],
                 )));
             }
             if let Ok(thread) = state.get_thread(thread_id).await {
@@ -423,7 +437,11 @@ impl AgentControl {
                 .approval_policy
                 .set(runtime_approval_policy)
                 .map_err(|err| {
-                    CodexErr::InvalidRequest(format!("approval_policy is invalid: {err}"))
+                    CodexErr::InvalidRequest(tr_with(
+                        current(),
+                        "approval_policy is invalid: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
             config.approvals_reviewer = runtime_approvals_reviewer;
             config.cwd = runtime_cwd;
@@ -431,7 +449,11 @@ impl AgentControl {
                 .permissions
                 .set_permission_profile_from_session_snapshot(runtime_permission_profile)
                 .map_err(|err| {
-                    CodexErr::InvalidRequest(format!("permission_profile is invalid: {err}"))
+                    CodexErr::InvalidRequest(tr_with(
+                        current(),
+                        "permission_profile is invalid: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
         }
         config.service_tier = self.root_service_tier();
@@ -444,8 +466,10 @@ impl AgentControl {
                 .get(&stored_model_provider)
                 .cloned()
                 .ok_or_else(|| {
-                    CodexErr::InvalidRequest(format!(
-                        "Model provider `{stored_model_provider}` not found"
+                    CodexErr::InvalidRequest(tr_with(
+                        current(),
+                        "Model provider `{0}` not found",
+                        &[&stored_model_provider],
                     ))
                 })?;
             config.model_provider_id = stored_model_provider;
@@ -460,16 +484,20 @@ impl AgentControl {
         {
             let parent_config = parent.session.get_config().await;
             if !crate::exec_policy::child_uses_parent_exec_policy(&parent_config, &config) {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "cannot resume multi-agent v2 child {thread_id}: parent execution policy has changed; retry through the parent"
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "cannot resume multi-agent v2 child {0}: parent execution policy has changed; retry through the parent",
+                    &[&thread_id.to_string()],
                 )));
             }
             if let Some(selections) = environment_selections.as_mut() {
                 for selection in selections {
                     let environment_id = &selection.environment_id;
                     let invalid_environment = |reason: &str| {
-                        CodexErr::InvalidRequest(format!(
-                            "cannot resume multi-agent v2 child {thread_id}: cached environment {environment_id} {reason}"
+                        CodexErr::InvalidRequest(tr_with(
+                            current(),
+                            "cannot resume multi-agent v2 child {0}: cached environment {1} {2}",
+                            &[&thread_id.to_string(), environment_id, reason],
                         ))
                     };
                     // Matching the attachment also keeps startup on the captured owner executor.
@@ -482,7 +510,10 @@ impl AgentControl {
                                 && parent_selection.workspace_roots == selection.workspace_roots
                         })
                         .ok_or_else(|| {
-                            invalid_environment("no longer matches a ready parent environment")
+                            invalid_environment(tr(
+                                current(),
+                                "no longer matches a ready parent environment",
+                            ))
                         })?;
                     let owner_config = owner_environment.config();
                     let child_config = match &selection.config {
@@ -493,26 +524,34 @@ impl AgentControl {
                         }
                         EnvironmentConfigState::Ready(config) => config,
                         EnvironmentConfigState::Pending | EnvironmentConfigState::Failed(_) => {
-                            return Err(invalid_environment("configuration is not ready"));
+                            return Err(invalid_environment(tr(
+                                current(),
+                                "configuration is not ready",
+                            )));
                         }
                     };
                     let mut bounded_config = child_config.clone();
                     bounded_config.permission_profile = owner_config.permission_profile.clone();
                     if bounded_config != *owner_config {
-                        return Err(invalid_environment(
+                        return Err(invalid_environment(tr(
+                            current(),
                             "configuration differs from the current parent",
-                        ));
+                        )));
                     }
                     if child_config.permission_profile == owner_config.permission_profile {
                         continue;
                     }
                     if owner_environment.environment.is_remote() {
-                        return Err(invalid_environment(
+                        return Err(invalid_environment(tr(
+                            current(),
                             "permissions changed on a remote executor",
-                        ));
+                        )));
                     }
                     let cwd = selection.cwd.to_abs_path().map_err(|_| {
-                        invalid_environment("working directory is not a local absolute path")
+                        invalid_environment(tr(
+                            current(),
+                            "working directory is not a local absolute path",
+                        ))
                     })?;
                     let roots = owner_environment
                         .workspace_roots()
@@ -520,7 +559,10 @@ impl AgentControl {
                         .map(PathUri::to_abs_path)
                         .collect::<Result<Vec<_>, _>>()
                         .map_err(|_| {
-                            invalid_environment("workspace roots are not local absolute paths")
+                            invalid_environment(tr(
+                                current(),
+                                "workspace roots are not local absolute paths",
+                            ))
                         })?;
                     let authority = owner_environment
                         .permission_profile()
@@ -534,8 +576,10 @@ impl AgentControl {
                     let permissions =
                         intersect_effective_permission_profiles(&authority, &requested, &cwd)
                             .map_err(|err| {
-                                invalid_environment(&format!(
-                                    "permissions cannot be intersected safely: {err}"
+                                invalid_environment(&tr_with(
+                                    current(),
+                                    "permissions cannot be intersected safely: {0}",
+                                    &[&err.to_string()],
                                 ))
                             })?;
                     bounded_config.permission_profile =
@@ -821,12 +865,16 @@ impl AgentControl {
         } = inheritance;
         if options.fork_parent_spawn_call_id.is_none() {
             return Err(CodexErr::Fatal(
-                "spawn_agent fork requires a parent spawn call id".to_string(),
+                tr(
+                    current(),
+                    "spawn_agent fork requires a parent spawn call id",
+                )
+                .to_string(),
             ));
         }
         let Some(fork_mode) = options.fork_mode.as_ref() else {
             return Err(CodexErr::Fatal(
-                "spawn_agent fork requires a fork mode".to_string(),
+                tr(current(), "spawn_agent fork requires a fork mode").to_string(),
             ));
         };
         let SessionSource::SubAgent(SubAgentSource::ThreadSpawn {
@@ -834,7 +882,11 @@ impl AgentControl {
         }) = &session_source
         else {
             return Err(CodexErr::Fatal(
-                "spawn_agent fork requires a thread-spawn session source".to_string(),
+                tr(
+                    current(),
+                    "spawn_agent fork requires a thread-spawn session source",
+                )
+                .to_string(),
             ));
         };
 
@@ -880,8 +932,10 @@ impl AgentControl {
             load_agent_model_context(state, parent_thread_id, parent_history_mode)
                 .await?
                 .ok_or_else(|| {
-                    CodexErr::Fatal(format!(
-                        "parent thread history unavailable for fork: {parent_thread_id}"
+                    CodexErr::Fatal(tr_with(
+                        current(),
+                        "parent thread history unavailable for fork: {0}",
+                        &[&parent_thread_id.to_string()],
                     ))
                 })?;
 
@@ -1218,7 +1272,13 @@ impl AgentControl {
             .as_deref()
             .map(AgentPath::try_from)
             .transpose()
-            .map_err(|err| CodexErr::InvalidRequest(format!("invalid stored agent path: {err}")))?;
+            .map_err(|err| {
+                CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "invalid stored agent path: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         let resumed_agent_nickname = stored_thread.agent_nickname.clone();
         let resumed_agent_role = stored_thread.agent_role.clone();
         let history = load_agent_model_context(&state, thread_id, stored_thread.history_mode)

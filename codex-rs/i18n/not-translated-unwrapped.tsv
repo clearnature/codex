@@ -232,3 +232,30 @@ writer: {writer_err}	codex-rs/tui/src/terminal_probe.rs:104	stdio/终端探针�
 unknown stdio duplicate error	codex-rs/tui/src/terminal_probe.rs:105	stdio/终端探针的 io::Error 诊断；调用点 tui.rs:543 用 `tracing::warn!("terminal default color probe failed: {err}")` 处理，**只进日志** ⇒ §12.3
 failed to duplicate stdio ({stdio_err}) or open /dev/tty reader ({fallback_err})	codex-rs/tui/src/terminal_probe.rs:115	stdio/终端探针的 io::Error 诊断；调用点 tui.rs:543 用 `tracing::warn!("terminal default color probe failed: {err}")` 处理，**只进日志** ⇒ §12.3
 failed to duplicate stdio ({stdio_err}) or open /dev/tty writer ({fallback_err})	codex-rs/tui/src/terminal_probe.rs:124	stdio/终端探针的 io::Error 诊断；调用点 tui.rs:543 用 `tracing::warn!("terminal default color probe failed: {err}")` 处理，**只进日志** ⇒ §12.3
+	codex-rs/tui/src/app/thread_title.rs:246	值跨行，写不进单行按值形态 ⇒ 按位置豁免；任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
+{instructions}\n\nUser prompt:\n	codex-rs/tui/src/app/thread_title.rs:259	任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
+<message role=\"\"></message>	codex-rs/tui/src/app/thread_title.rs:327	任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
+<message role=\"{role}\">{text}</message>	codex-rs/tui/src/app/thread_title.rs:348	任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
+	codex-rs/tui/src/app/thread_title.rs:362	值跨行，写不进单行按值形态 ⇒ 按位置豁免；任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
+{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:119	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+{method} failed in TUI: {}	codex-rs/tui/src/app_server_session/fs.rs:121	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+{method} returned invalid data	codex-rs/tui/src/app_server_session/fs.rs:123	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+invalid local app-server fs path {path}	codex-rs/tui/src/app_server_session/fs.rs:127	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:131	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+tried to execute EnableAlternateScroll using WinAPI; use ANSI instead	codex-rs/tui/src/tui.rs:261	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
+tried to execute DisableAlternateScroll using WinAPI; use ANSI instead	codex-rs/tui/src/tui.rs:282	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
+stdin is not a terminal	codex-rs/tui/src/tui.rs:424	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
+stdout is not a terminal	codex-rs/tui/src/tui.rs:427	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
+terminal startup probes completed	codex-rs/tui/src/tui.rs:455	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
+remote app server did not provide a cwd	codex-rs/tui/src/config_update.rs:221	信任解析的 **eyre/wrap_err 错误链**（设计 §3.6 判别规则明文：`.wrap_err(…)` 错误链上下文不译），且其中一条是 `rsplit_once(" as a trusted project in ")` **解析针** ⇒ §12.3 + §12.1
+failed to resolve the remote project directory	codex-rs/tui/src/config_update.rs:223	信任解析的 **eyre/wrap_err 错误链**（设计 §3.6 判别规则明文：`.wrap_err(…)` 错误链上下文不译），且其中一条是 `rsplit_once(" as a trusted project in ")` **解析针** ⇒ §12.3 + §12.1
+ as a trusted project in 	codex-rs/tui/src/config_update.rs:257	信任解析的 **eyre/wrap_err 错误链**（设计 §3.6 判别规则明文：`.wrap_err(…)` 错误链上下文不译），且其中一条是 `rsplit_once(" as a trusted project in ")` **解析针** ⇒ §12.3 + §12.1
+remote project directory is inside an explicitly untrusted project; pass the repository root explicitly with --cd	codex-rs/tui/src/config_update.rs:301	信任解析的 **eyre/wrap_err 错误链**（设计 §3.6 判别规则明文：`.wrap_err(…)` 错误链上下文不译），且其中一条是 `rsplit_once(" as a trusted project in ")` **解析针** ⇒ §12.3 + §12.1
+failed to list sessions while resolving session label	codex-rs/tui/src/named_session_lookup.rs:118	会话标签解析的 **eyre 上下文/错误链**（`.wrap_err` / `.wrap_err_with`，本文件 0 处渲染调用）⇒ §12.3
+app server returned invalid session id `{}`	codex-rs/tui/src/named_session_lookup.rs:139	会话标签解析的 **eyre 上下文/错误链**（`.wrap_err` / `.wrap_err_with`，本文件 0 处渲染调用）⇒ §12.3
+thread not loaded: {thread_id}	codex-rs/tui/src/named_session_lookup.rs:152	会话标签解析的 **eyre 上下文/错误链**（`.wrap_err` / `.wrap_err_with`，本文件 0 处渲染调用）⇒ §12.3
+failed to read thread: thread-store internal error: failed to read session metadata {}: 	codex-rs/tui/src/named_session_lookup.rs:162	会话标签解析的 **eyre 上下文/错误链**（`.wrap_err` / `.wrap_err_with`，本文件 0 处渲染调用）⇒ §12.3
+Enterprise (Automation)	codex-rs/tui/src/status/helpers.rs:112	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
+Business Premium	codex-rs/tui/src/status/helpers.rs:114	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
+Pro Lite	codex-rs/tui/src/status/helpers.rs:120	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6
+Edu Plus	codex-rs/tui/src/status/helpers.rs:122	套餐/层级**产品名**（Business Premium / Pro Lite / Edu Plus / Enterprise (Automation)）：与字典既有口径一致（Plus/Pro/Business/Enterprise 保留英文）⇒ §12.6

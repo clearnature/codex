@@ -24,6 +24,7 @@ use crate::spawn::SpawnChildRequest;
 use crate::spawn::StdioPolicy;
 use crate::spawn::spawn_child_async;
 use codex_i18n::current;
+use codex_i18n::tr;
 use codex_i18n::tr_with;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::error::CodexErr;
@@ -362,7 +363,7 @@ pub fn build_exec_request(
     let (program, args) = command.split_first().ok_or_else(|| {
         CodexErr::Io(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "command args are empty",
+            tr(current(), "command args are empty"),
         ))
     })?;
     let cwd = PathUri::from_abs_path(&cwd);
@@ -435,13 +436,21 @@ pub(crate) async fn execute_exec_request(
     let network_sandbox_policy = permission_profile.network_sandbox_policy();
 
     // TODO(anp): Keep PathUri through the local process launch boundary.
-    let cwd = cwd
-        .to_abs_path()
-        .map_err(|err| CodexErr::InvalidRequest(format!("invalid exec cwd: {err}")))?;
+    let cwd = cwd.to_abs_path().map_err(|err| {
+        CodexErr::InvalidRequest(tr_with(
+            current(),
+            "invalid exec cwd: {0}",
+            &[&err.to_string()],
+        ))
+    })?;
     // TODO(anp): Keep PathUri through the Windows sandbox launch boundary.
-    let windows_sandbox_policy_cwd = windows_sandbox_policy_cwd
-        .to_abs_path()
-        .map_err(|err| CodexErr::InvalidRequest(format!("invalid sandbox cwd: {err}")))?;
+    let windows_sandbox_policy_cwd = windows_sandbox_policy_cwd.to_abs_path().map_err(|err| {
+        CodexErr::InvalidRequest(tr_with(
+            current(),
+            "invalid sandbox cwd: {0}",
+            &[&err.to_string()],
+        ))
+    })?;
 
     let params = ExecParams {
         command,
@@ -608,9 +617,10 @@ async fn exec_windows_sandbox(
             network
                 .network_proxy_restricting_sid(network_environment_id.as_deref())
                 .ok_or_else(|| {
-                    CodexErr::Io(io::Error::other(
+                    CodexErr::Io(io::Error::other(tr(
+                        current(),
                         "managed Windows proxy route is missing its restricting SID",
-                    ))
+                    )))
                 })
         })
         .transpose()?;
@@ -634,8 +644,10 @@ async fn exec_windows_sandbox(
     };
     let permission_profile = permission_profile.clone();
     let codex_home = find_codex_home().map_err(|err| {
-        CodexErr::Io(io::Error::other(format!(
-            "windows sandbox: failed to resolve codex_home: {err}"
+        CodexErr::Io(io::Error::other(tr_with(
+            current(),
+            "windows sandbox: failed to resolve codex_home: {0}",
+            &[&err.to_string()],
         )))
     })?;
     let command_path = command.first().cloned();
@@ -703,13 +715,17 @@ async fn exec_windows_sandbox(
                 sandbox_level,
                 &err.to_string(),
             );
-            return Err(CodexErr::Io(io::Error::other(format!(
-                "windows sandbox: {err}"
+            return Err(CodexErr::Io(io::Error::other(tr_with(
+                current(),
+                "windows sandbox: {0}",
+                &[&err.to_string()],
             ))));
         }
         Err(join_err) => {
-            return Err(CodexErr::Io(io::Error::other(format!(
-                "windows sandbox join error: {join_err}"
+            return Err(CodexErr::Io(io::Error::other(tr_with(
+                current(),
+                "windows sandbox join error: {0}",
+                &[&join_err.to_string()],
             ))));
         }
     };
@@ -917,7 +933,7 @@ async fn exec(
     let (program, args) = command.split_first().ok_or_else(|| {
         CodexErr::Io(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "command args are empty",
+            tr(current(), "command args are empty"),
         ))
     })?;
     let arg0_ref = arg0.as_deref();
@@ -954,14 +970,16 @@ async fn consume_output(
     // we treat it as an exceptional I/O error
 
     let stdout_reader = child.stdout.take().ok_or_else(|| {
-        CodexErr::Io(io::Error::other(
+        CodexErr::Io(io::Error::other(tr(
+            current(),
             "stdout pipe was unexpectedly not available",
-        ))
+        )))
     })?;
     let stderr_reader = child.stderr.take().ok_or_else(|| {
-        CodexErr::Io(io::Error::other(
+        CodexErr::Io(io::Error::other(tr(
+            current(),
             "stderr pipe was unexpectedly not available",
-        ))
+        )))
     })?;
 
     let retained_bytes_cap = capture_policy.retained_bytes_cap();

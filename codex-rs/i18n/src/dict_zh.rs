@@ -7271,6 +7271,30 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Code Mode is unavailable because {0}. {1}; enable `features.code_mode_host` and install `codex-code-mode-host`.",
         "Code Mode不可用，原因：{0}。{1}；请启用`features.code_mode_host`并安装`codex-code-mode-host`。",
     ),
+    ("command args are empty", "命令参数为空"),
+    ("invalid exec cwd: {0}", "无效的exec cwd：{0}"),
+    ("invalid sandbox cwd: {0}", "无效的沙箱cwd：{0}"),
+    (
+        "managed Windows proxy route is missing its restricting SID",
+        "托管的Windows代理路由缺少其限制SID",
+    ),
+    (
+        "windows sandbox: failed to resolve codex_home: {0}",
+        "windows沙箱：无法解析codex_home：{0}",
+    ),
+    ("windows sandbox: {0}", "windows沙箱：{0}"),
+    (
+        "windows sandbox join error: {0}",
+        "windows沙箱join错误：{0}",
+    ),
+    (
+        "stdout pipe was unexpectedly not available",
+        "stdout管道意外不可用",
+    ),
+    (
+        "stderr pipe was unexpectedly not available",
+        "stderr管道意外不可用",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

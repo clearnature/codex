@@ -7396,6 +7396,16 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "MCP工具调用需要审批，但审批策略是never",
     ),
     ("user rejected MCP tool call", "用户拒绝了MCP工具调用"),
+    (
+        "cannot approve intercepted execution without an active turn",
+        "没有活动回合时无法批准被拦截的执行",
+    ),
+    ("Execution forbidden by policy", "策略禁止执行"),
+    ("User denied execution", "用户拒绝了执行"),
+    (
+        "unexpected shell command format for zsh-fork execution",
+        "zsh-fork执行遇到意外的shell命令格式",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

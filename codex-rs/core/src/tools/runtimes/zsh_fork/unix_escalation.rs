@@ -290,8 +290,11 @@ impl CoreShellActionProvider {
                     .await
                     .ok_or_else(|| {
                         ToolError::Rejected(
-                            "cannot approve intercepted execution without an active turn"
-                                .to_string(),
+                            tr(
+                                current(),
+                                "cannot approve intercepted execution without an active turn",
+                            )
+                            .to_string(),
                         )
                     })?;
                 let approval_ctx = ApprovalContext {
@@ -331,14 +334,16 @@ impl CoreShellActionProvider {
         decision_source: DecisionSource,
     ) -> anyhow::Result<EscalationDecision> {
         let action = match decision {
-            Decision::Forbidden => {
-                EscalationDecision::deny(Some("Execution forbidden by policy".to_string()))
-            }
+            Decision::Forbidden => EscalationDecision::deny(Some(
+                tr(current(), "Execution forbidden by policy").to_string(),
+            )),
             Decision::Prompt => {
                 if execve_prompt_is_rejected_by_policy(self.approval_policy, &decision_source)
                     .is_some()
                 {
-                    EscalationDecision::deny(Some("Execution forbidden by policy".to_string()))
+                    EscalationDecision::deny(Some(
+                        tr(current(), "Execution forbidden by policy").to_string(),
+                    ))
                 } else {
                     let decision = self
                         .prompt(program, argv, workdir, &self.stopwatch, prompt_permissions)
@@ -363,9 +368,9 @@ impl CoreShellActionProvider {
                                     EscalationDecision::run()
                                 }
                             }
-                            NetworkPolicyRuleAction::Deny => {
-                                EscalationDecision::deny(Some("User denied execution".to_string()))
-                            }
+                            NetworkPolicyRuleAction::Deny => EscalationDecision::deny(Some(
+                                tr(current(), "User denied execution").to_string(),
+                            )),
                         },
                         ReviewDecision::Denied { rejection } => {
                             EscalationDecision::deny(Some(rejection))
@@ -856,7 +861,11 @@ fn extract_shell_script(command: &[String]) -> Result<ParsedShellCommand, ToolEr
     }
 
     Err(ToolError::Rejected(
-        "unexpected shell command format for zsh-fork execution".to_string(),
+        tr(
+            current(),
+            "unexpected shell command format for zsh-fork execution",
+        )
+        .to_string(),
     ))
 }
 

@@ -11,17 +11,21 @@
 # ⚠ 按位置排除的脆弱点：代码移动会让 file:line 漂移。漂移后**不会**错误豁免别处
 #   （除非恰好有候选落在同一行），但会**静默失效**——所以清单条数会打在扫描器输出里
 #   （`declared not-translatable (skipped): N`），N 变小就该查是不是漂了。
+# 站点列（第 2 列）是**文档**，不是匹配依据：`scripts/i18n_todo.py` 只按第 1 列的
+# 值（以及 `path:line` 整体）匹配。改动文件后行号会漂移，本表已在第 381 轮做过一次
+# 全量复核：439 行的值确实落在站点列所指的行上，27 行的行号被修正（改动导致的位移），
+# 14 行与 269 行无法由文本定位（多行字面量、转义引号、空值键）—— 它们仍按值生效。
 forking the thread	codex-rs/tui/src/app/event_dispatch.rs:494	`refresh_in_memory_config_from_disk_best_effort` 的参数只进 tracing::warn!（config_persistence.rs:457-465 逐行读到），无渲染路径 ⇒ §12.3
 TUI disconnected while handling a dynamic tool call	codex-rs/tui/src/app/event_dispatch.rs:3418	经 dynamic_tools::failure_response 回给 app-server 的协议响应，不渲染到屏幕 ⇒ §12.11
-Git · {url}@{ref_name}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1678	仓库坐标标识符（Git 是产品名）⇒ §12.9
+Git · {url}@{ref_name}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1690	仓库坐标标识符（Git 是产品名）⇒ §12.9
 Git · {url}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1679	同上 ⇒ §12.9
-npm · {package}@{version}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1684	同上 ⇒ §12.9
+npm · {package}@{version}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1696	同上 ⇒ §12.9
 npm · {package}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1685	同上 ⇒ §12.9
-[Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text	codex-rs/tui/src/clipboard_copy.rs:338	PowerShell 脚本片段（要原样执行，不是文案）⇒ §12.5
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text	codex-rs/tui/src/clipboard_copy.rs:329	PowerShell 脚本片段（要原样执行，不是文案）⇒ §12.5
 {error_context} task failed	codex-rs/tui/src/app/config_persistence.rs:28	`wrap_err_with` 的错误上下文（§12.3），且本身就是占位拼接
  (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permission_popups.rs:83	`.replace(…)` 的数据修剪目标：要匹配预设描述里的后缀再删掉 ⇒ 译了就不匹配（§12.1 匹配/解析管线）
  (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permissions_menu.rs:110	同上（同一次修剪的另一处）
-OpenAI Codex	codex-rs/tui/src/status/card.rs:760	产品名（§12.6）
+OpenAI Codex	codex-rs/tui/src/status/card.rs:756	产品名（§12.6）
 ✨\u{200A}	codex-rs/tui/src/history_cell/notices.rs:54	emoji + 窄空格（§12.7；§12.10 已锚定同类）
 %Y-%m-%d %H:%M:%S	codex-rs/tui/src/resume_picker.rs:3524	strftime 格式串（§12.7）
 user_note: {notes}	codex-rs/tui/src/bottom_pane/request_user_input/mod.rs:943	答案前缀，随答案提交回 core 并在别处被解析（§12.1）
@@ -64,7 +68,7 @@ Write a brief catch-up for a user returning to this Codex task. 	codex-rs/tui/sr
 In at most 40 words and one or two plain-text sentences, explain the 	codex-rs/tui/src/app/recap.rs:58	同上 ⇒ §12.2
 pet frame grid must cover spritesheet exactly: expected {spritesheet_width}x{spritesheet_height}, got {total_width}x{total_height}	codex-rs/tui/src/pets/model.rs:379	`bail!` 内部不变量消息；同处的 .context 用户可见部分已译 ⇒ §12.3
 sixel RGBA buffer has {} bytes, expected {expected_len}	codex-rs/tui/src/pets/sixel.rs:33	同上 ⇒ §12.3
-codex resume {}	codex-rs/tui/src/app/exit_summary.rs:174	可粘贴的 CLI 命令（要原样执行）⇒ §12.5
+codex resume {}	codex-rs/tui/src/app/exit_summary.rs:162	可粘贴的 CLI 命令（要原样执行）⇒ §12.5
 codex resume	codex-rs/tui/src/app/exit_summary.rs:182	同上 ⇒ §12.5
   - network_proxy	codex-rs/tui/src/debug_config.rs:39	调试转储里的配置键列表 ⇒ §12.7
 	codex-rs/tui/src/history_cell/request_user_input.rs:72	纯缩进空白（布局），值写不进单行 TSV ⇒ 按位置豁免
@@ -158,13 +162,13 @@ raw output	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:75	`StatusSurf
 Workspace headline	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:76	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
 gpt-5.2-codex medium	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:78	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
 Tasks 0/0	codex-rs/tui/src/bottom_pane/status_surface_preview.rs:80	`StatusSurfacePreviewItem::placeholder()` 的**预览占位值**（模拟真实 UI 值的假数据，如 my-project / thread name / gpt-5.2-codex medium）：屏幕上代表的是**用户数据**，译了反而错 ⇒ 预览占位符不译（§12.9 与台账 i18n.doc.placeholder-rule）
-file changes: {status:?} · {} changes	codex-rs/tui/src/app/transcript_export.rs:158	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-mcp tool: {server}/{tool}({arguments}) · {status:?}	codex-rs/tui/src/app/transcript_export.rs:175	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-<image content>	codex-rs/tui/src/app/transcript_export.rs:183	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-<audio content>	codex-rs/tui/src/app/transcript_export.rs:186	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-link: {}	codex-rs/tui/src/app/transcript_export.rs:196	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-structured result: {content}	codex-rs/tui/src/app/transcript_export.rs:202	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
-error: {}	codex-rs/tui/src/app/transcript_export.rs:206	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+file changes: {status:?} · {} changes	codex-rs/tui/src/app/transcript_export.rs:157	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+mcp tool: {server}/{tool}({arguments}) · {status:?}	codex-rs/tui/src/app/transcript_export.rs:174	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+<image content>	codex-rs/tui/src/app/transcript_export.rs:182	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+<audio content>	codex-rs/tui/src/app/transcript_export.rs:185	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+link: {}	codex-rs/tui/src/app/transcript_export.rs:195	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+structured result: {content}	codex-rs/tui/src/app/transcript_export.rs:201	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
+error: {}	codex-rs/tui/src/app/transcript_export.rs:205	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 	codex-rs/tui/src/app/transcript_export.rs:241	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 \n## {heading}\n\n	codex-rs/tui/src/app/transcript_export.rs:289	markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
 	codex-rs/tui/src/app/transcript_export.rs:300	值以 `#` 开头（注册表按行首 `#` 判注释）⇒ 按位置豁免；markdown **导出正文**（transcript export 的 activity 行与文档头），不是实时 UI；同批已按 i18n.tui.export-triage 裁定：UI 状态文案入字典、导出正文保留英文 ⇒ §12.9
@@ -269,9 +273,9 @@ unknown built-in permission profile	codex-rs/tui/src/app/permission_shortcuts.rs
 refilling underfilled terminal scrollback from paginated history	codex-rs/tui/src/app/resize_reflow.rs:535	tracing 消息（本次复核 :533-535 的宏调用）
 resuming a thread	codex-rs/tui/src/app/resume_config.rs:18	`refresh_in_memory_config_from_disk_best_effort` 的 log_message：只进 tracing::warn!（与既有注册行同模式）
 previous turn {} is still in progress	codex-rs/tui/src/app/safety_buffering.rs:303	内部前进条件校验的 eyre 错误（本次复核 :303 是 eyre!）
-closing the session picker	codex-rs/tui/src/app/session_picker.rs:145	同上 log_message（本次复核 :145）
+closing the session picker	codex-rs/tui/src/app/session_picker.rs:139	同上 log_message（本次复核 :145）
 tui startup initial frame scheduled	codex-rs/tui/src/app/startup.rs:880	tracing 消息（本次复核 :880）
-    {display_index}. {folder}\n	codex-rs/tui/src/app/startup_prompts.rs:108	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
+    {display_index}. {folder}\n	codex-rs/tui/src/app/startup_prompts.rs:105	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
        {reason}\n	codex-rs/tui/src/app/startup_prompts.rs:109	列表脚手架 `    {display_index}. {folder}` / `       {reason}`，数据原样渲染（§12.9）
 expected active turn id `	codex-rs/tui/src/app.rs:770	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
 ` but found `	codex-rs/tui/src/app.rs:771	内部断言片段（`expected active turn id … but found …`）；本次复核该文件无渲染调用
@@ -304,7 +308,7 @@ Model metadata for `	codex-rs/tui/src/chatwidget/warnings.rs:3	`strip_prefix`/`s
 Bearer {}	codex-rs/tui/src/dynamic_tools_mcp.rs:116	HTTP 头 + 内部错误；本次复核 render=0
 managed MCP requirements do not permit the TUI task-tools server	codex-rs/tui/src/dynamic_tools_mcp.rs:137	HTTP 头 + 内部错误；本次复核 render=0
 missing task metadata	codex-rs/tui/src/dynamic_tools_mcp.rs:264	HTTP 头 + 内部错误；本次复核 render=0
-failed to detect external agent config migrations	codex-rs/tui/src/external_agent_config_migration/flow.rs:335	tracing::warn!（§12.10）；本次复核 render=0
+failed to detect external agent config migrations	codex-rs/tui/src/external_agent_config_migration/flow.rs:332	tracing::warn!（§12.10）；本次复核 render=0
 Import {rest}	codex-rs/tui/src/external_agent_config_migration/mod.rs:208	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
 Import enabled plugins from {}	codex-rs/tui/src/external_agent_config_migration/mod.rs:248	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
 Claude Code	codex-rs/tui/src/external_agent_config_migration/source.rs:43	产品名 `Claude Code`（§12.6）
@@ -327,7 +331,7 @@ disable disabled hide hidden off none	codex-rs/tui/src/pets/picker.rs:94	关键�
 legacy transcript preview exceeded its scan budget	codex-rs/tui/src/resume_picker_transcript_preview.rs:221	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
 {}  \n[{}]({placeholder})	codex-rs/tui/src/resume_picker_transcript_preview.rs:294	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
 {}  \n{}	codex-rs/tui/src/resume_picker_transcript_preview.rs:297	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
-Invalid request: unknown variant `thread/queue/add`	codex-rs/tui/src/session_queue_commands.rs:155	与入站错误文本比对的变体名（§12.1）
+Invalid request: unknown variant `thread/queue/add`	codex-rs/tui/src/session_queue_commands.rs:152	与入站错误文本比对的变体名（§12.1）
 failed to determine the working directory recorded for the selected session	codex-rs/tui/src/session_resume.rs:76	会话恢复内部错误；本次复核 render=0
 session {} is archived. 	codex-rs/tui/src/session_start.rs:72	`starts_with` 匹配服务端错误文本（本次复核 :72）
 startup cancelled	codex-rs/tui/src/startup_draft.rs:72	启动取消/输入流关闭的内部原因（§12.9）
@@ -367,14 +371,14 @@ Once reset, message items in current context window will be cleared in the new w
 failed to serialize default config: {e}	codex-rs/core/src/config/mod.rs:1932	小写 I/O 诊断
 failed to parse model_catalog_json path `{}` as JSON: {err}	codex-rs/core/src/config/mod.rs:2092	小写 I/O 诊断
 configured value is disallowed by requirements; falling back to required value for {field_name}	codex-rs/core/src/config/mod.rs:2209	`tracing::warn!` 宏的消息
-project table missing for {project_key}	codex-rs/core/src/config/mod.rs:2350	内部表缺失诊断
-failed to persist config.toml: {err}	codex-rs/core/src/config/mod.rs:2384	小写 I/O 诊断
-model instructions file	codex-rs/core/src/config/mod.rs:3973	`try_read_non_empty_file(…, context)` 的 **context 标签**，进入 `failed to read {context} …` 诊断
-experimental compact prompt file	codex-rs/core/src/config/mod.rs:4018	同上（另一个 context 标签）
-missing managed deny	codex-rs/core/src/config/mod.rs:4198	`ConstraintError::InvalidValue` 的 candidate **数据值**
-all managed deny_read restrictions	codex-rs/core/src/config/mod.rs:4201	同上（allowed 数据值）
-failed to read {context} {}: {e}	codex-rs/core/src/config/mod.rs:4497	小写 I/O 诊断模板
-{context} is empty: {}	codex-rs/core/src/config/mod.rs:4505	小写 I/O 诊断模板
+project table missing for {project_key}	codex-rs/core/src/config/mod.rs:2356	内部表缺失诊断
+failed to persist config.toml: {err}	codex-rs/core/src/config/mod.rs:2390	小写 I/O 诊断
+model instructions file	codex-rs/core/src/config/mod.rs:3989	`try_read_non_empty_file(…, context)` 的 **context 标签**，进入 `failed to read {context} …` 诊断
+experimental compact prompt file	codex-rs/core/src/config/mod.rs:4034	同上（另一个 context 标签）
+missing managed deny	codex-rs/core/src/config/mod.rs:4214	`ConstraintError::InvalidValue` 的 candidate **数据值**
+all managed deny_read restrictions	codex-rs/core/src/config/mod.rs:4217	同上（allowed 数据值）
+failed to read {context} {}: {e}	codex-rs/core/src/config/mod.rs:4513	小写 I/O 诊断模板
+{context} is empty: {}	codex-rs/core/src/config/mod.rs:4521	小写 I/O 诊断模板
 failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4562	小写 I/O 诊断
 failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4591	小写 I/O 诊断
 failed to read rules files from {dir}: {source}	codex-rs/core/src/exec_policy.rs:262	规则文件 I/O 诊断
@@ -746,5 +750,10 @@ user cancelled MCP tool call	codex-rs/core/src/mcp_tool_call.rs:337	**工具结�
 tool call error: {error:?}	codex-rs/core/src/mcp_tool_call.rs:536	**回给模型的工具错误**：`.map_err(|error| format!("tool call error: {error:?}"))` 产出的是 `Result<_, String>` 的错误串（工具执行失败文本，随 function_call_output 回给模型）⇒ §12.11 / §12.3（docs/plan/i18n-verification.md §12.11）
 Allow for this session	codex-rs/core/src/mcp_tool_call.rs:1377	**匹配键**：TUI 把用户所选选项的**标签文本**原样回传（`tools/handlers/request_user_input/mod.rs` 的 `submit_answers`），本文件 `:2088` 再把这些常量与回答**按值比较**；译了会静默失配（本文件 `:1371-1375` 的注释已记录该裁决）⇒ §12.34 同族（docs/plan/i18n-verification.md §12.34）
 Allow and don't ask me again	codex-rs/core/src/mcp_tool_call.rs:1378	**匹配键**：同 :1377（显示值与比较值是同一个常量）⇒ §12.34 同族（docs/plan/i18n-verification.md §12.34）
-failed to persist MCP tool approval	codex-rs/core/src/mcp_tool_call.rs:2184	** tracing 日志**：它是 `error!(error = %err, server = .., tool_name, "failed to persist MCP tool approval")` 的消息体，只进日志 ⇒ §12.3（docs/plan/i18n-verification.md §12.3）
+failed to persist MCP tool approval	codex-rs/core/src/mcp_tool_call.rs:2187	** tracing 日志**：它是 `error!(error = %err, server = .., tool_name, "failed to persist MCP tool approval")` 的消息体，只进日志 ⇒ §12.3（docs/plan/i18n-verification.md §12.3）
 MCP server `{server}` is not configured in config.toml or an enabled plugin	codex-rs/core/src/mcp_tool_call.rs:2268	**内部链**：`anyhow::bail!(..)` 的诊断（调用方的 anyhow 上下文），无 `ToolError`/`CodexErr`/UI 渲染方 ⇒ §12.3（docs/plan/i18n-verification.md §12.3）
+approval required by policy, but AskForApproval is set to Never	codex-rs/core/src/tools/runtimes/zsh_fork/unix_escalation.rs:67	**内部诊断 + 无渲染方**：这三个 `const &str` 是 `execve_prompt_is_rejected_by_policy`（:207）的返回值，生产侧唯一调用点（:338）只做 `.is_some()` 判断、**把值丢掉**（另有测试 `unix_escalation_tests.rs:102/119` 按值断言）。且它们是 `const`，`tr()` 是运行时调用、无法放进 const 初始化 —— 要译得先改成函数（属改变结构，按最小入侵不做）⇒ §12.3 + §12.1
+approval required by policy, but AskForApproval::Granular.sandbox_approval is false	codex-rs/core/src/tools/runtimes/zsh_fork/unix_escalation.rs:69	同上（同族三个常量之一）⇒ §12.3 + §12.1
+approval required by policy rule, but AskForApproval::Granular.rules is false	codex-rs/core/src/tools/runtimes/zsh_fork/unix_escalation.rs:71	同上（同族三个常量之一）⇒ §12.3 + §12.1
+intercepted exec request must contain argv[0]	codex-rs/core/src/tools/runtimes/zsh_fork/unix_escalation.rs:698	**内部不变量（anyhow 链）**：`prepare_escalated_exec` 的 `anyhow::anyhow!` 沿 escalate server 传播，最终由 `codex-rs/shell-escalation/src/unix/escalate_server.rs:259` 的 `tracing::error!("escalate session failed: {err:?}")` 落地 ⇒ 只进日志，无 UI/协议渲染方 ⇒ §12.3
+prepared command must not be empty	codex-rs/core/src/tools/runtimes/zsh_fork/unix_escalation.rs:769	**内部不变量（anyhow 链）**：同 :693（`prepare_sandboxed_exec` 的 `anyhow::anyhow!`）⇒ §12.3

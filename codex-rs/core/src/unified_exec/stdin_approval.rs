@@ -14,6 +14,9 @@ use crate::tools::sandboxing::ToolError;
 use codex_features::Feature;
 use codex_file_system::ExecPermissionProfile;
 use codex_file_system::FileSystemSandboxContext;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::EnvironmentNetworkPolicy;
 use codex_protocol::models::AdditionalPermissionProfile;
 use codex_protocol::models::PermissionProfile;
@@ -112,9 +115,12 @@ impl TerminalPermissions {
         if current.environment_network.is_some()
             && (bypassed || self.policy.environment_network != current.environment_network)
         {
-            return Err(
+            // NOTE: the parameter is named `current`, so the i18n helpers are
+            // qualified here to avoid resolving `current` to the policy.
+            return Err(codex_i18n::tr(
+                codex_i18n::current(),
                 "this terminal cannot enforce the current environment-owned network restrictions; start a new terminal",
-            );
+            ));
         }
         // Approval cannot retrofit denied reads onto a running process. Unless
         // its sandbox still matches, start a new terminal under the current policy.
@@ -123,9 +129,10 @@ impl TerminalPermissions {
             .has_denied_read_restrictions()
             && (bypassed || self.policy.file_system_context() != current.file_system_context())
         {
-            return Err(
+            return Err(codex_i18n::tr(
+                codex_i18n::current(),
                 "this terminal cannot enforce the current denied-read restrictions; start a new terminal",
-            );
+            ));
         }
         // Once the retained settings match, only the baseline permissions can differ.
         Ok(if bypassed || &self.policy != current {
@@ -144,31 +151,48 @@ impl TerminalPermissions {
         sandbox_permissions: SandboxPermissions,
     ) -> Result<String, serde_json::Error> {
         let authority = if self.launch_permissions.requires_escalated_permissions() {
-            "This terminal was launched outside the sandbox, bypassing any managed network proxy."
+            tr(
+                current(),
+                "This terminal was launched outside the sandbox, bypassing any managed network proxy.",
+            )
         } else if self.policy.sandbox.permissions == ExecPermissionProfile::Disabled {
-            "This terminal runs without a filesystem sandbox."
+            tr(
+                current(),
+                "This terminal runs without a filesystem sandbox.",
+            )
         } else {
             match sandbox_permissions {
-                SandboxPermissions::UseDefault => "This terminal uses the current permissions.",
+                SandboxPermissions::UseDefault => {
+                    tr(current(), "This terminal uses the current permissions.")
+                }
                 SandboxPermissions::WithAdditionalPermissions => {
-                    "This terminal retains additional permissions."
+                    tr(current(), "This terminal retains additional permissions.")
                 }
-                SandboxPermissions::RequireEscalated => {
-                    "This terminal retains sandbox or network settings that differ from the current permissions."
-                }
+                SandboxPermissions::RequireEscalated => tr(
+                    current(),
+                    "This terminal retains sandbox or network settings that differ from the current permissions.",
+                ),
             }
         };
-        let mut reason = format!("Send input to an existing terminal. {authority}");
+        let mut reason = tr_with(
+            current(),
+            "Send input to an existing terminal. {0}",
+            &[authority],
+        );
         if self.internal_permissions.is_some() {
-            reason.push_str(" It also has an internal plugin metrics write grant.");
+            reason.push_str(tr(
+                current(),
+                " It also has an internal plugin metrics write grant.",
+            ));
         }
-        reason.push_str(" The cwd is its launch directory; the terminal's current directory and state may have changed.");
+        reason.push_str(tr(current(), " The cwd is its launch directory; the terminal's current directory and state may have changed."));
         if let Some(grants) = &self.additional_permissions {
             // Stable reason text also reaches clients that strip the experimental
             // additionalPermissions field. Internal paths never enter this text.
-            reason.push_str(&format!(
-                " Retained grants: {}.",
-                serde_json::to_string(grants)?
+            reason.push_str(&tr_with(
+                current(),
+                " Retained grants: {0}.",
+                &[&serde_json::to_string(grants)?],
             ));
         }
         Ok(reason)
@@ -197,12 +221,13 @@ impl ProcessEntry {
             .turn_environments()
             .find(|environment| environment.selection.environment_id == self.environment_id)
             .ok_or_else(|| {
-                approval_error(
+                approval_error(tr(
+                    current(),
                     "cannot access the terminal's original environment; select it before retrying",
-                )
+                ))
             })?;
         let permissions = &self.permissions;
-        let current = TerminalPolicy::capture(
+        let current_policy = TerminalPolicy::capture(
             environment,
             &context.step_context.turn,
             permissions.sandbox_source,
@@ -212,16 +237,17 @@ impl ProcessEntry {
             ),
         );
         let sandbox_permissions = permissions
-            .review_requirement(&current, environment.permission_profile())
+            .review_requirement(&current_policy, environment.permission_profile())
             .map_err(approval_error)?;
         if sandbox_permissions == SandboxPermissions::UseDefault && !strict_auto_review {
             return Ok(None);
         }
         // Manual approvals shell-quote the input, which cannot preserve NUL bytes.
         if input.contains('\0') {
-            return Err(approval_error(
+            return Err(approval_error(tr(
+                current(),
                 "terminal input contains a NUL byte and cannot be reviewed safely",
-            ));
+            )));
         }
         let reason = permissions
             .approval_reason(sandbox_permissions)

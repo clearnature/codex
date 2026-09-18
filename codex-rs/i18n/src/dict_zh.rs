@@ -7216,6 +7216,55 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "自动复核作出了拒绝决定，但未给出理由。",
     ),
     ("User cancelled execution", "用户取消了执行"),
+    (
+        "this terminal cannot enforce the current environment-owned network restrictions; start a new terminal",
+        "本终端无法强制执行当前由环境拥有的网络限制；请新建终端",
+    ),
+    (
+        "this terminal cannot enforce the current denied-read restrictions; start a new terminal",
+        "本终端无法强制执行当前的禁止读取限制；请新建终端",
+    ),
+    (
+        "This terminal was launched outside the sandbox, bypassing any managed network proxy.",
+        "本终端在沙箱外启动，绕过了托管网络代理。",
+    ),
+    (
+        "This terminal runs without a filesystem sandbox.",
+        "本终端在没有文件系统沙箱的情况下运行。",
+    ),
+    (
+        "This terminal uses the current permissions.",
+        "本终端使用当前权限。",
+    ),
+    (
+        "This terminal retains additional permissions.",
+        "本终端保留附加权限。",
+    ),
+    (
+        "This terminal retains sandbox or network settings that differ from the current permissions.",
+        "本终端保留了与当前权限不同的沙箱或网络设置。",
+    ),
+    (
+        "cannot access the terminal's original environment; select it before retrying",
+        "无法访问终端的原始环境；请先选择它再重试",
+    ),
+    (
+        "terminal input contains a NUL byte and cannot be reviewed safely",
+        "终端输入包含NUL字节，无法安全复核",
+    ),
+    (
+        "Send input to an existing terminal. {0}",
+        "向已有终端发送输入。{0}",
+    ),
+    (
+        " It also has an internal plugin metrics write grant.",
+        "它还拥有内部插件指标写入授权。",
+    ),
+    (
+        " The cwd is its launch directory; the terminal's current directory and state may have changed.",
+        "其cwd是启动目录；终端的当前目录与状态可能已改变。",
+    ),
+    (" Retained grants: {0}.", "保留的授权：{0}。"),
 ];
 
 /// English source text -> Simplified Chinese.

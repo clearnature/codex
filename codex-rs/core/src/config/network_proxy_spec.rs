@@ -1,5 +1,7 @@
 use codex_config::NetworkConstraints;
 use codex_execpolicy::Policy;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_network_proxy::BlockedRequestObserver;
 use codex_network_proxy::ConfigReloader;
 use codex_network_proxy::ConfigReloaderFuture;
@@ -160,7 +162,11 @@ impl NetworkProxySpec {
         validate_policy_against_constraints(&config, &constraints).map_err(|err| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!("network proxy constraints are invalid: {err}"),
+                tr_with(
+                    current(),
+                    "network proxy constraints are invalid: {0}",
+                    &[&err.to_string()],
+                ),
             )
         })?;
         Ok(Self {
@@ -194,12 +200,19 @@ impl NetworkProxySpec {
             builder = builder.blocked_request_observer_arc(blocked_request_observer);
         }
         let proxy = builder.build().await.map_err(|err| {
-            std::io::Error::other(format!("failed to build network proxy: {err}"))
+            std::io::Error::other(tr_with(
+                current(),
+                "failed to build network proxy: {0}",
+                &[&err.to_string()],
+            ))
         })?;
-        let handle = proxy
-            .run()
-            .await
-            .map_err(|err| std::io::Error::other(format!("failed to run network proxy: {err}")))?;
+        let handle = proxy.run().await.map_err(|err| {
+            std::io::Error::other(tr_with(
+                current(),
+                "failed to run network proxy: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         Ok(StartedNetworkProxy::new(proxy, handle))
     }
 

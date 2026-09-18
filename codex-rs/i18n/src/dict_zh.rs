@@ -7406,6 +7406,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "unexpected shell command format for zsh-fork execution",
         "zsh-fork执行遇到意外的shell命令格式",
     ),
+    (
+        "network proxy constraints are invalid: {0}",
+        "网络代理约束无效：{0}",
+    ),
+    (
+        "failed to build network proxy: {0}",
+        "构建网络代理失败：{0}",
+    ),
+    ("failed to run network proxy: {0}", "运行网络代理失败：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1,0 +1,130 @@
+{
+  "core-approvals": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib approvals",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 26
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 26,
+    "pass_hash": "244952fb59b13947111f2493d304c81271825ca7",
+    "state_hash": "576b0970f697d21ea95c827b7faeeffc5be8949d"
+  },
+  "core-exec": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib exec",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 303
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 303,
+    "pass_hash": "502c382743c69b2839045bbc8ba8558b053a2e9b",
+    "state_hash": "126fa044243eb642dd33c35987402657c8413e02"
+  },
+  "core-guardian": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib guardian",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 167
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 167,
+    "pass_hash": "a606a5d4675791b799235c4440187cfaf4e2b173",
+    "state_hash": "83d051c9dee04f544e385f8cc7958445541a89a6"
+  },
+  "core-session": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib session",
+    "counts": {
+      "failed": 2,
+      "ignored": 0,
+      "passed": 432
+    },
+    "exit_code": 101,
+    "fail": [
+      "session::tests::user_shell_commands_do_not_inherit_managed_network_proxy",
+      "session::turn::tests::post_sampling_token_estimate_is_disabled_by_always_on_sinks"
+    ],
+    "fail_hash": "85610e63559484798dcc16e86cda8f73be57d89d",
+    "flaky": [],
+    "pass_count": 432,
+    "pass_hash": "a1f0e43bbfd86c59b6c4df2581769b5fa02f5198",
+    "state_hash": "b28e4bd9cdd1c3b5e142379ff9f6e86a338836a1"
+  },
+  "core-stdin-approval": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib stdin_approval",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 8
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [
+      "unified_exec::tests::stdin_approval_preserves_the_reviewed_terminal"
+    ],
+    "flaky_notes": {
+      "unified_exec::tests::stdin_approval_preserves_the_reviewed_terminal": "\u95f4\u6b47\u6027\uff084 \u6b21\u540c\u8fc7\u6ee4\u89c2\u6d4b\uff1a1 \u6b21 7/1\u30013 \u6b21 8/0\uff1b\u5355\u72ec\u8fd0\u884c 2 \u6b21\u5747\u901a\u8fc7\uff0c\u8017\u65f6\u7ea6 6s\uff09\u2014\u2014\u987a\u5e8f/\u65f6\u5e8f\u76f8\u5173\uff0c\u975e\u672c\u6279\u6539\u52a8\u5f15\u5165\uff1b\u8bc1\u636e\uff1aj-mu7ap95b-ff8i \u4e0e worklog \u672c\u6279\u6761\u76ee"
+    },
+    "pass_count": 8,
+    "pass_hash": "063f5429bd7c48292ed807c86047f15f36da6a22",
+    "state_hash": "1610ab919563a9e38ecde744130b61ec3a4dbb93"
+  },
+  "core-thread-manager": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib thread_manager",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 39
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 39,
+    "pass_hash": "35d6eb691b8ce3699f98faa0ce42db3d75fcd765",
+    "state_hash": "565d50eb3e60da3f34808490e37e7868664881a3"
+  },
+  "core-tools-handlers": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib handlers",
+    "counts": {
+      "failed": 0,
+      "ignored": 1,
+      "passed": 200
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 200,
+    "pass_hash": "6075d890f85950795de471d26884dd41657851d7",
+    "state_hash": "b834d3d56f5a0d9487ab360a63d664a280c3b400"
+  },
+  "core-unified-exec": {
+    "command": "RUST_MIN_STACK=16777216 cargo test -p codex-core --lib unified_exec",
+    "counts": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 82
+    },
+    "exit_code": 0,
+    "fail": [],
+    "fail_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "flaky": [],
+    "pass_count": 82,
+    "pass_hash": "708471813a7e1369dd8536940d5744b3a81a1290",
+    "state_hash": "4d88f12de805103bfe2d7d0503bba523c1f66c0c"
+  }
+}

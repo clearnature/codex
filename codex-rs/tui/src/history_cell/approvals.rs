@@ -93,7 +93,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     actor.subject().into(),
                     tr(current(), "approved").bold(),
-                    " codex to always run commands that start with ".into(),
+                    tr(current(), " codex to always run commands that start with ").into(),
                     snippet,
                 ],
             )
@@ -208,15 +208,15 @@ pub fn new_approval_decision_cell(
                 let summary = if let Some(snippet) = non_empty_exec_snippet(&command) {
                     vec![
                         tr(current(), "Review ").into(),
-                        "timed out".bold(),
-                        " before codex could run ".into(),
+                        tr(current(), "timed out").bold(),
+                        tr(current(), " before codex could run ").into(),
                         Span::from(snippet).dim(),
                     ]
                 } else {
                     vec![
                         tr(current(), "Review ").into(),
-                        "timed out".bold(),
-                        " before this request could be approved".into(),
+                        tr(current(), "timed out").bold(),
+                        tr(current(), " before this request could be approved").into(),
                     ]
                 };
                 ("✗ ".red(), summary)
@@ -225,8 +225,8 @@ pub fn new_approval_decision_cell(
                 "✗ ".red(),
                 vec![
                     tr(current(), "Review ").into(),
-                    "timed out".bold(),
-                    " before codex could access ".into(),
+                    tr(current(), "timed out").bold(),
+                    tr(current(), " before codex could access ").into(),
                     Span::from(target).dim(),
                 ],
             ),
@@ -236,14 +236,14 @@ pub fn new_approval_decision_cell(
                 let summary = if let Some(snippet) = non_empty_exec_snippet(&command) {
                     vec![
                         actor.subject().into(),
-                        "canceled".bold(),
+                        tr(current(), "canceled").bold(),
                         tr(current(), " the request to run ").into(),
                         Span::from(snippet).dim(),
                     ]
                 } else {
                     vec![
                         actor.subject().into(),
-                        "canceled".bold(),
+                        tr(current(), "canceled").bold(),
                         tr(current(), " this request").into(),
                     ]
                 };
@@ -253,7 +253,7 @@ pub fn new_approval_decision_cell(
                 "✗ ".red(),
                 vec![
                     actor.subject().into(),
-                    "canceled".bold(),
+                    tr(current(), "canceled").bold(),
                     tr(current(), " the request for codex network access to ").into(),
                     Span::from(target).dim(),
                 ],
@@ -277,7 +277,7 @@ pub enum ApprovalDecisionActor {
 impl ApprovalDecisionActor {
     fn subject(self) -> &'static str {
         match self {
-            Self::User => "You ",
+            Self::User => tr(current(), "You "),
             Self::Guardian => tr(current(), "Auto-reviewer "),
         }
     }
@@ -287,7 +287,7 @@ pub fn new_guardian_denied_patch_request(files: Vec<String>) -> Box<dyn HistoryC
     let mut summary = vec![
         tr(current(), "Request ").into(),
         tr(current(), "denied").bold(),
-        " for codex to apply ".into(),
+        tr(current(), " for codex to apply ").into(),
     ];
     if files.len() == 1 {
         summary.push(tr(current(), "a patch touching ").into());
@@ -295,7 +295,7 @@ pub fn new_guardian_denied_patch_request(files: Vec<String>) -> Box<dyn HistoryC
     } else {
         summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files.len().to_string()).dim());
-        summary.push(" files".into());
+        summary.push(tr(current(), " files").into());
     }
 
     Box::new(PrefixedWrappedHistoryCell::new(
@@ -309,7 +309,7 @@ pub fn new_guardian_denied_action_request(summary: String) -> Box<dyn HistoryCel
     let line = Line::from(vec![
         tr(current(), "Request ").into(),
         tr(current(), "denied").bold(),
-        " for ".into(),
+        tr(current(), " for ").into(),
         Span::from(summary).dim(),
     ]);
     Box::new(PrefixedWrappedHistoryCell::new(line, "✗ ".red(), "  "))
@@ -318,8 +318,8 @@ pub fn new_guardian_denied_action_request(summary: String) -> Box<dyn HistoryCel
 pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn HistoryCell> {
     let mut summary = vec![
         tr(current(), "Review ").into(),
-        "timed out".bold(),
-        " before codex could apply ".into(),
+        tr(current(), "timed out").bold(),
+        tr(current(), " before codex could apply ").into(),
     ];
     if files.len() == 1 {
         summary.push(tr(current(), "a patch touching ").into());
@@ -327,7 +327,7 @@ pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn Histo
     } else {
         summary.push(tr(current(), "a patch touching ").into());
         summary.push(Span::from(files.len().to_string()).dim());
-        summary.push(" files".into());
+        summary.push(tr(current(), " files").into());
     }
 
     Box::new(PrefixedWrappedHistoryCell::new(
@@ -340,8 +340,8 @@ pub fn new_guardian_timed_out_patch_request(files: Vec<String>) -> Box<dyn Histo
 pub fn new_guardian_timed_out_action_request(summary: String) -> Box<dyn HistoryCell> {
     let line = Line::from(vec![
         tr(current(), "Review ").into(),
-        "timed out".bold(),
-        " before ".into(),
+        tr(current(), "timed out").bold(),
+        tr(current(), " before ").into(),
         Span::from(summary).dim(),
     ]);
     Box::new(PrefixedWrappedHistoryCell::new(line, "✗ ".red(), "  "))

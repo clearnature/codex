@@ -6545,6 +6545,29 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "用量已重置。正在检查剩余的重置次数…",
     ),
     ("Refreshing...", "刷新中…"),
+    // Approval history cells (`history_cell/approvals.rs`): sentence fragments
+    // assembled as styled spans. The Chinese keeps the same order, so each
+    // fragment stands on its own (design §3.6). The single-token ones
+    // (`canceled`, `You `, ` files`) are below the scanner's candidate length,
+    // so only the `--precise` sweep listed them.
+    ("timed out", "超时"),
+    ("canceled", "已取消"),
+    ("You ", "你 "),
+    (" files", " 个文件"),
+    (" for ", "："),
+    (" before ", "，"),
+    (" before codex could run ", "，codex未能运行"),
+    (" before codex could access ", "，codex未能访问"),
+    (" before codex could apply ", "，codex未能应用"),
+    (" for codex to apply ", "，让codex应用"),
+    (
+        " before this request could be approved",
+        "，本次请求未获批准",
+    ),
+    (
+        " codex to always run commands that start with ",
+        "，让codex始终运行以此开头的命令：",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

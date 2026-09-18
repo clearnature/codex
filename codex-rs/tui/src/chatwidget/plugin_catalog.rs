@@ -615,7 +615,7 @@ impl ChatWidget {
         let mut header = ColumnRenderable::new();
         header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            format!("Installing {plugin_display_name}...").dim(),
+            tr_with(current(), "Installing {0}...", &[&plugin_display_name]).dim(),
         ));
 
         SelectionViewParams {
@@ -644,7 +644,7 @@ impl ChatWidget {
         let mut header = ColumnRenderable::new();
         header.push(Line::from(tr(current(), "Plugins").bold()));
         header.push(Line::from(
-            format!("Uninstalling {plugin_display_name}...").dim(),
+            tr_with(current(), "Uninstalling {0}...", &[&plugin_display_name]).dim(),
         ));
 
         SelectionViewParams {
@@ -891,7 +891,11 @@ impl ChatWidget {
             label: tr(current(), "All Plugins").to_string(),
             header: plugins_header(
                 tr(current(), "Browse plugins from available marketplaces.").to_string(),
-                format!("Installed {installed} of {total} available plugins."),
+                tr_with(
+                    current(),
+                    "Installed {0} of {1} available plugins.",
+                    &[&installed.to_string(), &total.to_string()],
+                ),
             ),
             items: all_items,
         });
@@ -901,7 +905,11 @@ impl ChatWidget {
             label: tr_with(current(), "Installed ({0})", &[&installed.to_string()]),
             header: plugins_header(
                 tr(current(), "Installed plugins.").to_string(),
-                format!("Showing {installed} installed plugins."),
+                tr_with(
+                    current(),
+                    "Showing {0} installed plugins.",
+                    &[&installed.to_string()],
+                ),
             ),
             items: self.plugin_selection_items(
                 installed_entries,
@@ -971,7 +979,11 @@ impl ChatWidget {
             label: tr(current(), "OpenAI Curated").to_string(),
             header: plugins_header(
                 tr(current(), "OpenAI Curated marketplace.").to_string(),
-                format!("Installed {curated_installed} of {curated_total} OpenAI Curated plugins."),
+                tr_with(
+                    current(),
+                    "Installed {0} of {1} OpenAI Curated plugins.",
+                    &[&curated_installed.to_string(), &curated_total.to_string()],
+                ),
             ),
             items: curated_items,
         });
@@ -1766,8 +1778,8 @@ fn plugin_share_creator_summary(context: &PluginShareContext) -> Option<String> 
 fn plugin_share_principals_summary(principals: &[PluginSharePrincipal]) -> String {
     match principals.len() {
         0 => tr(current(), "No explicit principals").to_string(),
-        1 => format!("1 principal: {}", principals[0].name),
-        count => format!("{count} principals"),
+        1 => tr_with(current(), "1 principal: {0}", &[&principals[0].name]),
+        count => tr_with(current(), "{0} principals", &[&count.to_string()]),
     }
 }
 

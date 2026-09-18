@@ -6568,6 +6568,23 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         " codex to always run commands that start with ",
         "，让codex始终运行以此开头的命令：",
     ),
+    // Plugin catalog counts (`chatwidget/plugin_catalog.rs`). The English
+    // originals used named captures; `substitute` only replaces positional
+    // `{N}`, so a named one would render literally under zh (see
+    // docs/plan/i18n-verification.md §13.1).
+    ("Installing {0}...", "正在安装{0}…"),
+    ("Uninstalling {0}...", "正在卸载{0}…"),
+    (
+        "Installed {0} of {1} available plugins.",
+        "已安装{0}/{1}个可用插件。",
+    ),
+    ("Showing {0} installed plugins.", "显示{0}个已安装的插件。"),
+    (
+        "Installed {0} of {1} OpenAI Curated plugins.",
+        "已安装{0}/{1}个OpenAI精选插件。",
+    ),
+    ("1 principal: {0}", "1位主体：{0}"),
+    ("{0} principals", "{0}位主体"),
 ];
 
 /// English source text -> Simplified Chinese.

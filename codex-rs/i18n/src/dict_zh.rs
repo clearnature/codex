@@ -6701,6 +6701,44 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0} uses a reserved namespace: {1}",
         "{0}使用了保留命名空间：{1}",
     ),
+    // core config validation/startup warnings, second batch (`config/mod.rs`).
+    (
+        "Configured value for `{0}` is disallowed by requirements; falling back to required value {1}. Details: {2}",
+        "`{0}`的配置值被requirements禁止，将回退到要求值{1}。详情：{2}",
+    ),
+    (
+        "configured value for `{0}` is disallowed by requirements ({1}); fallback to a requirement-compliant value also failed ({2})",
+        "`{0}`的配置值被requirements禁止（{1}）；回退到符合要求的值也失败（{2}）",
+    ),
+    (
+        "mcp_servers.{0} uses unsupported `bearer_token`; set `bearer_token_env_var`.",
+        "mcp_servers.{0}使用了不支持的`bearer_token`；请改用`bearer_token_env_var`。",
+    ),
+    (
+        "features.rollout_budget.{0} must be finite and non-negative",
+        "features.rollout_budget.{0}必须为有限非负数",
+    ),
+    (
+        "legacy `profile = \"{0}\"` config is no longer supported; use `--profile {1}` with `{2}.config.toml` instead",
+        "旧式`profile = \"{0}\"`配置已不再支持；请改用`--profile {1}`配合`{2}.config.toml`",
+    ),
+    ("Model provider `{0}` not found", "未找到模型提供方`{0}`"),
+    (
+        "requirements.toml permissions profile `{0}` conflicts with a config-defined profile of the same name",
+        "requirements.toml的权限配置`{0}`与配置中定义的同名配置冲突",
+    ),
+    (
+        "Configured value for `permission_profile` is disallowed by requirements; falling back from `{0}` to required value `{1}`.",
+        "`permission_profile`的配置值被requirements禁止，将从`{0}`回退到要求值`{1}`。",
+    ),
+    (
+        "requirements.toml allowed_permission_profiles refers to undefined profile `{0}`",
+        "requirements.toml的allowed_permission_profiles引用了未定义的配置`{0}`",
+    ),
+    (
+        "requirements.toml default_permissions `{0}` must be allowed by allowed_permission_profiles",
+        "requirements.toml的default_permissions`{0}`必须被allowed_permission_profiles允许",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

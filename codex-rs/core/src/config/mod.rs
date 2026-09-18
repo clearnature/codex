@@ -2208,16 +2208,24 @@ where
             requirement_source = ?constrained_value.source,
             "configured value is disallowed by requirements; falling back to required value for {field_name}"
         );
-        let message = format!(
-            "Configured value for `{field_name}` is disallowed by requirements; falling back to required value {fallback_value:?}. Details: {err}"
+        let message = tr_with(
+            current(),
+            "Configured value for `{0}` is disallowed by requirements; falling back to required value {1}. Details: {2}",
+            &[
+                &field_name,
+                &format!("{fallback_value:?}"),
+                &err.to_string(),
+            ],
         );
         startup_warnings.push(message);
 
         constrained_value.set(fallback_value).map_err(|fallback_err| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!(
-                    "configured value for `{field_name}` is disallowed by requirements ({err}); fallback to a requirement-compliant value also failed ({fallback_err})"
+                tr_with(
+                    current(),
+                    "configured value for `{0}` is disallowed by requirements ({1}); fallback to a requirement-compliant value also failed ({2})",
+                    &[&field_name, &err.to_string(), &fallback_err.to_string()],
                 ),
             )
         })?;
@@ -2274,8 +2282,10 @@ fn ensure_no_inline_bearer_tokens(value: &TomlValue) -> std::io::Result<()> {
         if let Some(server_table) = server_value.as_table()
             && server_table.contains_key("bearer_token")
         {
-            let message = format!(
-                "mcp_servers.{server_name} uses unsupported `bearer_token`; set `bearer_token_env_var`."
+            let message = tr_with(
+                current(),
+                "mcp_servers.{0} uses unsupported `bearer_token`; set `bearer_token_env_var`.",
+                &[&server_name],
             );
             return Err(std::io::Error::new(ErrorKind::InvalidData, message));
         }
@@ -2911,7 +2921,11 @@ fn resolve_rollout_budget_config(
         if !weight.is_finite() || weight < 0.0 {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!("features.rollout_budget.{field} must be finite and non-negative"),
+                tr_with(
+                    current(),
+                    "features.rollout_budget.{0} must be finite and non-negative",
+                    &[field],
+                ),
             ));
         }
     }
@@ -3352,8 +3366,10 @@ impl Config {
         if let Some(profile) = cfg.profile.as_deref() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
-                format!(
-                    "legacy `profile = \"{profile}\"` config is no longer supported; use `--profile {profile}` with `{profile}.config.toml` instead"
+                tr_with(
+                    current(),
+                    "legacy `profile = \"{0}\"` config is no longer supported; use `--profile {1}` with `{2}.config.toml` instead",
+                    &[profile, profile, profile],
                 ),
             ));
         }
@@ -3800,7 +3816,11 @@ impl Config {
                 let message = if model_provider_id == LEGACY_OLLAMA_CHAT_PROVIDER_ID {
                     OLLAMA_CHAT_PROVIDER_REMOVED_ERROR.to_string()
                 } else {
-                    format!("Model provider `{model_provider_id}` not found")
+                    tr_with(
+                        current(),
+                        "Model provider `{0}` not found",
+                        &[&model_provider_id],
+                    )
                 };
                 std::io::Error::new(std::io::ErrorKind::NotFound, message)
             })?
@@ -4663,8 +4683,10 @@ fn merge_managed_permission_profiles(
         if merged_permissions.entries.contains_key(profile_id) {
             return Err(std::io::Error::new(
                 ErrorKind::InvalidInput,
-                format!(
-                    "requirements.toml permissions profile `{profile_id}` conflicts with a config-defined profile of the same name"
+                tr_with(
+                    current(),
+                    "requirements.toml permissions profile `{0}` conflicts with a config-defined profile of the same name",
+                    &[profile_id],
                 ),
             ));
         }
@@ -4750,8 +4772,10 @@ fn resolve_default_permissions<'a>(
             Ok(Some(selected_permissions))
         }
         Some(selected_permissions) => {
-            startup_warnings.push(format!(
-                "Configured value for `permission_profile` is disallowed by requirements; falling back from `{selected_permissions}` to required value `{fallback_permissions}`."
+            startup_warnings.push(tr_with(
+                current(),
+                "Configured value for `permission_profile` is disallowed by requirements; falling back from `{0}` to required value `{1}`.",
+                &[&selected_permissions, &fallback_permissions],
             ));
             Ok(Some(fallback_permissions))
         }
@@ -4786,8 +4810,10 @@ fn validate_required_permission_profile_catalog(
         if !is_known_profile(profile_id) {
             return Err(std::io::Error::new(
                 ErrorKind::InvalidInput,
-                format!(
-                    "requirements.toml allowed_permission_profiles refers to undefined profile `{profile_id}`"
+                tr_with(
+                    current(),
+                    "requirements.toml allowed_permission_profiles refers to undefined profile `{0}`",
+                    &[profile_id],
                 ),
             ));
         }
@@ -4809,8 +4835,10 @@ fn validate_required_permission_profile_catalog(
     if !is_permission_allowed(allowed_permission_profiles, default_permissions) {
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
-            format!(
-                "requirements.toml default_permissions `{default_permissions}` must be allowed by allowed_permission_profiles"
+            tr_with(
+                current(),
+                "requirements.toml default_permissions `{0}` must be allowed by allowed_permission_profiles",
+                &[default_permissions],
             ),
         ));
     }

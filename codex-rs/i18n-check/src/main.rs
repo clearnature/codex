@@ -130,8 +130,7 @@ fn run(root: &Path) -> Result<bool, String> {
     let mut referencing_files = 0usize;
     for file in &files {
         let text = fs::read_to_string(file).map_err(|e| format!("{}: {e}", file.display()))?;
-        // A file that never mentions the crate cannot be calling its `tr`.
-        if !text.contains("codex_i18n") {
+        if !file_contributes_keys(file, &text, &source_root) {
             continue;
         }
         // The checker's own source is a tool, not product copy: its literals are
@@ -355,6 +354,28 @@ fn run(root: &Path) -> Result<bool, String> {
         || !placeholders.is_empty()
         || !asset_drift.is_empty()
         || !nested.is_empty())
+}
+
+/// Whether a source file can contribute keys the checker must reconcile.
+///
+/// The gate used to be "the text mentions `codex_i18n`", which silently skipped
+/// any file that reaches `tr` through a glob import (`use super::*`): the crate
+/// name never appears, so its calls were neither counted as rendered nor ever
+/// reported `missing`. That hid 14 wrapped-but-untranslated keys in
+/// `tui/src/chatwidget/review_popups.rs` while the gate stayed green (docs
+/// §13.7). A file that *calls* `tr`/`tr_with` is in scope whether or not it
+/// names the crate.
+///
+/// The crate that *defines* `tr` stays out: its own tests call `tr` with
+/// fixture literals, and scanning those reported the fixtures as missing keys.
+fn file_contributes_keys(file: &Path, text: &str, source_root: &Path) -> bool {
+    if text.contains("codex_i18n") {
+        return true;
+    }
+    if file.starts_with(source_root.join("i18n").join("src")) {
+        return false;
+    }
+    !extract_tr_calls(text).is_empty()
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {

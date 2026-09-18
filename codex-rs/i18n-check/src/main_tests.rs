@@ -9,6 +9,7 @@ use crate::extract_const_literals;
 use crate::extract_label_literals;
 use crate::extract_label_literals_in;
 use crate::extract_tr_calls;
+use crate::file_contributes_keys;
 use crate::named_placeholder_hits;
 use crate::named_placeholders;
 use crate::nested_tr_calls;
@@ -358,5 +359,62 @@ static ENTRIES: &[(&str, &str)] = &[
             "only; omitted when unavailable".to_string(),
             "Quit".to_string()
         ]
+    );
+}
+
+#[test]
+fn a_file_that_names_the_crate_is_in_scope() {
+    let root = std::path::Path::new("/repo/codex-rs");
+    assert_eq!(
+        file_contributes_keys(
+            std::path::Path::new("/repo/codex-rs/tui/src/app.rs"),
+            "use codex_i18n::tr;\nfn f() { tr(current(), \"x\"); }",
+            root,
+        ),
+        true
+    );
+}
+
+#[test]
+fn a_glob_imported_file_is_in_scope_when_it_calls_tr() {
+    // The regression: `use super::*` leaves no trace of the crate name, so the
+    // old gate skipped the whole file -- its keys were never reconciled
+    // (docs/plan/i18n-verification.md 13.7).
+    let root = std::path::Path::new("/repo/codex-rs");
+    assert_eq!(
+        file_contributes_keys(
+            std::path::Path::new("/repo/codex-rs/tui/src/chatwidget/review_popups.rs"),
+            "use super::*;\nfn f() { tr(current(), \"Review a commit\"); }",
+            root,
+        ),
+        true
+    );
+}
+
+#[test]
+fn a_file_with_no_tr_call_is_out_of_scope() {
+    let root = std::path::Path::new("/repo/codex-rs");
+    assert_eq!(
+        file_contributes_keys(
+            std::path::Path::new("/repo/codex-rs/tui/src/plain.rs"),
+            "fn f() { let s = \"not a key\"; }",
+            root,
+        ),
+        false
+    );
+}
+
+#[test]
+fn the_crate_that_defines_tr_stays_out_even_when_it_calls_it() {
+    // Its own tests pass fixture literals to `tr`; scanning them reported the
+    // fixtures as missing keys.
+    let root = std::path::Path::new("/repo/codex-rs");
+    assert_eq!(
+        file_contributes_keys(
+            std::path::Path::new("/repo/codex-rs/i18n/src/interpolate_tests.rs"),
+            "fn f() { tr(Lang::En, \"fixture\"); }",
+            root,
+        ),
+        false
     );
 }

@@ -71,6 +71,8 @@ use codex_core_plugins::PLUGIN_METRICS_OUTPUT_ENV_VAR;
 use codex_core_plugins::PluginCommandAttribution;
 use codex_core_plugins::PluginMetricsSidecar;
 use codex_core_plugins::strip_output_env;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_network_proxy::NetworkPolicyDecider;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::config_types::ShellEnvironmentPolicy;
@@ -1262,7 +1264,11 @@ impl UnifiedExecProcessManager {
         if environment.is_remote() || request.exec_server_shell_snapshot.is_some() {
             if !inherited_fds.is_empty() {
                 return Err(UnifiedExecError::create_process(
-                    "remote exec-server does not support inherited file descriptors".to_string(),
+                    tr(
+                        current(),
+                        "remote exec-server does not support inherited file descriptors",
+                    )
+                    .to_string(),
                 ));
             }
 
@@ -1312,8 +1318,11 @@ impl UnifiedExecProcessManager {
                                 )
                                 .ok_or_else(|| {
                                     UnifiedExecError::create_process(
-                                        "managed Windows proxy route is missing its restricting SID"
-                                            .to_string(),
+                                        tr(
+                                            current(),
+                                            "managed Windows proxy route is missing its restricting SID",
+                                        )
+                                        .to_string(),
                                     )
                                 })
                         })

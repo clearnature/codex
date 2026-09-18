@@ -7387,6 +7387,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "command failed; retry without sandbox?",
         "命令失败；是否不用沙箱重试？",
     ),
+    (
+        "remote exec-server does not support inherited file descriptors",
+        "远程exec-server不支持继承的文件描述符",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

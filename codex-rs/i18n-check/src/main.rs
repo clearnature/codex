@@ -790,7 +790,7 @@ fn parse_tr_call(text: &str, after_ident: usize) -> Option<String> {
         if let Some(rest) = argument.strip_prefix('&') {
             argument = rest.trim_start();
         }
-        if let Some((value, _)) = read_string(argument, 0) {
+        if let Some((value, _)) = read_string(argument, /*i*/ 0) {
             return Some(value);
         }
         if text.as_bytes().get(end) != Some(&b',') {

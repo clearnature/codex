@@ -1029,7 +1029,10 @@ pub async fn run_main(
     // the configuration is available the answer is recomputed with it and
     // republished, which preserves the documented precedence
     // (`--lang` > `config.toml` > environment > system) either way.
-    codex_i18n::set_current(codex_i18n::resolve_from_process(cli.lang.as_deref(), None));
+    codex_i18n::set_current(codex_i18n::resolve_from_process(
+        cli.lang.as_deref(),
+        /*config_lang*/ None,
+    ));
     match startup_orchestration::run_main_inner(
         cli,
         arg0_paths,

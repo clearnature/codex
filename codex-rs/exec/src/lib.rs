@@ -263,7 +263,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     // Publish the UI language before any output is produced. `--lang` wins, then
     // the environment, then the operating system's locale; a later pass adds
     // `config.toml` to the chain (see `codex-i18n`).
-    codex_i18n::set_current(codex_i18n::resolve_from_process(cli.lang.as_deref(), None));
+    codex_i18n::set_current(codex_i18n::resolve_from_process(
+        cli.lang.as_deref(),
+        /*config_lang*/ None,
+    ));
     if let Err(err) = set_default_originator("codex_exec".to_string()) {
         tracing::warn!(?err, "Failed to set codex exec originator override {err:?}");
     }

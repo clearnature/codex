@@ -1219,7 +1219,7 @@ fn main() -> anyhow::Result<()> {
     // whole chain (`--lang` > `locale` > environment > system) once it is.
     codex_i18n::set_current(codex_i18n::resolve_from_process(
         scanned_lang().as_deref(),
-        None,
+        /*config_lang*/ None,
     ));
     let remote_control_disabled = codex_app_server::take_remote_control_disabled_env();
     arg0_dispatch_or_else(move |arg0_paths: Arg0DispatchPaths| async move {

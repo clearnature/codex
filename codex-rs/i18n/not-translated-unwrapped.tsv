@@ -499,3 +499,19 @@ Absolute paths to grant read access; omit when none are needed.	codex-rs/core/sr
 Absolute paths to grant write access; omit when none are needed.	codex-rs/core/src/tools/handlers/shell_spec.rs:326	同上：shell/unified-exec 工具定义（ToolSpec + JsonSchema）喂模型 ⇒ 设计 §4 决策 3 / 验证 §12.2（docs/plan/i18n-verification.md:432）
 Filesystem access request.	codex-rs/core/src/tools/handlers/shell_spec.rs:335	同上：shell/unified-exec 工具定义（ToolSpec + JsonSchema）喂模型 ⇒ 设计 §4 决策 3 / 验证 §12.2（docs/plan/i18n-verification.md:432）
 	codex-rs/core/src/tools/handlers/shell_spec.rs:340	同上：shell/unified-exec 工具定义（ToolSpec + JsonSchema）喂模型 ⇒ 设计 §4 决策 3 / 验证 §12.2（docs/plan/i18n-verification.md:432）
+\n…output truncated…\n	codex-rs/core/src/realtime_conversation.rs	handoff 流被截断时插进会话正文的标记常量 HANDOFF_STREAM_TRUNCATION_MARKER：该正文作为**喂模型的 transcript** ⇒ §12.2 喂模型；realtime_conversation_tests.rs 按值断言它（docs/plan/i18n-verification.md）
+\"Agent Final Message\":\n\n	codex-rs/core/src/realtime_conversation.rs	handoff 负载里的派生标签常量 AGENT_FINAL_MESSAGE_PREFIX（codex-api 的 realtime_websocket/methods_common.rs 有同名同值常量）⇒ §12.7 标识符；测试按值断言（docs/plan/i18n-verification.md）
+[BACKEND] 	codex-rs/core/src/realtime_conversation.rs	realtime 文本前缀常量 REALTIME_BACKEND_TEXT_PREFIX：模型被明确告知按 `[BACKEND]` 识别后端消息（同文件有指示语常量）⇒ §12.2 喂模型 / §12.7 标识符（docs/plan/i18n-verification.md）
+Background agent finished. Use the preceding [BACKEND] messages as the result.	codex-rs/core/src/realtime_conversation.rs	给**模型**的后台代理完成指示语常量 REALTIME_V2_HANDOFF_COMPLETE_ACKNOWLEDGEMENT（注入会话）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+This was sent to steer the previous background agent task.	codex-rs/core/src/realtime_conversation.rs	给**模型**的转向说明常量 REALTIME_V2_STEER_ACKNOWLEDGEMENT（注入会话）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+Conversation already has an active response in progress:	codex-rs/core/src/realtime_conversation.rs	**匹配键**常量 REALTIME_ACTIVE_RESPONSE_ERROR_PREFIX：流错误处理里用 `message.starts_with(...)` 比对服务端返回文本 —— 译了匹配就失效 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md）
+realtime start instructions	codex-rs/core/src/realtime_conversation.rs	参数**名**：build_realtime_session_config 里 (name, instructions) 数组的第一项，只作为错误消息的 {name} 位出现 ⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+realtime end instructions	codex-rs/core/src/realtime_conversation.rs	同上：参数名，出现在 {name} 位 ⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+Bearer {api_key}	codex-rs/core/src/realtime_conversation.rs	HTTP 请求头的**值**（Authorization: Bearer …，经 HeaderValue::from_str 构造）——线上协议格式 ⇒ §12.5 数据格式 / §12.7 标识符（docs/plan/i18n-verification.md）
+text input channel closed	codex-rs/core/src/realtime_conversation.rs	anyhow::Context 的上下文串：只进 eyre/anyhow 内部链，到不了 UI ⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+handoff output channel closed	codex-rs/core/src/realtime_conversation.rs	anyhow::Context 的上下文串：只进内部链 ⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+standalone handoff	codex-rs/core/src/realtime_conversation.rs	request_create 的**请求标签**（区分创建来源），不是用户文案 ⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+handoff steering	codex-rs/core/src/realtime_conversation.rs	request_create 的**请求标签** ⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+realtime output event channel closed	codex-rs/core/src/realtime_conversation.rs	anyhow::bail! 的内部错误串（事件转发失败）⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+user audio input channel closed	codex-rs/core/src/realtime_conversation.rs	anyhow::Context 的上下文串 ⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+The user just ended their realtime session. Here is the remaining handoff/transcript tail. You probably do not have to do anything; acknowledge the handoff unless the transcript itself asks for something.	codex-rs/core/src/realtime_conversation.rs	给**模型**的会话结束交接指示语常量 REALTIME_SESSION_ENDED_HANDOFF_INSTRUCTION（注入会话）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）

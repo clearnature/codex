@@ -31,6 +31,9 @@ use codex_api::build_session_headers;
 use codex_api::map_api_error;
 use codex_config::config_toml::RealtimeWsMode;
 use codex_config::config_toml::RealtimeWsVersion;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_login::default_client::add_originator_header;
 use codex_login::default_client::default_headers;
@@ -743,7 +746,7 @@ impl RealtimeConversationManager {
 
         let Some(sender) = sender else {
             return Err(CodexErr::InvalidRequest(
-                "conversation is not running".to_string(),
+                tr(current(), "conversation is not running").to_string(),
             ));
         };
 
@@ -754,7 +757,7 @@ impl RealtimeConversationManager {
                 Ok(())
             }
             Err(TrySendError::Closed(_)) => Err(CodexErr::InvalidRequest(
-                "conversation is not running".to_string(),
+                tr(current(), "conversation is not running").to_string(),
             )),
         }
     }
@@ -769,7 +772,7 @@ impl RealtimeConversationManager {
 
         let Some((sender, session_kind)) = sender else {
             return Err(CodexErr::InvalidRequest(
-                "conversation is not running".to_string(),
+                tr(current(), "conversation is not running").to_string(),
             ));
         };
 
@@ -777,10 +780,9 @@ impl RealtimeConversationManager {
             params.text =
                 prefix_realtime_text(params.text, REALTIME_USER_TEXT_PREFIX, session_kind);
         }
-        sender
-            .send(params)
-            .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+        sender.send(params).await.map_err(|_| {
+            CodexErr::InvalidRequest(tr(current(), "conversation is not running").to_string())
+        })?;
         Ok(())
     }
 
@@ -793,7 +795,7 @@ impl RealtimeConversationManager {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
                 return Err(CodexErr::InvalidRequest(
-                    "conversation is not running".to_string(),
+                    tr(current(), "conversation is not running").to_string(),
                 ));
             };
             state.handoff.clone()
@@ -870,11 +872,9 @@ impl RealtimeConversationManager {
                 }
             }
         };
-        handoff
-            .output_tx
-            .send(output)
-            .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+        handoff.output_tx.send(output).await.map_err(|_| {
+            CodexErr::InvalidRequest(tr(current(), "conversation is not running").to_string())
+        })?;
         Ok(())
     }
 
@@ -946,7 +946,7 @@ impl RealtimeConversationManager {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
                 return Err(CodexErr::InvalidRequest(
-                    "conversation is not running".to_string(),
+                    tr(current(), "conversation is not running").to_string(),
                 ));
             };
             state.handoff.clone()
@@ -1012,7 +1012,7 @@ impl RealtimeConversationManager {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
                 return Err(CodexErr::InvalidRequest(
-                    "conversation is not running".to_string(),
+                    tr(current(), "conversation is not running").to_string(),
                 ));
             };
             state.handoff.clone()
@@ -1024,7 +1024,9 @@ impl RealtimeConversationManager {
                 text: realtime_backend_output(text, handoff.session_kind),
             })
             .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+            .map_err(|_| {
+                CodexErr::InvalidRequest(tr(current(), "conversation is not running").to_string())
+            })?;
         Ok(())
     }
 
@@ -1061,11 +1063,9 @@ impl RealtimeConversationManager {
             }
         };
 
-        handoff
-            .output_tx
-            .send(output)
-            .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))
+        handoff.output_tx.send(output).await.map_err(|_| {
+            CodexErr::InvalidRequest(tr(current(), "conversation is not running").to_string())
+        })
     }
 
     pub(crate) async fn clear_active_handoff(&self) {
@@ -1224,7 +1224,7 @@ async fn prepare_realtime_start(
         ConversationStartTransport::ExistingCall { .. } => {
             if version == RealtimeWsVersion::V2 {
                 return Err(CodexErr::InvalidRequest(
-                    "AVAS realtime calls require realtime v1 or v3".to_string(),
+                    tr(current(), "AVAS realtime calls require realtime v1 or v3").to_string(),
                 ));
             }
             if params.include_startup_context
@@ -1235,8 +1235,11 @@ async fn prepare_realtime_start(
                 || params.delegation_ack_filler.is_some()
             {
                 return Err(CodexErr::InvalidRequest(
-                    "existing realtime calls do not support session configuration options"
-                        .to_string(),
+                    tr(
+                        current(),
+                        "existing realtime calls do not support session configuration options",
+                    )
+                    .to_string(),
                 ));
             }
         }
@@ -1316,12 +1319,16 @@ fn validate_avas_webrtc_start(
 ) -> CodexResult<()> {
     if version == RealtimeWsVersion::V2 {
         return Err(CodexErr::InvalidRequest(
-            "AVAS realtime calls require realtime v1 or v3".to_string(),
+            tr(current(), "AVAS realtime calls require realtime v1 or v3").to_string(),
         ));
     }
     if session_type != RealtimeWsMode::Conversational {
         return Err(CodexErr::InvalidRequest(
-            "AVAS realtime calls require conversational realtime".to_string(),
+            tr(
+                current(),
+                "AVAS realtime calls require conversational realtime",
+            )
+            .to_string(),
         ));
     }
     Ok(())
@@ -1346,8 +1353,10 @@ pub(crate) async fn build_realtime_session_config(
         if instructions.is_some_and(|instructions| {
             approx_token_count(instructions) > REALTIME_MODE_INSTRUCTIONS_MAX_TOKENS
         }) {
-            return Err(CodexErr::InvalidRequest(format!(
-                "{name} must not exceed {REALTIME_MODE_INSTRUCTIONS_MAX_TOKENS} estimated tokens"
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "{0} must not exceed {1} estimated tokens",
+                &[name, &REALTIME_MODE_INSTRUCTIONS_MAX_TOKENS.to_string()],
             )));
         }
     }
@@ -1377,27 +1386,33 @@ pub(crate) async fn build_realtime_session_config(
     };
     if version != RealtimeWsVersion::V3 && !params.initial_items.is_empty() {
         return Err(CodexErr::InvalidRequest(
-            "initial realtime items require realtime v3".to_string(),
+            tr(current(), "initial realtime items require realtime v3").to_string(),
         ));
     }
     if params.initial_items.len() > REALTIME_INITIAL_ITEMS_MAX_COUNT {
-        return Err(CodexErr::InvalidRequest(format!(
-            "initial realtime items must contain no more than {REALTIME_INITIAL_ITEMS_MAX_COUNT} items"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "initial realtime items must contain no more than {0} items",
+            &[&REALTIME_INITIAL_ITEMS_MAX_COUNT.to_string()],
         )));
     }
     let mut total_initial_item_tokens: usize = 0;
     for item in &params.initial_items {
         let item_tokens = approx_token_count(&item.text);
         if item_tokens > REALTIME_INITIAL_ITEMS_MAX_TOKENS {
-            return Err(CodexErr::InvalidRequest(format!(
-                "each initial realtime item must not exceed {REALTIME_INITIAL_ITEMS_MAX_TOKENS} estimated tokens"
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "each initial realtime item must not exceed {0} estimated tokens",
+                &[&REALTIME_INITIAL_ITEMS_MAX_TOKENS.to_string()],
             )));
         }
         total_initial_item_tokens = total_initial_item_tokens.saturating_add(item_tokens);
     }
     if total_initial_item_tokens > REALTIME_INITIAL_ITEMS_MAX_TOKENS {
-        return Err(CodexErr::InvalidRequest(format!(
-            "initial realtime items must not exceed {REALTIME_INITIAL_ITEMS_MAX_TOKENS} estimated tokens in total"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "initial realtime items must not exceed {0} estimated tokens in total",
+            &[&REALTIME_INITIAL_ITEMS_MAX_TOKENS.to_string()],
         )));
     }
     let model = Some(
@@ -1419,7 +1434,11 @@ pub(crate) async fn build_realtime_session_config(
         && matches!(params.output_modality, RealtimeOutputModality::Text)
     {
         return Err(CodexErr::InvalidRequest(
-            "text realtime output modality requires realtime v2".to_string(),
+            tr(
+                current(),
+                "text realtime output modality requires realtime v2",
+            )
+            .to_string(),
         ));
     }
     let session_mode = match config.realtime.session_type {
@@ -1501,9 +1520,10 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) -> 
         .map(|voice| voice.wire_name())
         .collect::<Vec<_>>()
         .join(", ");
-    Err(CodexErr::InvalidRequest(format!(
-        "realtime voice `{}` is not supported for {version}; supported voices: {allowed}",
-        voice.wire_name()
+    Err(CodexErr::InvalidRequest(tr_with(
+        current(),
+        "realtime voice `{0}` is not supported for {1}; supported voices: {2}",
+        &[voice.wire_name(), &version.to_string(), &allowed],
     )))
 }
 
@@ -1723,7 +1743,7 @@ fn realtime_api_key(auth: Option<&CodexAuth>, provider: &ModelProviderInfo) -> C
     }
 
     Err(CodexErr::InvalidRequest(
-        "realtime conversation requires API key auth".to_string(),
+        tr(current(), "realtime conversation requires API key auth").to_string(),
     ))
 }
 
@@ -1753,7 +1773,11 @@ fn realtime_request_headers(
 
     if let Some(api_key) = api_key {
         let auth_value = HeaderValue::from_str(&format!("Bearer {api_key}")).map_err(|err| {
-            CodexErr::InvalidRequest(format!("invalid realtime api key header: {err}"))
+            CodexErr::InvalidRequest(tr_with(
+                current(),
+                "invalid realtime api key header: {0}",
+                &[&err.to_string()],
+            ))
         })?;
         headers.insert(AUTHORIZATION, auth_value);
     }

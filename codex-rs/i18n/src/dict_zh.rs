@@ -7034,6 +7034,55 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "spawn_agent fork requires a thread-spawn session source",
         "spawn_agent分叉需要线程派生会话来源",
     ),
+    ("conversation is not running", "会话未在运行"),
+    (
+        "AVAS realtime calls require realtime v1 or v3",
+        "AVAS实时调用需要realtime v1或v3",
+    ),
+    (
+        "existing realtime calls do not support session configuration options",
+        "已存在的实时调用不支持会话配置选项",
+    ),
+    (
+        "AVAS realtime calls require conversational realtime",
+        "AVAS实时调用需要会话式实时模式",
+    ),
+    (
+        "{0} must not exceed {1} estimated tokens",
+        "{0}不得超过{1}个估计token",
+    ),
+    (
+        "initial realtime items require realtime v3",
+        "初始实时条目需要realtime v3",
+    ),
+    (
+        "initial realtime items must contain no more than {0} items",
+        "初始实时条目不得超过{0}条",
+    ),
+    (
+        "each initial realtime item must not exceed {0} estimated tokens",
+        "每条初始实时条目不得超过{0}个估计token",
+    ),
+    (
+        "initial realtime items must not exceed {0} estimated tokens in total",
+        "初始实时条目总计不得超过{0}个估计token",
+    ),
+    (
+        "text realtime output modality requires realtime v2",
+        "文本实时输出模态需要realtime v2",
+    ),
+    (
+        "realtime voice `{0}` is not supported for {1}; supported voices: {2}",
+        "实时语音`{0}`不支持{1}；支持的语音：{2}",
+    ),
+    (
+        "realtime conversation requires API key auth",
+        "实时会话需要API key认证",
+    ),
+    (
+        "invalid realtime api key header: {0}",
+        "无效的实时API key请求头：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -76,6 +76,16 @@ SCOPES: dict[str, dict[str, str]] = {
     },
     "core-exec": {"cwd": "codex-rs", "pkg": "codex-core", "filter": "exec"},
     "core-code-mode": {"cwd": "codex-rs", "pkg": "codex-core", "filter": "code_mode"},
+    # The whole TUI lib suite (877 snapshots + the rest): the scope an i18n
+    # change needs, because "English source text is the key" is only load-
+    # bearing if the snapshots stay byte-identical. Its failure set is NOT
+    # stable — see `flaky` / `flaky_notes` in the baseline file.
+    "tui-lib": {
+        "cwd": "codex-rs",
+        "pkg": "codex-tui",
+        "filter": "",
+        "skip": "ide_context::ipc",
+    },
 }
 
 TEST_LINE = re.compile(r"^test (\S+) \.\.\. (ok|FAILED|ignored)$")
@@ -84,9 +94,14 @@ SUMMARY = re.compile(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) i
 
 def command_for(spec: dict[str, str]) -> str:
     """The exact command a scope runs, with the stack size the repo requires."""
-    return "RUST_MIN_STACK=16777216 cargo test -p {pkg} --lib {filter}".format(
+    command = "RUST_MIN_STACK=16777216 cargo test -p {pkg} --lib {filter}".format(
         pkg=spec["pkg"], filter=spec["filter"]
     )
+    if spec.get("skip"):
+        # `just test`-style scopes can carry a harness skip (e.g. the TUI suite
+        # skips `ide_context::ipc`, which is environment-dependent on this host).
+        command += f" -- --skip {spec['skip']}"
+    return command
 
 
 def sha1(text: str) -> str:

@@ -72,10 +72,12 @@
 | `core-tools-handlers` | `… --lib handlers` |
 | `core-exec` | `… --lib exec` |
 | `core-code-mode` | `… --lib code_mode` |
+| `tui-lib` | `cargo test -p codex-tui --lib -- --skip ide_context::ipc`（877 快照 + 全 lib 测试；约 60s） |
 
 全部带 `RUST_MIN_STACK=16777216`（默认 2 MiB 线程栈会让部分测试 SIGABRT）。
-加 scope 就在 `SCOPES` 表里加一行；跨 crate 的 scope（`just test -p codex-tui`）尚未纳入
-（它的运行时长更适合放后台/CI）。
+加 scope 就在 `SCOPES` 表里加一行；可选 `skip` 字段会追加成 `-- --skip <名字>`（`tui-lib` 用它排掉
+本机环境相关的 `ide_context::ipc`，与 `tui-test` 门禁命令逐字一致 —— **命令不一致的 scope 不能互相代替**）。
+跨 crate 的其余范围（`just test -p codex-exec` 等）尚未纳入。
 
 ## 6. 已知记录（截至建立基线时）
 
@@ -85,6 +87,21 @@
   （单独跑通过、整批失败 ⇒ 顺序/全局 tracing 状态相关）。
 - `core-stdin-approval` 声明 1 条 flaky：`unified_exec::tests::stdin_approval_preserves_the_reviewed_terminal`
   （4 次同过滤观测：1 次 7/1、3 次 8/0；单独运行 2 次均通过；耗时约 6s ⇒ 时序相关）。
+- `tui-lib` 的失败集**不稳定**：同一命令同一二进制**五次**观测得到五种组合 ——
+
+  | # | 结果 | 失败集合 |
+  | --- | --- | --- |
+  | 1 | 4285P/2F | `agents_overview_acknowledges_inactive_steer_before_interrupt`、`cached_legacy_resume_revalidates_history_across_migration_settings` |
+  | 2 | 4284P/2F | `agents_overview…`、`startup_draft_preserves_non_bracketed_multiline_pastes_without_submitting`（门禁回执 `r-mu7g6yu2-9s9yb6`） |
+  | 3 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`startup_draft_…` |
+  | 4 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`background_exit_tests::exit_interrupts_before_requesting_shutdown`（回执 `r-mu7gb1vo-a7j2s3`） |
+  | 5 | 4286P/1F | 只有 `agents_overview…` |
+
+  因此该 scope 的 `fail` 集记为**空**，四条名字（含第 5 次只出现一次的那个）都进 `flaky` 并各带
+  `flaky_notes`：三条做过 `--exact` 单独复跑，各 3/3 通过（回执 `r-mu7g7zxc-hcn57x`）⇒ 是并行/时序相关，
+  不是确定性失败。`agents_overview…` 五次全失败却单独跑 3/3 通过，是这批里最稳定的「不稳定项」。
+  **判据**：失败集合是否稳定，而不是「有没有失败」——同一命令两次失败集合不同即判 flaky，
+  处置是**如实标注**，不是重试到绿、更不是改快照或 `#[ignore]`。
 
 ## 7. 数据是"本机"的
 

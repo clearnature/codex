@@ -41,6 +41,42 @@
 | 未提交 | `i18n/src/dict_zh.rs` +124/-0（+36 条）；`exec/src/lib.rs` +188/-51 | `git diff --numstat` |
 | 快照 | 877 个 `.snap`、**0 个待审 `.snap.new`** | `find codex-rs/tui/src -name '*.snap'` |
 
+### 现状核对（第 118–122 轮，2026-09-17）
+
+对 `i18n-design.md` §3.1/§3.4/§3.5/§3.6/§五 逐条与代码对账，实测值如下（每条可复跑）：
+
+| 核对项 | 计划声称 | 实测 | 口径 / 证据 |
+| --- | --- | --- | --- |
+| §3.1 crate 文件 | 6 个（`lib`/`lang`/`dict_zh`/`resolution`/`current`/`interpolate`） | ✅ 全部存在（另各有 `*_tests.rs`） | `ls codex-rs/i18n/src/` |
+| §3.1 依赖方向 | 只加 tui/cli/exec 三条边 | ⚠ **实际 5 条**：+`core`、+`codex-mcp` | `grep -l codex-i18n codex-rs/*/Cargo.toml`；已在本轮更新设计图 |
+| §3.1 i18n 自身依赖 | 无 workspace 内部依赖 | ✅ 仅 `sys-locale` | `codex-rs/i18n/Cargo.toml` `[dependencies]` |
+| §3.5 不要动 `process_manager.rs:93` | 保持 `C.UTF-8` | ✅ 未被改动（`UNIFIED_EXEC_ENV` 十项完整） | `core/src/unified_exec/process_manager.rs:90-100` |
+| §3.6 const 表→fn（3 处） | 已做 | ✅ 三处都在 | `plugin_catalog.rs:191`、`keymap_setup/actions.rs:97`、`chatwidget/compaction.rs:13` |
+| §3.6 碎片拼句 `model_popups.rs` | 「待重构」 | ⚠ **仍未重构**：`format!("{advanced_label} {verb} usage limits faster")` | `chatwidget/model_popups.rs:607-625` |
+| §3.6 CI 落点 | `i18n-check` 入 CI | ✅ 且为超集：`i18n-check` + `i18n-smoke` | `.github/workflows/repo-checks.yml:68,76` |
+| §五.3 快照零改动 | 已实测成立 | ✅ 877 个 `.snap`、`.snap.new` **0** | `find codex-rs -name '*.snap.new' \| wc -l` |
+| §五.4 构建成本 | 「未评估」 | ✅ 已补验（两个 `BUILD.bazel` 存在，`bazel-i18n` 2 tests pass） | 回执 `r-mu5hy0u9-431oj3`；设计文档该条已改写 |
+
+**§3.4 六步完成度（同一轮实测）**：
+
+| 步 | 计划 | 实测 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 建 crate | ✅ | `cargo test -p codex-i18n` → **30 passed**，回执 `r-mu5he4r4-y05wa4` |
+| 2 | footer 垂直切片 | ✅ | `just i18n-smoke` → **zh 26 行中文 / locale=C 0 行**，回执 `r-mu5hw7tr-3t0s7b` |
+| 3 | 铺开 `tui` | 进行中 | `tui/src` 实测 2292 个 `tr(current())`·`tr_with(current())` 调用点；`i18n_todo` 全局**未接入候选 293** |
+| 4 | `cli`（帮助 + `doctor`） | ⚠ 部分：帮助已译、**doctor 有意整体不译** | 帮助：`i18n-locale-chain` 回执 `r-mu5hiw7l-h2m61t`（`--lang zh --help` 有 CJK）；doctor：台账 `i18n.r37.doctor-excluded`（`--json` 是稳定机器契约 + `detail_value` 查表键） |
+| 5 | `exec` 非交互输出 | ✅ | `cargo test -p codex-exec` → **63 + 78 passed**，回执 `r-mu5i0ym3-xb9smk` |
+| 6 | `core` 用户可见错误 | 进行中 | 已接入：渠道逐条裁定（§12.20–§12.24）、`session_rollout_init_error.rs:34`、`codex-mcp` 5 条、55 条审批资产；**`core/src` 仍有 ≈894 个未接入候选**（本节 §12.29 记 1161，两次口径不同，需按 `scripts/i18n_scan.py` 的同一参数复测才可比） |
+
+**当前权威数值**（`just i18n-check`，回执 `r-mu5he9ry-bwkbvm`）：
+字典 **2770** 条、rendered **2754**、coverage **99.9%**、
+missing / unused / spacing / nested / duplicate / placeholder / asset **全为 0**。
+
+> ⚠ **本节之前引用的回执 id 已失效**：`§13.5` 与 `§十` 里的 `r-mu4lm2kd-lgzakq` 等是在**旧门禁表哈希**
+> `c16bc4919e6e` 下签发的；现行哈希为 `a8a6a79b1835`（工具把 `expectFail` 加入了哈希字段集），
+> 旧回执判 `stale-table`。结论本身仍由现行回执支撑，但**引用旧 id 时不可复核**，
+> 复核请用本节的新 id（`~/.dsh/state/swe-mode/receipts/`）。
+
 2026-09-16 复跑三条硬证据。第三条走 Bazel 侧，与本文的 cargo 口径**不完全等价**（Bazel：8 分片 + `flaky` 重试 +
 `RUST_MIN_STACK=8388608`；本文：`RUST_MIN_STACK=16777216 cargo test -p codex-tui --lib -- --skip ide_context::ipc`）：
 

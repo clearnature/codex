@@ -103,13 +103,16 @@ codex-rs/
         ┌─────────────┐
         │ codex-i18n  │  ← 纯函数、无 IO、无 workspace 内部依赖
         └─────────────┘
-           ▲    ▲    ▲
-           │    │    └──────── codex-exec
-           │    └───────────── codex-cli
-           └────────────────── codex-tui
+           ▲   ▲   ▲   ▲   ▲
+           │   │   │   │   └──────── codex-mcp   ┐ §3.4 步 5–6 铺开后
+           │   │   │   └──────────── codex-core  ┘ 新增的两条边
+           │   │   └──────────────── codex-exec
+           │   └──────────────────── codex-cli
+           └──────────────────────── codex-tui
 ```
 
-`codex-i18n` 不依赖任何其他 workspace crate，因此不会与「`tui` 不依赖 `core`」这条既有边界冲突。
+`codex-i18n` 不依赖任何其他 workspace crate（唯一外部依赖是探系统 locale 的 `sys-locale`），
+因此不会与「`tui` 不依赖 `core`」这条既有边界冲突。
 
 ### 3.2 为什么不做在 `core` 或 `protocol`
 
@@ -201,7 +204,7 @@ writeln!(f, "{}", tr(lang, "Show this help"))?;
 | 1 | **候选 ④，且是五级链**：`--lang` > `config.toml` 的 `locale` > `LC_ALL` > `LANG` > 系统 locale（`sys-locale`）。按「是否出现」而非「能否识别」决定优先级：`--lang=en` 压过中文配置，未知 locale 一律回退 En、不报错。 | `i18n/src/resolution.rs`（纯函数 `resolve` + `Env` 数据化）、`i18n/src/current.rs`（进程内 `current()`/`set_current`）；旗标在 `utils/cli/src/shared_options.rs` 的 `SharedCliOptions.lang`，tui/exec 启动时 publish |
 | 2 | **候选 ①**：Rust 内嵌映射表，`dict_zh.rs` 的 `ENTRIES` 为 `(英文, 中文)` 字面量对——形状是承重的，`codex-i18n-check` 靠它做对账。 | `i18n/src/dict_zh.rs` |
 | 3 | **维持排除**：`core/*.md`、`core/templates/*` 与喂模型的工具描述不进 UI i18n。 | — |
-| 4 | **定名 `locale`**（**人类裁决**，2026-09-17 于本会话明确重申）。理由：Codex 桌面端**不开源**，本项目的桌面支持是**自研**且已列在架构规划里（接入方案已预留），没有向它对齐命名的理由；先把 i18n 工作按计划完成，桌面适配留到自研桌面落地时再谈。曾经同时接受桌面端的 `localeOverride`（`#[serde(alias)]`），**现已移除**：`localeOverride` 不再被读（`ConfigToml` 容忍未知键，所以契约是「不读该值」，不是「解析报错」，测试按此断言）。⚠ 记录一处不一致：本行在裁决正式落盘**之前**就写有「人类裁决」字样，与当时台账里该决策的 `open` 状态相矛盾；两种可能（文档写早了 / 台账挂久了）无法从记录中判定，现以本次明确裁决为准、两者对齐。 | `config/src/config_toml.rs`、`core/src/config/mod.rs` |
+| 4 | **定名 `locale`**（**人类裁决**，2026-09-17；稳定坐标＝台账流水的已闭环决策条目 `legacy-j-1b977695ad`【已裁决并关闭】）。理由：Codex 桌面端**不开源**，本项目的桌面支持是**自研**且已列在架构规划里（接入方案已预留），没有向它对齐命名的理由；先把 i18n 工作按计划完成，桌面适配留到自研桌面落地时再谈。曾经同时接受桌面端的 `localeOverride`（`#[serde(alias)]`），**现已移除**：`localeOverride` 不再被读（`ConfigToml` 容忍未知键，所以契约是「不读该值」，不是「解析报错」，测试按此断言）。⚠ 记录一处不一致：本行在裁决正式落盘**之前**就写有「人类裁决」字样，与当时台账里该决策的 `open` 状态相矛盾；两种可能（文档写早了 / 台账挂久了）无法从记录中判定，现以本次明确裁决为准、两者对齐。 | `config/src/config_toml.rs`、`core/src/config/mod.rs` |
 | 5 | 维持只做 zh；`Lang` 是穷尽枚举，加语言必须过 `match`，翻译缺失回退英文。 | `i18n/src/lang.rs` |
 | — | **插值**（§6 的「`{{var}}` 插值」一行）：实现为**位置占位** `{0}`/`{1}` + `tr_with(lang, key, args)`，因为 Rust 的 `format!` 要求格式串在编译期已知，而这里必须用查表之后的字符串。英文路径就是往英文原文里代入（`format!` 的旧行为不变），未知下标原样保留而不 panic。 | `i18n/src/interpolate.rs`（`tr_with` / `substitute` / `placeholders`），占位符对齐由 `interpolate_tests` 遍历字典守住 |
 
@@ -212,7 +215,10 @@ writeln!(f, "{}", tr(lang, "Show this help"))?;
 1. **桌面端不在范围内。** `codex` 桌面端是闭源二进制（仓库内无 desktop/electron/tauri，Release 产物均为 CLI 侧）。trha 的 `renderer/ui/i18n.ts` 模式**无法照搬**——我们没有那份源码。给桌面端上中文只能走补丁路线（社区已有，脆弱、绑版本）。
 2. **本节所有 codex 侧数字均为启发式扫描的上界**（含测试代码），实际接入时以逐文件甄别为准。
 3. **第 3.3 节的「快照零改动」已实测成立**（2026-09-17）：`codex-tui` 全量回归 4285 passed / snapshot 类失败 **0**，见 [`i18n-verification.md`](./i18n-verification.md) 的「执行结果」表。
-4. **未评估构建成本。** 新增 crate 需同步更新 `BUILD.bazel`（`AGENTS.md` 明确要求：涉及编译期文件读取时要更新对应 `BUILD.bazel`），本轮未验证 Bazel 侧改动量。
+4. **构建成本：已补验（第 118 轮核对）。** `codex-rs/i18n/BUILD.bazel` 与 `codex-rs/i18n-check/BUILD.bazel`
+   均已存在；Bazel 侧门禁 `bazel-i18n`（`bazel test //codex-rs/i18n:all //codex-rs/i18n-check:all`）
+   实测 **2 tests pass / EXIT=0**，回执 `r-mu5hy0u9-431oj3`（`~/.dsh/state/swe-mode/receipts/`）。
+   原记「未评估」作废。
 
 ---
 

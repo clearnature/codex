@@ -605,7 +605,7 @@ impl HooksBrowserView {
             HooksBrowserPage::Events => {
                 let mut spans = vec![tr(current(), "Press ").into()];
                 if let Some(accept) = accept {
-                    spans.extend([accept.into(), " to view hooks; ".into()]);
+                    spans.extend([accept.into(), tr(current(), " to view hooks; ").into()]);
                 }
                 spans.extend([cancel.into(), tr(current(), " to close").into()]);
                 Line::from(spans)
@@ -628,7 +628,7 @@ impl HooksBrowserView {
                     Line::from(vec![
                         tr(current(), "Press ").into(),
                         key_hint::plain(KeyCode::Char('t')).into(),
-                        " to trust; ".into(),
+                        tr(current(), " to trust; ").into(),
                         cancel.into(),
                         tr(current(), " to go back").into(),
                     ])

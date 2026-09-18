@@ -409,7 +409,7 @@ fn skills_toggle_hint_line(keymap: &ListKeymap) -> Line<'static> {
 
     match (accept, cancel) {
         (Some(accept), Some(cancel)) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             space.into(),
             tr(current(), " or ").into(),
             accept.into(),
@@ -418,20 +418,24 @@ fn skills_toggle_hint_line(keymap: &ListKeymap) -> Line<'static> {
             tr(current(), " to close").into(),
         ]),
         (Some(accept), None) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             space.into(),
             tr(current(), " or ").into(),
             accept.into(),
             tr(current(), " to toggle").into(),
         ]),
         (None, Some(cancel)) => Line::from(vec![
-            "Press ".into(),
+            tr(current(), "Press ").into(),
             space.into(),
             tr(current(), " to toggle; ").into(),
             cancel.into(),
             tr(current(), " to close").into(),
         ]),
-        (None, None) => Line::from(vec!["Press ".into(), space.into(), " to toggle".into()]),
+        (None, None) => Line::from(vec![
+            tr(current(), "Press ").into(),
+            space.into(),
+            tr(current(), " to toggle").into(),
+        ]),
     }
 }
 

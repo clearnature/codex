@@ -6585,6 +6585,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("1 principal: {0}", "1位主体：{0}"),
     ("{0} principals", "{0}位主体"),
+    // Hook browser / skills toggle fragments (`bottom_pane/`). Same assembly
+    // style as the neighbours that were already translated (" to review hooks; ").
+    (" to view hooks; ", " 查看钩子；"),
+    (" to trust; ", " 信任；"),
 ];
 
 /// English source text -> Simplified Chinese.

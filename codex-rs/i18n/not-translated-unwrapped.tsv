@@ -361,3 +361,19 @@ path must be absolute: {}	codex-rs/tui/src/windows_sandbox.rs:127	路径校验�
 path does not exist: {}	codex-rs/tui/src/windows_sandbox.rs:130	路径校验错误；本次复核 render=0
 path must be a directory: {}	codex-rs/tui/src/windows_sandbox.rs:133	路径校验错误；本次复核 render=0
 wrap_ranges: could not fully map owned line; returning partial source range	codex-rs/tui/src/wrapping.rs:392	tracing 消息（本次复核 :390-392）
+Your context window is nearly exhausted (only {n_remaining} tokens remaining) and will be automatically reset for you soon. 	codex-rs/core/src/config/mod.rs:1147	同上（concat! 的第二段）
+failed to build managed network proxy from {source}: {err}	codex-rs/core/src/config/mod.rs:586	小写 I/O 诊断：同文件 26 条**已包**消息全是配置校验类，`failed to …` 一律未包 ⇒ 沿用该文件既有分界
+Once reset, message items in current context window will be cleared in the new window, but notes and history items will be persistent across windows.	codex-rs/core/src/config/mod.rs:1148	同上（concat! 第二段）
+failed to serialize default config: {e}	codex-rs/core/src/config/mod.rs:1932	小写 I/O 诊断
+failed to parse model_catalog_json path `{}` as JSON: {err}	codex-rs/core/src/config/mod.rs:2092	小写 I/O 诊断
+configured value is disallowed by requirements; falling back to required value for {field_name}	codex-rs/core/src/config/mod.rs:2209	`tracing::warn!` 宏的消息
+project table missing for {project_key}	codex-rs/core/src/config/mod.rs:2350	内部表缺失诊断
+failed to persist config.toml: {err}	codex-rs/core/src/config/mod.rs:2384	小写 I/O 诊断
+model instructions file	codex-rs/core/src/config/mod.rs:3973	`try_read_non_empty_file(…, context)` 的 **context 标签**，进入 `failed to read {context} …` 诊断
+experimental compact prompt file	codex-rs/core/src/config/mod.rs:4018	同上（另一个 context 标签）
+missing managed deny	codex-rs/core/src/config/mod.rs:4198	`ConstraintError::InvalidValue` 的 candidate **数据值**
+all managed deny_read restrictions	codex-rs/core/src/config/mod.rs:4201	同上（allowed 数据值）
+failed to read {context} {}: {e}	codex-rs/core/src/config/mod.rs:4497	小写 I/O 诊断模板
+{context} is empty: {}	codex-rs/core/src/config/mod.rs:4505	小写 I/O 诊断模板
+failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4562	小写 I/O 诊断
+failed to read effective config for selected permission profile: {err}	codex-rs/core/src/config/mod.rs:4591	小写 I/O 诊断

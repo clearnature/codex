@@ -52,3 +52,24 @@ Do not modify files, source, git state, permissions, configuration, or workspace
 Do not modify files, source, git state, permissions, configuration, or any other workspace state unless the user explicitly requests that mutation in this side conversation. Do not request escalated permissions or broader sandbox access unless the user explicitly requests a mutation that requires it. If the user explicitly requests a mutation, keep it minimal, local to the request, and avoid disrupting the main thread.	codex-rs/tui/src/app/side.rs	喂给模型的会话边界/系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string）⇒ §12.2
 	codex-rs/tui/src/app/side.rs:56	喂给模型的会话边界提示资产（SIDE_BOUNDARY_PROMPT，raw string 1435 字符，跨行无法写进 TSV）⇒ §12.2
 	codex-rs/tui/src/app/side.rs:70	侧会话系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string 1613 字符）⇒ §12.2
+failed to set selected permission profile approval policy on app config	codex-rs/tui/src/app/config_persistence.rs:205	`try_set_approval_policy_on_config` 的第 4 个形参就叫 `log_message`，只进 `tracing::warn!`（config_persistence.rs:603）；用户可见的是第 3 个参数，已译 ⇒ §12.3
+failed to set auto-review approval policy on staged config	codex-rs/tui/src/app/config_persistence.rs:752	同上（log_message）⇒ §12.3
+failed to set auto-review permission profile on staged config	codex-rs/tui/src/app/config_persistence.rs:761	同上（log_message）⇒ §12.3
+failed to sync overridden Auto-review permission profile	codex-rs/tui/src/app/config_persistence.rs:1340	同上（log_message）⇒ §12.3
+failed to set approval policy on app config	codex-rs/tui/src/app/event_dispatch.rs:2437	同上（log_message）⇒ §12.3
+failed to set active permission profile on app config	codex-rs/tui/src/app/event_dispatch.rs:2460	同上（log_message）⇒ §12.3
+Implement the plan.	codex-rs/tui/src/chatwidget/plan_implementation.rs:27	喂给模型的提示词（plan_implementation.rs:54 取作 user_text 提交）⇒ §12.2
+A previous agent produced the plan below to accomplish the user's task. 	codex-rs/tui/src/chatwidget/plan_implementation.rs:29	同上（PLAN_IMPLEMENTATION_CLEAR_CONTEXT_PREFIX，:77 拼进提示）⇒ §12.2
+Write a brief catch-up for a user returning to this Codex task. 	codex-rs/tui/src/app/recap.rs:57	喂模型的 prompt（RECAP_PROMPT_PREFIX，concat! 片段）⇒ §12.2
+In at most 40 words and one or two plain-text sentences, explain the 	codex-rs/tui/src/app/recap.rs:58	同上 ⇒ §12.2
+pet frame grid must cover spritesheet exactly: expected {spritesheet_width}x{spritesheet_height}, got {total_width}x{total_height}	codex-rs/tui/src/pets/model.rs:379	`bail!` 内部不变量消息；同处的 .context 用户可见部分已译 ⇒ §12.3
+sixel RGBA buffer has {} bytes, expected {expected_len}	codex-rs/tui/src/pets/sixel.rs:33	同上 ⇒ §12.3
+codex resume {}	codex-rs/tui/src/app/exit_summary.rs:174	可粘贴的 CLI 命令（要原样执行）⇒ §12.5
+codex resume	codex-rs/tui/src/app/exit_summary.rs:182	同上 ⇒ §12.5
+  - network_proxy	codex-rs/tui/src/debug_config.rs:39	调试转储里的配置键列表 ⇒ §12.7
+	codex-rs/tui/src/history_cell/request_user_input.rs:72	纯缩进空白（布局），值写不进单行 TSV ⇒ 按位置豁免
+	codex-rs/tui/src/history_cell/request_user_input.rs:85	同上
+	codex-rs/tui/src/history_cell/request_user_input.rs:93	同上
+	codex-rs/tui/src/history_cell/request_user_input.rs:99	同上
+	codex-rs/tui/src/keymap_setup/debug.rs:125	同上
+	codex-rs/tui/src/keymap_setup/debug.rs:134	同上

@@ -65,6 +65,61 @@ def is_wrapped(lines: list[str], line_number: int) -> bool:
     return False
 
 
+ENCLOSING_CALL = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\s*$")
+
+
+def line_start_offset(text: str, line_number: int) -> int | None:
+    """Character offset of the first character of a 1-based line number."""
+    pos = 0
+    for _ in range(line_number - 1):
+        pos = text.find("\n", pos)
+        if pos < 0:
+            return None
+        pos += 1
+    return pos
+
+
+def is_wrapped_precise(
+    source: str, masked: str, lines: list[str], finding: dict
+) -> bool:
+    """True when the literal is a key of the `tr`/`tr_with` call enclosing it.
+
+    `is_wrapped` only looks at the surrounding lines, so a literal that merely
+    sits *next to* a `tr(..)` call -- a sibling field of the same struct
+    literal, or a match arm printed below a wrapped one -- counts as wrapped.
+    Measured on `chatwidget/model_popups.rs:625` that leniency hid a real gap:
+    a `format!` fragment one line under `name: tr(current(), "More reasoning…")`.
+
+    This rule walks backwards from the literal and stops at the innermost call
+    that encloses it, which is what "wrapped in `tr`" actually means. It is
+    opt-in (`--precise`) so the default report stays comparable over time.
+    """
+    start = line_start_offset(source, finding["line"])
+    if start is None:
+        return False
+    raw = lines[finding["line"] - 1] if 0 < finding["line"] <= len(lines) else ""
+    column = raw.find(finding["value"])
+    if column < 0:
+        column = raw.find('"')
+    if column < 0:
+        return False
+    depth = 0
+    index = start + column - 1
+    while 0 <= index < len(masked):
+        char = masked[index]
+        if char == ")":
+            depth += 1
+        elif char == "(":
+            if depth == 0:
+                enclosing = ENCLOSING_CALL.search(masked[:index])
+                return bool(enclosing and enclosing.group(1) in ("tr", "tr_with"))
+            depth -= 1
+        elif char in ";{}" and depth == 0:
+            return False
+        index -= 1
+    return False
+
+
 def read_not_translated(path: Path) -> tuple[set[str], set[str]]:
     """Returns (keys, sites): rows are `key<TAB>site<TAB>reason`.
 
@@ -98,6 +153,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--top", type=int, default=10, help="how many files to list")
     parser.add_argument("--file", help="list every remaining literal in one file")
     parser.add_argument(
+        "--precise",
+        action="store_true",
+        help=(
+            "judge a literal by the call that encloses it, and list the ones the "
+            "lenient same-line lookback hides (additive: the default report is "
+            "unchanged)"
+        ),
+    )
+    parser.add_argument(
         "--root",
         type=Path,
         action="append",
@@ -126,20 +190,31 @@ def main(argv: list[str]) -> int:
         REPO / "codex-rs" / "i18n" / "not-translated-unwrapped.tsv"
     )
 
-    cache: dict[str, list[str]] = {}
+    cache: dict[str, tuple[str, str, list[str]]] = {}
     remaining = []
+    # Literals the lenient rule calls wrapped although no `tr` call encloses
+    # them. Filled only under `--precise`; this is the triage list.
+    hidden = []
     for finding in findings:
         path = finding["path"]
         if path not in cache:
-            cache[path] = (
-                (REPO / path).read_text(encoding="utf-8", errors="replace").splitlines()
-            )
-        if is_wrapped(cache[path], finding["line"]):
+            source = (REPO / path).read_text(encoding="utf-8", errors="replace")
+            cache[path] = (source, scanner.mask_source(source), source.splitlines())
+        source, masked, lines = cache[path]
+        lenient = is_wrapped(lines, finding["line"])
+        wrapped = (
+            is_wrapped_precise(source, masked, lines, finding)
+            if args.precise
+            else lenient
+        )
+        if wrapped:
             continue
         site = f"{finding['path']}:{finding['line']}"
         if finding["value"] in not_translated[0] or site in not_translated[1]:
             continue
         remaining.append(finding)
+        if args.precise and lenient:
+            hidden.append(finding)
 
     if args.file:
         wanted = [f for f in remaining if f["path"].endswith(args.file)]
@@ -164,8 +239,11 @@ def main(argv: list[str]) -> int:
         print(f"{len(wanted)} unwrapped candidates in *{args.file}")
         if skipped:
             print(f"  ({skipped} exempted by not-translated-unwrapped.tsv)")
+        hidden_sites = {f"{f['path']}:{f['line']}" for f in hidden}
         for finding in wanted:
-            print(f"  {finding['path']}:{finding['line']}: {finding['value'][:90]!r}")
+            site = f"{finding['path']}:{finding['line']}"
+            mark = "   [the lenient rule hid this]" if site in hidden_sites else ""
+            print(f"  {site}: {finding['value'][:90]!r}{mark}")
         return 0
 
     by_file = Counter(f["path"] for f in remaining)
@@ -176,6 +254,10 @@ def main(argv: list[str]) -> int:
     )
     print(f"all candidates       : {len(findings)}")
     print(f"wrapped so far       : {len(findings) - len(remaining)}")
+    if args.precise:
+        print(f"hidden by the lenient rule (no `tr` encloses them): {len(hidden)}")
+        for finding in hidden:
+            print(f"  {finding['path']}:{finding['line']}: {finding['value'][:90]!r}")
     print()
     print("module                        remaining")
     for module, count in by_module.most_common(None):

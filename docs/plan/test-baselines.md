@@ -91,3 +91,35 @@
 `test-baseline.json` 记录的是**本机**的观测（依赖编译产物、环境变量、并发度）。在别的机器/CI 上
 应从该环境重新 `--update` 建立，而不是照搬；跨机器比较失败集时先确认命令与 `cwd` 一致
 （`state_hash` 已把 command 纳入，因此两台机器上同名 scope 的 `state_hash` 不同是**预期**行为）。
+
+## 8. 三条来自实战的补则
+
+### 8.1 flaky 要在**每个**匹配它的 scope 里声明
+
+cargo 的过滤是**测试路径子串匹配**，所以同一个测试可能同时属于多个 scope。实测：
+`unified_exec::tests::stdin_approval_preserves_the_reviewed_terminal` 同时匹配 `stdin_approval` 与
+`unified_exec` 两个 scope —— 只在 `core-stdin-approval` 里声明 flaky 时，`core-unified-exec`
+把它报成 `NEW FAILURES`（**工具行为正确**，是声明漏了）。补声明的成本很低，漏声明的代价是一轮假回归。
+
+### 8.2 平台 `cfg` 下的改动：本机验不了就如实标，别冒充
+
+改动落在 `#[cfg(target_os = "…")]` 而本机不是那个平台时，**本机 `cargo check` 根本不编译那段代码**——
+它通过了也不代表那段代码编得过。本机的实测限制：对 `codex-core` 做
+`cargo check --target x86_64-pc-windows-msvc` 会在**依赖构建期**失败
+（`blake3`/`ring` 的 cc-rs 需要 `ml64.exe`/`lib.exe`，见 known_issues `no-windows-cross-check-linux`，回执 `r-mu7caoa2-p3z0qp`）。
+
+处置：把这类改动单列成「**未验证（平台限制）**」并在交付里写清需哪个平台的 CI 复核；
+台账里用 `needs_review`（验收要求里那条记 `incomplete`），**不要**因为 Linux 编译过了就写 `done`。
+
+### 8.3 别让管道吞掉退出码
+
+跑本节这些命令时（尤其 `--check`）**不要**把输出接进 `| tail`/`| head`/`| grep` 收尾，
+或者显式带上被检命令的退出码：
+
+```bash
+cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pipefail
+```
+
+实测两次假绿：后台 job 报 `exit code: 0` 而 cargo 实际 101（0 来自 `| tail`）；末尾接 `echo`
+让 `expectFail` 的负向控制判成「没红」。把「输出里有期待的片段」当**内容**证据、
+退出码当**状态**证据，两个都要（known_issues `pipe-masks-exit-code`，模式层）。

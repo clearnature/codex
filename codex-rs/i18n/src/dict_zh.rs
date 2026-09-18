@@ -7083,6 +7083,19 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "invalid realtime api key header: {0}",
         "无效的实时API key请求头：{0}",
     ),
+    (
+        "failed to serialize request_permissions response: {0}",
+        "序列化request_permissions响应失败：{0}",
+    ),
+    (
+        "{0} handler received unsupported payload",
+        "{0}处理器收到不支持的负载",
+    ),
+    (
+        "failed to serialize {0} response: {1}",
+        "序列化{0}响应失败：{1}",
+    ),
+    ("failed to sleep: {0}", "休眠失败：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

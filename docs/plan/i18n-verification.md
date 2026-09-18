@@ -1072,57 +1072,54 @@ internal                  : 23509
 *证据*：`just i18n-check` 退出码 0，回执 `r-mu4lwag5-j2q2h0`；
 `cargo test -p codex-i18n-check` 20 passed（其中新增 5 条）；`fmt-check` 回执 `r-mu4lwsxw-v3qcmc`。
 
-### 12.30 第 245 轮：core 剩余候选的**分诊表**（193 文件 → 185 有活，798 个候选）
+### 12.30 第 245 轮：core 剩余候选的**分诊表**（178 文件有活，725 个候选）
 
 **为什么要先列表**：`realtime_conversation.rs`（23 译 / 17 不译）与 `realtime_context.rs`（26 全不译）
 是**同一功能的两半、判定相反**，所以「按目录/文件名批量豁免」是错的；而逐文件从头读又太慢。
-两列即可把 798 分成两类可操作的工作：**候选数**与**用户可见调用点出现次数**
-（`add_error_message` / `add_info_message` / `add_warning_message` / `EventMsg::Warning` /
-`ToolError` / `CodexErr` / `Line::from` / `Span::from`）。
+两列即可把剩余候选分成两类可操作的工作：**候选数**与**用户可见调用点出现次数**。
+
+**用户可见标记（第 248 轮修订）**：`add_error_message` / `add_info_message` / `add_warning_message` /
+`EventMsg::Warning` / `ToolError` / `CodexErr` / `Line::from` / `Span::from` /
+**`FunctionCallError::Fatal`**。最后一项是本轮补的，理由可复核：`tools/parallel.rs:85`
+把它映射成 `CodexErr::Fatal(message)` —— 即**同一个用户可见错误**；而它的兄弟变体
+`FunctionCallError::RespondToModel`（`codex-rs/tools/src/function_call_error.rs:7`）明确回给模型，属不译。
+第一版表漏了 `::Fatal`，导致 6 个文件被错分进桶 A（本轮已修，见 §12.31 的「修正记录」）。
 
 **方法（可复现）**：import `scripts/i18n_todo.py`，对 `scripts/i18n_scan.py` 的 `candidates` 桶
 逐个套用**与该脚本相同的两道过滤**——`is_wrapped(lines, line)` 与
 `not-translated-unwrapped.tsv` 的键/站点——再按文件计数。
-**自检**：本表合计 **798**，与 `python3 scripts/i18n_todo.py --root codex-rs/core` 的
-`unwrapped candidates` 逐字相同（差一个数就说明过滤没对齐）。
+**自检**：本表合计必须**逐字等于** `python3 scripts/i18n_todo.py --root codex-rs/core` 的
+`unwrapped candidates`（差一个数就说明过滤没对齐）。
 
-> ⚠ **一个 22% 的测量坑（本轮实测）**：只 import `i18n_scan.py` 而**不**套 `is_wrapped`，
-> 合计会是 **972** 而不是 798 —— 因为扫描器的 `candidates` 桶按**形状**分类，
+> ⚠ **一个 22% 的测量坑（第 245 轮实测）**：只 import `i18n_scan.py` 而**不**套 `is_wrapped`，
+> 合计会是 972 而不是当时的 798 —— 扫描器的 `candidates` 桶按**形状**分类，
 > 「有没有被 `tr(` 包住」是 `i18n_todo.py` 之后才施加的第二道过滤
-> （脚本自己在 `LOOKBACK` 的注释里写过：只看同行会把已包的误报成剩余，实测虚高约 15%）。
-> 这类「口径差一层」的坑与 §12.25 是同一个家族。
+> （脚本自己在 `LOOKBACK` 注释里写过：只看同行会虚高约 15%）。与 §12.25 同族。
 
-#### 桶 A：**0 个用户可见调用点** —— 140 文件 / 544 候选（**疑似不译，但必须逐文件给判据**）
+#### 桶 A：**0 个用户可见调用点** —— 127 文件 / 447 候选（**疑似不译，但必须逐文件给判据**）
 
 「0 个用户可见调用点」只是**反证的必要条件**，不是充分条件：本桶里至少有四种真实形态，
 判据各不相同（文件可能同时属于多种，逐文件看）：
 ① 工具定义 / JSON schema（`tools/handlers/*_spec.rs` 等，§4 决策 3 / §12.2）；
 ② 注入模型的上线上下文与提示词（§12.2）；
-③ `Result<_, String>` 回给模型或 app-server 的工具参数校验错误（§12.3 / §12.11）；
+③ `Result<_, String>` / `FunctionCallError::RespondToModel` 这类**回给模型或 app-server** 的工具错误（§12.11）；
 ④ 走 `eyre`/`anyhow`/`tracing` 内部链、到不了 UI 的诊断（§12.3）。
-**反例警示**：桶 A 里出现过「本该译」的文件（例如 `shell_snapshot.rs` 之类把文案塞进结构体字段、
-由 TUI 渲染的路径就不经过上面那八个 API）——所以本桶的每一批仍要跑
-「文件级反证 + 一次负向控制」，不能只看本表就豁免。
+**反例警示**：桶 A 里出现过「本该译」的文件（§12.31 的修正记录就是一例）——所以本桶的每一批
+仍要跑「文件级反证 + 一次负向控制」，不能只看本表就豁免。
 
 | 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
 | ---: | ---: | --- |
 | 18 | 0 | `core/src/tools/code_mode/mod.rs` |
 | 15 | 0 | `core/src/session/step_activation.rs` |
-| 14 | 0 | `core/src/tools/handlers/request_user_input_spec.rs` |
 | 12 | 0 | `core/src/tools/handlers/unified_exec/exec_command.rs` |
 | 11 | 0 | `core/src/agent/role.rs` |
 | 11 | 0 | `core/src/context/world_state/environment.rs` |
 | 11 | 0 | `core/src/session/mcp.rs` |
 | 11 | 0 | `core/src/shell_snapshot.rs` |
-| 11 | 0 | `core/src/tools/handlers/mod.rs` |
 | 10 | 0 | `core/src/config/network_proxy_spec.rs` |
 | 10 | 0 | `core/src/context/environment_context.rs` |
 | 10 | 0 | `core/src/context/node_repl_review_evidence.rs` |
-| 10 | 0 | `core/src/tools/handlers/apply_patch.rs` |
-| 10 | 0 | `core/src/tools/handlers/request_permissions.rs` |
-| 10 | 0 | `core/src/tools/handlers/request_plugin_install.rs` |
-| 10 | 0 | `core/src/tools/handlers/sleep.rs` |
-| 10 | 0 | `core/src/tools/handlers/view_image.rs` |
+| 10 | 0 | `core/src/tools/handlers/mod.rs` |
 | 9 | 0 | `core/src/tools/code_mode/delegate.rs` |
 | 9 | 0 | `core/src/tools/handlers/mcp_resource_spec.rs` |
 | 8 | 0 | `core/src/mcp_openai_file.rs` |
@@ -1131,12 +1128,10 @@ internal                  : 23509
 | 8 | 0 | `core/src/tools/handlers/request_plugin_install_spec.rs` |
 | 7 | 0 | `core/src/mcp_skill_dependencies.rs` |
 | 7 | 0 | `core/src/plugins/render.rs` |
-| 7 | 0 | `core/src/tools/handlers/mcp_resource.rs` |
-| 7 | 0 | `core/src/tools/handlers/request_user_input_async.rs` |
-| 7 | 0 | `core/src/tools/registry.rs` |
 | 7 | 0 | `core/src/tools/runtimes/mod.rs` |
 | 6 | 0 | `core/src/context/token_budget_context.rs` |
 | 6 | 0 | `core/src/session/multi_agents.rs` |
+| 6 | 0 | `core/src/tools/handlers/request_user_input_async.rs` |
 | 6 | 0 | `core/src/windows_sandbox.rs` |
 | 5 | 0 | `core/src/context/guardian_followup_review_reminder.rs` |
 | 5 | 0 | `core/src/context/world_state/tools.rs` |
@@ -1144,11 +1139,10 @@ internal                  : 23509
 | 5 | 0 | `core/src/image_preparation.rs` |
 | 5 | 0 | `core/src/tools/code_mode/wait_spec.rs` |
 | 5 | 0 | `core/src/tools/handlers/dynamic.rs` |
+| 5 | 0 | `core/src/tools/handlers/mcp_resource.rs` |
 | 5 | 0 | `core/src/tools/handlers/multi_agents_v2/wait.rs` |
 | 5 | 0 | `core/src/tools/handlers/plan_spec.rs` |
-| 5 | 0 | `core/src/tools/handlers/request_user_input.rs` |
 | 5 | 0 | `core/src/tools/handlers/tool_search_spec.rs` |
-| 5 | 0 | `core/src/tools/handlers/wait_for_environment.rs` |
 | 4 | 0 | `core/src/config/requirements.rs` |
 | 4 | 0 | `core/src/context/available_plugins_instructions.rs` |
 | 4 | 0 | `core/src/context/update_plan_instructions.rs` |
@@ -1156,12 +1150,10 @@ internal                  : 23509
 | 4 | 0 | `core/src/lib.rs` |
 | 4 | 0 | `core/src/responses_metadata.rs` |
 | 4 | 0 | `core/src/session_prefix.rs` |
-| 4 | 0 | `core/src/tools/handlers/current_time.rs` |
 | 4 | 0 | `core/src/tools/handlers/mcp.rs` |
 | 4 | 0 | `core/src/tools/handlers/multi_agents.rs` |
 | 4 | 0 | `core/src/tools/handlers/multi_agents_v2/spawn.rs` |
 | 4 | 0 | `core/src/tools/handlers/plan.rs` |
-| 4 | 0 | `core/src/tools/handlers/send_message_to_user_async.rs` |
 | 4 | 0 | `core/src/tools/mod.rs` |
 | 3 | 0 | `core/src/agents_md.rs` |
 | 3 | 0 | `core/src/context/image_resize_notice.rs` |
@@ -1175,7 +1167,7 @@ internal                  : 23509
 | 3 | 0 | `core/src/tools/handlers/apply_patch_spec.rs` |
 | 3 | 0 | `core/src/tools/handlers/multi_agents/resume_agent.rs` |
 | 3 | 0 | `core/src/tools/handlers/multi_agents_v2/message_tool.rs` |
-| 3 | 0 | `core/src/tools/handlers/tool_search.rs` |
+| 3 | 0 | `core/src/tools/handlers/send_message_to_user_async.rs` |
 | 3 | 0 | `core/src/tools/handlers/view_image_spec.rs` |
 | 2 | 0 | `core/src/config/edit.rs` |
 | 2 | 0 | `core/src/config/managed_features.rs` |
@@ -1187,8 +1179,6 @@ internal                  : 23509
 | 2 | 0 | `core/src/context/world_state/agents_md.rs` |
 | 2 | 0 | `core/src/context/world_state/context_window_guidance.rs` |
 | 2 | 0 | `core/src/guardian/review_session_context.rs` |
-| 2 | 0 | `core/src/tools/code_mode/wait_handler.rs` |
-| 2 | 0 | `core/src/tools/handlers/list_available_plugins_to_install.rs` |
 | 2 | 0 | `core/src/tools/handlers/multi_agents/spawn.rs` |
 | 2 | 0 | `core/src/tools/handlers/new_context_window.rs` |
 | 2 | 0 | `core/src/tools/handlers/unified_exec.rs` |
@@ -1196,7 +1186,6 @@ internal                  : 23509
 | 2 | 0 | `core/src/unified_exec/oneshot.rs` |
 | 2 | 0 | `core/src/unified_exec/process.rs` |
 | 1 | 0 | `core/src/agent_communication.rs` |
-| 1 | 0 | `core/src/apply_patch.rs` |
 | 1 | 0 | `core/src/config/edit/document_helpers.rs` |
 | 1 | 0 | `core/src/config/otel.rs` |
 | 1 | 0 | `core/src/config/permission_profile_catalog.rs` |
@@ -1237,6 +1226,7 @@ internal                  : 23509
 | 1 | 0 | `core/src/tools/code_mode/execute_handler.rs` |
 | 1 | 0 | `core/src/tools/code_mode/execute_spec.rs` |
 | 1 | 0 | `core/src/tools/code_mode/telemetry.rs` |
+| 1 | 0 | `core/src/tools/code_mode/wait_handler.rs` |
 | 1 | 0 | `core/src/tools/handlers/get_context_remaining.rs` |
 | 1 | 0 | `core/src/tools/handlers/get_context_remaining_spec.rs` |
 | 1 | 0 | `core/src/tools/handlers/list_available_plugins_to_install_spec.rs` |
@@ -1247,7 +1237,7 @@ internal                  : 23509
 | 1 | 0 | `core/src/tools/handlers/new_context_window_spec.rs` |
 | 1 | 0 | `core/src/turn_diff_tracker.rs` |
 
-#### 桶 B：**有用户可见调用点** —— 45 文件 / 254 候选（**逐站点甄别**）
+#### 桶 B：**有用户可见调用点** —— 51 文件 / 278 候选（**逐站点甄别**）
 
 | 候选 | 用户可见调用点 | 文件（相对 `codex-rs/`） |
 | ---: | ---: | --- |
@@ -1265,6 +1255,7 @@ internal                  : 23509
 | 9 | 1 | `core/src/unified_exec/errors.rs` |
 | 8 | 25 | `core/src/tools/runtimes/unified_exec.rs` |
 | 7 | 7 | `core/src/session_rollout_init_error.rs` |
+| 7 | 1 | `core/src/tools/registry.rs` |
 | 6 | 7 | `core/src/session/turn_suspension.rs` |
 | 6 | 7 | `core/src/thread_rollout_truncation.rs` |
 | 6 | 12 | `core/src/tools/approvals.rs` |
@@ -1274,18 +1265,23 @@ internal                  : 23509
 | 5 | 4 | `core/src/client.rs` |
 | 5 | 3 | `core/src/hook_runtime.rs` |
 | 5 | 7 | `core/src/responses_retry.rs` |
+| 5 | 1 | `core/src/tools/handlers/request_user_input.rs` |
+| 5 | 1 | `core/src/tools/handlers/wait_for_environment.rs` |
 | 4 | 2 | `core/src/guardian/review_session.rs` |
 | 4 | 2 | `core/src/session/session.rs` |
 | 4 | 3 | `core/src/tools/handlers/unified_exec/write_stdin.rs` |
-| 4 | 3 | `core/src/tools/parallel.rs` |
+| 4 | 5 | `core/src/tools/parallel.rs` |
 | 3 | 14 | `core/src/compact.rs` |
 | 3 | 7 | `core/src/compact_remote_v2.rs` |
 | 3 | 7 | `core/src/session/turn_input.rs` |
 | 3 | 14 | `core/src/tools/events.rs` |
 | 3 | 3 | `core/src/tools/handlers/multi_agents_v2/interrupt_agent.rs` |
+| 3 | 1 | `core/src/tools/handlers/tool_search.rs` |
 | 2 | 6 | `core/src/agent/registry.rs` |
 | 2 | 3 | `core/src/compact_remote.rs` |
 | 2 | 6 | `core/src/session/turn_context.rs` |
+| 2 | 1 | `core/src/tools/handlers/current_time.rs` |
+| 2 | 2 | `core/src/tools/handlers/list_available_plugins_to_install.rs` |
 | 2 | 2 | `core/src/tools/handlers/multi_agents/wait.rs` |
 | 1 | 8 | `core/src/agent/control/legacy.rs` |
 | 1 | 5 | `core/src/codex_delegate.rs` |
@@ -1297,5 +1293,50 @@ internal                  : 23509
 | 1 | 2 | `core/src/tools/handlers/multi_agents/close_agent.rs` |
 | 1 | 8 | `core/src/tools/sandboxing.rs` |
 
-*证据*：分诊表合计 798 与 `i18n_todo` 输出一致（自检内建于生成脚本，assert 失败即中止）；
-本轮据此完成的批次见台账 `i18n.rollout.core.*`；`fmt-check` 回执 `r-mu762buk-etm7n4`。
+### 12.31 第 248 轮：**工具负载不译**的口径与 6 个 handler 文件（64 站点）
+
+本批覆盖 `core/src/tools/handlers/` 下 6 个文件（apply_patch / request_permissions /
+request_plugin_install / request_user_input_spec / sleep / view_image），共 64 个候选、登记 61 行。
+判定为**不译**，依据三条，均可独立复核：
+
+1. **文件级反证（必要条件）**：这些文件里
+   `add_error_message` / `add_info_message` / `add_warning_message` / `EventMsg::Warning` /
+   `ToolError` / `CodexErr` / `Line::from` / `Span::from` / **`FunctionCallError::Fatal`**
+   的出现次数**都是 0**（本轮实跑断言）。即：这些串没有任何一条渲染到屏幕的路径。
+2. **去向是模型或协议**：工具定义（`ToolSpec` / `JsonSchema` 的 `name`/`description`）随
+   `ResponsesApiTool` 发给模型 —— 设计 §4 决策 3 已裁定排除；handler 的 `Result<_, String>`
+   成为 `function_call_output`（模型读它）；`*** End of File` 这类是**补丁语法标记**（§12.7）。
+   与 §12.11（`dynamic_tools.rs` 的 `Err(String)` 只有协议出口）同一口径。
+3. **经验判据（本仓既有做法）**：TUI 译的是 **chrome/状态文案**——字典里已经有
+   `Waiting for` / `Running hooks` / `Searching…` / `permission request` 等（`tui/chatwidget/*` 里成批 `tr(...)`），
+   而**不译负载**。chrome 与负载的分界，正是「app 自己写给用户看的」 vs「协议里流动的」。
+
+#### 修正记录（第 248 轮，自我纠错）
+
+第一版口径漏了 `FunctionCallError::Fatal`：`tools/parallel.rs:85` 把它**映射成 `CodexErr::Fatal(message)`**，
+所以它和 `CodexErr` 一样是**用户可见**的。漏掉它导致 4 个值（5 个站点）被错误登记为不译：
+`request_permissions.rs` 的 `failed to serialize request_permissions response: {err}`、
+`request_plugin_install.rs` 的两条序列化/负载错误、`sleep.rs` 的两处 `failed to sleep: {err:#}`。
+**已改回译**（包 `tr_with`，具名占位符转位置参数），并把登记行从 `not-translated-unwrapped.tsv` 撤回。
+判据遂修订为上面那 9 个标记。
+
+#### 可反驳条件（falsification）——什么情况下这条口径**不适用**
+
+- 该串实际存在渲染路径（`add_*_message` / `Line::from` / `Span::from` / `EventMsg::Warning` / `ToolError` 被渲染）；或
+- 该串属于 app 自己写的**状态/chrome** 文案（那么按第 3 条应当**译**）；或
+- 该串是**配置键 / 匹配键 / 协议字段名**（那属于 §12.1 / §12.7，同样不译，但依据不同）。
+
+#### 残余不确定（如实标记，不假装已解决）
+
+工具**执行结果**（如 `Sleep completed.`、`Sleep interrupted by new input.`、
+`Wall time: {wall_time_seconds:.4} seconds\n{message}`）与工具 schema 不同：
+它在 TUI 的 transcript 里**用户是看得见的**。本表把它们与 schema 同等对待，
+理由是「翻译会改变模型读到的字节」（它们同时是 `function_call_output`）。
+若希望连结果文案也本地化，需要**另一套机制**去区分「给模型的结果」与「给用户看的结果」——
+那是一条独立的设计决策，已在台账流水里开着待裁决条目；本表不把它当作已解决。
+
+*证据*：6 个文件在 `i18n_todo --root codex-rs/core` 下均为 `0 unwrapped candidates`
+且显式归因于登记；负向控制（删掉任一行 ⇒ 该站点重新成为候选）见本轮回执；
+`i18n-todo` 总数 798 → **725**（本批 64 个站点，另有 8 个**同值**站点因按值登记而连带豁免——
+全部落在同一家族（`tools/handlers/` 与 `tools/code_mode/wait_handler.rs`，都是 0 处渲染路径）。
+「按值登记」的这个连带效果是本机制的固有性质，已在 §12.30 的桶说明里点明）。

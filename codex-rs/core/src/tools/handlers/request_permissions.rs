@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::permissions::FileSystemSandboxPolicyContext;
 use codex_protocol::request_permissions::RequestPermissionsArgs;
 use codex_sandboxing::policy_transforms::normalize_additional_permissions_with_context;
@@ -118,8 +120,10 @@ impl RequestPermissionsHandler {
             })?;
 
         let content = serde_json::to_string(&response).map_err(|err| {
-            FunctionCallError::Fatal(format!(
-                "failed to serialize request_permissions response: {err}"
+            FunctionCallError::Fatal(tr_with(
+                current(),
+                "failed to serialize request_permissions response: {0}",
+                &[&err.to_string()],
             ))
         })?;
 

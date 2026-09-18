@@ -6,3 +6,5 @@
 Allow and don't ask me again	codex-rs/core/src/mcp_tool_call.rs:1378	选项 label 同时是比对值：TUI 原样提交该文本（request_user_input/mod.rs 的 submit_answers），core 再用 == 与英文 const 比对（mcp_tool_call.rs:2088）⇒ 译了静默破坏 ApprovedMcpPolicyAmendment
 Install	codex-rs/core/src/mcp_skill_dependencies.rs:42	同上：label 被提交后与 MCP_DEPENDENCY_OPTION_INSTALL 比对（:336）
 Continue anyway	codex-rs/core/src/mcp_skill_dependencies.rs:43	同上：与 MCP_DEPENDENCY_OPTION_SKIP 比对
+clock	codex-rs/core/src/tools/handlers/sleep.rs:26	常量 `NAMESPACE`：它是**工具命名空间名**（:47/:67 拼进 ToolSpec/协议发给模型）——改名就破坏协议，不能译（消费者：codex-i18n-check 的 bound keys；本文件此轮才首次含 tr 调用，因此这条此前不可见）
+sleep	codex-rs/core/src/tools/handlers/sleep.rs:27	常量 `TOOL_NAME`：**工具名**（:50/:67 进 ToolSpec 与 ToolName::namespaced）——模型按名字调用工具，译了工具就调不通（同上，本文件此轮才被扫描）

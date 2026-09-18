@@ -7,6 +7,8 @@ use codex_analytics::PluginInstallRequestedPlugin;
 use codex_analytics::build_track_events_context;
 use codex_config::types::ToolSuggestDisabledTool;
 use codex_core_plugins::remote::REMOTE_GLOBAL_MARKETPLACE_NAME;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
 use codex_rmcp_client::ElicitationAction;
 use codex_rmcp_client::ElicitationResponse;
@@ -108,8 +110,10 @@ impl RequestPluginInstallHandler {
         let arguments = match payload {
             ToolPayload::Function { arguments } => arguments,
             _ => {
-                return Err(FunctionCallError::Fatal(format!(
-                    "{REQUEST_PLUGIN_INSTALL_TOOL_NAME} handler received unsupported payload"
+                return Err(FunctionCallError::Fatal(tr_with(
+                    current(),
+                    "{0} handler received unsupported payload",
+                    &[REQUEST_PLUGIN_INSTALL_TOOL_NAME],
                 )));
             }
         };
@@ -303,8 +307,10 @@ impl RequestPluginInstallHandler {
             suggest_reason: suggest_reason.to_string(),
         })
         .map_err(|err| {
-            FunctionCallError::Fatal(format!(
-                "failed to serialize {REQUEST_PLUGIN_INSTALL_TOOL_NAME} response: {err}"
+            FunctionCallError::Fatal(tr_with(
+                current(),
+                "failed to serialize {0} response: {1}",
+                &[REQUEST_PLUGIN_INSTALL_TOOL_NAME, &err.to_string()],
             ))
         })?;
 

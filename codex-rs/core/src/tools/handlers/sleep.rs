@@ -8,6 +8,8 @@ use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
 use codex_extension_items::ExtensionItem;
 use codex_extension_items::sleep::SleepItem;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::items::TurnItem;
 use codex_tools::JsonSchema;
 use codex_tools::ResponsesApiNamespace;
@@ -123,7 +125,7 @@ impl ToolExecutor<ToolInvocation> for SleepHandler {
                     result = &mut sleep => result
                         .map(|()| false)
                         .map_err(|err| {
-                            FunctionCallError::Fatal(format!("failed to sleep: {err:#}"))
+                            FunctionCallError::Fatal(tr_with(current(), "failed to sleep: {0}", &[&format!("{err:#}")]))
                         }),
                     result = activity_rx.changed() => {
                         if result.is_ok() {
@@ -133,7 +135,7 @@ impl ToolExecutor<ToolInvocation> for SleepHandler {
                                 .await
                                 .map(|()| false)
                                 .map_err(|err| {
-                                    FunctionCallError::Fatal(format!("failed to sleep: {err:#}"))
+                                    FunctionCallError::Fatal(tr_with(current(), "failed to sleep: {0}", &[&format!("{err:#}")]))
                                 })
                         }
                     }

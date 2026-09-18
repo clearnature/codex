@@ -1389,3 +1389,17 @@ request_plugin_install / request_user_input_spec / sleep / view_image），共 6
 于是除首个文件外，判定都在拿**上一个文件**的文本做括号配平，全部退化成
 `<attribute/proximity>`。修法是让两处用同一个变量；这个 bug 的现象（判定"总是找不到外围宏"）
 比原因更早被发现，正是因为它让 57 条一条都没被过滤掉、与预期不符。
+
+#### 第 27 轮补：再两类良性形态（`*_span` 宏与单 token 值）—— 78 条降到 **40** 条
+
+`session/turn.rs` 的 6 条「未决」逐条看下来仍然全是良性：`trace_span!("run_turn.…")` 的
+span 名（`trace_span` 不在首版良性名单里 —— 只写了 `span`/`instrument`），以及
+`const POST_SAMPLING_TOKEN_ESTIMATE_TARGET = "codex_core::post_sampling_token_estimate"`
+（tracing **target 名**）与 `"receiving"`。补两条判据：
+
+- 外围宏名以 `_span` 结尾（`trace_span!`/`debug_span!`/…）⇒ 良性；
+- **值是单个 token**（`[A-Za-z_][A-Za-z0-9_:.\-]*` 整串匹配）⇒ 是标识符 / target / span 名，
+  不是句子（散文必含空白）。
+
+core 全量甄别存量：**413 → 78 → 40**（`session/turn.rs` 6 → 0）。
+回归检查：`session/mod.rs`、`guardian/review.rs`、`codex_thread.rs` 的 `--suspect` 仍为 0。

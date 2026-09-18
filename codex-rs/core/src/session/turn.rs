@@ -567,7 +567,11 @@ pub(crate) async fn run_turn(
                     {
                         // Do not feed managed rejections back into an unattended memory loop.
                         return Err(CodexErr::InvalidRequest(
-                            "Memory consolidation was rejected by a Stop hook.".to_string(),
+                            tr(
+                                current(),
+                                "Memory consolidation was rejected by a Stop hook.",
+                            )
+                            .to_string(),
                         ));
                     }
                     if stop_outcome.should_block {
@@ -2387,7 +2391,7 @@ async fn try_run_sampling_request(
             Some(Err(err)) => break Err(err),
             None => {
                 break Err(CodexErr::Stream(
-                    "stream closed before response.completed".into(),
+                    tr(current(), "stream closed before response.completed").into(),
                 ));
             }
         };

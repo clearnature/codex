@@ -136,8 +136,15 @@ BENIGN_ENCLOSING = re.compile(
     r"^(?:debug|info|warn|error|trace)$"  # log macros (incl. tracing::)
     r"|^(?:assert|assert_eq|assert_ne|debug_assert|debug_assert_eq|debug_assert_ne"
     r"|panic|unreachable|expect|matches)$"  # invariant / assertion text
-    r"|^(?:instrument|span|event)$"  # span names
+    r"|^(?:instrument|event)$|_span$"  # span names (trace_span!/span!)
 )
+
+# A value that is a *single token* is an identifier, a tracing target or a span
+# name -- never a sentence (prose contains whitespace). `receiving`,
+# `session.flush_rollout` and `codex_core::post_sampling_token_estimate` are all
+# this shape, and reporting them drowned the signal again (6 of 6 undecided
+# literals in `session/turn.rs`).
+IDENTIFIER_LIKE = re.compile(r"[A-Za-z_][A-Za-z0-9_:.\-]*")
 
 
 def literal_offset(lines: list[str], line_number: int, source: str = "") -> int:
@@ -330,7 +337,7 @@ def main(argv: list[str]) -> int:
             inside_attribute = is_inside_attribute(
                 source, literal_offset(lines, finding["line"], source)
             )
-            if inside_attribute:
+            if inside_attribute or IDENTIFIER_LIKE.fullmatch(finding["value"].strip()):
                 continue
             if macro is not None and BENIGN_ENCLOSING.match(macro):
                 continue

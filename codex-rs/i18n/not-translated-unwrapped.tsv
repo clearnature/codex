@@ -613,3 +613,12 @@ replaced unavailable requested model with provider default	codex-rs/core/src/ses
 failed to start managed network proxy: {err}	codex-rs/core/src/session/mod.rs	`start_managed_network_proxy` 的错误串：唯一生产调用点是本文件 :1200 的 sandbox-change 路径，那里只 `warn!(...)`（:1219）⇒ 到不了 UI，§12.3 诊断（docs/plan/i18n-verification.md）
 item completed without a recorded start timestamp	codex-rs/core/src/session/mod.rs	`tracing::warn!` 的日志串（item 完成但无起始时间戳）⇒ §12.3 诊断（docs/plan/i18n-verification.md）
 MCP event request _meta must be a JSON object, got {other}	codex-rs/core/src/codex_thread.rs	MCP **app-server 协议层**的参数校验错误：`start_mcp_event_stream` 的唯一调用方是 `codex-rs/app-server/src/request_processors/mcp_event_stream.rs`（两处），错误经 JSON-RPC 回给客户端 ⇒ §12.11 判据（回给 app-server 的协议层错误不译）（docs/plan/i18n-verification.md）
+post sampling token usage	codex-rs/core/src/session/turn.rs	`tracing` 事件名/字段（只用于指标与日志过滤）⇒ §12.3 诊断 / §12.7 标识符（docs/plan/i18n-verification.md）
+post sampling token estimate	codex-rs/core/src/session/turn.rs	同上：`tracing` 事件名（`tracing::event_enabled!` 按名过滤）⇒ §12.3 / §12.7（docs/plan/i18n-verification.md）
+I need your input. Please respond in the app.	codex-rs/core/src/session/turn.rs	`realtime_text_for_event` 的固定提示语，经 `conversation.handoff_out(..)` **送进 realtime 会话**（模型侧通道）——与 realtime_conversation.rs 那批同口径 ⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+I need your approval to continue. Please review the request in the app.	codex-rs/core/src/session/turn.rs	同上：送进 realtime 会话的固定提示语 ⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+in-flight tool future failed during drain: {err}	codex-rs/core/src/session/turn.rs	`error_or_panic(..)`（core/src/util.rs:93：debug 下 panic、release 下 `error!`）——只进日志/panic ⇒ §12.3 诊断（docs/plan/i18n-verification.md）
+OutputTextDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串（同上）⇒ §12.3（docs/plan/i18n-verification.md）
+ReasoningSummaryDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）
+ReasoningSummaryPartAdded without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）
+ReasoningRawContentDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）

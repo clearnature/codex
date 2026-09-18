@@ -7181,6 +7181,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("read thread", "读取线程"),
     ("update thread metadata", "更新线程元数据"),
     ("append rollout items", "追加rollout条目"),
+    (
+        "Memory consolidation was rejected by a Stop hook.",
+        "记忆整合被Stop钩子拒绝。",
+    ),
+    (
+        "stream closed before response.completed",
+        "流在response.completed之前关闭",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

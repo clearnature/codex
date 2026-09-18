@@ -1,4 +1,6 @@
 use crate::config::RolloutBudgetConfig;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
@@ -51,8 +53,7 @@ impl RolloutBudget {
             let units = units.as_f64().unwrap_or(f64::NAN);
             if !units.is_finite() || units < 0.0 {
                 return Err(CodexErr::Fatal(
-                    "response.completed usage.codex_rollout_budget_units must be finite and non-negative"
-                        .to_string(),
+                    tr(current(), "response.completed usage.codex_rollout_budget_units must be finite and non-negative").to_string(),
                 ));
             }
             units

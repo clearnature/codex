@@ -622,3 +622,29 @@ OutputTextDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_
 ReasoningSummaryDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）
 ReasoningSummaryPartAdded without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）
 ReasoningRawContentDelta without active item	codex-rs/core/src/session/turn.rs	`error_or_panic` 的不变量串 ⇒ §12.3（docs/plan/i18n-verification.md）
+thread:{thread_id}	codex-rs/core/src/agent/registry.rs	agent registry 的 **ID 回退模板**（unwrap_or_else(|| format!(..))，只拼 id）⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+{name}: {{\n{description}{locked_settings_note}\n}}	codex-rs/core/src/agent/role.rs	role 渲染的**结构模板**（除占位符外无文案；description/locked_settings_note 各自是独立字面量）⇒ §12.5 数据格式（docs/plan/i18n-verification.md）
+{name}: no description	codex-rs/core/src/agent/role.rs	同上渲染的回退标签；agent/role.rs 实测 **0 处** add_*_message/CodexErr/Line::from，与同文件 11 个候选同属模型/调试面向 ⇒ §12.2 / §12.3（docs/plan/i18n-verification.md）
+{SUMMARY_PREFIX}\n{summary_suffix}	codex-rs/core/src/compact.rs	压缩摘要的**外壳**：两段都是**预构串**（SUMMARY_PREFIX 常量 + 已生成的 summary），此处只是拼接 ⇒ §12.5 数据格式（docs/plan/i18n-verification.md）
+\n{instructions}\n	codex-rs/core/src/context/realtime_end_instructions.rs	包住 instructions 的**换行外壳**（内容来自配置/常量）⇒ §12.5 数据格式（docs/plan/i18n-verification.md）
+{directory}\n\n<INSTRUCTIONS>\n{}\n	codex-rs/core/src/context/user_instructions.rs	注入模型的 AGENTS/指令块**结构**（目录 + 标签 + 正文）⇒ §12.2 喂模型 / §12.5（docs/plan/i18n-verification.md）
+image content omitted because it could not be processed	codex-rs/core/src/image_preparation.rs	IMAGE_PROCESSING_ERROR_PLACEHOLDER：图像处理失败时**替进模型输入**的占位说明（与 view_image 的 data URL omitted 同类）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+err: {e}	codex-rs/core/src/mcp_tool_call.rs	CallToolResult::from_error_text(format!("err: {e}"))：**工具结果负载**回给模型 ⇒ §12.11（docs/plan/i18n-verification.md）
+- Skills from this plugin are prefixed with `{skill_namespace}:`.	codex-rs/core/src/plugins/render.rs	插件技能清单里**给模型的说明**（告知命名空间前缀）⇒ §12.2 喂模型（docs/plan/i18n-verification.md）
+<startup_context>	codex-rs/core/src/realtime_context.rs	STARTUP_CONTEXT_OPEN_TAG：上线上下文的 XML 标签 ⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+realtime stream error event received	codex-rs/core/src/realtime_conversation.rs	anyhow::bail!(..)：realtime 流循环的内部中断串（同文件另 4 条同类串已按内部诊断登记）⇒ §12.3（docs/plan/i18n-verification.md）
+op.dispatch.{op_name}	codex-rs/core/src/session/handlers.rs	**span 名**（submission_dispatch_span）⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+mcp_elicitation:{}:{}	codex-rs/core/src/session/mcp.rs	elicitation 的 **ID 模板**（mcp_elicitation:<thread>:<id>）⇒ §12.7 标识符（docs/plan/i18n-verification.md）
+execution error: {err:?}	codex-rs/core/src/tasks/user_shell.rs	失败的用户 shell 命令的 **stderr/aggregated_output**（ExecToolCallOutput）——工具结果负载，与 §12.31 记录的「工具执行结果」同一类（那条仍是待裁决的残余不确定）⇒ §12.11（docs/plan/i18n-verification.md）
+code mode nested tool dispatcher is unavailable	codex-rs/core/src/tools/code_mode/delegate.rs	code-mode 内部 dispatcher 的 Result<_, String> 错误串（同函数 :290/:292 同类）——经嵌套调用回给调用方，非 UI 文案 ⇒ §12.3 / §12.11（docs/plan/i18n-verification.md）
+failed to serialize tool_search output: {err}	codex-rs/core/src/tools/context.rs	序列化失败时**塞进 JsonValue** 的字符串（成为工具负载）⇒ §12.11（docs/plan/i18n-verification.md）
+failed to serialize exec result: {err}	codex-rs/core/src/tools/context.rs	同上：JsonValue::String(..) 工具负载 ⇒ §12.11（docs/plan/i18n-verification.md）
+apply_patch handler received invalid patch input	codex-rs/core/src/tools/handlers/apply_patch.rs	FunctionCallError::RespondToModel(..) —— 明确回给模型的变体 ⇒ §12.11（docs/plan/i18n-verification.md）
+failed to serialize {tool_name} result: {err}	codex-rs/core/src/tools/handlers/multi_agents_common.rs	JsonValue::String(..) 工具负载（同一值两处）⇒ §12.11（docs/plan/i18n-verification.md）
+PostToolUse hook blocked the tool result	codex-rs/core/src/tools/registry.rs	FunctionCallError::RespondToModel(message) ⇒ §12.11（docs/plan/i18n-verification.md）
+	codex-rs/core/src/context/update_plan_instructions.rs:20	值是 `## Planning`：**以 # 开头**，无法写进 TSV 的 key 列（读取端把 # 行当注释）⇒ 按站点登记。用途是**比对键**（line != "## Planning" 识别模型输出里的计划小节）⇒ §12.1 匹配键（docs/plan/i18n-verification.md）
+	codex-rs/core/src/realtime_context.rs:30	STARTUP_CONTEXT_HEADER：realtime 上线上下文表头，含真实换行 ⇒ 按站点登记；该文件整批已判为喂模型（§12.30 桶 A）⇒ §12.2（docs/plan/i18n-verification.md）
+	codex-rs/core/src/tools/handlers/request_user_input_async.rs:66	异步版 request_user_input 的工具**描述**（description 的回退文本，含真实换行）⇒ §4 决策 3 / §12.2（按站点登记）（docs/plan/i18n-verification.md）
+	codex-rs/core/src/tools/handlers/multi_agents_spec.rs:674	工具说明模板（format! 的 **r#".."# 原始串**，含真实换行）⇒ §4 决策 3 / §12.2（按站点登记）（docs/plan/i18n-verification.md）
+	codex-rs/core/src/tools/handlers/multi_agents_spec.rs:692	同上：spawn_agent 工具说明模板（r#".."#）⇒ §4 决策 3 / §12.2（按站点登记）（docs/plan/i18n-verification.md）
+	codex-rs/core/src/tools/handlers/multi_agents_spec.rs:740	同上：spawn_agent 说明模板（r#".."#）⇒ §4 决策 3 / §12.2（按站点登记）（docs/plan/i18n-verification.md）

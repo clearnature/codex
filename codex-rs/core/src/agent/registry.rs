@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::AgentPath;
 use codex_protocol::ThreadId;
 use codex_protocol::error::CodexErr;
@@ -307,8 +309,10 @@ impl AgentRegistry {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         match active_agents.agent_tree.entry(agent_path.to_string()) {
-            Entry::Occupied(_) => Err(CodexErr::UnsupportedOperation(format!(
-                "agent path `{agent_path}` already exists"
+            Entry::Occupied(_) => Err(CodexErr::UnsupportedOperation(tr_with(
+                current(),
+                "agent path `{0}` already exists",
+                &[&agent_path.to_string()],
             ))),
             Entry::Vacant(entry) => {
                 entry.insert(AgentMetadata {

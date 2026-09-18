@@ -16,6 +16,9 @@ use codex_execpolicy::Evaluation;
 use codex_execpolicy::MatchOptions;
 use codex_execpolicy::Policy;
 use codex_execpolicy::RuleMatch;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::WindowsSandboxLevel;
 use codex_protocol::error::CodexErr;
 use codex_protocol::models::AdditionalPermissionProfile;
@@ -376,12 +379,12 @@ impl CoreShellActionProvider {
                             error!("Shell escalation received ApprovedMcpPolicyAmendment");
 
                             EscalationDecision::deny(Some(
-                                "Error while requesting approval".to_string(),
+                                tr(current(), "Error while requesting approval").to_string(),
                             ))
                         }
-                        ReviewDecision::Abort => {
-                            EscalationDecision::deny(Some("User cancelled execution".to_string()))
-                        }
+                        ReviewDecision::Abort => EscalationDecision::deny(Some(
+                            tr(current(), "User cancelled execution").to_string(),
+                        )),
                     }
                 }
             }
@@ -807,8 +810,10 @@ impl CoreShellCommandExecutor {
                 .map_err(|err| {
                     let environment_id =
                         self.network_environment_id.as_deref().unwrap_or("default");
-                    CodexErr::Io(io::Error::other(format!(
-                        "failed to prepare network proxy for environment `{environment_id}`: {err}"
+                    CodexErr::Io(io::Error::other(tr_with(
+                        current(),
+                        "failed to prepare network proxy for environment `{0}`: {1}",
+                        &[environment_id, &err.to_string()],
                     )))
                 })?;
         }

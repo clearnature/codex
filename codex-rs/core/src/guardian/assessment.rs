@@ -1,6 +1,8 @@
 //! The production synchronous reviewer's output schema and tolerant JSON parser.
 //! Parsing defaults and error text are shared unchanged by all reviewer callers.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::protocol::GuardianAssessmentOutcome;
 use codex_protocol::protocol::GuardianRiskLevel;
 use codex_protocol::protocol::GuardianUserAuthorization;
@@ -47,11 +49,13 @@ pub fn parse_guardian_assessment(text: Option<&str>) -> anyhow::Result<GuardianA
         .filter(|rationale| !rationale.trim().is_empty())
         .unwrap_or_else(|| match outcome {
             GuardianAssessmentOutcome::Allow => {
-                "Auto-review returned a low-risk allow decision.".to_string()
+                tr(current(), "Auto-review returned a low-risk allow decision.").to_string()
             }
-            GuardianAssessmentOutcome::Deny => {
-                "Auto-review returned a deny decision without a rationale.".to_string()
-            }
+            GuardianAssessmentOutcome::Deny => tr(
+                current(),
+                "Auto-review returned a deny decision without a rationale.",
+            )
+            .to_string(),
         });
 
     Ok(GuardianAssessment {

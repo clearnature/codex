@@ -23,6 +23,8 @@ use crate::sandboxing::SandboxPermissions;
 use crate::spawn::SpawnChildRequest;
 use crate::spawn::StdioPolicy;
 use crate::spawn::spawn_child_async;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result;
@@ -137,8 +139,10 @@ fn network_proxy_environment_error(
     err: impl std::fmt::Display,
 ) -> CodexErr {
     let environment_id = network_environment_id.unwrap_or("default");
-    CodexErr::Io(io::Error::other(format!(
-        "failed to prepare network proxy for environment `{environment_id}`: {err}"
+    CodexErr::Io(io::Error::other(tr_with(
+        current(),
+        "failed to prepare network proxy for environment `{0}`: {1}",
+        &[environment_id, &err.to_string()],
     )))
 }
 

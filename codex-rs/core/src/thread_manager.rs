@@ -2168,8 +2168,10 @@ impl ThreadManagerState {
         if let Err(err) = io.shutdown_and_wait().await {
             warn!("failed to shut down duplicate thread {thread_id}: {err}");
         }
-        Err(CodexErr::InvalidRequest(format!(
-            "thread {thread_id} is already running"
+        Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "thread {0} is already running",
+            &[&thread_id.to_string()],
         )))
     }
 

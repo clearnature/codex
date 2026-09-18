@@ -7189,6 +7189,34 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "stream closed before response.completed",
         "流在response.completed之前关闭",
     ),
+    ("agent path `{0}` already exists", "代理路径`{0}`已存在"),
+    (
+        "failed to prepare network proxy for environment `{0}`: {1}",
+        "为环境`{0}`准备网络代理失败：{1}",
+    ),
+    (
+        "Auto-review returned a low-risk allow decision.",
+        "自动复核返回了低风险的允许决定。",
+    ),
+    (
+        "automatic approval review could not prepare the action",
+        "自动审批复核无法准备该操作",
+    ),
+    (
+        "response.completed usage.codex_rollout_budget_units must be finite and non-negative",
+        "response.completed的usage.codex_rollout_budget_units必须是有限的非负值",
+    ),
+    ("thread {0} is already running", "线程{0}已在运行"),
+    (
+        "automatic approval review could not complete",
+        "自动审批复核无法完成",
+    ),
+    ("'{0}' in {1}", "在{1}中查找'{0}'"),
+    (
+        "Auto-review returned a deny decision without a rationale.",
+        "自动复核作出了拒绝决定，但未给出理由。",
+    ),
+    ("User cancelled execution", "用户取消了执行"),
 ];
 
 /// English source text -> Simplified Chinese.

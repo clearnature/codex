@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::models::WebSearchAction;
 
 fn search_action_detail(query: &Option<String>, queries: &Option<Vec<String>>) -> String {
@@ -20,7 +22,9 @@ pub fn web_search_action_detail(action: &WebSearchAction) -> String {
         WebSearchAction::Search { query, queries } => search_action_detail(query, queries),
         WebSearchAction::OpenPage { url } => url.clone().unwrap_or_default(),
         WebSearchAction::FindInPage { url, pattern } => match (pattern, url) {
-            (Some(pattern), Some(url)) => format!("'{pattern}' in {url}"),
+            (Some(pattern), Some(url)) => {
+                tr_with(current(), "'{0}' in {1}", &[pattern.as_str(), url.as_str()])
+            }
             (Some(pattern), None) => format!("'{pattern}'"),
             (None, Some(url)) => url.clone(),
             (None, None) => String::new(),

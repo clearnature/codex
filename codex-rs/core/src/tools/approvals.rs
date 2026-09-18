@@ -23,6 +23,8 @@ use crate::tools::sandboxing::with_cached_approval;
 use codex_analytics::GuardianApprovalRequestSource;
 use codex_config::types::AppToolApproval;
 use codex_hooks::PermissionRequestDecision;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::ToolDecisionSource;
 use codex_protocol::approvals::ExecApprovalKind;
 use codex_protocol::approvals::ExecPolicyAmendment;
@@ -438,7 +440,7 @@ impl ApprovalResolution {
             ReviewDecision::ApprovedMcpPolicyAmendment => {
                 error!("Tool approval received ApprovedMcpPolicyAmendment");
                 Err(ToolError::Rejected(
-                    "Error while requesting approval".to_string(),
+                    tr(current(), "Error while requesting approval").to_string(),
                 ))
             }
             ReviewDecision::NetworkPolicyAmendment {
@@ -625,9 +627,10 @@ impl Session {
             )
             .await
             .unwrap_or_else(|_| {
-                Some(ReviewDecision::denied(
+                Some(ReviewDecision::denied(tr(
+                    current(),
                     "automatic approval review could not complete",
-                ))
+                )))
             })
         } else if is_network_approval {
             let review_cancel = CancellationToken::new();
@@ -645,9 +648,10 @@ impl Session {
             ));
             let decision = review.await.unwrap_or_else(|err| {
                 warn!("network Guardian review task failed: {err}");
-                Some(ReviewDecision::denied(
+                Some(ReviewDecision::denied(tr(
+                    current(),
                     "automatic approval review could not complete",
-                ))
+                )))
             });
             drop(review_cancel_guard.disarm());
             decision

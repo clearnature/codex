@@ -2,6 +2,8 @@
 
 use codex_extension_api::ExtensionFuture;
 use codex_extension_api::SynchronousApprovalReviewer;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::protocol::ReviewDecision;
 use std::sync::Arc;
 
@@ -58,7 +60,10 @@ impl ReviewAction {
     ) -> Result<&GuardianApprovalRequest, ReviewDecision> {
         let request = self.request.as_ref().map_err(|error| {
             tracing::error!(%error, "failed to build automatic approval action");
-            ReviewDecision::denied("automatic approval review could not prepare the action")
+            ReviewDecision::denied(tr(
+                current(),
+                "automatic approval review could not prepare the action",
+            ))
         })?;
         if let GuardianApprovalRequest::WriteStdin { environment_id, .. } = request
             && !context

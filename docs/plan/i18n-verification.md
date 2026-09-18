@@ -1403,3 +1403,31 @@ span 名（`trace_span` 不在首版良性名单里 —— 只写了 `span`/`ins
 
 core 全量甄别存量：**413 → 78 → 40**（`session/turn.rs` 6 → 0）。
 回归检查：`session/mod.rs`、`guardian/review.rs`、`codex_thread.rs` 的 `--suspect` 仍为 0。
+
+### 12.33 第 29 轮：core 的**两个隐形工作类清零**，以及「包住一个会藏起另一个」
+
+本轮把 `--suspect` 在 core 的最后 40 条存量逐条甄别完（13 处译、27 处登记；见下），
+于是 core 现在有两个「0」——**但没有立刻宣布干净**，因为过程中又冒出**第三类隐形**。
+
+**第三类隐形（本轮实测）**：把某个字面量包上 `tr(...)` 之后，默认报告的判定用的是
+`is_wrapped` 的**宽松规则**（向上看 4 行里有没有 `tr(`），于是**紧邻的另一个仍未包的字面量**
+会被连带判成「已包」，从候选清单里**消失**。本轮我包了 `guardian/assessment.rs` 与
+`unix_escalation.rs` 的站点后，它们的兄弟站点
+（`Auto-review returned a deny decision without a rationale.`、`User cancelled execution`）
+就是这样不见的 —— 是 `--precise` 把它们报出来的，随后一并译掉。
+
+**判据（并入每批收尾）**：三个数一起看，缺一不可 ——
+
+| 口径 | 命令 | 期望 |
+| --- | --- | --- |
+| 候选侧 | `i18n_todo --root <root>` | 本批文件 0 且豁免数显式 |
+| 被隐藏侧 | `i18n_todo --root <root> --suspect` | 0 |
+| **被宽松规则藏起来的邻居** | `i18n_todo --root <root> --precise` 的 `hidden by the lenient rule` | 0 |
+
+第三个是**唯一**能发现「自己刚把它藏起来」的口径 —— 前两个都可能因为同一批改动而变干净。
+
+**本批甄别记录（13 处译 / 27 处登记，核心按去向判）**：`CodexErr`/`ToolError::Rejected`/
+`ReviewDecision::denied`（**返回**给调用方的决定，非 telemetry 实参 ⇒ 与 network_approval 那批的
+telemetry 情形区分开）判译；`FunctionCallError::RespondToModel`、`JsonValue::String(..)` 工具负载、
+tracing target/span 名、ID 模板、模型提示词结构、`## Planning` 这类**比对键**判不译。
+现状（本批收尾）：候选 **673**、`--suspect` **0**、`lenient-hidden` **0**。

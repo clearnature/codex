@@ -156,9 +156,10 @@ impl SlashCommand {
             SlashCommand::MemoryDrop => tr(current(), "DO NOT USE"),
             SlashCommand::MemoryUpdate => tr(current(), "DO NOT USE"),
             SlashCommand::Model => tr(current(), "choose what model and reasoning effort to use"),
-            SlashCommand::Ide => {
-                "include current selection, open files, and other context from your IDE"
-            }
+            SlashCommand::Ide => tr(
+                current(),
+                "include current selection, open files, and other context from your IDE",
+            ),
             SlashCommand::Personality => tr(current(), "choose a communication style for Codex"),
             SlashCommand::Plan => tr(current(), "switch to Plan mode"),
             SlashCommand::Goal => tr(current(), "set or view the goal for a long-running task"),
@@ -168,15 +169,16 @@ impl SlashCommand {
             ),
             SlashCommand::MultiAgents => tr(current(), "switch between this session's subagents"),
             SlashCommand::Side | SlashCommand::Btw => {
-                "start a side conversation in an ephemeral fork"
+                tr(current(), "start a side conversation in an ephemeral fork")
             }
             SlashCommand::Permissions => tr(current(), "choose what Codex is allowed to do"),
             SlashCommand::Keymap => tr(current(), "remap TUI shortcuts"),
             SlashCommand::Vim => tr(current(), "toggle Vim mode for the composer"),
             SlashCommand::ElevateSandbox => tr(current(), "set up elevated agent sandbox"),
-            SlashCommand::SandboxReadRoot => {
-                "let sandbox read a directory: /sandbox-add-read-dir <absolute_path>"
-            }
+            SlashCommand::SandboxReadRoot => tr(
+                current(),
+                "let sandbox read a directory: /sandbox-add-read-dir <absolute_path>",
+            ),
             SlashCommand::Experimental => tr(current(), "toggle experimental features"),
             SlashCommand::AutoReview => tr(
                 current(),

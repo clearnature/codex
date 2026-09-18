@@ -559,7 +559,7 @@ impl BedrockState {
                     }) {
                         tr(current(), "Use your existing Amazon Bedrock API key")
                     } else {
-                        "Use your existing AWS credentials"
+                        tr(current(), "Use your existing AWS credentials")
                     };
                     (
                         tr(current(), "Continue with detected credentials").to_string(),
@@ -593,10 +593,14 @@ impl BedrockState {
                 ),
                 BedrockMethod::EnvironmentInstructions => (
                     tr(current(), "Environment variables").to_string(),
-                    "Configure AWS credentials in your environment, then return here.".to_string(),
+                    tr(
+                        current(),
+                        "Configure AWS credentials in your environment, then return here.",
+                    )
+                    .to_string(),
                 ),
                 BedrockMethod::ApiKey => (
-                    "Bedrock API key".to_string(),
+                    tr(current(), "Bedrock API key").to_string(),
                     tr(current(), "Enter a Bedrock API key").to_string(),
                 ),
             };

@@ -6589,6 +6589,27 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     // style as the neighbours that were already translated (" to review hooks; ").
     (" to view hooks; ", " 查看钩子；"),
     (" to trust; ", " 信任；"),
+    // Slash-command descriptions and Bedrock onboarding leftovers
+    // (`slash_command.rs`, `onboarding/bedrock.rs`). The neighbours in the same
+    // match arms were already translated; these were not. `Bedrock API key`
+    // stays verbatim like the rest of that block (see the note above).
+    (
+        "include current selection, open files, and other context from your IDE",
+        "包含当前选中内容、打开的文件以及来自IDE的其他上下文",
+    ),
+    (
+        "start a side conversation in an ephemeral fork",
+        "在临时分叉中开始一段旁支对话",
+    ),
+    (
+        "let sandbox read a directory: /sandbox-add-read-dir <absolute_path>",
+        "让沙箱读取一个目录：/sandbox-add-read-dir <absolute_path>",
+    ),
+    (
+        "Configure AWS credentials in your environment, then return here.",
+        "在你的环境中配置AWS凭据，然后回到这里。",
+    ),
+    ("Bedrock API key", "Bedrock API key"),
 ];
 
 /// English source text -> Simplified Chinese.

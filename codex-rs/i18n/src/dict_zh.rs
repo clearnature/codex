@@ -6881,6 +6881,82 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "glob_scan_max_depth must be at least 1",
         "glob_scan_max_depth至少为1",
     ),
+    // Thread-manager errors (`core/src/thread_manager.rs`). All 19 were wrapped
+    // in `CodexErr::*`, the user-facing error type, so the "does it start with
+    // failed to" shape is not the boundary here.
+    (
+        "turn environment working directory exceeds the maximum size",
+        "回合环境的工作目录超出最大长度",
+    ),
+    (
+        "duplicate turn environment id `{0}`",
+        "重复的回合环境id`{0}`",
+    ),
+    ("unknown turn environment id `{0}`", "未知的回合环境id`{0}`"),
+    (
+        "ephemeral thread does not support metadata updates: {0}",
+        "临时线程不支持元数据更新：{0}",
+    ),
+    (
+        "ephemeral thread does not support section moves: {0}",
+        "临时线程不支持区段移动：{0}",
+    ),
+    (
+        "failed to load thread-spawn descendants: {0}",
+        "加载线程派生后代失败：{0}",
+    ),
+    (
+        "internal sessions require an internal session source",
+        "内部会话需要内部会话来源",
+    ),
+    (
+        "failed to read subagent fork source {0}: {1}",
+        "读取子代理分叉源{0}失败：{1}",
+    ),
+    (
+        "thread {0} is not a recorded multi-agent v2 child",
+        "线程{0}不是已记录的多代理v2子线程",
+    ),
+    (
+        "cannot resume multi-agent v2 child {0}: parent {1} is not loaded; resume the parent first",
+        "无法恢复多代理v2子线程{0}：父线程{1}未加载；请先恢复父线程",
+    ),
+    (
+        "failed to read stored thread {0}: invalid thread-store request: {1}",
+        "读取已存储线程{0}失败：无效的线程存储请求：{1}",
+    ),
+    (
+        "failed to read stored thread {0}: {1}",
+        "读取已存储线程{0}失败：{1}",
+    ),
+    (
+        "failed to load model context for thread {0}: {1}",
+        "加载线程{0}的模型上下文失败：{1}",
+    ),
+    (
+        "reserved thread ID cannot be used when resuming a thread",
+        "恢复线程时不能使用保留的线程ID",
+    ),
+    (
+        "thread {0} is already running with a different rollout path",
+        "线程{0}已在以不同的rollout路径运行",
+    ),
+    (
+        "thread {0} did not include persisted history",
+        "线程{0}未包含已持久化的历史",
+    ),
+    (
+        "failed to read thread by rollout path: {0}",
+        "按rollout路径读取线程失败：{0}",
+    ),
+    (
+        "thread metadata update is not supported by this store: {0}",
+        "此存储不支持线程元数据更新：{0}",
+    ),
+    (
+        "failed to update thread metadata {0}: {1}",
+        "更新线程元数据{0}失败：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

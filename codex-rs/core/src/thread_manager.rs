@@ -39,6 +39,9 @@ use codex_features::Feature;
 use codex_history::InitialHistory;
 use codex_history::ResumedHistory;
 use codex_history::RolloutItem;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
 use codex_login::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
@@ -776,22 +779,28 @@ impl ThreadManager {
             if environment.cwd.inferred_native_path_string().len() > MAX_TURN_ENVIRONMENT_CWD_BYTES
             {
                 return Err(CodexErr::InvalidRequest(
-                    "turn environment working directory exceeds the maximum size".to_string(),
+                    tr(
+                        current(),
+                        "turn environment working directory exceeds the maximum size",
+                    )
+                    .to_string(),
                 ));
             }
             if !environment_ids.insert(environment.environment_id.as_str()) {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "duplicate turn environment id `{}`",
-                    environment.environment_id
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "duplicate turn environment id `{0}`",
+                    &[&environment.environment_id],
                 )));
             }
             self.state
                 .environment_manager
                 .get_environment(&environment.environment_id)
                 .ok_or_else(|| {
-                    CodexErr::InvalidRequest(format!(
-                        "unknown turn environment id `{}`",
-                        environment.environment_id
+                    CodexErr::InvalidRequest(tr_with(
+                        current(),
+                        "unknown turn environment id `{0}`",
+                        &[&environment.environment_id],
                     ))
                 })?;
         }
@@ -847,8 +856,10 @@ impl ThreadManager {
     ) -> CodexResult<StoredThread> {
         if let Ok(thread) = self.get_thread(thread_id).await {
             if thread.config_snapshot().await.ephemeral {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "ephemeral thread does not support metadata updates: {thread_id}"
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "ephemeral thread does not support metadata updates: {0}",
+                    &[&thread_id.to_string()],
                 )));
             }
             return thread
@@ -895,8 +906,10 @@ impl ThreadManager {
     ) -> CodexResult<()> {
         if let Ok(thread) = self.get_thread(thread_id).await {
             if thread.config_snapshot().await.ephemeral {
-                return Err(CodexErr::InvalidRequest(format!(
-                    "ephemeral thread does not support section moves: {thread_id}"
+                return Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "ephemeral thread does not support section moves: {0}",
+                    &[&thread_id.to_string()],
                 )));
             }
             // Explicit placement must work before the first turn materializes the thread.
@@ -930,7 +943,11 @@ impl ThreadManager {
                 .list_thread_spawn_descendants(thread_id, /*status_filter*/ None)
                 .await
                 .map_err(|err| {
-                    CodexErr::Fatal(format!("failed to load thread-spawn descendants: {err}"))
+                    CodexErr::Fatal(tr_with(
+                        current(),
+                        "failed to load thread-spawn descendants: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?
             {
                 if seen_thread_ids.insert(descendant_id) {
@@ -992,7 +1009,11 @@ impl ThreadManager {
     ) -> CodexResult<NewThread> {
         if !matches!(options.session_source, Some(SessionSource::Internal(_))) {
             return Err(CodexErr::InvalidRequest(
-                "internal sessions require an internal session source".to_string(),
+                tr(
+                    current(),
+                    "internal sessions require an internal session source",
+                )
+                .to_string(),
             ));
         }
         let parent = self.get_thread(parent_thread_id).await?;
@@ -1053,8 +1074,10 @@ impl ThreadManager {
             )
             .await
             .map_err(|err| {
-                CodexErr::Fatal(format!(
-                    "failed to read subagent fork source {forked_from_thread_id}: {err}"
+                CodexErr::Fatal(tr_with(
+                    current(),
+                    "failed to read subagent fork source {0}: {1}",
+                    &[&forked_from_thread_id.to_string(), &err.to_string()],
                 ))
             })?;
         let history = stored_thread_to_initial_history(stored_thread, fork_source.rollout_path())?;
@@ -1109,14 +1132,14 @@ impl ThreadManager {
             })
             .await?;
         let Some(parent_thread_id) = stored_thread.parent_thread_id else {
-            return Err(CodexErr::InvalidRequest(format!(
-                "thread {child_thread_id} is not a recorded multi-agent v2 child"
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "thread {0} is not a recorded multi-agent v2 child",
+                &[&child_thread_id.to_string()],
             )));
         };
         let parent = self.get_thread(parent_thread_id).await.map_err(|_| {
-            CodexErr::InvalidRequest(format!(
-                "cannot resume multi-agent v2 child {child_thread_id}: parent {parent_thread_id} is not loaded; resume the parent first"
-            ))
+            CodexErr::InvalidRequest(tr_with(current(), "cannot resume multi-agent v2 child {0}: parent {1} is not loaded; resume the parent first", &[&child_thread_id.to_string(), &parent_thread_id.to_string()]))
         })?;
         let config = parent.session.get_config().await.as_ref().clone();
         let agent_control = parent.session.services.agent_control.clone();
@@ -1542,12 +1565,18 @@ impl ThreadManagerState {
                     if message.starts_with("no rollout found for thread id ") {
                         CodexErr::ThreadNotFound(thread_id)
                     } else {
-                        CodexErr::Fatal(format!(
-                            "failed to read stored thread {thread_id}: invalid thread-store request: {message}"
+                        CodexErr::Fatal(tr_with(
+                            current(),
+                            "failed to read stored thread {0}: invalid thread-store request: {1}",
+                            &[&thread_id.to_string(), &message],
                         ))
                     }
                 }
-                err => CodexErr::Fatal(format!("failed to read stored thread {thread_id}: {err}")),
+                err => CodexErr::Fatal(tr_with(
+                    current(),
+                    "failed to read stored thread {0}: {1}",
+                    &[&thread_id.to_string(), &err.to_string()],
+                )),
             })
     }
 
@@ -1563,8 +1592,10 @@ impl ThreadManagerState {
                 ThreadStoreError::ThreadNotFound { thread_id } => {
                     CodexErr::ThreadNotFound(thread_id)
                 }
-                err => CodexErr::Fatal(format!(
-                    "failed to load model context for thread {thread_id}: {err}"
+                err => CodexErr::Fatal(tr_with(
+                    current(),
+                    "failed to load model context for thread {0}: {1}",
+                    &[&thread_id.to_string(), &err.to_string()],
                 )),
             })
     }
@@ -1937,7 +1968,11 @@ impl ThreadManagerState {
         let is_resumed_thread = matches!(&initial_history, InitialHistory::Resumed(_));
         if reserved_thread_id.is_some() && matches!(&initial_history, InitialHistory::Resumed(_)) {
             return Err(CodexErr::InvalidRequest(
-                "reserved thread ID cannot be used when resuming a thread".to_string(),
+                tr(
+                    current(),
+                    "reserved thread ID cannot be used when resuming a thread",
+                )
+                .to_string(),
             ));
         }
         if let InitialHistory::Resumed(resumed) = &initial_history {
@@ -1947,9 +1982,10 @@ impl ThreadManagerState {
                     if let Some(requested_rollout_path) = resumed.rollout_path.as_deref()
                         && thread.rollout_path().as_deref() != Some(requested_rollout_path)
                     {
-                        return Err(CodexErr::InvalidRequest(format!(
-                            "thread {} is already running with a different rollout path",
-                            resumed.conversation_id
+                        return Err(CodexErr::InvalidRequest(tr_with(
+                            current(),
+                            "thread {0} is already running with a different rollout path",
+                            &[&resumed.conversation_id.to_string()],
                         )));
                     }
                     return Ok(NewThread {
@@ -2178,8 +2214,10 @@ fn stored_thread_to_initial_history(
 ) -> CodexResult<InitialHistory> {
     let thread_id = stored_thread.thread_id;
     let history = stored_thread.history.ok_or_else(|| {
-        CodexErr::Fatal(format!(
-            "thread {thread_id} did not include persisted history"
+        CodexErr::Fatal(tr_with(
+            current(),
+            "thread {0} did not include persisted history",
+            &[&thread_id.to_string()],
         ))
     })?;
     Ok(InitialHistory::Resumed(ResumedHistory {
@@ -2193,7 +2231,11 @@ fn thread_store_rollout_read_error(err: ThreadStoreError) -> CodexErr {
     match err {
         ThreadStoreError::ThreadNotFound { thread_id } => CodexErr::ThreadNotFound(thread_id),
         ThreadStoreError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
-        err => CodexErr::Fatal(format!("failed to read thread by rollout path: {err}")),
+        err => CodexErr::Fatal(tr_with(
+            current(),
+            "failed to read thread by rollout path: {0}",
+            &[&err.to_string()],
+        )),
     }
 }
 
@@ -2201,11 +2243,15 @@ fn thread_store_metadata_update_error(thread_id: ThreadId, err: ThreadStoreError
     match err {
         ThreadStoreError::ThreadNotFound { thread_id } => CodexErr::ThreadNotFound(thread_id),
         ThreadStoreError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
-        ThreadStoreError::Unsupported { operation } => CodexErr::UnsupportedOperation(format!(
-            "thread metadata update is not supported by this store: {operation}"
+        ThreadStoreError::Unsupported { operation } => CodexErr::UnsupportedOperation(tr_with(
+            current(),
+            "thread metadata update is not supported by this store: {0}",
+            &[&operation],
         )),
-        err => CodexErr::Fatal(format!(
-            "failed to update thread metadata {thread_id}: {err}"
+        err => CodexErr::Fatal(tr_with(
+            current(),
+            "failed to update thread metadata {0}: {1}",
+            &[&thread_id.to_string(), &err.to_string()],
         )),
     }
 }

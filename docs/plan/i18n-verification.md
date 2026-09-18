@@ -1490,3 +1490,40 @@ python3 scripts/i18n_todo.py --root codex-rs/core --root codex-rs/tui --root cod
 `docs/plan/i18n-verification.md` 的这条建议与人类待裁决项同源，暂不实施。
 
 **四口径现状（core）**：候选 **652**、`--suspect` **0**、`--precise` 的 lenient-hidden **0**、`--traps` **0**（全仓也是 0）。
+
+### 12.35 第 41 轮：三个文件的**去向档案**与一条判据修正（协议字段 ≠ 不可译）
+
+本轮用一次只读调查（子代理）为三个文件产出了逐候选去向档案，结论如下（每条都带 `文件:行` 去向）：
+
+| 文件 | 候选 | 判定 |
+| --- | ---: | --- |
+| `tools/orchestrator.rs` | 6 | **全部译**：去向有两条 —— ① `ToolError::Rejected` → `tools/events.rs` 的 `ToolEventStage::Failure(Rejected)` → `ExecCommandEnd` 的 stderr/aggregated_output → TUI `CommandOutput`（`tui/src/chatwidget/command_lifecycle.rs:341,395`）；② `ExecApprovalRequestEvent.reason` → `tui/src/bottom_pane/approval_overlay.rs:735` 的 `Reason: ` 行 |
+| `unified_exec/process_manager.rs` | 6 | 1 译（`:1315` 同串在字典里已有译文，且属 windows 分支 ⇒ 另需平台复核）、**4 不确定**、1 平台不可验 |
+| `session/mcp.rs` | 11 | **全部不译**：5 条只进 `tracing`/`anyhow` 内部链；6 条 Guardian Decline 串只经 `mcp.rs:986` 的 `tracing::warn`，返回值是**无消息**的 decline，不进任何用户面或协议载荷 |
+
+#### 判据修正：**协议字段 ≠ 不可译**，判据是「有没有 UI 渲染它」
+
+档案里最硬的一条发现：`ExecApprovalRequestEvent.reason` 是 `codex_protocol` 的**协议字段**，
+但 TUI 的审批浮层会**逐字渲染**它（`approval_overlay.rs:735` 的 `Reason: ` 行）⇒ 它该**译**。
+这修正了我此前一条过粗的推理（「进协议类型 ⇒ 不译」，见 §12.34 与 step_activation 那批）。
+
+处置：判据改为 **「该串有没有渲染方」**——协议类型只说明它跨进程传递，不说明没人渲染它。
+据此**复核** step_activation 那批（15 条 `TurnSettingsUpdateOutcome::Rejected { reason }`）：
+该 `reason` 目前**没有**渲染方（全仓无生产提交方，唯一非单测调用是集成测试且只断言变体），
+故判定不变；但每行已写明「若日后有 UI 直接渲染 reason，本判定需复核」，现在这条注记有了
+**具体的复核判据**（找渲染方，而不是看它是不是协议类型）。
+
+#### 一处留待人类裁决的张力
+
+`tools/orchestrator.rs:549` 的 `"command failed; retry without sandbox?"` 同时出现在两处：
+① 用户审批理由（`ExecApprovalRequestEvent.reason` → TUI 渲染，倾向「译」）；
+② **guardian 提示词**的 `Retry reason:` 段（`guardian/prompt.rs:89` → `:273-274`，属喂模型上下文，倾向「不译」）。
+按「同一串在一个语言下只能有一个 key」的机制，二者无法同时满足。**建议**：按①译（用户面优先），
+并在 guardian 侧接受中文理由出现在模型提示里；若人类认为模型上下文优先，则改为不译并把该串
+从审批理由路径上摘出（另设一个英文常量）。该问题已列入待裁决。
+
+#### 未完成项（明确记录，不假装）
+
+`unified_exec/process_manager.rs` 的 4 条「不确定」（`:613`/`:851`/`:1265`/`:1467`）**未判**：
+它们同时存在 `FunctionCallError::RespondToModel`（回模型）与 `ToolError::Rejected → 用户面` 两条真实路径，
+要定案必须先确认「哪条 spawn 路径产生的这个 err」。留到该文件自己的批次，届时按调用路径逐条定。

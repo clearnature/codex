@@ -7343,6 +7343,34 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "unified_exec zsh-fork is not supported for remote environments",
         "远程环境不支持unified_exec zsh-fork",
     ),
+    (
+        "attachment-owned network policy requires a remote executor",
+        "由附件拥有的网络策略需要远程执行器",
+    ),
+    (
+        "environment network restrictions must use network_policy",
+        "环境网络限制必须使用network_policy",
+    ),
+    (
+        "environment command policy cannot contain allow rules",
+        "环境命令策略不能包含允许规则",
+    ),
+    (
+        "invalid environment network policy: {0}",
+        "无效的环境网络策略：{0}",
+    ),
+    (
+        "environment readiness contains more than {0} selected capability roots",
+        "环境就绪信息包含超过{0}个选定的能力根",
+    ),
+    (
+        "selected capability roots must have unique non-empty IDs and belong to environment `{0}`",
+        "选定的能力根必须有唯一且非空的ID，并属于环境`{0}`",
+    ),
+    (
+        "environment `{0}` is not selected on this thread with the requested workspace",
+        "本线程未选择与环境`{0}`匹配的工作区",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

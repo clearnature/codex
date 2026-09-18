@@ -4,6 +4,9 @@ use codex_exec_server::LOCAL_ENVIRONMENT_ID;
 use codex_exec_server::MAX_SELECTED_CAPABILITY_ROOTS;
 use codex_exec_server::SelectedCapabilityRootsStatus;
 use codex_execpolicy::Policy;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::capabilities::CapabilityRootLocation;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
@@ -48,7 +51,11 @@ fn validate_environment_config(
     if let Some(policy) = config.network_policy.as_ref() {
         if selection.environment_id == LOCAL_ENVIRONMENT_ID {
             return Err(CodexErr::InvalidRequest(
-                "attachment-owned network policy requires a remote executor".to_string(),
+                tr(
+                    current(),
+                    "attachment-owned network policy requires a remote executor",
+                )
+                .to_string(),
             ));
         }
         if config
@@ -57,7 +64,11 @@ fn validate_environment_config(
             .is_some_and(|policy| !policy.as_ref().network_rules().is_empty())
         {
             return Err(CodexErr::InvalidRequest(
-                "environment network restrictions must use network_policy".to_string(),
+                tr(
+                    current(),
+                    "environment network restrictions must use network_policy",
+                )
+                .to_string(),
             ));
         }
         // Validate owner policy on its own; controller compatibility is checked at execution.
@@ -68,12 +79,18 @@ fn validate_environment_config(
             &Policy::empty(),
         )
         .map_err(|error| {
-            CodexErr::InvalidRequest(format!("invalid environment network policy: {error}"))
+            CodexErr::InvalidRequest(tr_with(
+                current(),
+                "invalid environment network policy: {0}",
+                &[&error.to_string()],
+            ))
         })?;
     }
     if config.selected_capability_roots.len() > MAX_SELECTED_CAPABILITY_ROOTS {
-        return Err(CodexErr::InvalidRequest(format!(
-            "environment readiness contains more than {MAX_SELECTED_CAPABILITY_ROOTS} selected capability roots"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "environment readiness contains more than {0} selected capability roots",
+            &[&MAX_SELECTED_CAPABILITY_ROOTS.to_string()],
         )));
     }
     if config
@@ -82,7 +99,11 @@ fn validate_environment_config(
         .is_some_and(|policy| !policy.as_ref().get_allowed_prefixes().is_empty())
     {
         return Err(CodexErr::InvalidRequest(
-            "environment command policy cannot contain allow rules".to_string(),
+            tr(
+                current(),
+                "environment command policy cannot contain allow rules",
+            )
+            .to_string(),
         ));
     }
 
@@ -93,9 +114,10 @@ fn validate_environment_config(
             || environment_id != &selection.environment_id
             || !root_ids.insert(root.id.as_str())
         {
-            return Err(CodexErr::InvalidRequest(format!(
-                "selected capability roots must have unique non-empty IDs and belong to environment `{}`",
-                selection.environment_id
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "selected capability roots must have unique non-empty IDs and belong to environment `{0}`",
+                &[&selection.environment_id.to_string()],
             )));
         }
     }
@@ -161,9 +183,10 @@ impl Session {
                 && environment.cwd == selection.cwd
                 && environment.workspace_roots == selection.workspace_roots
         }) else {
-            return Err(CodexErr::InvalidRequest(format!(
-                "environment `{}` is not selected on this thread with the requested workspace",
-                selection.environment_id
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "environment `{0}` is not selected on this thread with the requested workspace",
+                &[&selection.environment_id.to_string()],
             )));
         };
 

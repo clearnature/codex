@@ -98,7 +98,15 @@ def is_wrapped_precise(
     if start is None:
         return False
     raw = lines[finding["line"] - 1] if 0 < finding["line"] <= len(lines) else ""
-    column = raw.find(finding["value"])
+    # Locate the literal itself, not the first occurrence of its text: the same
+    # text also appears *outside* quotes when an identifier repeats it
+    # (`SubAgentActivityKind::Started => (tr(current(), "Started ")`), and
+    # anchoring there reports an already-wrapped literal as remaining work. The
+    # scanner stores the raw source between the quotes, so the quoted form is
+    # the exact needle.
+    column = raw.find(f'"{finding["value"]}"')
+    if column < 0:
+        column = raw.find(finding["value"])
     if column < 0:
         column = raw.find('"')
     if column < 0:

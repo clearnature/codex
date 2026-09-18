@@ -41,6 +41,9 @@ use crate::unified_exec::UnifiedExecError;
 use crate::unified_exec::UnifiedExecProcess;
 use crate::unified_exec::UnifiedExecProcessManager;
 use codex_core_plugins::PluginMetricsSidecar;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::ManagedNetworkSandboxContext;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::error::CodexErr;
@@ -133,7 +136,7 @@ fn build_unified_exec_sandbox_command(
 ) -> Result<SandboxCommand, ToolError> {
     let (program, args) = command
         .split_first()
-        .ok_or_else(|| ToolError::Rejected("command args are empty".to_string()))?;
+        .ok_or_else(|| ToolError::Rejected(tr(current(), "command args are empty").to_string()))?;
     Ok(SandboxCommand {
         program: program.clone().into(),
         args: args.to_vec(),
@@ -306,8 +309,11 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
                     launch.policy_decision_timeout_ms =
                         Some(u64::try_from(timeout.as_millis()).map_err(|_| {
                             ToolError::Rejected(
-                                "remote network policy decision timeout exceeds protocol limit"
-                                    .to_string(),
+                                tr(
+                                    current(),
+                                    "remote network policy decision timeout exceeds protocol limit",
+                                )
+                                .to_string(),
                             )
                         })?);
                 }
@@ -320,14 +326,15 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
                             .info()
                             .await
                             .map_err(|err| {
-                                ToolError::Codex(CodexErr::Io(io::Error::other(format!(
-                                    "failed to query exec-server capabilities: {err}"
+                                ToolError::Codex(CodexErr::Io(io::Error::other(tr_with(
+                                    current(),
+                                    "failed to query exec-server capabilities: {0}",
+                                    &[&err.to_string()],
                                 ))))
                             })?;
                     if !environment_info.capabilities.network_proxy_launch {
                         return Err(ToolError::Rejected(
-                            "selected exec-server does not support executor-local network proxy launches"
-                                .to_string(),
+                            tr(current(), "selected exec-server does not support executor-local network proxy launches").to_string(),
                         ));
                     }
                     (env, None, Some(launch))
@@ -340,9 +347,13 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
                         Some(&req.turn_environment.selection.environment_id),
                     )
                     .map_err(|err| {
-                        ToolError::Codex(CodexErr::Io(io::Error::other(format!(
-                            "failed to prepare network proxy for environment `{}`: {err}",
-                            req.turn_environment.selection.environment_id
+                        ToolError::Codex(CodexErr::Io(io::Error::other(tr_with(
+                            current(),
+                            "failed to prepare network proxy for environment `{0}`: {1}",
+                            &[
+                                &req.turn_environment.selection.environment_id.to_string(),
+                                &err.to_string(),
+                            ],
                         ))))
                     })?;
                 (prepared.env, Some(prepared.sandbox_context), None)
@@ -447,7 +458,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
             )
             .map_err(|error| match error {
                 ToolError::Rejected(_) => {
-                    ToolError::Rejected("missing command line for PTY".to_string())
+                    ToolError::Rejected(tr(current(), "missing command line for PTY").to_string())
                 }
                 error @ ToolError::Codex(_) => error,
             })?;
@@ -467,8 +478,11 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
                 Some(prepared) => {
                     if req.turn_environment.environment.is_remote() {
                         return Err(ToolError::Rejected(
-                            "unified_exec zsh-fork is not supported for remote environments"
-                                .to_string(),
+                            tr(
+                                current(),
+                                "unified_exec zsh-fork is not supported for remote environments",
+                            )
+                            .to_string(),
                         ));
                     }
                     let process = self
@@ -515,7 +529,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
         )
         .map_err(|error| match error {
             ToolError::Rejected(_) => {
-                ToolError::Rejected("missing command line for PTY".to_string())
+                ToolError::Rejected(tr(current(), "missing command line for PTY").to_string())
             }
             error @ ToolError::Codex(_) => error,
         })?;

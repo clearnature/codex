@@ -123,3 +123,15 @@ cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pi
 实测两次假绿：后台 job 报 `exit code: 0` 而 cargo 实际 101（0 来自 `| tail`）；末尾接 `echo`
 让 `expectFail` 的负向控制判成「没红」。把「输出里有期待的片段」当**内容**证据、
 退出码当**状态**证据，两个都要（known_issues `pipe-masks-exit-code`，模式层）。
+
+### 8.4 一次改动的多个站点可能落在**不同报表**里 —— 控制要断言「看得见它的那个」
+
+`i18n_todo` 的四个口径覆盖**不同的桶**：候选报表只看 `candidates` 桶；`--suspect` 看
+`internal:assert`/`internal:log`；`--precise` 报「被宽松规则藏起来的邻居」；`--traps` 看匹配键。
+同一个批次的站点**可能分散在多个桶**里（实测：`tools/runtimes/unified_exec.rs` 这批 8 个站点里，
+两条 `missing command line for PTY` 在候选桶，而 `failed to query exec-server capabilities: {err}`
+因为上方有日志形态的调用被判进 `internal:log`）。
+
+所以负向控制不能只盯一个报表数数：**先确认该站点落哪个桶，再断言那个报表**（或断言多个报表的并集里
+出现它）。本轮实测教训：我按「候选报表应报 3 条」断言，实际候选侧只报 2 条 + `--suspect` 报 1 条 ⇒
+控制被判成"没红"，而这**不是**工具失灵，是断言盯错了报表。

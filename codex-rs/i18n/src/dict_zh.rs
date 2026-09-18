@@ -7326,6 +7326,23 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Failed to shutdown thread persistence",
         "关闭线程持久化失败",
     ),
+    (
+        "remote network policy decision timeout exceeds protocol limit",
+        "远程网络策略决策超时超过协议限制",
+    ),
+    (
+        "selected exec-server does not support executor-local network proxy launches",
+        "所选的exec-server不支持执行器本地网络代理启动",
+    ),
+    (
+        "failed to query exec-server capabilities: {0}",
+        "查询exec-server能力失败：{0}",
+    ),
+    ("missing command line for PTY", "缺少PTY的命令行"),
+    (
+        "unified_exec zsh-fork is not supported for remote environments",
+        "远程环境不支持unified_exec zsh-fork",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

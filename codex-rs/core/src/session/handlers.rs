@@ -4,6 +4,9 @@ use crate::realtime_conversation::handle_speech as handle_realtime_conversation_
 use crate::realtime_conversation::handle_start as handle_realtime_conversation_start;
 use crate::realtime_conversation::handle_text as handle_realtime_conversation_text;
 use async_channel::Receiver;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_otel::set_parent_from_w3c_trace_context;
 use codex_protocol::protocol::Submission;
 use tracing::Instrument;
@@ -187,7 +190,11 @@ pub async fn exec_approval(
             .persist_execpolicy_amendment(proposed_execpolicy_amendment)
             .await
     {
-        let message = format!("Failed to apply execpolicy amendment: {err}");
+        let message = tr_with(
+            current(),
+            "Failed to apply execpolicy amendment: {0}",
+            &[&err.to_string()],
+        );
         tracing::warn!("{message}");
         let warning = EventMsg::Warning(WarningEvent { message });
         sess.send_event_raw(Event {
@@ -257,7 +264,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 misalignment: None,
-                message: "num_turns must be >= 1".to_string(),
+                message: tr(current(), "num_turns must be >= 1").to_string(),
                 codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
             }),
         })
@@ -271,7 +278,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 misalignment: None,
-                message: "Cannot rollback while a turn is in progress.".to_string(),
+                message: tr(current(), "Cannot rollback while a turn is in progress.").to_string(),
                 codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
             }),
         })
@@ -282,14 +289,18 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
     let turn_context = sess
         .new_turn_with_default_settings(sub_id, Default::default())
         .await;
-    let live_thread = match sess.live_thread_for_persistence("rollback thread") {
+    let live_thread = match sess.live_thread_for_persistence(tr(current(), "rollback thread")) {
         Ok(live_thread) => live_thread,
         Err(_) => {
             sess.send_event_raw(Event {
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     misalignment: None,
-                    message: "thread rollback requires persisted thread history".to_string(),
+                    message: tr(
+                        current(),
+                        "thread rollback requires persisted thread history",
+                    )
+                    .to_string(),
                     codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
                 }),
             })
@@ -302,7 +313,11 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: turn_context.sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 misalignment: None,
-                message: format!("failed to flush thread persistence for rollback replay: {err}"),
+                message: tr_with(
+                    current(),
+                    "failed to flush thread persistence for rollback replay: {0}",
+                    &[&err.to_string()],
+                ),
                 codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
             }),
         })
@@ -317,7 +332,11 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     misalignment: None,
-                    message: format!("failed to load thread history for rollback replay: {err}"),
+                    message: tr_with(
+                        current(),
+                        "failed to load thread history for rollback replay: {0}",
+                        &[&err.to_string()],
+                    ),
                     codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
                 }),
             })
@@ -351,9 +370,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
         sess.send_event(
             turn_context.as_ref(),
             EventMsg::Warning(WarningEvent {
-                message: format!(
-                    "Rolled the thread back, but failed to save the rollback marker. Codex will continue retrying. Error: {err}"
-                ),
+                message: tr_with(current(), "Rolled the thread back, but failed to save the rollback marker. Codex will continue retrying. Error: {0}", &[&err.to_string()]),
             }),
         )
         .await;
@@ -370,7 +387,8 @@ pub(super) async fn persist_thread_memory_mode_update(
     sess: &Arc<Session>,
     mode: ThreadMemoryMode,
 ) -> anyhow::Result<()> {
-    let live_thread = sess.live_thread_for_persistence("update thread memory mode")?;
+    let live_thread =
+        sess.live_thread_for_persistence(tr(current(), "update thread memory mode"))?;
     live_thread.persist(PersistContext::Standard).await?;
     live_thread.flush().await?;
     live_thread
@@ -468,7 +486,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
             id: sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 misalignment: None,
-                message: "Failed to shutdown thread persistence".to_string(),
+                message: tr(current(), "Failed to shutdown thread persistence").to_string(),
                 codex_error_info: Some(CodexErrorInfo::Other),
             }),
         };

@@ -7295,6 +7295,37 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "stderr pipe was unexpectedly not available",
         "stderr管道意外不可用",
     ),
+    (
+        "Failed to apply execpolicy amendment: {0}",
+        "应用execpolicy修订失败：{0}",
+    ),
+    ("num_turns must be >= 1", "num_turns必须>=1"),
+    (
+        "Cannot rollback while a turn is in progress.",
+        "回合进行中无法回滚。",
+    ),
+    ("rollback thread", "回滚线程"),
+    (
+        "thread rollback requires persisted thread history",
+        "线程回滚需要已持久化的线程历史",
+    ),
+    (
+        "failed to flush thread persistence for rollback replay: {0}",
+        "为回滚重放刷新线程持久化失败：{0}",
+    ),
+    (
+        "failed to load thread history for rollback replay: {0}",
+        "为回滚重放加载线程历史失败：{0}",
+    ),
+    (
+        "Rolled the thread back, but failed to save the rollback marker. Codex will continue retrying. Error: {0}",
+        "线程已回滚，但保存回滚标记失败。Codex将继续重试。错误：{0}",
+    ),
+    ("update thread memory mode", "更新线程记忆模式"),
+    (
+        "Failed to shutdown thread persistence",
+        "关闭线程持久化失败",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

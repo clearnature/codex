@@ -7371,6 +7371,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "environment `{0}` is not selected on this thread with the requested workspace",
         "本线程未选择与环境`{0}`匹配的工作区",
     ),
+    (
+        "attachment-owned network policy cannot be bypassed by sandbox escalation",
+        "由附件拥有的网络策略不能通过沙箱提权绕过",
+    ),
+    (
+        "could not prepare approval action: {0}",
+        "无法准备审批操作：{0}",
+    ),
+    (
+        "Network access to \"{0}\" is blocked by policy.",
+        "对\"{0}\"的网络访问被策略阻止。",
+    ),
+    (
+        "command failed; retry without sandbox?",
+        "命令失败；是否不用沙箱重试？",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

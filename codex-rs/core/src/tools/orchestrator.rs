@@ -25,6 +25,9 @@ use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::default_exec_approval_requirement;
 use crate::tools::sandboxing::sandbox_override_for_first_attempt;
 use crate::tools::sandboxing::unsandboxed_execution_allowed;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_otel::ToolDecisionSource;
 use codex_protocol::error::CodexErrorDetails;
 use codex_protocol::error::SandboxErr;
@@ -157,8 +160,11 @@ impl ToolOrchestrator {
                 .requires_escalated_permissions()
         {
             return Err(ToolError::Rejected(
-                "attachment-owned network policy cannot be bypassed by sandbox escalation"
-                    .to_string(),
+                tr(
+                    current(),
+                    "attachment-owned network policy cannot be bypassed by sandbox escalation",
+                )
+                .to_string(),
             ));
         }
         let workspace_roots = environment.workspace_roots();
@@ -180,7 +186,11 @@ impl ToolOrchestrator {
                     let action = tool
                         .approval_action(req, &tool_ctx.call_id)
                         .map_err(|err| {
-                            ToolError::Rejected(format!("could not prepare approval action: {err}"))
+                            ToolError::Rejected(tr_with(
+                                current(),
+                                "could not prepare approval action: {0}",
+                                &[&err.to_string()],
+                            ))
                         })?;
                     let approval_ctx = ApprovalContext {
                         review_context: GuardianReviewContext::from(&tool_ctx.step_context),
@@ -213,7 +223,11 @@ impl ToolOrchestrator {
                 let action = tool
                     .approval_action(req, &tool_ctx.call_id)
                     .map_err(|err| {
-                        ToolError::Rejected(format!("could not prepare approval action: {err}"))
+                        ToolError::Rejected(tr_with(
+                            current(),
+                            "could not prepare approval action: {0}",
+                            &[&err.to_string()],
+                        ))
                     })?;
                 let approval_ctx = ApprovalContext {
                     review_context: GuardianReviewContext::from(&tool_ctx.step_context),
@@ -400,9 +414,10 @@ impl ToolOrchestrator {
                 }
                 let retry_reason =
                     if let Some(network_approval_context) = network_approval_context.as_ref() {
-                        format!(
-                            "Network access to \"{}\" is blocked by policy.",
-                            network_approval_context.host
+                        tr_with(
+                            current(),
+                            "Network access to \"{0}\" is blocked by policy.",
+                            &[&network_approval_context.host],
                         )
                     } else {
                         build_denial_reason_from_output(output.as_ref())
@@ -422,7 +437,11 @@ impl ToolOrchestrator {
                     let action = tool
                         .approval_action(req, &tool_ctx.call_id)
                         .map_err(|err| {
-                            ToolError::Rejected(format!("could not prepare approval action: {err}"))
+                            ToolError::Rejected(tr_with(
+                                current(),
+                                "could not prepare approval action: {0}",
+                                &[&err.to_string()],
+                            ))
                         })?;
                     let approval_ctx = ApprovalContext {
                         review_context: GuardianReviewContext::from(&tool_ctx.step_context),
@@ -546,5 +565,5 @@ fn sandbox_outcome_from_tool_error(err: &ToolError) -> Option<&'static str> {
 fn build_denial_reason_from_output(_output: &ExecToolCallOutput) -> String {
     // Keep approval reason terse and stable for UX/tests, but accept the
     // output so we can evolve heuristics later without touching call sites.
-    "command failed; retry without sandbox?".to_string()
+    tr(current(), "command failed; retry without sandbox?").to_string()
 }

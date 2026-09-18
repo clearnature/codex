@@ -7415,6 +7415,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "构建网络代理失败：{0}",
     ),
     ("failed to run network proxy: {0}", "运行网络代理失败：{0}"),
+    (
+        "wait_for_environment handler received unsupported payload",
+        "wait_for_environment处理器收到不支持的负载",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

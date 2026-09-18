@@ -18,6 +18,8 @@ use codex_features::Feature;
 use codex_history::RetainedContextEvent;
 use codex_history::VerifiedAnswer;
 use codex_history::VerifiedQuestionAnswer;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::request_user_input::RequestUserInputArgs;
 use codex_tools::ToolName;
@@ -98,8 +100,10 @@ impl RequestUserInputHandler {
         let response = accepted.response;
 
         let content = serde_json::to_string(&response).map_err(|err| {
-            FunctionCallError::Fatal(format!(
-                "failed to serialize {REQUEST_USER_INPUT_TOOL_NAME} response: {err}"
+            FunctionCallError::Fatal(tr_with(
+                current(),
+                "failed to serialize request_user_input response: {0}",
+                &[&err.to_string()],
             ))
         })?;
         if turn.config.features.enabled(Feature::GuardianApproval) {

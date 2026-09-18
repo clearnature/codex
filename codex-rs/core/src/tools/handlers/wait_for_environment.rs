@@ -14,6 +14,8 @@ use crate::tools::context::boxed_tool_output;
 use crate::tools::handlers::parse_arguments;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 const WAIT_FOR_ENVIRONMENT_TOOL_NAME: &str = "wait_for_environment";
 const DEFAULT_TOOL_DESCRIPTION: &str = "Wait for a selected execution environment marked as `starting` to become available. Use this when the current task needs that environment's files, commands, or installed capabilities. Do not wait if the task can be completed using tools already available, such as connectors. Waiting may take several minutes and blocks other tool calls. If startup fails, continue without that environment.";
@@ -116,9 +118,13 @@ impl ToolExecutor<ToolInvocation> for WaitForEnvironmentHandler {
             let arguments = match payload {
                 ToolPayload::Function { arguments } => arguments,
                 _ => {
-                    return Err(FunctionCallError::Fatal(format!(
-                        "{WAIT_FOR_ENVIRONMENT_TOOL_NAME} handler received unsupported payload"
-                    )));
+                    return Err(FunctionCallError::Fatal(
+                        tr(
+                            current(),
+                            "wait_for_environment handler received unsupported payload",
+                        )
+                        .to_string(),
+                    ));
                 }
             };
             let args: WaitForEnvironmentArgs = parse_arguments(&arguments)?;

@@ -1,6 +1,8 @@
 //! Review preset selection and custom review prompt surfaces.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn open_review_popup(&mut self) {

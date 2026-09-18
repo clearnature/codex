@@ -6641,6 +6641,31 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Capture two consecutive keys for this action.",
         "为此操作连续按两个键。",
     ),
+    // Session-picker errors (`app/resume_config.rs`): the same render path
+    // (`add_session_picker_error`) is already translated in session_lifecycle.rs.
+    (
+        "Failed to determine working directory for resume: {0}",
+        "确定恢复会话的工作目录失败：{0}",
+    ),
+    (
+        "Failed to rebuild configuration for resume: {0}",
+        "为恢复会话重建配置失败：{0}",
+    ),
+    // Review popups (`chatwidget/review_popups.rs`). These 11 keys were wrapped
+    // in `tr` but absent from the dictionary: the file pulls `tr` in through
+    // `use super::*`, and codex-i18n-check only scans files whose text mentions
+    // `codex_i18n` (main.rs:134), so it never reported them missing.
+    ("Review against a base branch", "对基准分支做审查"),
+    ("(PR Style)", "（PR风格）"),
+    ("Review uncommitted changes", "审查未提交的改动"),
+    ("Review a commit", "审查某个提交"),
+    ("Custom review instructions", "自定义审查说明"),
+    ("Select a review preset", "选择审查预设"),
+    ("Select a base branch", "选择基准分支"),
+    ("Type to search branches", "输入以搜索分支"),
+    ("Select a commit to review", "选择要审查的提交"),
+    ("Type to search commits", "输入以搜索提交"),
+    ("Type instructions and press Enter", "输入说明后按回车"),
 ];
 
 /// English source text -> Simplified Chinese.

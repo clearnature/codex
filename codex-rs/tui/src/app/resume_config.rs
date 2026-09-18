@@ -4,6 +4,9 @@
 
 use super::*;
 use codex_config::types::ResumeCwdMode;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) async fn resume_config_for_target(
@@ -41,8 +44,11 @@ impl App {
             && matches!(resume_cwd_mode, Some(ResumeCwdMode::Current))
         {
             self.add_session_picker_error(
-                "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace"
-                    .to_string(),
+                tr(
+                    current(),
+                    "`tui.resume_cwd = \"current\"` requires `--cd` when using a remote workspace",
+                )
+                .to_string(),
             );
             return Err(AppRunControl::Continue);
         }
@@ -72,8 +78,10 @@ impl App {
             .await;
             match outcome {
                 Err(err) => {
-                    self.add_session_picker_error(format!(
-                        "Failed to determine working directory for resume: {err}"
+                    self.add_session_picker_error(tr_with(
+                        current(),
+                        "Failed to determine working directory for resume: {0}",
+                        &[&err.to_string()],
                     ));
                     return Err(AppRunControl::Continue);
                 }
@@ -99,8 +107,10 @@ impl App {
         {
             Ok(cfg) => cfg,
             Err(err) => {
-                self.add_session_picker_error(format!(
-                    "Failed to rebuild configuration for resume: {err}"
+                self.add_session_picker_error(tr_with(
+                    current(),
+                    "Failed to rebuild configuration for resume: {0}",
+                    &[&err.to_string()],
                 ));
                 return Err(AppRunControl::Continue);
             }

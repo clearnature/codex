@@ -363,7 +363,7 @@ impl ChatWidget {
                         crate::markdown::CopyTarget::Code { language, content } => Some((
                             language.map_or_else(
                                 || tr(current(), "Code block").to_string(),
-                                |language| format!("{language} code"),
+                                |language| tr_with(current(), "{0} code", &[&language]),
                             ),
                             content,
                             CopyFormat::PlainText,

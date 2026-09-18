@@ -649,7 +649,7 @@ impl ExternalAgentConfigMigrationScreen {
                         line: Line::from(if count_summary.is_empty() {
                             tr(current(), "      Importing: none").to_string()
                         } else {
-                            format!("      Importing: {count_summary}")
+                            tr_with(current(), "      Importing: {0}", &[&count_summary])
                         }),
                     },
                 ]

@@ -144,22 +144,25 @@ impl ChatWidget {
                 .map(Self::reasoning_effort_label)
                 .collect::<Vec<_>>()
                 .join(" and ");
-            let verb = if advanced_label.contains(" and ") {
-                "are"
-            } else {
-                "is"
-            };
             let model_path = if current_model.starts_with("codex-auto-") {
                 current_model
             } else {
                 tr_with(current(), "All models → {0}", &[&current_model])
             };
-            self.add_info_message(
-                format!(
-                    "{advanced_label} {verb} available under /model → {model_path} → More reasoning…"
-                ),
-                /*hint*/ None,
-            );
+            let message = if advanced_label.contains(" and ") {
+                tr_with(
+                    current(),
+                    "{0} are available under /model → {1} → More reasoning…",
+                    &[&advanced_label, &model_path],
+                )
+            } else {
+                tr_with(
+                    current(),
+                    "{0} is available under /model → {1} → More reasoning…",
+                    &[&advanced_label, &model_path],
+                )
+            };
+            self.add_info_message(message, /*hint*/ None);
             return true;
         }
 

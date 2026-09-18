@@ -282,7 +282,7 @@ pub(crate) fn build_keymap_action_menu_params(
     if active_binding_count == 0 {
         items.push(action_menu_item(
             tr(current(), "Set key chord"),
-            "Capture two consecutive keys for this action.".to_string(),
+            tr(current(), "Capture two consecutive keys for this action.").to_string(),
             &context,
             &action,
             KeymapEditIntent::ReplaceAll,

@@ -609,11 +609,6 @@ impl ChatWidget {
                 .map(Self::reasoning_effort_label)
                 .collect::<Vec<_>>()
                 .join(" and ");
-            let verb = if advanced_choices.len() == 1 {
-                "consumes"
-            } else {
-                "consume"
-            };
             let preset_for_action = preset;
             let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
                 tx.send(AppEvent::OpenAdvancedReasoningPopup {
@@ -622,7 +617,19 @@ impl ChatWidget {
             })];
             items.push(SelectionItem {
                 name: tr(current(), "More reasoning…").to_string(),
-                description: Some(format!("{advanced_label} {verb} usage limits faster")),
+                description: Some(if advanced_choices.len() == 1 {
+                    tr_with(
+                        current(),
+                        "{0} consumes usage limits faster",
+                        &[&advanced_label],
+                    )
+                } else {
+                    tr_with(
+                        current(),
+                        "{0} consume usage limits faster",
+                        &[&advanced_label],
+                    )
+                }),
                 is_current: is_current_model
                     && highlight_choice
                         .as_ref()

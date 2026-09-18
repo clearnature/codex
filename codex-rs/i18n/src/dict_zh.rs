@@ -6610,6 +6610,37 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "在你的环境中配置AWS凭据，然后回到这里。",
     ),
     ("Bedrock API key", "Bedrock API key"),
+    // Last blind-spot sweep. The first four pair a fragment with a variable
+    // whose value is itself English (`verb` above), so the template is a whole
+    // sentence with positional slots instead of two glued fragments (§3.6).
+    ("{0} consumes usage limits faster", "{0}更快地消耗用量限额"),
+    ("{0} consume usage limits faster", "{0}更快地消耗用量限额"),
+    (
+        "{0} is available under /model → {1} → More reasoning…",
+        "{0}可在「/model → {1} → More reasoning…」中使用",
+    ),
+    (
+        "{0} are available under /model → {1} → More reasoning…",
+        "{0}可在「/model → {1} → More reasoning…」中使用",
+    ),
+    ("{0} code", "{0}代码"),
+    ("      Importing: {0}", "      正在导入：{0}"),
+    (
+        "Search scanned first {0} sessions; more may exist",
+        "已扫描前{0}个会话；可能还有更多",
+    ),
+    (
+        " Consider removing write access for Everyone from the following folders:",
+        " 建议取消Everyone对这些文件夹的写权限：",
+    ),
+    (
+        "No root-level keymap overrides have been configured.",
+        "尚未配置根级快捷键覆盖。",
+    ),
+    (
+        "Capture two consecutive keys for this action.",
+        "为此操作连续按两个键。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

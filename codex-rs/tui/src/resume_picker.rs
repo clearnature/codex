@@ -3532,9 +3532,10 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
             return vec![tr(current(), "Searching…").italic().dim()].into();
         }
         if state.pagination.reached_scan_cap {
-            let msg = format!(
-                "Search scanned first {} sessions; more may exist",
-                state.pagination.num_scanned_files
+            let msg = tr_with(
+                current(),
+                "Search scanned first {0} sessions; more may exist",
+                &[&state.pagination.num_scanned_files.to_string()],
             );
             return vec![Span::from(msg).italic().dim()].into();
         }

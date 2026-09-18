@@ -274,7 +274,10 @@ fn build_keymap_picker_params_for_action(
         items: keymap_selection_items(
             custom_rows,
             tr(current(), "No customized shortcuts"),
-            "No root-level keymap overrides have been configured.",
+            tr(
+                current(),
+                "No root-level keymap overrides have been configured.",
+            ),
         ),
     });
 

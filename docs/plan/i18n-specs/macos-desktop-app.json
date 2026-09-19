@@ -1,0 +1,217 @@
+{
+ "file": "codex-rs/cli/src/desktop_app/mac.rs",
+ "root": "codex-rs/cli/src",
+ "translate": {
+  "20": {
+   "kind": "eprintln",
+   "args": [
+    "&app_path.display().to_string()"
+   ],
+   "zh": "正在打开桌面应用：{0}…"
+  },
+  "26": {
+   "kind": "eprintln",
+   "args": [],
+   "zh": "未找到桌面应用；正在下载安装程序…"
+  },
+  "37": {
+   "kind": "context",
+   "args": [],
+   "zh": "下载/安装桌面应用失败"
+  },
+  "39": {
+   "kind": "eprintln",
+   "args": [
+    "&installed_app.display().to_string()"
+   ],
+   "zh": "正在从{0}启动桌面应用…"
+  },
+  "105": {
+   "kind": "eprintln",
+   "args": [
+    "&workspace.display().to_string()"
+   ],
+   "zh": "正在打开工作区{0}…"
+  },
+  "115": {
+   "kind": "context",
+   "args": [],
+   "zh": "调用`open`失败"
+  },
+  "122": {
+   "kind": "bail",
+   "args": [
+    "&app_path.display().to_string()",
+    "url.as_str()",
+    "&status.to_string()"
+   ],
+   "zh": "`open -a {0} {1}` 以 {2} 退出"
+  },
+  "138": {
+   "kind": "context",
+   "args": [],
+   "zh": "校验桌面应用签名失败"
+  },
+  "145": {
+   "kind": "bail",
+   "args": [
+    "&app_path.display().to_string()",
+    "OPENAI_APPLE_TEAM_IDENTIFIER",
+    "CODEX_BUNDLE_IDENTIFIER",
+    "String::from_utf8_lossy(&output.stderr).trim()"
+   ],
+   "zh": "桌面应用位于{0}，未通过OpenAI签名校验（团队{1}，bundle{2}）：{3}"
+  },
+  "163": {
+   "kind": "context",
+   "args": [],
+   "zh": "创建临时目录失败"
+  },
+  "170": {
+   "kind": "eprintln",
+   "args": [],
+   "zh": "正在挂载桌面应用安装程序…"
+  },
+  "173": {
+   "kind": "eprintln",
+   "args": [
+    "&mount_point.display().to_string()"
+   ],
+   "zh": "安装程序已挂载到{0}。"
+  },
+  "178": {
+   "kind": "context",
+   "args": [],
+   "zh": "在已挂载的dmg中找不到Codex.app"
+  },
+  "181": {
+   "kind": "context",
+   "args": [],
+   "zh": "拒绝安装未经验证的桌面应用"
+  },
+  "189": {
+   "kind": "eprintln",
+   "args": [
+    "&mount_point.display().to_string()",
+    "&err.to_string()"
+   ],
+   "zh": "警告：无法卸载{0}处的dmg：{1}"
+  },
+  "200": {
+   "kind": "eprintln",
+   "args": [
+    "&applications_dir.display().to_string()"
+   ],
+   "zh": "正在把桌面应用安装到{0}…"
+  },
+  "205": {
+   "kind": "format",
+   "args": [
+    "&applications_dir.display().to_string()"
+   ],
+   "zh": "创建应用目录{0}失败"
+  },
+  "219": {
+   "kind": "eprintln",
+   "args": [
+    "&applications_dir.display().to_string()",
+    "&err.to_string()"
+   ],
+   "zh": "警告：无法把Codex.app安装到{0}：{1}"
+  },
+  "226": {
+   "kind": "bail",
+   "args": [],
+   "zh": "无法把Codex.app安装到任何应用目录"
+  },
+  "236": {
+   "kind": "eprintln",
+   "args": [],
+   "zh": "正在下载安装程序…"
+  },
+  "248": {
+   "kind": "context",
+   "args": [],
+   "zh": "调用`curl`失败"
+  },
+  "253": {
+   "kind": "bail",
+   "args": [
+    "&status.to_string()"
+   ],
+   "zh": "curl下载失败，状态为{0}"
+  },
+  "264": {
+   "kind": "context",
+   "args": [],
+   "zh": "调用`hdiutil attach`失败"
+  },
+  "268": {
+   "kind": "bail",
+   "args": [
+    "&output.status.to_string()",
+    "&String::from_utf8_lossy(&output.stderr)"
+   ],
+   "zh": "`hdiutil attach` 以 {0} 失败：{1}"
+  },
+  "277": {
+   "kind": "format",
+   "args": [
+    "&stdout"
+   ],
+   "zh": "无法从hdiutil输出解析挂载点：\n{0}"
+  },
+  "286": {
+   "kind": "context",
+   "args": [],
+   "zh": "调用`hdiutil detach`失败"
+  },
+  "291": {
+   "kind": "bail",
+   "args": [
+    "&status.to_string()"
+   ],
+   "zh": "hdiutil detach失败，状态为{0}"
+  },
+  "302": {
+   "kind": "format",
+   "args": [
+    "&mount_point.display().to_string()"
+   ],
+   "zh": "读取{0}失败"
+  },
+  "306": {
+   "kind": "context",
+   "args": [],
+   "zh": "读取挂载目录条目失败"
+  },
+  "314": {
+   "kind": "bail",
+   "args": [
+    "&mount_point.display().to_string()"
+   ],
+   "zh": "在{0}处没有找到.app bundle"
+  },
+  "325": {
+   "kind": "context",
+   "args": [],
+   "zh": "调用`ditto`失败"
+  },
+  "330": {
+   "kind": "bail",
+   "args": [
+    "&status.to_string()"
+   ],
+   "zh": "ditto复制失败，状态为{0}"
+  },
+  "334": {
+   "kind": "context",
+   "args": [],
+   "zh": "未设置HOME",
+   "literal": "HOME is not set"
+  }
+ },
+ "register": {
+  "130": "代码签名**要求串**（codesign `-R=` 的语法）：`identifier \"…\" and anchor apple generic and certificate leaf[subject.OU] = \"…\"` —— 机器语法，译了会让签名校验失效（§12.1/§12.7 数据格式/机器契约）；该文件为 `#[cfg(target_os = \"macos\")]`（desktop_app/mod.rs:1-2）"
+ }
+}

@@ -1,0 +1,64 @@
+{
+ "batches": [
+  {
+   "file": "codex-rs/cli/src/queue_cmd.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "46": {
+     "kind": "bail",
+     "args": [],
+     "zh": "`codex queue` 不支持图片附件"
+    }
+   },
+   "register": {}
+  },
+  {
+   "file": "codex-rs/cli/src/desktop_app/windows.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "17": {
+     "kind": "eprintln",
+     "args": [
+      "display_workspace.as_str()"
+     ],
+     "zh": "正在桌面应用中打开工作区{0}…"
+    },
+    "22": {
+     "kind": "eprintln",
+     "args": [],
+     "zh": "未找到桌面应用；正在打开Windows安装程序…"
+    },
+    "29": {
+     "kind": "eprintln",
+     "args": [
+      "display_workspace.as_str()"
+     ],
+     "zh": "安装桌面应用后，请打开工作区{0}。"
+    },
+    "43": {
+     "kind": "context",
+     "args": [],
+     "zh": "调用`powershell.exe`失败"
+    },
+    "60": {
+     "kind": "format",
+     "args": [
+      "url"
+     ],
+     "zh": "打开{0}失败"
+    },
+    "65": {
+     "kind": "bail",
+     "args": [
+      "url",
+      "&status.to_string()"
+     ],
+     "zh": "打开{0}失败（{1}）"
+    }
+   },
+   "register": {
+    "39": "PowerShell 脚本文本（`Get-StartApps | Where-Object AppID -Like …`）：喂给 powershell.exe 的机器命令，译了会破坏功能（§12.1/§12.7 数据格式）；同函数 :56 的 `& { param($target) Start-Process … }` 同理（因形状规则未入候选表）。该文件为 `#[cfg(target_os = \"windows\")]`（desktop_app/mod.rs:3-4）"
+   }
+  }
+ ]
+}

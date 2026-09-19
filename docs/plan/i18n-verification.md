@@ -2542,3 +2542,6 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 
 **证据**：`i18n-check r-mu8787x8-qmzg2b`（3360 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
 合并自检 `r-mu87itt3-1t250t`（drift=0 / 四 scope audit=0 / fanout=0 / cli=0 / tui=0 / exec=0 / core=10）。
+
+**平台受限批次的**逐实参类型依据**已提交入库**：`docs/plan/i18n-specs/`（`macos-desktop-app.json` 等四份，见该目录 README）。
+这样「本机不编译的那 39 处」的每个实参类型都能被第三方回溯到源码声明处，而不依赖会话记录。

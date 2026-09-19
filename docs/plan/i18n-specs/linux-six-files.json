@@ -1,0 +1,232 @@
+{
+ "batches": [
+  {
+   "file": "codex-rs/cli/src/debug_sandbox.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "92": {
+     "kind": "bail",
+     "args": [],
+     "zh": "Seatbelt沙箱仅在macOS上可用"
+    },
+    "218": {
+     "kind": "anyhow",
+     "args": [
+      "&err.to_string()"
+     ],
+     "zh": "无效的--sandbox-state-json值：{0}"
+    },
+    "230": {
+     "kind": "context",
+     "args": [],
+     "zh": "沙箱状态的工作目录不属于本机"
+    },
+    "279": {
+     "kind": "bail",
+     "args": [],
+     "zh": "--sandbox-state-disable-network无法应用于已禁用的权限配置"
+    },
+    "305": {
+     "kind": "context",
+     "args": [],
+     "zh": "沙箱命令不能为空"
+    },
+    "336": {
+     "kind": "bail",
+     "args": [],
+     "zh": "Windows沙箱仅在Windows上可用"
+    },
+    "402": {
+     "kind": "bail",
+     "args": [],
+     "zh": "Seatbelt命令缺少其生成的策略"
+    },
+    "466": {
+     "kind": "eprintln",
+     "args": [],
+     "zh": "未找到。"
+    },
+    "501": {
+     "kind": "eprintln",
+     "args": [
+      "&err.to_string()"
+     ],
+     "zh": "windows沙箱失败：{0}"
+    },
+    "533": {
+     "kind": "eprintln",
+     "args": [
+      "&err.to_string()"
+     ],
+     "zh": "windows沙箱失败：{0}"
+    }
+   },
+   "register": {
+    "400": "Seatbelt(SBPL) 策略语法行：`policy.push_str(\"\\n(deny file-ioctl (ioctl-command TIOCSTI))\")` 是喂给 macOS 沙箱的机器策略文本，译了会破坏策略（§12.1/§12.7 数据格式）；且该块为 `#[cfg(target_os = \"macos\")]`"
+   }
+  },
+  {
+   "file": "codex-rs/cli/src/bin/logs_client.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "156": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法解析--from"
+    },
+    "162": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法解析--to"
+    },
+    "204": {
+     "kind": "format",
+     "args": [
+      "value"
+     ],
+     "zh": "期望RFC3339或Unix秒，实际为{0}"
+    },
+    "243": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法获取回填日志"
+    },
+    "260": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法获取新日志"
+    },
+    "270": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法获取最大日志ID"
+    }
+   },
+   "register": {
+    "18": "clap `about` 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）"
+   }
+  },
+  {
+   "file": "codex-rs/cli/src/sandbox_setup.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "56": {
+     "kind": "bail",
+     "args": [],
+     "zh": "`codex sandbox setup`当前需要--elevated"
+    },
+    "102": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法加载目标用户的Codex配置以进行沙箱配置"
+    },
+    "115": {
+     "kind": "anyhow",
+     "args": [
+      "&err.to_string()"
+     ],
+     "zh": "沙箱配置成功，但持久化提权沙箱配置失败：{0}"
+    },
+    "120": {
+     "kind": "println",
+     "args": [
+      "identity.real_user.as_str()",
+      "&identity.codex_home.display().to_string()"
+     ],
+     "zh": "已完成{0}的Windows提权沙箱设置（{1}）。"
+    },
+    "139": {
+     "kind": "anyhow",
+     "args": [
+      "&err.to_string()"
+     ],
+     "zh": "无法从环境确定当前用户：{0}"
+    },
+    "154": {
+     "kind": "anyhow",
+     "args": [],
+     "zh": "需要--user或--current-user"
+    },
+    "158": {
+     "kind": "anyhow",
+     "args": [],
+     "zh": "使用--user时需要--codex-home"
+    }
+   },
+   "register": {}
+  },
+  {
+   "file": "codex-rs/cli/src/cloud_config.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "28": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法加载配置"
+    },
+    "39": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法解析CODEX_HOME"
+    },
+    "44": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法解析当前目录"
+    },
+    "56": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法加载引导配置"
+    },
+    "59": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法解析云配置认证"
+    },
+    "63": {
+     "kind": "context",
+     "args": [],
+     "zh": "无法初始化云配置认证"
+    }
+   },
+   "register": {}
+  },
+  {
+   "file": "codex-rs/cli/src/exec_server_telemetry.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "92": {
+     "kind": "eprintln",
+     "args": [
+      "&error.to_string()"
+     ],
+     "zh": "无法监听exec-server关闭信号：{0}"
+    },
+    "131": {
+     "kind": "eprintln",
+     "args": [
+      "&error.to_string()"
+     ],
+     "zh": "无法监听exec-server关闭信号：{0}"
+    }
+   },
+   "register": {}
+  },
+  {
+   "file": "codex-rs/cli/src/lib.rs",
+   "root": "codex-rs/cli/src",
+   "translate": {
+    "103": {
+     "kind": "format",
+     "args": [
+      "raw",
+      "&err.to_string()"
+     ],
+     "zh": "无效路径{0}：{1}"
+    }
+   },
+   "register": {}
+  }
+ ]
+}

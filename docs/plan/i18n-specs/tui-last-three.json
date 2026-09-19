@@ -1,0 +1,21 @@
+{
+ "batches": [
+  {
+   "file": "codex-rs/tui/src/app/history_ui.rs",
+   "root": "codex-rs/tui/src",
+   "translate": {},
+   "register": {
+    "418": "PowerShell 脚本文本（`r#\"…\"#` 跨行的启动脚本）：喂给 powershell.exe 的机器命令，译了会破坏功能（§12.1/§12.7 数据格式）；该函数为 `#[cfg(target_os = \"windows\")]`（history_ui.rs:414）"
+   }
+  },
+  {
+   "file": "codex-rs/tui/src/app/transcript_export.rs",
+   "root": "codex-rs/tui/src",
+   "translate": {},
+   "register": {
+    "240": "[fanout-reviewed] 导出 Markdown 的**头部**且被当作**判空哨兵**：同值另一站点 transcript_export.rs:299 用 `if markdown != \"# Codex conversation\\n\"` 与它做相等比较 ⇒ 属 §12.1 匹配键/§12.5 数据格式；译了会让导出物的头随语言变化（下游 diff/工具会漂移）⇒ 两站点均不译（已逐站点核对）",
+    "299": "[fanout-reviewed] 同上：本行是**判空比较**，与 transcript_export.rs:240 同值 ⇒ 两站点一并登记（已逐站点核对）"
+   }
+  }
+ ]
+}

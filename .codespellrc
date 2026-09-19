@@ -4,3 +4,6 @@ skip = .git*,vendor,*-lock.yaml,*.lock,.codespellrc,*test.ts,*.jsonl,frame*.txt,
 check-hidden = true
 ignore-regex = ^\s*"image/\S+": ".*|\b(afterAll)\b
 ignore-words-list = ratatui,ser,iTerm,iterm2,iterm,te,TE,PASE,SEH
+# CI runs `codespell --ignore-words .codespellignore`; pointing the config at the same
+# file keeps a bare `codespell` (and local runs) from reporting the words that file lists.
+ignore-words = .codespellignore

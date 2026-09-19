@@ -201,33 +201,45 @@ could not create workflow dispatch event: HTTP 403: Must have admin rights to Re
 处方：显式 `--repo clearnature/codex`，或先 `gh repo set-default clearnature/codex`（本次两条都做了，之后 dispatch 成功）。
 `gh run list` 也会因此列出**上游**的运行（本次实测：改前列出的全是 openai/codex 的 Issue/CLA 运行）。
 
-### 8.3 结果分类：红的是**基础设施**，不是我们的代码
+### 8.3 结果分类：**逐条核过注解**（两条 run 均已结束）
 
-大量 job 直接红在**启动阶段**，注解原文：
+两条 run 都是 `failure` 结论，但**没有一条红是由本仓库代码引起的**——逐作业核对如下。
 
-| 注解原文                                                                                                            | 含义                                                    | 归类     |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------- |
-| `Required runner group 'codex-runners' not found`                                                                   | 工作流要上游组织级**自建 runner 组**，fork 里没有       | 环境限制 |
-| `The job was not started because recent account payments have failed or your spending limit needs to be increased.` | `macos-15-xlarge` 等**计费机型**起不来（账单/额度问题） | 环境限制 |
-| fork 的 `gh secret list` / `gh variable list` 都是 **0 条**                                                         | 需要机密的 job（远程缓存/签名等）也无从满足             | 环境限制 |
+**`rust-ci`（[35450055551](https://github.com/clearnature/codex/actions/runs/35450055551)）conclusion=failure**
 
-**能真正跑起来的**（标准 `ubuntu-24.04`、无机密依赖）：
+| 作业                                      | 结论        | 注解 / 原因                                                                                                         | 归类                               |
+| ----------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Detect changed areas                      | success     | —                                                                                                                   | —                                  |
+| **Format / etc**（`just fmt-check` 家族） | **success** | 仅 `just@1.51.0 for 'x86_64_linux' is not supported; fallback to cargo-binstall` 警告                               | ✅ **远端绿灯**                    |
+| cargo shear                               | success     | 同上警告                                                                                                            | ✅ 远端绿灯                        |
+| **Argument comment lint package**         | **success** | 同上警告                                                                                                            | ✅ **远端绿灯**                    |
+| Argument comment lint - Windows           | failure     | `Required runner group 'codex-runners' not found`                                                                   | 环境（缺自建 runner 组）           |
+| Argument comment lint - macOS             | failure     | `The job was not started because recent account payments have failed or your spending limit needs to be increased.` | 环境（计费/额度）                  |
+| Argument comment lint - Linux             | cancelled   | `The job has exceeded the maximum execution time of 30m0s` + `The operation was canceled.`                          | **超时**（真需要更久，非卡死）     |
+| CI results (required)                     | failure     | `Process completed with exit code 1.`                                                                               | 依赖失败的**聚合后果**，非独立原因 |
 
-- `changed`（Detect changed areas）— **completed success**
-- `general`（步骤里有 `Format / etc` = `just fmt-check` 一类）— in_progress
-- `cargo_shear` — in_progress
-- `argument_comment_lint_package`（Linux、按包安装工具链）— in_progress
-- 一条 `Bazel test on ubuntu-24.04 for x86_64-unknown-linux-musl`（标准 runner）— in_progress
+**`Bazel`（[35450058371](https://github.com/clearnature/codex/actions/runs/35450058371)）conclusion=failure**
 
-⇒ 恰好是**我们最关心的几条**（格式、argument-comment-lint、shear）能跑；平台矩阵与 Bazel 的多平台/自建 runner 在个人 fork 上**结构性跑不了**。
+| 作业组                                                              | 数量 | 注解 / 原因                                                                    | 归类                     |
+| ------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------ | ------------------------ |
+| `macos-15-xlarge`（test/clippy/release，aarch64 + x86_64）          | 5    | `…spending limit needs to be increased…`                                       | 环境（计费机型起不来）   |
+| `windows-latest` gnullvm（clippy / test shard 1–4 / release）       | 7    | `Required runner group 'codex-runners' not found`                              | 环境（缺自建 runner 组） |
+| `ubuntu-24.04`（clippy gnu / test gnu / test musl / release build） | 4    | `The job has exceeded the maximum execution time of 30m0s`（冷构建无远程缓存） | **超时**                 |
+| `windows-latest` msvc (native main)                                 | 1    | skipped                                                                        | —                        |
 
-### 8.4 结论（对应「不 PR 能不能 CI」）
+**关键推论**：该 fork 的 `gh secret list` 是 **0 条** ⇒ 没有 BuildBuddy 之类的**远程缓存密钥** ⇒ Bazel 冷构建必然超过 30 分钟的作业上限 ⇒
+**本 fork 上 Bazel 侧结构性拿不到绿灯**（不是代码问题，也**不是「再跑一次就好」**）。
 
-- **能拿到远端信号的**：`rust-ci` 与 `bazel` 的手动 dispatch（`gh workflow run … --repo clearnature/codex --ref <branch>`），
-  或推一个 `*full-ci` 分支跑 `rust-ci-full`。
-- **仍然拿不到 i18n 三闸（`just fmt-check` / `just i18n-check` / `just i18n-smoke`）**：
-  它们在 `repo-checks` 里，而 `repo-checks` 只有 `workflow_call`、由 `blocking-ci` 在 `pull_request` / `push: main` 时带起。
-  ⇒ **想在远端跑那三道，必须开 PR**（或推 main）。好消息：`repo-checks` 跑在 `ubuntu-latest`、不依赖上游机密，
-  所以在个人 fork 上**它本身是能跑的**（不像 Bazel 的多平台矩阵）。
-- **平台矩阵（macOS/Windows）在本 fork 上结构性不可用**：要么缺 `codex-runners` 组，要么计费机型起不来。
-  ⇒ 43 处平台门控站点的验签仍只能靠**上游 CI** 或人工平台验证，本 fork 帮不上。
+**唯一「未出结论」的项**：`Argument comment lint - Linux`（prebuilt 变体）超时被杀。
+但**同一门禁的 package 变体在同一平台上 success** ⇒ argument-comment-lint 在 Linux 上**已被远端验证**。
+（第一轮报告里我把这些 ubuntu 作业只读成「cancelled / 原因未知」——**不完整**；逐条读注解后确认全是 30 分钟作业上限。）
+
+### 8.4 结论（更新后）
+
+- **远端能拿到的绿灯**：`Format / etc`（格式）、`cargo shear`、`argument_comment_lint_package`（Linux）——
+  这正是本地门禁 `fmt-check` / `argument-comment-lint` 的远端复核。
+- **远端结构性拿不到的**：平台矩阵（macOS/Windows）与 Bazel 全平台（计费机型 + 缺 `codex-runners` 组 + 冷构建超时）。
+  ⇒ 43 处平台门控站点**仍只能靠上游 CI 或人工平台验证**，本 fork 帮不上，且**不要**为此改建 workflow（那是改尺子）。
+- **i18n 三闸**（`just fmt-check` / `just i18n-check` / `just i18n-smoke`）：仍在 `repo-checks` 里，远端要跑必须
+  **PR 或 push main**。好消息：`repo-checks` 跑在 `ubuntu-latest` 且不依赖上游机密 ⇒ 在个人 fork 上**它本身是能跑的**
+  （与 Bazel 多平台不同）⇒ 开 PR 是当前唯一能让这三道在远端出结论的路径。

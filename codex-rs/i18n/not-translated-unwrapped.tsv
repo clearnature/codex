@@ -24,8 +24,8 @@ npm · {package}@{version}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1696	�
 npm · {package}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1685	同上 ⇒ §12.9
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text	codex-rs/tui/src/clipboard_copy.rs:329	PowerShell 脚本片段（要原样执行，不是文案）⇒ §12.5
 {error_context} task failed	codex-rs/tui/src/app/config_persistence.rs:28	`wrap_err_with` 的错误上下文（§12.3），且本身就是占位拼接
- (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permission_popups.rs:83	`.replace(…)` 的数据修剪目标：要匹配预设描述里的后缀再删掉 ⇒ 译了就不匹配（§12.1 匹配/解析管线）
- (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permissions_menu.rs:110	同上（同一次修剪的另一处）
+ (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permission_popups.rs:83	`.replace(…)` 的数据修剪目标：要匹配预设描述里的后缀再删掉 ⇒ 译了就不匹配（§12.1 匹配/解析管线） 〔fanout 补核〕两站点均为 `.replace(" (Identical to Agent mode)", "")` 的匹配目标（permission_popups.rs:83、permissions_menu.rs:110）⇒ 译了就不匹配（§12.1）[fanout-reviewed]
+ (Identical to Agent mode)	codex-rs/tui/src/chatwidget/permissions_menu.rs:110	同上（同一次修剪的另一处） 〔fanout 补核〕两站点均为 `.replace(" (Identical to Agent mode)", "")` 的匹配目标（permission_popups.rs:83、permissions_menu.rs:110）⇒ 译了就不匹配（§12.1）[fanout-reviewed]
 OpenAI Codex	codex-rs/tui/src/status/card.rs:756	产品名（§12.6）
 ✨\u{200A}	codex-rs/tui/src/history_cell/notices.rs:54	emoji + 窄空格（§12.7；§12.10 已锚定同类）
 %Y-%m-%d %H:%M:%S	codex-rs/tui/src/resume_picker.rs:3524	strftime 格式串（§12.7）
@@ -92,11 +92,11 @@ Dynamic tool response exceeded the maximum context budget	codex-rs/tui/src/dynam
 list_threads does not accept a cursor	codex-rs/tui/src/dynamic_tools.rs:434	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 maxOutputCharsPerItem must not exceed {MAX_OUTPUT_CHARS}	codex-rs/tui/src/dynamic_tools.rs:496	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 Unknown cursor: {cursor}	codex-rs/tui/src/dynamic_tools.rs:532	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
-title must not be empty	codex-rs/tui/src/dynamic_tools.rs:581	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
+title must not be empty	codex-rs/tui/src/dynamic_tools.rs:581	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11 〔fanout 补核〕两站点同为动态工具回调的 `Err(String)`（dynamic_tools.rs:581/:788）⇒ 回给 app-server/模型[fanout-reviewed]
 ephemeral tasks cannot create inspectable background tasks	codex-rs/tui/src/dynamic_tools.rs:586	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 Cannot inherit an external sandbox without a permission profile	codex-rs/tui/src/dynamic_tools.rs:627	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 model must not be empty	codex-rs/tui/src/dynamic_tools.rs:747	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
-title must not be empty	codex-rs/tui/src/dynamic_tools.rs:788	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
+title must not be empty	codex-rs/tui/src/dynamic_tools.rs:788	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11 〔fanout 补核〕两站点同为动态工具回调的 `Err(String)`（dynamic_tools.rs:581/:788）⇒ 回给 app-server/模型[fanout-reviewed]
 timeoutMs must not exceed {MAX_WAIT_TIMEOUT_MS}	codex-rs/tui/src/dynamic_tools.rs:841	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 wait_threads cannot wait on the calling task	codex-rs/tui/src/dynamic_tools.rs:846	工具参数校验错误（Result<_, String>，回给模型/app-server）⇒ §12.3 / §12.11
 Unsupported TUI dynamic tool: {tool}	codex-rs/tui/src/dynamic_tools.rs:1145	诊断/协议错误串：经 Result → success_response/resolve_server_request 回 app-server，失败路径只 tracing::warn!（event_dispatch.rs:202-213），无渲染路径 ⇒ §12.3 / §12.11
@@ -117,8 +117,8 @@ no IDE IPC socket paths were available	codex-rs/tui/src/ide_context/ipc.rs:258	I
 IDE IPC connection exhausted the request deadline: {err}	codex-rs/tui/src/ide_context/ipc.rs:273	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context Unix socket path contains a nul byte	codex-rs/tui/src/ide_context/ipc.rs:363	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context Unix socket path is too long	codex-rs/tui/src/ide_context/ipc.rs:371	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
-IDE context Unix socket address is too long	codex-rs/tui/src/ide_context/ipc.rs:393	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
-IDE context Unix socket address is too long	codex-rs/tui/src/ide_context/ipc.rs:401	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
+IDE context Unix socket address is too long	codex-rs/tui/src/ide_context/ipc.rs:393	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①[fanout-reviewed]
+IDE context Unix socket address is too long	codex-rs/tui/src/ide_context/ipc.rs:401	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①[fanout-reviewed]
 invalid socket error length	codex-rs/tui/src/ide_context/ipc.rs:454	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 invalid IDE context Unix socket	codex-rs/tui/src/ide_context/ipc.rs:515	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context socket has no parent directory	codex-rs/tui/src/ide_context/ipc.rs:575	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
@@ -126,14 +126,14 @@ IDE context socket directory is not owned by the current user	codex-rs/tui/src/i
 IDE context socket directory is writable by other users	codex-rs/tui/src/ide_context/ipc.rs:586	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context socket is not owned by the current user	codex-rs/tui/src/ide_context/ipc.rs:593	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 invalid peer credential length	codex-rs/tui/src/ide_context/ipc.rs:609	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
-IDE context provider is not owned by the current user	codex-rs/tui/src/ide_context/ipc.rs:668	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
+IDE context provider is not owned by the current user	codex-rs/tui/src/ide_context/ipc.rs:668	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据① 〔fanout 补核〕跨文件两站点同为 io::Error（ipc.rs:668 `permission_denied_io_error`、windows_pipe.rs:289 `io::Error::new`）；两文件渲染 API 实测 0 处[fanout-reviewed]
 invalid IDE context JSON message: {err}	codex-rs/tui/src/ide_context/ipc.rs:738	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context payload exceeds u32 length	codex-rs/tui/src/ide_context/ipc.rs:744	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 invalid JSON payload: {err}	codex-rs/tui/src/ide_context/ipc.rs:767	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 failed to fill whole IDE context frame	codex-rs/tui/src/ide_context/ipc.rs:785	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 unexpected IDE context message type: {other}	codex-rs/tui/src/ide_context/ipc.rs:835	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 IDE context message did not include a type	codex-rs/tui/src/ide_context/ipc.rs:840	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
-timed out waiting for IDE context	codex-rs/tui/src/ide_context/ipc.rs:865	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
+timed out waiting for IDE context	codex-rs/tui/src/ide_context/ipc.rs:865	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据① 〔fanout 补核〕跨文件两站点同为 io::Error（ipc.rs:865 `deadline_timeout_io_error`、windows_pipe.rs:343 `timeout_io_error`）；两文件渲染 API 实测 0 处[fanout-reviewed]
 ide-context response did not include result.ideContext	codex-rs/tui/src/ide_context/ipc.rs:883	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 response did not include a success or error resultType	codex-rs/tui/src/ide_context/ipc.rs:902	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
 expired primary deadline should fail	codex-rs/tui/src/ide_context/ipc.rs:1131	IDE 上下文协议层错误/套接字诊断：该文件实测 **0 处** add_error_message/add_info_message/Line::from/Span::from，串随 eyre/tracing 走内部链 ⇒ §12.3 / §12.13 判据①
@@ -242,11 +242,11 @@ failed to duplicate stdio ({stdio_err}) or open /dev/tty writer ({fallback_err})
 <message role=\"\"></message>	codex-rs/tui/src/app/thread_title.rs:327	任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
 <message role=\"{role}\">{text}</message>	codex-rs/tui/src/app/thread_title.rs:348	任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
 	codex-rs/tui/src/app/thread_title.rs:362	值跨行，写不进单行按值形态 ⇒ 按位置豁免；任务标题生成的**提示词与 XML 载荷**（`<message role=…>` 拼进发给模型的请求）⇒ §12.2
-{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:119	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
-{method} failed in TUI: {}	codex-rs/tui/src/app_server_session/fs.rs:121	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:119	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3 〔fanout 补核〕两站点同为 eyre 上下文（app_server_session/fs.rs:119/:131）；该文件渲染 API 实测 0 处[fanout-reviewed]
+{method} failed in TUI: {}	codex-rs/tui/src/app_server_session/fs.rs:121	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3[fanout-reviewed]
 {method} returned invalid data	codex-rs/tui/src/app_server_session/fs.rs:123	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
 invalid local app-server fs path {path}	codex-rs/tui/src/app_server_session/fs.rs:127	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
-{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:131	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3
+{method} failed in TUI	codex-rs/tui/src/app_server_session/fs.rs:131	TUI 侧 app-server fs 请求的 **eyre 上下文/错误链**（本文件 0 处渲染调用；§12.10 已裁定同类）⇒ §12.3 〔fanout 补核〕两站点同为 eyre 上下文（app_server_session/fs.rs:119/:131）；该文件渲染 API 实测 0 处[fanout-reviewed]
 tried to execute EnableAlternateScroll using WinAPI; use ANSI instead	codex-rs/tui/src/tui.rs:261	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
 tried to execute DisableAlternateScroll using WinAPI; use ANSI instead	codex-rs/tui/src/tui.rs:282	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
 stdin is not a terminal	codex-rs/tui/src/tui.rs:424	内部 WinAPI 未实现提示 + `stdin/stdout is not a terminal` 启动诊断 + tracing 消息（§12.10 已逐行裁定）⇒ §12.3
@@ -313,9 +313,9 @@ failed to detect external agent config migrations	codex-rs/tui/src/external_agen
 Import {rest}	codex-rs/tui/src/external_agent_config_migration/mod.rs:208	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
 Import enabled plugins from {}	codex-rs/tui/src/external_agent_config_migration/mod.rs:248	前缀匹配改写：`strip_prefix("Migrate ")` 产出 `Import {rest}`，且 `Import enabled plugins from ` 又被 strip_prefix 自己匹配（译了匹配失效）
 Claude Code	codex-rs/tui/src/external_agent_config_migration/source.rs:43	产品名 `Claude Code`（§12.6）
-git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:137	git 子进程失败诊断；本次复核 render=0
-git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:157	git 子进程失败诊断；本次复核 render=0
-git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:180	git 子进程失败诊断；本次复核 render=0
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:137	git 子进程失败诊断；本次复核 render=0 〔fanout 补核〕接收者：chatwidget/slash_dispatch.rs:511 `Err(e) => tr_with(current(), "Failed to compute diff: {0}", &[&e])` ⇒ 作为**已译包装的 `{0}` 明细**不译（§12.31 明细口径）；get_git_diff.rs 本身 0 处渲染 API（实测）[fanout-reviewed]
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:157	git 子进程失败诊断；本次复核 render=0 〔fanout 补核〕接收者：chatwidget/slash_dispatch.rs:511 `Err(e) => tr_with(current(), "Failed to compute diff: {0}", &[&e])` ⇒ 作为**已译包装的 `{0}` 明细**不译（§12.31 明细口径）；get_git_diff.rs 本身 0 处渲染 API（实测）[fanout-reviewed]
+git {:?} failed with status {}	codex-rs/tui/src/get_git_diff.rs:180	git 子进程失败诊断；本次复核 render=0 〔fanout 补核〕接收者：chatwidget/slash_dispatch.rs:511 `Err(e) => tr_with(current(), "Failed to compute diff: {0}", &[&e])` ⇒ 作为**已译包装的 `{0}` 明细**不译（§12.31 明细口径）；get_git_diff.rs 本身 0 处渲染 API（实测）[fanout-reviewed]
 [P{priority}] {title}	codex-rs/tui/src/git_action_directives.rs:109	喂模型的指令载荷
 {indent}- {title} — {location}\n{indent}  {body}{suffix}	codex-rs/tui/src/git_action_directives.rs:127	喂模型的指令载荷
 unexpected WaitForSingleObject result: {other}	codex-rs/tui/src/ide_context/windows_pipe.rs:186	Windows 命名管道内部错误（WinAPI）（§12.9）
@@ -325,8 +325,8 @@ code={:?}, modifiers={}, kind={:?}	codex-rs/tui/src/keymap_setup/debug.rs:238	�
 debug inspect keypress key terminal detected actions	codex-rs/tui/src/keymap_setup/picker.rs:365	快捷键关键字列表（匹配用）
 :\d+(?::\d+)?(?:[-–]\d+(?::\d+)?)?$	codex-rs/tui/src/markdown_render/local_links.rs:19	正则表达式
 Luna Reserve	codex-rs/tui/src/model_catalog.rs:12	模型代号 `Luna Reserve`（产品名）
-tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/bel.rs:29	WinAPI 未实现提示（§12.9 同类）
-tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/osc9.rs:59	WinAPI 未实现提示（§12.9 同类）
+tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/bel.rs:29	WinAPI 未实现提示（§12.9 同类） 〔fanout 补核〕两站点同为 `#[cfg(windows)] fn execute_winapi` 的 `io::Error::other(..)` 兜底（bel.rs:29、osc9.rs:59）；Windows 专用，Linux 不可验证[fanout-reviewed]
+tried to execute PostNotification using WinAPI; use ANSI instead	codex-rs/tui/src/notifications/osc9.rs:59	WinAPI 未实现提示（§12.9 同类） 〔fanout 补核〕两站点同为 `#[cfg(windows)] fn execute_winapi` 的 `io::Error::other(..)` 兜底（bel.rs:29、osc9.rs:59）；Windows 专用，Linux 不可验证[fanout-reviewed]
 Null Signal	codex-rs/tui/src/pets/catalog.rs:80	名称 `Null Signal`（产品/作品名）
 disable disabled hide hidden off none	codex-rs/tui/src/pets/picker.rs:94	关键字列表（匹配用）
 legacy transcript preview exceeded its scan budget	codex-rs/tui/src/resume_picker_transcript_preview.rs:221	tracing + markdown 模板（该文件的渲染调用不落在这些字面量上）
@@ -337,10 +337,10 @@ failed to determine the working directory recorded for the selected session	code
 session {} is archived. 	codex-rs/tui/src/session_start.rs:72	`starts_with` 匹配服务端错误文本（本次复核 :72）
 startup cancelled	codex-rs/tui/src/startup_draft.rs:72	启动取消/输入流关闭的内部原因（§12.9）
 terminal input stream closed during startup	codex-rs/tui/src/startup_draft.rs:221	启动取消/输入流关闭的内部原因（§12.9）
-Extra High	codex-rs/tui/src/status/thread_usage.rs:28	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
-Fast mode	codex-rs/tui/src/status/thread_usage.rs:37	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
-Extra High	codex-rs/tui/src/status/thread_usage.rs:223	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
-Fast mode	codex-rs/tui/src/status/thread_usage.rs:231	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5）
+Extra High	codex-rs/tui/src/status/thread_usage.rs:28	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5） 〔fanout 补核〕既是展示名又是 `thread_usage.rs:28` 的查找键（`.position(|v| v == display_name)`）；译了破坏查找 ⇒ 登记（§12.34 匹配键陷阱）[fanout-reviewed]
+Fast mode	codex-rs/tui/src/status/thread_usage.rs:37	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5） 〔fanout 补核〕既是展示名又是 `thread_usage.rs:37` 的查找键（`.position(|v| v == display_name)`）；译了破坏查找 ⇒ 登记（§12.34 匹配键陷阱）[fanout-reviewed]
+Extra High	codex-rs/tui/src/status/thread_usage.rs:223	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5） 〔fanout 补核〕既是展示名又是 `thread_usage.rs:28` 的查找键（`.position(|v| v == display_name)`）；译了破坏查找 ⇒ 登记（§12.34 匹配键陷阱）[fanout-reviewed]
+Fast mode	codex-rs/tui/src/status/thread_usage.rs:231	源码注释明写：被 `.position(|v| v == display_name)` 当键查找，译了查找失败（§9.1.5） 〔fanout 补核〕既是展示名又是 `thread_usage.rs:37` 的查找键（`.position(|v| v == display_name)`）；译了破坏查找 ⇒ 登记（§12.34 匹配键陷阱）[fanout-reviewed]
 {minutes}m {seconds:02}s	codex-rs/tui/src/status_indicator_widget.rs:80	时间格式串 `{minutes}m {seconds:02}s`
 {hours}h {minutes:02}m {seconds:02}s	codex-rs/tui/src/status_indicator_widget.rs:85	时间格式串 `{minutes}m {seconds:02}s`
 stream chunking mode transition	codex-rs/tui/src/streaming/commit_tick.rs:138	tracing 消息（§12.9 同类）

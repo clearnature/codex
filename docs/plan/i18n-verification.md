@@ -1609,8 +1609,9 @@ for f in m.scan(Path("codex-rs/core")):
 - `python3 scripts/i18n_todo.py --fanout [--all]` 列出「一行豁免 >1 个未译站点」的登记；
 - 逐站点裁决后，在该行**理由列**追加 `[fanout-reviewed]`；`--fanout` 默认只列**未核**行（队列口径）；
 - 第 454 轮实测：core 32 行/79 站点（已核 6 行、待核 26 行/59 站点）、tui 10 行/21 站点（待核 10 行/21 站点）；
-- **第 460 轮实测：core 31 行/77 站点，已核 30 行、待核 1 行/2 站点**（`MCP runtime refresh semaphore closed`）、
-  tui 待核 10 行/21 站点。历史数字保留在此仅供对照，**以最后一次实测为准**。
+- **第 460 轮实测：core 31 行/77 站点，已核 30 行、待核 1 行/2 站点**（`MCP runtime refresh semaphore closed`）；
+- **第 464 轮实测：core 待核 1 行/2 站点、tui 待核 0 行/0 站点**（tui 10 行/21 站点已全部核完）。
+  历史数字保留在此仅供对照，**以最后一次实测为准**。
 
 **本轮已核 6 行的裁决**（每个站点都读过接收者，不是抽样）：
 
@@ -1663,3 +1664,22 @@ for f in m.scan(Path("codex-rs/core")):
 
 **一条判据教训（值得复用）**：理由栏若只写**成因/风格**（「小写 I/O 诊断」「内部并发状态」），它是**不可复核**的；
 必须写**接收者类别 + 站点证据**。本轮的缺陷正是因为理由写了风格，而同文件先例恰好相反才被抓出。
+
+#### 补核（第 464 轮）：tui 队列清零
+
+| 值 | 站点数 | 判决与依据 |
+| --- | --- | --- |
+| `git {:?} failed with status {}` | 3 | **已译包装的 `{0}` 明细**：消费者 `codex-rs/tui/src/chatwidget/slash_dispatch.rs:511` `Err(e) => tr_with(current(), "Failed to compute diff: {0}", &[&e])`；`get_git_diff.rs` 本身 0 处渲染 API（实测）|
+| `{method} failed in TUI` | 2 | eyre 上下文（`app_server_session/fs.rs:119`/`:131`），该文件渲染 API 实测 0 处 |
+| ` (Identical to Agent mode)` | 2 | `.replace(" (Identical to Agent mode)", "")` 的**匹配目标**（`permission_popups.rs:83`、`permissions_menu.rs:110`）⇒ 译了就不匹配（§12.1）|
+| `title must not be empty` | 2 | 动态工具回调的 `Err(String)`（`codex-rs/tui/src/dynamic_tools.rs:581`/`:788`）⇒ 回给 app-server/模型 |
+| `IDE context Unix socket address is too long` | 2 | `io::Error::new(InvalidInput, …)`（`ide_context/ipc.rs:393`/`:401`）；该文件渲染 API 实测 0 处 |
+| `IDE context provider is not owned by the current user` | 2 | 跨文件同为 io 错误（`ide_context/ipc.rs:668` `permission_denied_io_error`、`ide_context/windows_pipe.rs:289`）；两文件渲染 API 实测 0 处 |
+| `timed out waiting for IDE context` | 2 | 跨文件同为 io 错误（`ide_context/ipc.rs:865` `deadline_timeout_io_error`、`ide_context/windows_pipe.rs:343`）；同上 |
+| `tried to execute PostNotification using WinAPI; use ANSI instead` | 2 | `#[cfg(windows)] fn execute_winapi` 的 `io::Error::other(..)`（`notifications/bel.rs:29`、`notifications/osc9.rs:59`）；**Windows 专用，Linux 不可验证** |
+| `Extra High` / `Fast mode` | 4 | 展示名**同时**是 `status/thread_usage.rs:28`/`:37` 的查找键（`.position(|v| v == display_name)`）⇒ 登记而非译（§12.34 匹配键陷阱）；这是**已知的展示侧代价**（zh 运行下这两处标签仍是英文）|
+
+**新增判据（本轮的收获）**：登记理由里写「本文件 0 处渲染 API」**只证了一半**——渲染可能发生在**调用方**。
+必须顺着 `?`/`Err` 往上找到第一个渲染点：本轮 `git … failed` 的接受者就是
+`slash_dispatch.rs:511` 的**已译包装**，故它是 `{0}` 明细；若那里直接 `add_error_message(err.to_string())`，
+则它就该译。判据：**先找渲染点，再判明细还是正文**。

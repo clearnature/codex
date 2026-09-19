@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **163** | 第 492 轮清 21 站点（译 3：`Fatal`；登记 18）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **146** | 第 495 轮清 17 站点（译 5：`CodexErr::*`/assistant message/`send_user_shell_error`；登记 12）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1902,3 +1902,20 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 本批这 3 处正是「**已译字符串的未包 tr 出现**」—— 候选桶的定义本身。处置：删掉我重复的两条词条
 （保留原有），源文件保持包 `tr_with`。判据补充：**给候选站点补 `tr` 时先查字典**，
 已在字典里的键不要重复添加（`[duplicate]` 是硬门禁）。
+
+### 12.46 第 495 轮：`CodexErr::*` / assistant message / shell 错误该译；world state 与昵称构造登记
+
+| 站点 | 判决 | 依据 |
+| --- | --- | --- |
+| `agent/control/legacy.rs:77` | **译** | `CodexErr::Fatal(..)` ⇒ 用户可见面（§12.2）|
+| `agent/registry.rs:377` | **译** | `CodexErr::UnsupportedOperation("no available agent nicknames")` ⇒ 同上 |
+| `tasks/review.rs:233` | **译** | 赋给 `assistant_message`（回合内给用户看的助手消息），同文件另有 `render_review_exit_interrupted()` 的渲染侧 |
+| `tasks/user_shell.rs:144`/`:161` | **译**（2）| 走 `send_user_shell_error(&session, turn_context, "…")` ⇒ **发给用户的 shell 错误** |
+| `agent/registry.rs:76` `{name} the {value}{suffix}` | 登记 | agent **昵称构造**：`value`/`suffix` 是 `st/nd/rd/th` 序数后缀 ⇒ 标识符（§12.7）|
+| `context/world_state/*`（8 条）| 登记 | `impl WorldStateSection` 的 `render_diff` 返回 `Box<dyn ContextualUserFragment>` ⇒ 模型上下文（§12.2）|
+| `tasks/user_shell.rs:252` `command aborted by user` | 登记 | 进 `ExecToolCallOutput`（工具输出文本，与 `Process exited with code …` 同族）⇒ §12.31 |
+
+**流程收获（`--audit-rows` 第一次真正抓到东西）**：本批 12 行登记里有 **1 行是静默空操作** ——
+`managed_developer_instructions` 那条我写的是**常量定义处 `:17`**，而候选在**使用处 `:72`**，
+且键还是从列表里抄来的**截断值**（两个错叠加）。改**空键+站点形态**（站点 `:72`）后候选严格对平 17 条。
+⇒ 这正是上一轮加 `--audit-rows` 的用途：**登记「写了但不生效」只有机器能查**。

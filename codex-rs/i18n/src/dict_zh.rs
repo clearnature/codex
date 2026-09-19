@@ -7562,6 +7562,23 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`{0}`下的配置值被来自{1}的要求覆盖。",
     ),
     ("failed to read current time: {0}", "读取当前时间失败：{0}"),
+    (
+        "failed to persist stale thread-spawn edge status for {0}: {1}",
+        "保存过期的线程派生边状态失败（{0}）：{1}",
+    ),
+    ("no available agent nicknames", "没有可用的agent昵称"),
+    (
+        "Review was interrupted. Please re-run /review and wait for it to complete.",
+        "审查被中断。请重新运行 `/review` 并等待其完成。",
+    ),
+    (
+        "shell is unavailable in this session",
+        "本会话中shell不可用",
+    ),
+    (
+        "shell working directory is not native to the Codex host",
+        "shell工作目录不属于Codex宿主的原生路径",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

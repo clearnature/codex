@@ -28,6 +28,8 @@ use crate::tools::runtimes::apply_package_path_prepend;
 use crate::tools::runtimes::maybe_wrap_shell_lc_with_snapshot;
 use crate::tools::runtimes::strip_managed_proxy_env;
 use crate::user_shell_command::user_shell_command_record_item;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::exec_output::ExecToolCallOutput;
 use codex_protocol::exec_output::StreamOutput;
 use codex_protocol::items::CommandExecutionItem;
@@ -141,7 +143,7 @@ pub(crate) async fn execute_user_shell_command(
         send_user_shell_error(
             &session,
             turn_context.as_ref(),
-            "shell is unavailable in this session",
+            tr(current(), "shell is unavailable in this session"),
         )
         .await;
         return;
@@ -158,7 +160,10 @@ pub(crate) async fn execute_user_shell_command(
         send_user_shell_error(
             &session,
             turn_context.as_ref(),
-            "shell working directory is not native to the Codex host",
+            tr(
+                current(),
+                "shell working directory is not native to the Codex host",
+            ),
         )
         .await;
         return;

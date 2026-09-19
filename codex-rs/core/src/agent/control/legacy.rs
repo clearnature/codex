@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::error::CodexErrorDetails;
 use codex_thread_store::PersistContext;
 
@@ -73,8 +75,10 @@ impl AgentControl {
                         )
                         .await
                 {
-                    return Err(CodexErr::Fatal(format!(
-                        "failed to persist stale thread-spawn edge status for {agent_id}: {err}"
+                    return Err(CodexErr::Fatal(tr_with(
+                        current(),
+                        "failed to persist stale thread-spawn edge status for {0}: {1}",
+                        &[&agent_id.to_string(), &err.to_string()],
                     )));
                 }
             }

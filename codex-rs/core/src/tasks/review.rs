@@ -27,6 +27,8 @@ use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
 use crate::state::TaskKind;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::user_input::UserInput;
 use codex_thread_store::PersistContext;
 
@@ -229,9 +231,11 @@ pub(crate) async fn exit_review_mode(
         (rendered, assistant_message)
     } else {
         let rendered = render_review_exit_interrupted();
-        let assistant_message =
-            "Review was interrupted. Please re-run /review and wait for it to complete."
-                .to_string();
+        let assistant_message = tr(
+            current(),
+            "Review was interrupted. Please re-run /review and wait for it to complete.",
+        )
+        .to_string();
         (rendered, assistant_message)
     };
 

@@ -1,4 +1,5 @@
 use codex_i18n::current;
+use codex_i18n::tr;
 use codex_i18n::tr_with;
 use codex_protocol::AgentPath;
 use codex_protocol::ThreadId;
@@ -374,7 +375,9 @@ impl SpawnReservation {
             .state
             .reserve_agent_nickname(names, preferred)
             .ok_or_else(|| {
-                CodexErr::UnsupportedOperation("no available agent nicknames".to_string())
+                CodexErr::UnsupportedOperation(
+                    tr(current(), "no available agent nicknames").to_string(),
+                )
             })?;
         self.reserved_agent_nickname = Some(agent_nickname.clone());
         Ok(agent_nickname)

@@ -1637,10 +1637,10 @@ for f in m.scan(Path("codex-rs/core")):
 
 | 值 | 站点数 | 判决与依据 |
 | --- | --- | --- |
-| `failed to read effective config for selected permission profile: {err}` | 2 | **缺陷，已修**（`tr_with`）：同文件 `permissions.rs:347`/`:441`/`:463` 的同类 `io::Error::new(InvalidInput, …)` **本来就已译**——原登记理由只给了「小写 I/O 诊断」这种**风格依据**，与文件内先例矛盾。提交 `8a8de4d37` |
+| `failed to read effective config for selected permission profile: {err}` | 2 | **缺陷，已修**（`tr_with`）：同文件 `codex-rs/core/src/config/permissions.rs:347`/`:441`/`:463` 的同类 `io::Error::new(InvalidInput, …)` **本来就已译**——原登记理由只给了「小写 I/O 诊断」这种**风格依据**，与文件内先例矛盾。提交 `8a8de4d37` |
 | `code mode session is shutting down` | 5 | 同一 `Err(String)`，handlers 逐处 `map_err` 成 `RespondToModel`（`code_mode/mod.rs:173`/`:226`/`:231`/`:236`/`:244`） |
 | `code mode notification cancelled` / `code mode nested tool call cancelled` | 5 | `CodeModeSessionDelegate` 的 `Err(String)`（协议面回模型；trait 见 `code-mode-protocol/src/session.rs:99`） |
-| `apply_patch verification failed: {parse_error}` | 3 | 三处均为 `FunctionCallError::RespondToModel`（`apply_patch.rs:384`/`:431`/`:536`） |
+| `apply_patch verification failed: {parse_error}` | 3 | 三处均为 `FunctionCallError::RespondToModel`（`codex-rs/core/src/tools/handlers/apply_patch.rs:384`/`:431`/`:536`） |
 | `Environment id from <environment_context>…` / `Output token budget…` / `Reasoning effort override…` / `Tools for reading and waiting on time.` | 7 | 全部是 `JsonSchema::*` / `ResponsesApiNamespace { description }` **工具定义描述** ⇒ §12.2 |
 | `<completed without visible text>\n` / `[REPL response {} {}]\n` | 5 | `ContextualUserFragment` 渲染结果注入模型（`node_repl_review_evidence.rs:301` 起）⇒ §12.2 |
 | `\n{}: {}` | 2 | `question_text` 拼接格式（把用户数据拼进 guardian 证据）|
@@ -1649,8 +1649,8 @@ for f in m.scan(Path("codex-rs/core")):
 | `missing url/command…` / `unsupported transport {transport}` | 6 | `canonical_mcp_dependency_key` 的 `Err(String)`，调用点只 `warn!("unable to auto-install MCP dependency …")`（`mcp_skill_dependencies.rs:513`/`:530`）|
 | `standalone handoff` | 2 | `request_create` 请求标签 |
 | `Wall time: … seconds\nOutput:` | 2 | 工具输出表头负载（§12.31）|
-| `network approval was not applied` | 2 | 只进 `session_telemetry.tool_decision(…)`（`network_approval.rs:1048`/`:1054`）|
-| `collab manager unavailable` | 2 | `RespondToModel`（`multi_agents_common.rs:87`/`:105`）|
+| `network approval was not applied` | 2 | 只进 `session_telemetry.tool_decision(…)`（`codex-rs/core/src/tools/network_approval.rs:1048`/`:1054`）|
+| `collab manager unavailable` | 2 | `RespondToModel`（`codex-rs/core/src/tools/handlers/multi_agents_common.rs:87`/`:105`）|
 | `tool {tool_name} already registered` | 2 | `error_or_panic`（release 下只 `error!`）|
 | `timeout_ms is too large` | 2 | `UnifiedExecError::process_failed` ⇒ 模型面 |
 | `No corresponding config content` | 2 | `anyhow!` 内部链，`role.rs:63-66` 统一替换成 `AGENT_TYPE_UNAVAILABLE_ERROR` |

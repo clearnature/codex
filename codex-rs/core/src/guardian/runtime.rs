@@ -71,9 +71,10 @@ impl ReviewAction {
                 .turn_environments()
                 .any(|environment| environment.selection.environment_id == *environment_id)
         {
-            return Err(ReviewDecision::denied(
+            return Err(ReviewDecision::denied(tr(
+                current(),
                 "automatic approval review cannot access the terminal's environment; select it before retrying",
-            ));
+            )));
         }
         Ok(request)
     }

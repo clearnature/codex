@@ -276,6 +276,17 @@ def main(argv: list[str]) -> int:
         ),
     )
     parser.add_argument(
+        "--dump-rows",
+        action="store_true",
+        help=(
+            "emit PASTE-READY dossier rows (`<key>\\t<site>\\t`) for the remaining candidates. "
+            "Values that cannot be a TSV key (real newline/tab, or a leading `#` which the file "
+            "reads as a comment) come out in the empty-key + site form instead. Use this instead "
+            "of copying `--dump` output: the repr quotes and the 90-char truncation in listing "
+            "modes are what silently produce no-op rows."
+        ),
+    )
+    parser.add_argument(
         "--dump",
         action="store_true",
         help=(
@@ -563,6 +574,27 @@ def main(argv: list[str]) -> int:
             print(f"    {site}: {value[:70]!r}")
         print(f"  inert value-rows (value matches no candidate here): {len(inert)}")
         return 0 if not nop else 1
+
+    if args.dump_rows:
+        wanted = [
+            f for f in remaining if not args.file or f["path"].endswith(args.file)
+        ]
+        unsafe = 0
+        for f in wanted:
+            value = f["value"]
+            site = f"{f['path']}:{f['line']}"
+            if "\n" in value or "\t" in value or value.lstrip().startswith("#"):
+                unsafe += 1
+                prefix = value.replace("\n", "\\n")[:70]
+                print(f"\t{site}\t[空键形态·值: {prefix}…] ")
+            else:
+                print(f"{value}\t{site}\t")
+        print(
+            f"# {len(wanted)} rows ({unsafe} in the empty-key + site form); "
+            "append the reason as the third column",
+            file=sys.stderr,
+        )
+        return 0
 
     if args.dump:
         wanted = [

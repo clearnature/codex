@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **146** | 第 495 轮清 17 站点（译 5：`CodexErr::*`/assistant message/`send_user_shell_error`；登记 12）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **130** | 第 498 轮清 16 站点（译 2：`ReviewDecision::denied` ×2；登记 14：guardian 内部诊断/提示词）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1919,3 +1919,18 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 `managed_developer_instructions` 那条我写的是**常量定义处 `:17`**，而候选在**使用处 `:72`**，
 且键还是从列表里抄来的**截断值**（两个错叠加）。改**空键+站点形态**（站点 `:72`）后候选严格对平 17 条。
 ⇒ 这正是上一轮加 `--audit-rows` 的用途：**登记「写了但不生效」只有机器能查**。
+
+### 12.47 第 498 轮：`ReviewDecision::denied` **全类枚举**，以及「抄写错」的工具化根除
+
+**做法**：不只清候选清单，而是把整类用户可见文案枚举出来对账 ——
+`grep -rn 'ReviewDecision::denied(' codex-rs/core/src` 得到 16 处：已译 6 处（`mcp_tool_call.rs:1542`/`:2041`、
+`tools/approvals.rs:630`/`:651`、`guardian/runtime.rs:63`、`guardian/review.rs:802`）、遥测 4 处
+（`network_approval.rs:824`/`:837`/`:1048`/`:1054`，都已登记：它们只进 `session_telemetry.tool_decision(..)`）、
+**本轮补译 2 处**（`guardian/decision.rs:107`、`guardian/runtime.rs:74`）、其余是转发已构造的字符串。
+⇒ 这一类**清完了**，可作为「一个类一个类地清」的样板。
+
+**工具化**：本批又因「抄写 `--dump` 输出」造出 2 行空操作（`--dump` 打的是 `repr(value)`，
+**带引号**，且列表模式截断到 90 字符）。与其第三次靠 `--audit-rows` 抓，不如让工具直接产出
+**可粘贴的登记行**：新增 `python3 scripts/i18n_todo.py --root <R> --dump-rows`，输出
+`<key>\t<site>\t`；**不能做 TSV 键的值**（含真换行/制表符、或以 `#` 开头会被当注释）自动改成
+`<空>\t<site>\t[空键形态·值: 前缀…] `。判据：**登记行只从 `--dump-rows` 抄**，不再从列表或 `--dump` 抄。

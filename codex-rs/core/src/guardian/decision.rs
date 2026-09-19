@@ -19,6 +19,8 @@ use super::review::record_guardian_non_denial;
 use super::runtime::ReviewAction;
 use super::runtime::ReviewRuntime;
 use crate::session::session::Session;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(crate) fn spawn_approval_decision(
     session: Arc<Session>,
@@ -104,9 +106,10 @@ pub(crate) async fn decide_approval(
     let action = match &request.action {
         Ok(action) => action,
         Err(_) => {
-            return Some(ReviewDecision::denied(
+            return Some(ReviewDecision::denied(tr(
+                current(),
                 "automatic approval review could not prepare the action",
-            ));
+            )));
         }
     };
     let runtime = ReviewRuntime {

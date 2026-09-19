@@ -7579,6 +7579,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "shell working directory is not native to the Codex host",
         "shell工作目录不属于Codex宿主的原生路径",
     ),
+    (
+        "automatic approval review cannot access the terminal's environment; select it before retrying",
+        "自动审批复核无法访问该终端环境；请先选择它再重试",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

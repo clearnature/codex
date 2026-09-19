@@ -932,5 +932,5 @@ missing exec command cwd convention	codex-rs/core/src/tools/approvals.rs:304	`st
 Dynamic tools	codex-rs/core/src/tools/handlers/dynamic.rs:102	工具搜索索引的 `ToolSearchSourceInfo.name`（模型侧元数据，`from_tool_spec`）⇒ §12.2/§12.7
 Tools provided by the current Codex thread.	codex-rs/core/src/tools/handlers/dynamic.rs:103	同上：`ToolSearchSourceInfo.description` ⇒ §12.2
 dynamic tool handler received unsupported payload	codex-rs/core/src/tools/handlers/dynamic.rs:133	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
-dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:149	同上：RespondToModel ⇒ 模型面（§12.31）
-dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:242	同上：RespondToModel ⇒ 模型面（§12.31）
+dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:149	同上：RespondToModel ⇒ 模型面（§12.31） 〔fanout 补核〕两站点（:149 / :242）同为 `FunctionCallError::RespondToModel(..)`（同一 handler 的 async 等待与同步等待两条路径）⇒ 模型面[fanout-reviewed]
+dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:242	同上：RespondToModel ⇒ 模型面（§12.31） 〔fanout 补核〕两站点（:149 / :242）同为 `FunctionCallError::RespondToModel(..)`（同一 handler 的 async 等待与同步等待两条路径）⇒ 模型面[fanout-reviewed]

@@ -1707,6 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **0** | 第 599 轮清 `desktop_app/mac.rs` 34 站点（33 译 + 1 登记，§12.68）⇒ **cli 全范围清空**；已扣 doctor 851（裁定排除） |
+| `codex-rs/tui/src` | **0** | 第 603 轮把最后 3 条按「机器语法/匹配键」登记（§12.69） |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2523,3 +2524,21 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 
 **证据**：`fmt-check r-mu85xeer-awr9lq`、`i18n-check r-mu85xnh3-7x4d31`（3360 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
 `clippy r-mu8626fv-c0a23m`、合并自检 `r-mu864b8x-j4d4sa`（drift=0 / 四 scope audit=0 / fanout=0 / **census cli=0**、core=10、tui=3、exec=0）。
+
+### 12.69 第 603 轮：`tui` 最后 3 条登记 ⇒ **cli / tui / exec 三个 scope 全部归 0**
+
+`tui` 3 条全部是**不能译**的机器文本，登记后 `tui` 候选归 0：
+
+| 站点 | 类别 | 依据 |
+| --- | --- | --- |
+| `app/history_ui.rs:418` | **PowerShell 脚本文本**（`r#"…"#` 跨行的窗口应用启动脚本） | 喂给 `powershell.exe` 的机器命令，译了会破坏功能（§12.1/§12.7 数据格式）；所在函数是 `#[cfg(target_os = "windows")]`（`:414`） |
+| `app/transcript_export.rs:240` | **导出 Markdown 的头部**，同时是**判空哨兵** | 同值另一站点 `:299` 用 `if markdown != "# Codex conversation\n"` 与它比较 ⇒ §12.1 匹配键；译了会让导出物头部随语言漂移（下游 diff/工具） |
+| `app/transcript_export.rs:299` | 上述哨兵的**比较侧** | 与 `:240` 同值 ⇒ 两站点一并登记，并标 `[fanout-reviewed]`（逐站点核对） |
+
+**普查现状（同回合合并自检 `r-mu87itt3-1t250t`）**：`cli=0`、`tui=0`、`exec=0`、**`core=10`** ——
+剩下的 10 条**全部**是 §12.9/§12.54 记录的 **thiserror 族**（`core/src/unified_exec/errors.rs` 9 条写在 `#[error(...)]` 属性里 +
+`core/src/mcp_tool_call/account.rs:11`），内联 `tr` 已被证明不可能（`E0609`/`E0658`），
+处置路线只有「改成手写 `Display`」（已有 4 个先例类型）⇒ **需要人类裁决** `j-mu7lh6vq-fp6o`。
+
+**证据**：`i18n-check r-mu8787x8-qmzg2b`（3360 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
+合并自检 `r-mu87itt3-1t250t`（drift=0 / 四 scope audit=0 / fanout=0 / cli=0 / tui=0 / exec=0 / core=10）。

@@ -7525,6 +7525,12 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to read effective config for selected permission profile: {0}",
         "读取所选权限档位的有效配置失败：{0}",
     ),
+    ("Reconnecting... waiting for network", "正在重连…等待网络"),
+    ("Reconnecting... {0}/{1}", "正在重连…{0}/{1}"),
+    (
+        "after_agent hook '{0}' failed and aborted turn completion: {1}",
+        "after_agent钩子'{0}'失败，已中止回合完成：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

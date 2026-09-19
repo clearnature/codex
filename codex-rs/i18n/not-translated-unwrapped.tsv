@@ -910,3 +910,15 @@ Follow the Workspace Policy. 	codex-rs/core/src/context/guardian_followup_review
 If the user explicitly approves a previously rejected action after being informed of the 	codex-rs/core/src/context/guardian_followup_review_reminder.rs:28	**注入模型的 guardian 提示词**：本文件 `impl ContextualUserFragment for GuardianFollowupReviewReminder`（:7）⇒ render() 产物注入模型上下文（guardian 复核提醒）⇒ §12.2（译了会改变模型行为）
 concrete risks, set outcome to \"allow\" unless the policy explicitly disallows user 	codex-rs/core/src/context/guardian_followup_review_reminder.rs:29	**注入模型的 guardian 提示词**：本文件 `impl ContextualUserFragment for GuardianFollowupReviewReminder`（:7）⇒ render() 产物注入模型上下文（guardian 复核提醒）⇒ §12.2（译了会改变模型行为）
 overwrites in such cases.	codex-rs/core/src/context/guardian_followup_review_reminder.rs:30	**注入模型的 guardian 提示词**：本文件 `impl ContextualUserFragment for GuardianFollowupReviewReminder`（:7）⇒ render() 产物注入模型上下文（guardian 复核提醒）⇒ §12.2（译了会改变模型行为）
+stream connection failed; waiting to retry	codex-rs/core/src/responses_retry.rs:75	`tracing::warn!` 日志行（同文件其余重连文案已由 `notify_stream_error` 走 UI）⇒ §12.3
+stream disconnected - retrying sampling request ({retries}/{max_retries} in {delay:?})...	codex-rs/core/src/responses_retry.rs:161	`tracing::warn!` 日志行 ⇒ §12.3
+remote compaction v2 stream failed; retrying request after delay	codex-rs/core/src/responses_retry.rs:170	`tracing::warn!` 日志行 ⇒ §12.3
+Command blocked by PreToolUse hook: {reason}. Command: {command}	codex-rs/core/src/hook_runtime.rs:235	接收者：tools/registry.rs:588 `FunctionCallError::RespondToModel(message)` ⇒ 模型面（§12.31）
+Tool call blocked by PreToolUse hook: {reason}. Tool: {}	codex-rs/core/src/hook_runtime.rs:239	同上：RespondToModel ⇒ 模型面（§12.31）
+aborting operation	codex-rs/core/src/hook_runtime.rs:635	`tracing::warn!` 的 `{action}` 片段（日志）⇒ §12.3
+after_agent hook failed; {action}	codex-rs/core/src/hook_runtime.rs:643	`tracing::warn!` 日志行；用户可见的那条是 `:645`（走 EventMsg::Error，已译）⇒ §12.3
+image content omitted because it exceeded the supported size limit; use a smaller image	codex-rs/core/src/image_preparation.rs:28	**替换发给模型的图像内容**：`prepare_response_items` 把失败图换成该占位文案进模型请求（且测试断言该常量）⇒ §12.2
+image content omitted because detail 'low' is not supported; use 'high', 'original', or 'auto'	codex-rs/core/src/image_preparation.rs:29	同上（模型上下文占位）⇒ §12.2
+image content omitted because remote image URLs are not supported	codex-rs/core/src/image_preparation.rs:31	同上（模型上下文占位）⇒ §12.2
+remote image URLs are not supported	codex-rs/core/src/image_preparation.rs:69	私有 enum 的 thiserror Display，仅经 `placeholder()`（:78-86）映射成模型上下文占位 ⇒ §12.2
+image detail `low` is not supported	codex-rs/core/src/image_preparation.rs:71	同上（placeholder 映射，非渲染路径）⇒ §12.2

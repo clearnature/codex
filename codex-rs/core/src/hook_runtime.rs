@@ -68,6 +68,8 @@ use crate::state::TurnState;
 use crate::tools::hook_names::HookToolName;
 use crate::tools::sandboxing::PermissionRequestPayload;
 use crate::turn_metadata::McpTurnMetadataContext;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 pub(crate) struct HookRuntimeOutcome {
     pub should_stop: bool,
@@ -641,8 +643,10 @@ pub(crate) async fn run_legacy_after_agent_hook(
             "after_agent hook failed; {action}"
         );
         if should_abort && abort_message.is_none() {
-            abort_message = Some(format!(
-                "after_agent hook '{hook_name}' failed and aborted turn completion: {error}"
+            abort_message = Some(tr_with(
+                current(),
+                "after_agent hook '{0}' failed and aborted turn completion: {1}",
+                &[hook_name.as_str(), &error.to_string()],
             ));
         }
     }

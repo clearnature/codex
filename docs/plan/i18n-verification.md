@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **299** | 最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **284** | 第 472 轮清掉 15 条（译 3 + 登记 12）；最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1717,3 +1717,22 @@ for f in m.scan(Path("codex-rs/core")):
 `session/mcp.rs:269` → `codex_thread.rs:850` → `app-server/…/installed.rs:75` → `:159`
 `internal_error(format!("failed to refresh installed connector runtime state: {err:#}"))` → JSON-RPC 响应；
 包装层属 app-server 范围（见上表）。
+
+### 12.39 第 472 轮：`responses_retry` / `hook_runtime` / `image_preparation` 的 15 条去向
+
+三个文件各 5 条候选，判据仍是**接收者**，不是「像不像文案」：
+
+| 文件:行 | 值 | 判决 |
+| --- | --- | --- |
+| `responses_retry.rs:76` | `Reconnecting... waiting for network` | **译**：`notify_stream_error`（源码注释：「Surface retry information to any UI/front-end」）|
+| `responses_retry.rs:124` | `Reconnecting... {retry_count}/{max_retries}` | **译**（`tr_with` + 位置占位）：同上 UI 路径 |
+| `responses_retry.rs:74` `:152` `:161` | 三条重连/重试文案 | 登记：都在 `tracing::warn!` 里（同文件同族文案分走两条路，正是「同族不同接收者」的例子）|
+| `hook_runtime.rs:645` | `after_agent hook '{hook_name}' failed and aborted turn completion: {error}` | **译**：进 `abort_message` → `EventMsg::Error`（用户可见）|
+| `hook_runtime.rs:233` `:237` | `… blocked by PreToolUse hook …` | 登记：接收者 `tools/registry.rs:588` 是 `FunctionCallError::RespondToModel(message)` ⇒ **模型面** |
+| `hook_runtime.rs:633` `:641` | `aborting operation` / `after_agent hook failed; {action}` | 登记：`tracing::warn!` |
+| `image_preparation.rs:28` `:29` `:31` | 三条 `image content omitted because …` | 登记：`prepare_response_items` 把失败图**替换成该占位文案进模型请求**（且测试断言该常量）⇒ §12.2 |
+| `image_preparation.rs:69` `:71` | 两个 thiserror 变体 | 登记：私有 enum，仅经 `placeholder()`（`:78-86`）映射成模型上下文占位，非渲染路径 |
+
+**本批又被 clippy 抓到一次**（第三次同型）：我给 `{1}` 传 `error.as_str()`，而 `error` 是
+`Box<dyn Error + Send + Sync>`（`E0599`）—— 改成 `&error.to_string()`（与 `config/mod.rs` 同形）。
+判据复核：**只有编译门禁能抓这类 slip**，读码看不出来。

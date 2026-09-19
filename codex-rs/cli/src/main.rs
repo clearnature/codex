@@ -1305,9 +1305,10 @@ async fn cli_main(
                                         && value.get("writable_roots").is_some())
                             }))
                 {
-                    anyhow::bail!(
+                    anyhow::bail!(tr(
+                        current(),
                         "`codex agents` cannot apply local provider or additional-directory overrides to a remote server"
-                    );
+                    ));
                 }
                 if is_workload_identity_selected() {
                     anyhow::bail!(tr(
@@ -1725,7 +1726,11 @@ async fn cli_main(
                         .await;
                     } else if login_cli.api_key.is_some() {
                         eprintln!(
-                            "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`."
+                            "{}",
+                            tr(
+                                current(),
+                                "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`."
+                            )
                         );
                         std::process::exit(1);
                     } else if login_cli.with_api_key {
@@ -2031,9 +2036,10 @@ fn profile_v2_for_subcommand<'a>(
         | Subcommand::Debug(DebugCommand {
             subcommand: DebugSubcommand::PromptInput(_),
         }) => Ok(Some(profile_v2)),
-        _ => anyhow::bail!(
+        _ => anyhow::bail!(tr(
+            current(),
             "--profile only applies to runtime commands and `codex mcp`: `codex`, `codex exec`, `codex review`, `codex resume`, `codex queue`, `codex archive`, `codex delete`, `codex unarchive`, `codex fork`, `codex mcp`, `codex sandbox`, and `codex debug prompt-input`."
-        ),
+        )),
     }
 }
 
@@ -2210,14 +2216,15 @@ async fn load_exec_server_remote_auth_provider(
 
     let (auth_manager, auth) = load_exec_server_remote_auth(
         config,
-        "remote exec-server registration requires ChatGPT authentication or API key authentication; run `codex login` or set CODEX_API_KEY",
+        tr(current(), "remote exec-server registration requires ChatGPT authentication or API key authentication; run `codex login` or set CODEX_API_KEY"),
     )
     .await?;
 
     if !is_supported_exec_server_remote_auth(&auth) {
-        anyhow::bail!(
+        anyhow::bail!(tr(
+            current(),
             "remote exec-server registration requires ChatGPT authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth"
-        );
+        ));
     }
 
     if auth.is_api_key_auth() {
@@ -2272,9 +2279,10 @@ fn validate_api_key_remote_host(base_url: &str) -> anyhow::Result<()> {
     };
 
     if !is_allowed {
-        anyhow::bail!(
+        anyhow::bail!(tr(
+            current(),
             "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
-        );
+        ));
     }
 
     Ok(())
@@ -2414,8 +2422,12 @@ fn maybe_print_under_development_feature_warning(codex_home: &std::path::Path, f
 
     let config_path = codex_home.join(codex_config::CONFIG_TOML_FILE);
     eprintln!(
-        "Under-development features enabled: {feature}. Under-development features are incomplete and may behave unpredictably. To suppress this warning, set `suppress_unstable_features_warning = true` in {}.",
-        config_path.display()
+        "{}",
+        tr_with(
+            current(),
+            "Under-development features enabled: {0}. Under-development features are incomplete and may behave unpredictably. To suppress this warning, set `suppress_unstable_features_warning = true` in {1}.",
+            &[feature, &config_path.display().to_string()]
+        )
     );
 }
 
@@ -2590,9 +2602,10 @@ async fn run_debug_clear_memories_command(
             &[&memories_path.display().to_string()],
         )
     };
-    message.push_str(&format!(
-        " Cleared memory directories under {}.",
-        config.codex_home.display()
+    message.push_str(&tr_with(
+        current(),
+        " Cleared memory directories under {0}.",
+        &[&config.codex_home.display().to_string()],
     ));
 
     println!("{message}");
@@ -2615,14 +2628,18 @@ fn reject_remote_mode_for_subcommand(
     subcommand: &str,
 ) -> anyhow::Result<()> {
     if let Some(remote) = remote {
-        anyhow::bail!(
-            "`--remote {remote}` is only supported for interactive TUI commands, not `codex {subcommand}`"
-        );
+        anyhow::bail!(tr_with(
+            current(),
+            "`--remote {0}` is only supported for interactive TUI commands, not `codex {1}`",
+            &[remote, subcommand]
+        ));
     }
     if remote_auth_token_env.is_some() {
-        anyhow::bail!(
-            "`--remote-auth-token-env` is only supported for interactive TUI commands, not `codex {subcommand}`"
-        );
+        anyhow::bail!(tr_with(
+            current(),
+            "`--remote-auth-token-env` is only supported for interactive TUI commands, not `codex {0}`",
+            &[subcommand]
+        ));
     }
     Ok(())
 }
@@ -2670,9 +2687,10 @@ fn reject_unsupported_worktree_for_subcommand(
             }
         },
         _ => {
-            anyhow::bail!(
+            anyhow::bail!(tr(
+                current(),
                 "`--worktree` supports new interactive sessions, `codex fork`, `codex exec`, and `codex exec fork`"
-            )
+            ))
         }
     }
 }
@@ -2886,13 +2904,18 @@ async fn run_interactive_tui(
     let terminal_info = codex_terminal_detection::terminal_info();
     if terminal_info.name == TerminalName::Dumb {
         if !(std::io::stdin().is_terminal() && std::io::stderr().is_terminal()) {
-            return Ok(AppExitInfo::fatal(
+            return Ok(AppExitInfo::fatal(tr(
+                current(),
                 "TERM is set to \"dumb\". Refusing to start the interactive TUI because no terminal is available for a confirmation prompt (stdin/stderr is not a TTY). Run in a supported terminal or unset TERM.",
-            ));
+            )));
         }
 
         eprintln!(
-            "WARNING: TERM is set to \"dumb\". Codex's interactive TUI may not work in this terminal."
+            "{}",
+            tr(
+                current(),
+                "WARNING: TERM is set to \"dumb\". Codex's interactive TUI may not work in this terminal."
+            )
         );
         if !confirm(tr(current(), "Continue anyway? [y/N]: "))? {
             return Ok(AppExitInfo::fatal(
@@ -2983,8 +3006,10 @@ where
             Ok(backups) => local_state_db::confirm_fresh_start_rebuild(startup_error, &backups)?,
             Err(backup_err) => {
                 local_state_db::print_diagnostic_guidance(startup_error);
-                return Ok(AppExitInfo::fatal(format!(
-                    "failed to move damaged Codex local database files into a backup folder automatically: {backup_err}"
+                return Ok(AppExitInfo::fatal(tr_with(
+                    current(),
+                    "failed to move damaged Codex local database files into a backup folder automatically: {0}",
+                    &[&backup_err.to_string()],
                 )));
             }
         }

@@ -8083,6 +8083,62 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "访问令牌登录已被禁用。请改用API密钥登录。",
     ),
     ("Successfully logged in", "登录成功"),
+    (
+        "`codex agents` cannot apply local provider or additional-directory overrides to a remote server",
+        "`codex agents` 无法对远程服务器应用本地provider或附加目录覆盖项",
+    ),
+    (
+        "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`.",
+        "不再支持--api-key参数。请改用管道传入密钥，例如`printenv OPENAI_API_KEY | codex login --with-api-key`。",
+    ),
+    (
+        "--profile only applies to runtime commands and `codex mcp`: `codex`, `codex exec`, `codex review`, `codex resume`, `codex queue`, `codex archive`, `codex delete`, `codex unarchive`, `codex fork`, `codex mcp`, `codex sandbox`, and `codex debug prompt-input`.",
+        "--profile只适用于运行时命令与`codex mcp`：`codex`、`codex exec`、`codex review`、`codex resume`、`codex queue`、`codex archive`、`codex delete`、`codex unarchive`、`codex fork`、`codex mcp`、`codex sandbox` 和 `codex debug prompt-input`。",
+    ),
+    (
+        "remote exec-server registration requires ChatGPT authentication or API key authentication; run `codex login` or set CODEX_API_KEY",
+        "远程exec-server注册需要ChatGPT认证或API密钥认证；请运行`codex login`或设置CODEX_API_KEY",
+    ),
+    (
+        "remote exec-server registration requires ChatGPT authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth",
+        "远程exec-server注册需要ChatGPT认证或API密钥认证；请运行`codex login`或设置CODEX_API_KEY",
+    ),
+    (
+        "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts",
+        "远程exec-server的API密钥认证仅限HTTPS的openai.com与openai.org主机及子域，或回环主机",
+    ),
+    (
+        "Under-development features enabled: {0}. Under-development features are incomplete and may behave unpredictably. To suppress this warning, set `suppress_unstable_features_warning = true` in {1}.",
+        "已启用开发中特性：{0}。开发中特性尚不完整，行为可能不可预测。要抑制此警告，请在{1}中设置`suppress_unstable_features_warning = true`。",
+    ),
+    (
+        " Cleared memory directories under {0}.",
+        " 已清除位于{0}的内存目录。",
+    ),
+    (
+        "`--remote {0}` is only supported for interactive TUI commands, not `codex {1}`",
+        "`--remote {0}`仅支持交互式TUI命令，不支持`codex {1}`",
+    ),
+    (
+        "`--remote-auth-token-env` is only supported for interactive TUI commands, not `codex {0}`",
+        "`--remote-auth-token-env`仅支持交互式TUI命令，不支持`codex {0}`",
+    ),
+    (
+        "`--worktree` supports new interactive sessions, `codex fork`, `codex exec`, and `codex exec fork`",
+        "`--worktree`支持新建交互式会话、`codex fork`、`codex exec` 和 `codex exec fork`",
+    ),
+    (
+        "TERM is set to \"dumb\". Refusing to start the interactive TUI because no terminal is available for a confirmation prompt (stdin/stderr is not a TTY). Run in a supported terminal or unset TERM.",
+        "TERM被设为\"dumb\"。由于没有可用于确认提示的终端（stdin/stderr不是TTY），拒绝启动交互式TUI。请在受支持的终端中运行，或取消设置TERM。",
+    ),
+    (
+        "WARNING: TERM is set to \"dumb\". Codex's interactive TUI may not work in this terminal.",
+        "警告：TERM被设为\"dumb\"。Codex的交互式TUI在此终端中可能无法正常工作。",
+    ),
+    (
+        "failed to move damaged Codex local database files into a backup folder automatically: {0}",
+        "无法自动把损坏的Codex本地数据库文件移动到备份文件夹：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

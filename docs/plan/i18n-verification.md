@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **167** | 第 562 轮清 `login.rs` 41 站点（全译，§12.61）；已扣 doctor 851（裁定排除）；最密文件 `main.rs` 37、`desktop_app/mac.rs` 34 |
+| `codex-rs/cli/src` | **130** | 第 573 轮清 `main.rs` 37 站点（14 译 + 23 登记，§12.62）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34、`marketplace_cmd.rs` 27、`remote_control_cmd.rs` 27 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2331,3 +2331,27 @@ duplicate 0 / placeholder 0）、`clippy r-mu8015xq-mdd5t9`、合并自检 `r-mu
 unused 0 / spacing 0 / duplicate 0 / placeholder 0）、`clippy r-mu813jbq-win5up`、
 合并自检 `r-mu815o3i-5iy9zv`（drift=0 / 四 scope audit=0 / fanout=0 / census cli=167）。
 失败回执保留：`r-mu80y1ep-mdyyfn`（3 条 spacing）、`r-mu812hqt-5ske2r`（redundant_clone）。
+
+### 12.62 第 573 轮：`main.rs` 裁定（37 站点：译 14 / 登记 23）
+
+`--file cli/src/main.rs` 报 **0 unwrapped**；`cli/src` 167 → **130**，字典 3243 → **3257**。
+
+**译 14 站点 / 13 条词条**（`:2213`/`:2219` 是同句两站点）：`1309`/`1728`/`2035`/`2213`/`2219`/`2276`/`2417`/`2594`/`2619`/`2624`/`2674`/`2890`/`2895`/`2987`。
+本批首次遇到两种形状：**函数实参**（`:2213` 传给 `load_exec_server_remote_auth`、`:2890` 传给 `AppExitInfo::fatal`）用 `kind:"arg"` 只包字面量；
+**`format!` 只包一个表达式**用 `kind:"format"` 直接替换成 `tr_with(...)`（避免 `clippy::useless_format`）。
+
+**登记 23 站点，两类**：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| **命令名标识符** | `:1812`/`:1862`/`:1870`/`:1878`/`:1892`/`:1900`/`:1910`/`:1960`/`:1993`/`:2001`（`reject_remote_mode_for_subcommand` 的第 3 实参）、`:2789`–`:2806`（`app_server_subcommand_name` 的返回值） | 它们被**插进**用户可见模板 `` `--remote {0}` is only supported for interactive TUI commands, not `codex {1}` ``（同文件 `:2619`）⇒ 是用户要照抄的**命令名**（§12.6/§12.7 标识符）。**测试反过来佐证**：`:5153`/`:5167` 断言错误文本包含 `"app-server proxy"` / `"app-server daemon version"` —— 不译才让该断言在两种语言下都成立 |
+| **STAGE 列 token** | `:1187` `"under development"` | `features list` 的 STAGE 列，列宽由 `stage.len()` 算出（`:1980`/`:1986`）；同族 `experimental`/`stable`/`deprecated`/`removed` 因短词被形状规则排除 ⇒ 同 §12.58/§12.60 口径 |
+
+**登记行行号的自我纠错（值得记）**：`just fmt` 之后 23 行里有 6 行行号漂移；4 行由 `i18n_dossier_lines.py --fix` + 逐值比对修正，
+另 2 行（`app-server daemon version`、`app-server proxy`）**值在源码里出现两次** —— 第二次出现在**测试的断言字符串**里
+（`:5153`/`:5167`），自动重定位“按顺序分配”会指错 ⇒ 手工指到 match 臂（`:2817`/`:2820`）。
+判据：**值出现次数 > 登记行数时不要自动分配**，先看清第二处是什么；并把这一巧合写进理由列。
+
+**证据**：`fmt-check r-mu81szao-4cbu82`、`i18n-check r-mu81segi-m13eyt`（3257 词条 / missing 0 / unused 0 / spacing 0 /
+duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu81xa4b-kmdqkn`、
+合并自检 `r-mu81zim4-dv6muw`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=130）。

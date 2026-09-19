@@ -17,6 +17,9 @@ use codex_core_plugins::marketplace_add::add_marketplace;
 use codex_core_plugins::marketplace_remove::MarketplaceRemoveOutcome;
 use codex_core_plugins::marketplace_remove::MarketplaceRemoveRequest;
 use codex_core_plugins::marketplace_remove::remove_marketplace;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_utils_cli::CliConfigOverrides;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -175,18 +178,36 @@ async fn run_add(config: Config, args: AddMarketplaceArgs) -> Result<()> {
 
     if outcome.already_added {
         println!(
-            "Marketplace `{}` is already added from {}.",
-            outcome.marketplace_name, outcome.source_display
+            "{}",
+            tr_with(
+                current(),
+                "Marketplace `{0}` is already added from {1}.",
+                &[
+                    outcome.marketplace_name.as_str(),
+                    outcome.source_display.as_str()
+                ]
+            )
         );
     } else {
         println!(
-            "Added marketplace `{}` from {}.",
-            outcome.marketplace_name, outcome.source_display
+            "{}",
+            tr_with(
+                current(),
+                "Added marketplace `{0}` from {1}.",
+                &[
+                    outcome.marketplace_name.as_str(),
+                    outcome.source_display.as_str()
+                ]
+            )
         );
     }
     println!(
-        "Installed marketplace root: {}",
-        outcome.installed_root.as_path().display()
+        "{}",
+        tr_with(
+            current(),
+            "Installed marketplace root: {0}",
+            &[&outcome.installed_root.as_path().display().to_string()]
+        )
     );
 
     Ok(())
@@ -215,7 +236,7 @@ async fn run_list(config: Config, args: ListMarketplaceArgs) -> Result<()> {
     let plugins_input = config.plugins_config_input();
     let marketplace_listing = manager
         .discover_marketplaces_for_config(&plugins_input, &[])
-        .context("failed to list plugin marketplaces")?;
+        .context(tr(current(), "failed to list plugin marketplaces"))?;
     let mut load_issues = configured_marketplace_snapshot_issues(
         config.codex_home.as_path(),
         &plugins_input,
@@ -239,16 +260,23 @@ async fn run_list(config: Config, args: ListMarketplaceArgs) -> Result<()> {
         let issue_lines = load_issues
             .iter()
             .map(|issue| {
-                format!(
-                    "- `{}` at {}: {}",
-                    issue.marketplace_name,
-                    issue.path.display(),
-                    issue.message
+                tr_with(
+                    current(),
+                    "- `{0}` at {1}: {2}",
+                    &[
+                        issue.marketplace_name.as_str(),
+                        &issue.path.display().to_string(),
+                        issue.message.as_str(),
+                    ],
                 )
             })
             .collect::<Vec<_>>()
             .join("\n");
-        bail!("failed to load marketplace(s):\n{issue_lines}");
+        bail!(tr_with(
+            current(),
+            "failed to load marketplace(s):\n{0}",
+            &[&issue_lines]
+        ));
     }
     let marketplaces = marketplace_listing.marketplaces;
     if args.json {
@@ -261,7 +289,7 @@ async fn run_list(config: Config, args: ListMarketplaceArgs) -> Result<()> {
     }
 
     if marketplaces.is_empty() {
-        println!("No plugin marketplaces in scope.");
+        println!("{}", tr(current(), "No plugin marketplaces in scope."));
         return Ok(());
     }
 
@@ -416,11 +444,22 @@ async fn run_remove(config: Config, args: RemoveMarketplaceArgs) -> Result<()> {
         return Ok(());
     }
 
-    println!("Removed marketplace `{}`.", outcome.marketplace_name);
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "Removed marketplace `{0}`.",
+            &[outcome.marketplace_name.as_str()]
+        )
+    );
     if let Some(installed_root) = outcome.removed_installed_root {
         println!(
-            "Removed installed marketplace root: {}",
-            installed_root.as_path().display()
+            "{}",
+            tr_with(
+                current(),
+                "Removed installed marketplace root: {0}",
+                &[&installed_root.as_path().display().to_string()]
+            )
         );
     }
 
@@ -448,12 +487,20 @@ impl JsonMarketplaceRemoveOutput {
 fn print_upgrade_outcome_json(outcome: &PluginMarketplaceUpgradeOutcome) -> Result<()> {
     for error in &outcome.errors {
         eprintln!(
-            "Failed to upgrade marketplace `{}`: {}",
-            error.marketplace_name, error.message
+            "{}",
+            tr_with(
+                current(),
+                "Failed to upgrade marketplace `{0}`: {1}",
+                &[error.marketplace_name.as_str(), error.message.as_str()]
+            )
         );
     }
     if !outcome.all_succeeded() {
-        bail!("{} upgrade failure(s) occurred.", outcome.errors.len());
+        bail!(tr_with(
+            current(),
+            "{0} upgrade failure(s) occurred.",
+            &[&outcome.errors.len().to_string()]
+        ));
     }
 
     let output = JsonMarketplaceUpgradeOutput::from_outcome(outcome);
@@ -503,12 +550,20 @@ fn print_upgrade_outcome(
 ) -> Result<()> {
     for error in &outcome.errors {
         eprintln!(
-            "Failed to upgrade marketplace `{}`: {}",
-            error.marketplace_name, error.message
+            "{}",
+            tr_with(
+                current(),
+                "Failed to upgrade marketplace `{0}`: {1}",
+                &[error.marketplace_name.as_str(), error.message.as_str()]
+            )
         );
     }
     if !outcome.all_succeeded() {
-        bail!("{} upgrade failure(s) occurred.", outcome.errors.len());
+        bail!(tr_with(
+            current(),
+            "{0} upgrade failure(s) occurred.",
+            &[&outcome.errors.len().to_string()]
+        ));
     }
 
     let selection_label = marketplace_name.unwrap_or("all configured Git marketplaces");
@@ -516,19 +571,60 @@ fn print_upgrade_outcome(
         println!("No configured Git marketplaces to upgrade.");
     } else if outcome.upgraded_roots.is_empty() {
         if marketplace_name.is_some() {
-            println!("Marketplace `{selection_label}` is already up to date.");
+            println!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Marketplace `{0}` is already up to date.",
+                    &[selection_label]
+                )
+            );
         } else {
-            println!("All configured Git marketplaces are already up to date.");
+            println!(
+                "{}",
+                tr(
+                    current(),
+                    "All configured Git marketplaces are already up to date."
+                )
+            );
         }
     } else if marketplace_name.is_some() {
-        println!("Upgraded marketplace `{selection_label}` to the latest configured revision.");
+        println!(
+            "{}",
+            tr_with(
+                current(),
+                "Upgraded marketplace `{0}` to the latest configured revision.",
+                &[selection_label]
+            )
+        );
         for root in &outcome.upgraded_roots {
-            println!("Installed marketplace root: {}", root.display());
+            println!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Installed marketplace root: {0}",
+                    &[&root.display().to_string()]
+                )
+            );
         }
     } else {
-        println!("Upgraded {} marketplace(s).", outcome.upgraded_roots.len());
+        println!(
+            "{}",
+            tr_with(
+                current(),
+                "Upgraded {0} marketplace(s).",
+                &[&outcome.upgraded_roots.len().to_string()]
+            )
+        );
         for root in &outcome.upgraded_roots {
-            println!("Installed marketplace root: {}", root.display());
+            println!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Installed marketplace root: {0}",
+                    &[&root.display().to_string()]
+                )
+            );
         }
     }
 

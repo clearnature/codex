@@ -1214,3 +1214,11 @@ app-server proxy	codex-rs/cli/src/main.rs:2820	命令名标识符：作为 `reje
 app-server generate-ts	codex-rs/cli/src/main.rs:2821	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
 app-server generate-json-schema	codex-rs/cli/src/main.rs:2822	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
 app-server generate-internal-json-schema	codex-rs/cli/src/main.rs:2824	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+codex plugin marketplace	codex-rs/cli/src/marketplace_cmd.rs:37	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+codex plugin marketplace add	codex-rs/cli/src/marketplace_cmd.rs:65	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+Examples:\n  codex plugin marketplace add ./path/to/marketplace\n  codex plugin marketplace add owner/repo --ref main\n  codex plugin marketplace add https://github.com/owner/repo --sparse plugins/foo	codex-rs/cli/src/marketplace_cmd.rs:66	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+codex plugin marketplace list	codex-rs/cli/src/marketplace_cmd.rs:91	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+codex plugin marketplace upgrade	codex-rs/cli/src/marketplace_cmd.rs:100	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+Examples:\n  codex plugin marketplace upgrade\n  codex plugin marketplace upgrade debug	codex-rs/cli/src/marketplace_cmd.rs:101	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+codex plugin marketplace remove	codex-rs/cli/src/marketplace_cmd.rs:115	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+Example:\n  codex plugin marketplace remove debug	codex-rs/cli/src/marketplace_cmd.rs:116	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）

@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **130** | 第 573 轮清 `main.rs` 37 站点（14 译 + 23 登记，§12.62）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34、`marketplace_cmd.rs` 27、`remote_control_cmd.rs` 27 |
+| `codex-rs/cli/src` | **103** | 第 578 轮清 `marketplace_cmd.rs` 27 站点（19 译 + 8 登记，§12.63）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34、`remote_control_cmd.rs` 27 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2355,3 +2355,25 @@ unused 0 / spacing 0 / duplicate 0 / placeholder 0）、`clippy r-mu813jbq-win5u
 **证据**：`fmt-check r-mu81szao-4cbu82`、`i18n-check r-mu81segi-m13eyt`（3257 词条 / missing 0 / unused 0 / spacing 0 /
 duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu81xa4b-kmdqkn`、
 合并自检 `r-mu81zim4-dv6muw`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=130）。
+
+### 12.63 第 578 轮：`marketplace_cmd.rs` 裁定（27 站点：译 19 / 登记 8）
+
+`--file cli/src/marketplace_cmd.rs` 报 **0 unwrapped**；`cli/src` 130 → **103**，字典 3257 → **3271**。
+
+**译 19 站点 / 14 条新词条 + 1 条复用**：`178`/`183`/`188`/`218`/`243`/`251`/`264`/`419`/`422`/`451`/`456`/`506`/`511`/`519`/`521`/`524`/`526`/`529`/`531`。
+
+- `:243` 的 `` "- `{}` at {}: {}" `` **与 §12.60 的 plugin_cmd 是同一条键** ⇒ 复用既有词条（脚本 plan 阶段报「字典已有 1 条」）。
+  这正是 `i18n-check` 报 `[duplicate] 0` 的原因：同一键只声明一次、两处站点共用 ⇒ **按值去重的正常结果，不是漏译**。
+- 同句多站点按值合并：`` Failed to upgrade marketplace `{}`: {} ``（`:451`/`:506`）、`{} upgrade failure(s) occurred.`（`:456`/`:511`）、
+  `Installed marketplace root: {}`（`:188`/`:526`/`:531` 三站点共享一条键）。
+
+**登记 8 站点**：`:37`/`:65`/`:100`/`:115` 的 clap `bin_name` 与 `:66`/`:101`/`:116` 的 `after_help`（编译期常量，同 §12.60 口径）。
+
+**行号漂移已是常态（本批第 3 次遇到）**：插入 import（+3 行）后 8 条登记行里 4 条（`bin_name`）行号漂移；
+`i18n_dossier_lines.py --fix` 处理了另外 4 条（`after_help`），这 4 条用「值唯一 ⇒ 自动重指」修好并逐条复核命中。
+判据累积成一条可操作流程：**`just fmt` + `--fix` 之后必须逐条核对「值出现在所引行」**；
+值在源码里出现多次时**不要自动分配**、人工判定（`known_issues i18n-row-relink-value-appears-twice`）。
+
+**证据**：`fmt-check r-mu82kkq5-whk79x`、`i18n-check r-mu82jyzp-wbsv36`（3271 词条 / missing 0 / unused 0 / spacing 0 /
+duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu82orep-rjg069`、
+合并自检 `r-mu82qx7x-12bkud`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=103）。

@@ -8139,6 +8139,47 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to move damaged Codex local database files into a backup folder automatically: {0}",
         "无法自动把损坏的Codex本地数据库文件移动到备份文件夹：{0}",
     ),
+    (
+        "Marketplace `{0}` is already added from {1}.",
+        "市场源`{0}`已从{1}添加过。",
+    ),
+    (
+        "Added marketplace `{0}` from {1}.",
+        "已从{1}添加市场源`{0}`。",
+    ),
+    (
+        "Installed marketplace root: {0}",
+        "已安装的市场源根目录：{0}",
+    ),
+    ("failed to list plugin marketplaces", "无法列出插件市场源"),
+    (
+        "failed to load marketplace(s):\n{0}",
+        "无法加载市场源：\n{0}",
+    ),
+    ("No plugin marketplaces in scope.", "范围内没有插件市场源。"),
+    ("Removed marketplace `{0}`.", "已移除市场源`{0}`。"),
+    (
+        "Removed installed marketplace root: {0}",
+        "已移除已安装的市场源根目录：{0}",
+    ),
+    (
+        "Failed to upgrade marketplace `{0}`: {1}",
+        "升级市场源`{0}`失败：{1}",
+    ),
+    ("{0} upgrade failure(s) occurred.", "发生{0}次升级失败。"),
+    (
+        "Marketplace `{0}` is already up to date.",
+        "市场源`{0}`已是最新。",
+    ),
+    (
+        "All configured Git marketplaces are already up to date.",
+        "所有已配置的Git市场源都已是最新。",
+    ),
+    (
+        "Upgraded marketplace `{0}` to the latest configured revision.",
+        "已把市场源`{0}`升级到最新配置的修订版本。",
+    ),
+    ("Upgraded {0} marketplace(s).", "已升级{0}个市场源。"),
 ];
 
 /// English source text -> Simplified Chinese.

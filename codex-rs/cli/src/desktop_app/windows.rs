@@ -1,4 +1,7 @@
 use anyhow::Context as _;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::Path;
 use std::path::PathBuf;
 use tokio::process::Command;
@@ -14,19 +17,39 @@ pub async fn run_windows_app_open_or_install(
     let workspace_path = workspace.display().to_string();
     let display_workspace = display_workspace_path(&workspace);
     if codex_app_is_installed().await? {
-        eprintln!("Opening workspace {display_workspace} in the Desktop app...");
+        eprintln!(
+            "{}",
+            tr_with(
+                current(),
+                "Opening workspace {0} in the Desktop app...",
+                &[display_workspace.as_str()]
+            )
+        );
         open_url(&codex_new_thread_url(&workspace_path)).await?;
         return Ok(());
     }
 
-    eprintln!("Desktop app not found; opening Windows installer...");
+    eprintln!(
+        "{}",
+        tr(
+            current(),
+            "Desktop app not found; opening Windows installer..."
+        )
+    );
     let download_url = download_url_override
         .as_deref()
         .unwrap_or(CODEX_WINDOWS_INSTALLER_URL);
     if open_url(download_url).await.is_err() && download_url_override.is_none() {
         open_url(CODEX_MICROSOFT_STORE_WEB_URL).await?;
     }
-    eprintln!("After installing the Desktop app, open workspace {display_workspace}.");
+    eprintln!(
+        "{}",
+        tr_with(
+            current(),
+            "After installing the Desktop app, open workspace {0}.",
+            &[display_workspace.as_str()]
+        )
+    );
     Ok(())
 }
 
@@ -40,7 +63,7 @@ async fn codex_app_is_installed() -> anyhow::Result<bool> {
         )
         .output()
         .await
-        .context("failed to invoke `powershell.exe`")?;
+        .context(tr(current(), "failed to invoke `powershell.exe`"))?;
 
     if !output.status.success() {
         return Ok(false);
@@ -57,12 +80,16 @@ async fn open_url(url: &str) -> anyhow::Result<()> {
         .arg(url)
         .status()
         .await
-        .with_context(|| format!("failed to open {url}"))?;
+        .with_context(|| tr_with(current(), "failed to open {0}", &[url]))?;
 
     if status.success() {
         Ok(())
     } else {
-        anyhow::bail!("failed to open {url} with {status}");
+        anyhow::bail!(tr_with(
+            current(),
+            "failed to open {0} with {1}",
+            &[url, &status.to_string()]
+        ));
     }
 }
 

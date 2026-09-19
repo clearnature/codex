@@ -8326,6 +8326,28 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无法监听exec-server关闭信号：{0}",
     ),
     ("invalid path {0}: {1}", "无效路径{0}：{1}"),
+    (
+        "`codex queue` does not support image attachments",
+        "`codex queue` 不支持图片附件",
+    ),
+    (
+        "Opening workspace {0} in the Desktop app...",
+        "正在桌面应用中打开工作区{0}…",
+    ),
+    (
+        "Desktop app not found; opening Windows installer...",
+        "未找到桌面应用；正在打开Windows安装程序…",
+    ),
+    (
+        "After installing the Desktop app, open workspace {0}.",
+        "安装桌面应用后，请打开工作区{0}。",
+    ),
+    (
+        "failed to invoke `powershell.exe`",
+        "调用`powershell.exe`失败",
+    ),
+    ("failed to open {0}", "打开{0}失败"),
+    ("failed to open {0} with {1}", "打开{0}失败（{1}）"),
 ];
 
 /// English source text -> Simplified Chinese.

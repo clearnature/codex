@@ -1,6 +1,8 @@
 use clap::Parser;
 use clap::builder::NonEmptyStringValueParser;
 use codex_arg0::Arg0DispatchPaths;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_tui::Cli as TuiCli;
 use codex_utils_cli::CliConfigOverrides;
 
@@ -43,7 +45,10 @@ pub(crate) async fn run_queue_command(
     let cli =
         finalize_session_archive_interactive(interactive, root_config_overrides, config_overrides);
     if !cli.images.is_empty() {
-        anyhow::bail!("`codex queue` does not support image attachments");
+        anyhow::bail!(tr(
+            current(),
+            "`codex queue` does not support image attachments"
+        ));
     }
     let explicit_remote_endpoint = resolve_remote_endpoint(
         remote.remote.or(root_remote),

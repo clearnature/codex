@@ -67,6 +67,25 @@ TSV = REPO / "codex-rs/i18n/not-translated-unwrapped.tsv"
 IMPORT_TEMPLATE = REPO / "codex-rs/cli/src/state_db_recovery.rs"
 
 
+def import_name(line: str) -> str:
+    """`use codex_i18n::tr_with;` -> `tr_with`。"""
+    return line.rstrip().rstrip(";").rsplit("::", 1)[-1]
+
+
+def _used_imports(spec: dict) -> set[str]:
+    """只插入实际用得到的 import —— 无条件插入会产生 unused_imports 告警（实测两次）。"""
+    used = {"current"}
+    for entry in spec.get("translate", {}).values():
+        used.add("tr_with" if entry.get("args") else "tr")
+    for e in spec.get("extra_edits", []):
+        body = e.get("replace", "")
+        if "tr_with(" in body:
+            used.add("tr_with")
+        if "tr(" in body or "tr_with(" in body:
+            used.add("tr")
+    return used
+
+
 def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines()
 
@@ -374,6 +393,7 @@ def main() -> int:
         print(f"⚠ 缺译文（填 zh 后再 --apply）：{unfilled}")
     if reg_missing:
         print(f"⚠ 登记站点不在候选表里（会被 --audit-rows 当无效）：{reg_missing}")
+    print("将按需插入的 import：", sorted(_used_imports(spec)))
     if not args.apply:
         print("（plan 模式，未写入）")
         return 0
@@ -388,6 +408,7 @@ def main() -> int:
         line
         for line in read_lines(IMPORT_TEMPLATE)
         if line.startswith("use codex_i18n")
+        and import_name(line) in _used_imports(spec)
     ]
     if imp and "use codex_i18n" not in new_text:
         lines = new_text.splitlines()

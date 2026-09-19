@@ -1113,3 +1113,24 @@ Wall time: {secs:.1} seconds\naborted by user	codex-rs/core/src/tools/parallel.r
 aborted by user after {secs:.1}s	codex-rs/core/src/tools/parallel.rs:261	同上（工具输出里的中止提示）⇒ §12.31
 tool call completed	codex-rs/core/src/tools/parallel.rs:332	追踪/遥测标签（trace 记录）⇒ §12.3/§3.6
 Output exceeded the available model context and was truncated	codex-rs/core/src/compact_remote.rs:53	`CONTEXT_WINDOW_TRUNCATED_OUTPUT_MESSAGE` 经 `FunctionCallOutputBody::Text(..)`（:520）⇒ 工具输出负载 ⇒ §12.31
+\n\n--- project-doc ---\n\n	codex-rs/core/src/agents_md.rs:46	AGENTS.md 片段的**结构分隔标记**（`--- project-doc ---`，注入模型的 prompt 拼接）⇒ §12.2
+for `{}` with root {}\n\n	codex-rs/core/src/agents_md.rs:404	同上（片段标题拼接 `for `{}` with root {}`）⇒ §12.2
+agent communication	codex-rs/core/src/agent_communication.rs:76	标签/标识符（通信来源标记）⇒ §12.7
+delegate turn input was not started: {submission:?}	codex-rs/core/src/codex_delegate.rs:230	内部 anyhow（delegate 会话未启动）⇒ §12.3
+previous-model compaction failed; retried with current model	codex-rs/core/src/compact_model_fallback.rs:62	`tracing::warn!` 日志行 ⇒ §12.3
+remote compaction v2 expected exactly one compaction output item, got {compaction_count} from {output_item_count} output items	codex-rs/core/src/compact_remote_v2.rs:478	内部不变式错误（压缩输出项数量）⇒ §12.3
+config persistence task panicked	codex-rs/core/src/config/edit.rs:1002	panic 消息（进程内诊断，不面向用户）⇒ §12.3
+<permissions instructions>	codex-rs/core/src/event_mapping.rs:41	**XML 标记**（`<permissions instructions>`）⇒ §12.7
+visualize{	codex-rs/core/src/realtime_history/presentation.rs:15	展示拼装格式串（`visualize{{`）⇒ §12.7
+code-mode host operation completed	codex-rs/core/src/tools/code_mode/telemetry.rs:67	**遥测**事件名 ⇒ §3.6
+{PUBLIC_TOOL_NAME} expects raw JavaScript source text	codex-rs/core/src/tools/code_mode/execute_handler.rs:199	`FunctionCallError::RespondToModel` ⇒ 模型面（§12.31）
+{WAIT_TOOL_NAME} expects JSON arguments	codex-rs/core/src/tools/code_mode/wait_handler.rs:169	`FunctionCallError::RespondToModel` ⇒ 模型面（§12.31）
+[plaintext arguments]	codex-rs/core/src/tools/router.rs:68	标签（`[plaintext arguments]`）⇒ §12.7
+failed to parse tool_search arguments: {err}	codex-rs/core/src/tools/router.rs:273	`FunctionCallError::RespondToModel` ⇒ 模型面（§12.31）
+blob {}\0	codex-rs/core/src/turn_diff_tracker.rs:393	git object 格式串（`blob {}\0`）⇒ 结构 ⇒ §12.7
+command cancelled	codex-rs/core/src/unified_exec/oneshot.rs:71	`UnifiedExecError::process_failed(..)` ⇒ 经 exec_command 回模型 ⇒ §12.31
+exec-server process event stream closed	codex-rs/core/src/unified_exec/process.rs:461	内部流关闭诊断（`exec-server process event stream closed`）⇒ §12.3
+conflicting MCP server actions; using resolved catalog outcome	codex-rs/core/src/mcp.rs:317	`tracing::warn!` 日志行 ⇒ §12.3
+	codex-rs/core/src/tools/handlers/list_available_plugins_to_install_spec.rs:9	[空键形态·值: …] 工具定义（`ToolSpec` description，进模型）⇒ §12.2
+	codex-rs/core/src/tools/code_mode/execute_spec.rs:16	[空键形态·值: …] 工具定义（`ToolSpec` description，进模型）⇒ §12.2
+MCP tool returned an error: {text}	codex-rs/core/src/hook_mcp_executor.rs:50	hook 执行 MCP 工具失败的错误文本（回给 hook 发起方/模型）⇒ §12.31

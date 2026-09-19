@@ -15,6 +15,8 @@ use crate::exec::execute_exec_request;
 use crate::spawn::CODEX_SANDBOX_ENV_VAR;
 use crate::spawn::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR;
 use codex_file_system::FileSystemSandboxContext;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_network_proxy::ManagedNetworkSandboxContext;
 use codex_network_proxy::NetworkProxy;
 use codex_network_proxy::RemoteNetworkProxyLaunchConfig;
@@ -142,9 +144,13 @@ impl ExecRequest {
         } = options;
         let windows_sandbox_filesystem_overrides = if sandbox == SandboxType::WindowsRestrictedToken
         {
-            let sandbox_policy_cwd = windows_sandbox_policy_cwd
-                .to_abs_path()
-                .map_err(|err| CodexErr::InvalidRequest(format!("invalid sandbox cwd: {err}")))?;
+            let sandbox_policy_cwd = windows_sandbox_policy_cwd.to_abs_path().map_err(|err| {
+                CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "invalid sandbox cwd: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
             let use_windows_elevated_backend =
                 windows_sandbox_uses_elevated_backend(windows_sandbox_level);
             if use_windows_elevated_backend {

@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **47** | 第 515 轮清 22 站点（译 8：拒绝族/启动警告/配置持久化；登记 13：deprecated note、工具输出表头、追踪标签）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **25** | 第 519 轮清 22 站点（译 1 + 登记 21）；剩余 25 = `unified_exec/errors.rs` 9 条（卡裁决）+ 16 处待判；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -2074,3 +2074,28 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
 失败回执 `r-mu7wfazs-9jr1wl`。两次都**只改代码、不放宽门禁**。教训合并成一句：
 **文本替换后要核对「替换结果整行」**（不只是替换片段），而核对手段就是编译门禁——
 本会话 clippy 已累计抓到 6 次我手写实参/表达式的 slip。
+
+### 12.53 第 519 轮：一次「批量登记 + 单点译文」；并把剩余 16 处**列队**（不猜）
+
+**译 1**：`sandboxing/mod.rs:147` —— `CodexErr::InvalidRequest(format!("invalid sandbox cwd: {err}"))` ⇒ `CodexErr` 面向用户。
+
+**登记 21**（每行理由按类别，不逐行编故事）：工具定义描述 2（含 2 条**空键形态**：值是空/多行 raw string）、
+`RespondToModel` 4（`code_mode/execute_handler.rs:199`、`wait_handler.rs:169`、`tools/router.rs:273`、
+`unified_exec/oneshot.rs:71`）、`tracing`/遥测/panic 3、XML 标记与标签/结构 5、prompt 片段标记 2、
+内部不变式 3、其余 2。
+
+**剩余 25 处 = 明确的队列**（下一批按此顺序做，**不猜着判**）：
+
+| 站点 | 待查什么 |
+| --- | --- |
+| `unified_exec/errors.rs`（9）| 人类裁决 `j-mu7lh6vq-fp6o`（thiserror 属性内联 `tr` 已证不可行）|
+| `windows_sandbox.rs:167`/`:176`/`:224`/`:236`/`:312`/`:321`（6）| 4 条 `only supported on Windows` 在非 Windows 上大概率是用户可见错误；需读调用链 + **标 Windows 平台不可运行验证** |
+| `responses_metadata.rs:471`/`:474`/`:479`/`:482`（4）| 返回 `&str` 的函数如何被包装（是否 `CodexErr::InvalidRequest`）|
+| `agents_md.rs:104` | `load_project_instructions` 的 `io::Error` 经 `agents_md_manager.rs:58` 后是否冒到用户 |
+| `shell.rs:69` | `anyhow::bail!`（未知 shell）的调用链 |
+| `environment_selection.rs:625` | `ExecServerError::Protocol(..)` 是否渲染 |
+| `tools/sandboxing.rs:217` | `ExecApprovalRequirement::Forbidden { reason }` 的 reason 是否渲染（与 `SafetyCheck::Reject` 同族，后者已判该译）|
+| `mcp_tool_call/account.rs:11` | `McpToolAccountError` 的 Display 落点 |
+| `config/edit/document_helpers.rs:201` | `anyhow::context` 的配置写入错误是否冒到用户 |
+
+⇒ 这 16 处**全都可从调用链判**，只是本批没读完；**没有把它们当成「不译」**。

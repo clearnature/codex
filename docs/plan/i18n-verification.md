@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **103** | 第 578 轮清 `marketplace_cmd.rs` 27 站点（19 译 + 8 登记，§12.63）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34、`remote_control_cmd.rs` 27 |
+| `codex-rs/cli/src` | **76** | 第 583 轮清 `remote_control_cmd.rs` 27 站点（22 译 + 4 登记 + 1 手工改造，§12.64）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34（macOS-only）、`debug_sandbox.rs` 11、`bin/logs_client.rs` 7、`desktop_app/windows.rs` 7 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -1911,7 +1911,7 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 | `agent/registry.rs:377` | **译** | `CodexErr::UnsupportedOperation("no available agent nicknames")` ⇒ 同上 |
 | `tasks/review.rs:233` | **译** | 赋给 `assistant_message`（回合内给用户看的助手消息），同文件另有 `render_review_exit_interrupted()` 的渲染侧 |
 | `tasks/user_shell.rs:144`/`:161` | **译**（2）| 走 `send_user_shell_error(&session, turn_context, "…")` ⇒ **发给用户的 shell 错误** |
-| `agent/registry.rs:76` `{name} the {value}{suffix}` | 登记 | agent **昵称构造**：`value`/`suffix` 是 `st/nd/rd/th` 序数后缀 ⇒ 标识符（§12.7）|
+| `agent/registry.rs:76` `{name} the {value}{suffix}` | 登记 | agent **昵称构造**：`value`/`suffix` 是 `1st/2nd/3rd/4th` 序数后缀 ⇒ 标识符（§12.7）|
 | `context/world_state/*`（8 条）| 登记 | `impl WorldStateSection` 的 `render_diff` 返回 `Box<dyn ContextualUserFragment>` ⇒ 模型上下文（§12.2）|
 | `tasks/user_shell.rs:252` `command aborted by user` | 登记 | 进 `ExecToolCallOutput`（工具输出文本，与 `Process exited with code …` 同族）⇒ §12.31 |
 
@@ -2377,3 +2377,34 @@ duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu81xa4b-kmdqkn`、
 **证据**：`fmt-check r-mu82kkq5-whk79x`、`i18n-check r-mu82jyzp-wbsv36`（3271 词条 / missing 0 / unused 0 / spacing 0 /
 duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu82orep-rjg069`、
 合并自检 `r-mu82qx7x-12bkud`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=103）。
+
+### 12.64 第 583 轮：`remote_control_cmd.rs` 裁定（27 站点：译 22 / 登记 4 / 手工改造 1）
+
+`--file cli/src/remote_control_cmd.rs` 报 **0 unwrapped**；`cli/src` 103 → **76**，字典 3271 → **3293**。
+
+**译 22 站点 / 21 条去重词条**：`73`/`80`/`86`/`106`/`119`/`122`/`189`/`231`/`232`/`254`/`257`/`259`/`374`/`378`/`396`/`401`/`419`/`429`/`482`/`483`/`488`/`489`。
+其中 `:73`/`:80`/`:86` 是**函数实参**（`print_remote_control_progress(command.json, "…")`）⇒ `kind:"arg"`；`254`/`257` 同句两站点按值合并。
+
+**登记 4 站点**：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| 命令名标识符 | `:50`/`:53`/`:56`（`RemoteControlCommand::subcommand_name()` 的 3 个返回值） | 被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；测试 `main.rs:4763`/`:4781` 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立 |
+| 键值转储字段行 | `:433` `  path: {}` | 同块 `  version: {}` 已被形状规则排除；字段名是机器键（§12.5.6）；块标题 `:432` 按 `debug_config` 先例**单独译**（§12.5：标题译、字段名不译） |
+
+**新形状：含 Rust 格式说明的字面量要走 `extra_edits` 手工改造（本批首例）**。
+`:495` 的 `format!("Remote control stop completed with status {:?}.", output.status)` 里 `{:?}` 不是位置占位符，
+而 `tr_with` 只替换 `{N}` ⇒ 直接当键会在中文输出里留下字面 `{:?}`。改造为
+`tr_with(current(), "Remote control stop completed with status {0}.", &[&format!("{:?}", output.status)])`
+（键经 `extra_dict` 入字典）。⇒ **工具能力边界写清楚**：`i18n_apply.py` 的 `translate` 只识别 `{}`/`{ident}`；
+其它格式说明（`{:?}`/`{:<}`…）必须走 `extra_edits`。
+
+**证据**：`fmt-check r-mu83b8y5-m6d33e`、`i18n-check r-mu83an8d-8v2n9v`（3293 词条 / missing 0 / unused 0 / spacing 0 /
+duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu83fflw-qzroa9`、
+合并自检 `r-mu83hoix-c7okl5`（drift=0 / 四 scope audit=0 / fanout NEED REVIEW=0 / census cli=76）、
+crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
+
+**顺带（本轮会计修正，见 §12.65 与流水）**：`codespell` 具名门禁在本机**已生效**（定义 `codespell`，读仓库 `.codespellrc`），
+首跑 13 条里 3 条落在我的文件 —— 全是**误报**（TSV 空键行的预览被我截断在词中 `…metadata wit…`；`st/nd/rd/th` 的 `nd` 被当成 `and`），
+已在**源头**消掉（预览按词边界截断、序数后缀改写为 `1st/2nd/3rd/4th`）；复跑后 **9 条全部不在我触碰的文件里**
+（`.codespellignore` ×4、skills 资产 ×2、`utils/pty` / `utils/audio` / `exec-server` 各 1）⇒ 回执 `r-mu843u76-gcnh4b`。

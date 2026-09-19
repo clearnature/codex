@@ -953,7 +953,7 @@ Search query for deferred tools.	codex-rs/core/src/tools/handlers/tool_search_sp
 Maximum number of tools to return. Defaults to {default_limit}.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:29	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 None currently enabled.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:49	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 \n\nYou have access to tools from the following sources:\n{source_descriptions}\n	codex-rs/core/src/tools/handlers/tool_search_spec.rs:87	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
-	codex-rs/core/src/tools/handlers/tool_search_spec.rs:94	[空键形态·值: # Tool discovery\n\nSearches over deferred tool metadata wit…] 工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+	codex-rs/core/src/tools/handlers/tool_search_spec.rs:94	[空键形态·值: # Tool discovery\n\nSearches over deferred tool metadata …] 工具
 	codex-rs/core/src/context/available_plugins_instructions.rs:32	[空键形态·值: ## Plugins…] 注入模型的插件说明片段（Codex 自有 prompt 文本）⇒ §12.2
 A plugin is a local bundle of skills, MCP servers, and apps.	codex-rs/core/src/context/available_plugins_instructions.rs:33	同上（注入模型的 prompt 片段）⇒ §12.2
 	codex-rs/core/src/context/available_plugins_instructions.rs:36	[空键形态·值: ### How to use plugins…] 同上 ⇒ §12.2
@@ -1030,7 +1030,7 @@ limit must be greater than zero	codex-rs/core/src/tools/handlers/tool_search.rs:
 Local filesystem path to an image file.	codex-rs/core/src/tools/handlers/view_image_spec.rs:19	工具定义（`ToolSpec` description / 格式说明，进模型）⇒ §12.2
 Image detail level. Defaults to `high`; use `original` to preserve exact resolution.	codex-rs/core/src/tools/handlers/view_image_spec.rs:27	工具定义（`ToolSpec` description / 格式说明，进模型）⇒ §12.2
 View a local image file from the filesystem when visual inspection is needed. Use this for images already available on disk.	codex-rs/core/src/tools/handlers/view_image_spec.rs:44	工具定义（`ToolSpec` description / 格式说明，进模型）⇒ §12.2
-{name} the {value}{suffix}	codex-rs/core/src/agent/registry.rs:77	agent **昵称构造**（`{name} the {value}{suffix}`，value/suffix 是 `st/nd/rd/th` 序数后缀）⇒ 标识符不译（§12.7）
+{name} the {value}{suffix}	codex-rs/core/src/agent/registry.rs:77	agent **昵称构造**（`{name} the {value}{suffix}`，value/suffix 是 `1st/2nd/3rd/4th` 序数后缀）⇒ 标识符不译（§12.7）
 These AGENTS.md instructions replace all previously provided AGENTS.md instructions.	codex-rs/core/src/context/world_state/agents_md.rs:10	world state 片段（`impl WorldStateSection` 的 `render_diff` 返回 `ContextualUserFragment`）⇒ 模型上下文 ⇒ §12.2
 The previously provided AGENTS.md instructions no longer apply.	codex-rs/core/src/context/world_state/agents_md.rs:11	world state 片段（`impl WorldStateSection` 的 `render_diff` 返回 `ContextualUserFragment`）⇒ 模型上下文 ⇒ §12.2
 This context-window guidance replaces all previously provided context-window guidance.	codex-rs/core/src/context/world_state/context_window_guidance.rs:7	world state 片段（`impl WorldStateSection` 的 `render_diff` 返回 `ContextualUserFragment`）⇒ 模型上下文 ⇒ §12.2
@@ -1222,3 +1222,7 @@ codex plugin marketplace upgrade	codex-rs/cli/src/marketplace_cmd.rs:100	`bin_na
 Examples:\n  codex plugin marketplace upgrade\n  codex plugin marketplace upgrade debug	codex-rs/cli/src/marketplace_cmd.rs:101	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
 codex plugin marketplace remove	codex-rs/cli/src/marketplace_cmd.rs:115	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
 Example:\n  codex plugin marketplace remove debug	codex-rs/cli/src/marketplace_cmd.rs:116	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
+remote-control start	codex-rs/cli/src/remote_control_cmd.rs:48	命令名标识符：`RemoteControlCommand::subcommand_name()` 的返回值，被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；且测试 main.rs:4763/:4781 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立
+remote-control stop	codex-rs/cli/src/remote_control_cmd.rs:49	命令名标识符：`RemoteControlCommand::subcommand_name()` 的返回值，被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；且测试 main.rs:4763/:4781 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立
+remote-control pair	codex-rs/cli/src/remote_control_cmd.rs:50	命令名标识符：`RemoteControlCommand::subcommand_name()` 的返回值，被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；且测试 main.rs:4763/:4781 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立
+  path: {}	codex-rs/cli/src/remote_control_cmd.rs:469	同一 `key: value` 转储块里的字段行（`  path: {}`；同块 `  version: {}` 已被形状规则排除）—— 字段名是机器键（§12.5.6 口径）；块标题 :429 按 debug_config 先例单独译（§12.5：标题译、字段名不译）

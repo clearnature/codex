@@ -8180,6 +8180,73 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "已把市场源`{0}`升级到最新配置的修订版本。",
     ),
     ("Upgraded {0} marketplace(s).", "已升级{0}个市场源。"),
+    (
+        "Starting app-server with remote control enabled...",
+        "正在启动启用远程控制的app-server…",
+    ),
+    (
+        "Starting app-server daemon with remote control enabled...",
+        "正在启动启用远程控制的app-server守护进程…",
+    ),
+    ("Stopping remote control...", "正在停止远程控制…"),
+    (
+        "failed to flush remote-control progress message",
+        "刷新远程控制进度消息失败",
+    ),
+    (
+        "failed to create private app-server socket directory",
+        "创建私有app-server套接字目录失败",
+    ),
+    (
+        "private app-server socket path was not absolute",
+        "私有app-server套接字路径不是绝对路径",
+    ),
+    ("failed to listen for Ctrl-C: {0}", "监听Ctrl-C失败：{0}"),
+    (
+        "foreground app-server task failed to join",
+        "前台app-server任务join失败",
+    ),
+    (
+        "foreground app-server exited with an error",
+        "前台app-server因错误退出",
+    ),
+    (
+        "foreground app-server exited before remote control became ready",
+        "远程控制就绪之前，前台app-server已退出",
+    ),
+    (
+        "foreground app-server task failed before remote control became ready",
+        "远程控制就绪之前，前台app-server任务失败",
+    ),
+    (
+        "This machine is available for remote control as {0}.",
+        "本机可被作为{0}用于远程控制。",
+    ),
+    (
+        "Remote control is enabled on {0} and still connecting.",
+        "远程控制已在{0}上启用，仍在连接中。",
+    ),
+    (
+        "Remote control is enabled on {0} but the connection is errored.",
+        "远程控制已在{0}上启用，但连接出错。",
+    ),
+    (
+        "Remote control is disabled on {0}.",
+        "{0}上的远程控制已被禁用。",
+    ),
+    ("Press Ctrl-C to stop.", "按Ctrl-C停止。"),
+    ("Daemon used app-server:", "守护进程使用的app-server："),
+    (
+        "remote-control pairing response did not include a manual pairing code",
+        "远程控制配对响应中没有包含手动配对码",
+    ),
+    ("Pairing code: {0}", "配对码：{0}"),
+    ("Remote control stopped.", "远程控制已停止。"),
+    ("Remote control is not running.", "远程控制未在运行。"),
+    (
+        "Remote control stop completed with status {0}.",
+        "远程控制停止完成，状态为{0}。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

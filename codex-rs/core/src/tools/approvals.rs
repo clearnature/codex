@@ -447,9 +447,9 @@ impl ApprovalResolution {
                 network_policy_amendment,
             } if network_policy_amendment.action == NetworkPolicyRuleAction::Deny => {
                 let rejection = match source {
-                    ApprovalResolutionSource::Hook => "rejected by configuration",
+                    ApprovalResolutionSource::Hook => tr(current(), "rejected by configuration"),
                     ApprovalResolutionSource::Guardian => {
-                        "automatic approval review denied the action"
+                        tr(current(), "automatic approval review denied the action")
                     }
                     ApprovalResolutionSource::User => "rejected by user",
                 };
@@ -532,7 +532,7 @@ impl Session {
                 }
                 (ReviewDecision::Abort, ApprovalResolutionSource::Guardian) => {
                     return Err(ToolError::Rejected(
-                        "automatic approval review was cancelled".to_string(),
+                        tr(current(), "automatic approval review was cancelled").to_string(),
                     ));
                 }
                 _ => {}

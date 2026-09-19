@@ -7531,6 +7531,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "after_agent hook '{0}' failed and aborted turn completion: {1}",
         "after_agent钩子'{0}'失败，已中止回合完成：{1}",
     ),
+    ("rejected by configuration", "被配置拒绝"),
+    (
+        "automatic approval review denied the action",
+        "自动审批复核拒绝了该操作",
+    ),
+    (
+        "automatic approval review was cancelled",
+        "自动审批复核已取消",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

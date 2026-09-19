@@ -922,3 +922,15 @@ image content omitted because detail 'low' is not supported; use 'high', 'origin
 image content omitted because remote image URLs are not supported	codex-rs/core/src/image_preparation.rs:31	同上（模型上下文占位）⇒ §12.2
 remote image URLs are not supported	codex-rs/core/src/image_preparation.rs:69	私有 enum 的 thiserror Display，仅经 `placeholder()`（:78-86）映射成模型上下文占位 ⇒ §12.2
 image detail `low` is not supported	codex-rs/core/src/image_preparation.rs:71	同上（placeholder 映射，非渲染路径）⇒ §12.2
+Custom tool call output is missing for call id: {call_id}	codex-rs/core/src/context_manager/normalize.rs:91	`error_or_panic`（debug panic / release `error!` 记日志）⇒ 无 UI/协议渲染方 ⇒ §12.3
+Local shell call output is missing for call id: {call_id}	codex-rs/core/src/context_manager/normalize.rs:111	同上：`error_or_panic` ⇒ §12.3
+Orphan function call output for call id: {call_id}	codex-rs/core/src/context_manager/normalize.rs:189	同上：`error_or_panic` ⇒ §12.3
+Orphan custom tool call output for call id: {call_id}	codex-rs/core/src/context_manager/normalize.rs:197	同上：`error_or_panic` ⇒ §12.3
+Orphan tool search output for call id: {call_id}	codex-rs/core/src/context_manager/normalize.rs:206	同上：`error_or_panic` ⇒ §12.3
+network-access {target}	codex-rs/core/src/tools/approvals.rs:224	**PermissionRequest hook 载荷的 description**（`PermissionRequestPayload::bash(cmd, /*description*/ Some(...))`，见 tools/sandboxing.rs:127）⇒ 协议/hook 面，非 UI ⇒ §12.7
+missing exec command cwd convention	codex-rs/core/src/tools/approvals.rs:304	`std::io::Error::other` 内部不变式错误（构造 hook 载荷 cwd 时）⇒ §12.3
+Dynamic tools	codex-rs/core/src/tools/handlers/dynamic.rs:102	工具搜索索引的 `ToolSearchSourceInfo.name`（模型侧元数据，`from_tool_spec`）⇒ §12.2/§12.7
+Tools provided by the current Codex thread.	codex-rs/core/src/tools/handlers/dynamic.rs:103	同上：`ToolSearchSourceInfo.description` ⇒ §12.2
+dynamic tool handler received unsupported payload	codex-rs/core/src/tools/handlers/dynamic.rs:133	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:149	同上：RespondToModel ⇒ 模型面（§12.31）
+dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:242	同上：RespondToModel ⇒ 模型面（§12.31）

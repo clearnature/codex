@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **284** | 第 472 轮清掉 15 条（译 3 + 登记 12）；最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **269** | 第 475 轮再清 15 条（译 3 + 登记 12）；最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1736,3 +1736,30 @@ for f in m.scan(Path("codex-rs/core")):
 **本批又被 clippy 抓到一次**（第三次同型）：我给 `{1}` 传 `error.as_str()`，而 `error` 是
 `Box<dyn Error + Send + Sync>`（`E0599`）—— 改成 `&error.to_string()`（与 `config/mod.rs` 同形）。
 判据复核：**只有编译门禁能抓这类 slip**，读码看不出来。
+
+### 12.40 第 475 轮：`ToolError::Rejected` 的**双重接收者**，以及拒绝族的混语代价
+
+`tools/approvals.rs` 的拒绝族三条候选，判据落在 `tools/events.rs:441-455`：
+
+```rust
+let normalized = if msg == "rejected by user" { /* 归一化成 exec/patch rejected by user */ } else { msg };
+let event = ToolEventStage::Failure(ToolEventFailure::Rejected { message: normalized.clone(), .. });
+let result = Err(FunctionCallError::RespondToModel(normalized));
+```
+
+⇒ `ToolError::Rejected` 的消息**同时**是（a）TUI 渲染的工具失败原因、（b）回给模型的 function_call_output。
+所以它是**用户可见**的，该译。本批据此译了三条（`approvals.rs:450`/`:452`/`:535`）。
+
+**但同族里 `rejected by user` 必须留英文**：它是哨兵，`events.rs:441` 用 `msg == "rejected by user"` 做归一化
+（§12.34 匹配键陷阱）。代价是**同一处 match 里三条拒绝文案语言不一致**（英文 User 臂 + 中文另两臂）——
+这是哨兵设计的既有代价，记在这里以免下一个人把它当漏译去「修」。
+
+**本批其余 12 条去向**（每个站点都读接收者）：
+
+| 文件:行 | 判决 |
+| --- | --- |
+| `context_manager/normalize.rs:91`/`:111`/`:189`/`:197`/`:206` | 登记：五条都走 `error_or_panic`（debug panic / release `error!`），无 UI/协议渲染方 ⇒ §12.3 |
+| `tools/approvals.rs:224` `network-access {target}` | 登记：PermissionRequest **hook 载荷的 description**（`tools/sandboxing.rs:127` 的 `PermissionRequestPayload::bash(cmd, Some(desc))`）⇒ 协议/hook 面 |
+| `tools/approvals.rs:304` `missing exec command cwd convention` | 登记：`std::io::Error::other` 内部不变式错误 ⇒ §12.3 |
+| `tools/handlers/dynamic.rs:102`/`:103` | 登记：`ToolSearchSourceInfo` 的 name/description，进**工具搜索索引**（模型侧元数据）⇒ §12.2 |
+| `tools/handlers/dynamic.rs:133`/`:149`/`:242` | 登记：`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）|

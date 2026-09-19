@@ -1894,3 +1894,11 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 
 其余 18 条登记：`*_spec.rs` 的 `ToolSpec` description 9 条、`apply_patch_spec.rs` 的 **Lark 语法** 2 条
 （`APPLY_PATCH_LARK_GRAMMAR.replace(..)` 的匹配目标 + 进 spec ⇒ 译了破坏替换）、`RespondToModel` 7 条。
+
+**同批第三个信号：`[duplicate]` 反过来印证了判决**。我为那 3 个 `Fatal` 站点加词条时，
+`i18n-check` 报 `[duplicate] keys declared more than once: 2` —— **两条键字典里本来就有**
+（`"{0} handler received unsupported payload"`、`"failed to serialize {0} response: {1}"`）。
+这不是我写错，而是**判决正确**的证据：这两个模板**早已被译过**（在别的站点包了 `tr_with`），
+本批这 3 处正是「**已译字符串的未包 tr 出现**」—— 候选桶的定义本身。处置：删掉我重复的两条词条
+（保留原有），源文件保持包 `tr_with`。判据补充：**给候选站点补 `tr` 时先查字典**，
+已在字典里的键不要重复添加（`[duplicate]` 是硬门禁）。

@@ -107,7 +107,7 @@ fn apply_exact_requirement<T>(
         startup_warnings.push(tr_with(
             current(),
             "Configured value for `{0}` is overridden by the required value {1} from {2}.",
-            &[field_name, &format!("{value:?}"), source],
+            &[field_name, &format!("{value:?}"), &source.to_string()],
         ));
     }
     *configured_value = Some(value.clone());
@@ -168,7 +168,7 @@ pub(super) fn push_sqlite_home_env_override_warning(
     startup_warnings.push(tr_with(
             current(),
             "Environment value for `$CODEX_SQLITE_HOME` is overridden by the required `sqlite_home` value {0} from {1}.",
-            &[&format!("{value:?}"), source],
+            &[&format!("{value:?}"), &source.to_string()],
         ));
 }
 
@@ -190,6 +190,6 @@ fn push_structured_requirement_override_warning(
     startup_warnings.push(tr_with(
         current(),
         "Configured values under `{0}` are overridden by requirements from {1}.",
-        &[field_name, source],
+        &[field_name, &source.to_string()],
     ));
 }

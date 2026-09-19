@@ -1822,3 +1822,13 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 而**第一个文件（`control.rs`）的改动已经落盘**、字典与登记还没写。结果是一个「半个批次」的仓库状态：
 若不看门禁就以为整批没生效，`i18n-check` 迟早会因为缺字典条目变红。
 判据：**批处理脚本失败后必须重跑门禁并核对候选数差值**，不能只看脚本自己的输出。
+
+**同一批的另外两次「门禁抓到人」**（都留了失败回执，不是重试到绿）：
+
+1. `clippy` 报 `E0308`：我给 `tr_with` 传 `source`，而它是 `&RequirementSource` 不是 `&str`
+   —— 第 **4** 次同型 slip（前三次：`as_str()` 解析到不稳定的 `str::as_str`、`&[&x]` 多余借用、
+   `Box<dyn Error>` 上写 `as_str()`）。判据与 `j-mu7n0w2n-0zpg` 一致：**`&[&str]` 实参形状只能靠编译门禁**，
+   读码看不出来。修法：`&source.to_string()`。失败回执 `r-mu7rw87h-qgkl55`。
+2. 本批**漏跑**五步里的 `python3 scripts/i18n_dossier_lines.py --fix`（我在文件里插入了代码行 ⇒
+   站点列漂移），被合成校验抓到（`r-mu7rxmms-3cmr72` 非零退出）。补跑后 `rewrote 2 row(s)`、`drifted 0`。
+   **五步清单不是仪式**：漏掉任何一步都有对应的机器检查在等着报。

@@ -972,5 +972,5 @@ Wait completed.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:145	`Wa
 Wait interrupted by new input.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:146	同上：ToolOutput 负载 ⇒ §12.31
 Wait timed out.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:147	同上：ToolOutput 负载 ⇒ §12.31
 {message}\n\nRequested timeout of {requested_timeout_ms}ms was clamped to the minimum of {timeout_ms}ms.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:151	同上：ToolOutput 负载拼接 ⇒ §12.31
-  <subagents>\n  </subagents>\n	codex-rs/core/src/agent/control.rs:533	**XML 标记**（模型上下文的 subagents 块容器）⇒ §12.7
-<agent name="{agent_path}" />	codex-rs/core/src/agent/control.rs:538	同上：XML 标记 ⇒ §12.7
+  <subagents>\n  </subagents>\n	codex-rs/core/src/agent/control.rs:540	**XML 标记**（模型上下文的 subagents 块容器）⇒ §12.7
+<agent name="{agent_path}" />	codex-rs/core/src/agent/control.rs:545	同上：XML 标记 ⇒ §12.7

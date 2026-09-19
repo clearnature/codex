@@ -1642,14 +1642,14 @@ fn session_configured_from_thread_response(
         tr_with(
             current(),
             "session id `{0}` is invalid: {1}",
-            &[&session_id.to_string(), &err.to_string()],
+            &[session_id, &err.to_string()],
         )
     })?;
     let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
         tr_with(
             current(),
             "thread id `{0}` is invalid: {1}",
-            &[&thread_id.to_string(), &err.to_string()],
+            &[thread_id, &err.to_string()],
         )
     })?;
     let forked_from_id = forked_from_id
@@ -2078,7 +2078,7 @@ async fn resolve_server_request(
             tr_with(
                 current(),
                 "failed to resolve `{0}` server request: {1}",
-                &[&method.to_string(), &err.to_string()],
+                &[method, &err.to_string()],
             )
         })
 }
@@ -2103,7 +2103,7 @@ async fn reject_server_request(
             tr_with(
                 current(),
                 "failed to reject `{0}` server request: {1}",
-                &[&method.to_string(), &err.to_string()],
+                &[method, &err.to_string()],
             )
         })
 }

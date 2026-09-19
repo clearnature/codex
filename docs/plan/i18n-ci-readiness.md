@@ -37,12 +37,12 @@ repo-checks / rust-ci / sdk。
 
 第一版把这条写成「未验证 + 风险最高」。装上依赖后**实测确认了预判**：
 
-* `pnpm run format`（= `prettier --check *.json *.md docs/**/*.md .github/workflows/*.yml **/*.js`）
+- `pnpm run format`（= `prettier --check *.json *.md docs/**/*.md .github/workflows/*.yml **/*.js`）
   → **EXIT=1，16 个文件不合格**：`docs/plan/` 的 i18n 文档族 10 个、`docs/maps/*` 6 个、
   以及 `docs/plan/{build-and-versioning,desktop-architecture,test-baselines}.md`。
   后两类**不是本任务写的**，但 CI 检查的是**全量匹配文件**而非变更集 ⇒ 必须一起修。
-* `pnpm run format:fix` → 16 files changed, 1370 insertions(+), 1357 deletions(-)。
-* 复核：`pnpm run format` → `All matched files use Prettier code style!` **EXIT=0**
+- `pnpm run format:fix` → 16 files changed, 1370 insertions(+), 1357 deletions(-)。
+- 复核：`pnpm run format` → `All matched files use Prettier code style!` **EXIT=0**
   （回执 `r-mu8i2854-ytho4y`）；`just fmt-check` 复跑仍绿（`r-mu8i2shd-6ec8cu`）。
 
 ⚠ 之前无法本机验证的原因**不是「没有网络」**（那是误判，见 §六.4），而是当时还没装 `node_modules`。
@@ -152,6 +152,7 @@ repo-checks / rust-ci / sdk。
   正是「推功能分支不触发任何 workflow」的结果）。
 - 本地引用：`HEAD` 比 `origin/feat/i18n` **领先 308 个提交**（`git rev-list --left-right --count HEAD...origin/feat/i18n`
   = `308 0`）⇒ 最近的工作都还没推。
+
 * 本机**可以推送**（第一版写错了）：`git ls-remote origin HEAD` EXIT=0、`pnpm install --frozen-lockfile` EXIT=0（551 包 / 15.4s）、`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` **EXIT=0**（dry-run 不创建远端引用），且 `credential.helper = store` + `~/.git-credentials` 存在。⇒ 触发 CI 的动作在本机**做得到**；「推哪个分支 / 要不要开 PR」是人类的决策。
 
 ### 7.4 建议（附判据）
@@ -166,5 +167,5 @@ repo-checks / rust-ci / sdk。
    macOS·Windows / sdk / blob-size checker**。
 4. **动作前置（已核实）**：本机有网络与推送凭据（§六.5）⇒ 推分支做得到；开 PR / 手动 dispatch 需要 `gh` 或 API token（凭据在 `~/.git-credentials`，但**用不用它去动共享远端**要人拍板）。本文件只记录能力与代价，**不代表已经推过**：截至本提交，远端 `origin/feat/i18n` 仍停在 `aa944d6b9`，本地领先 310 个提交。
 
-4. **「沙箱无网络」是错的**（已改正 §三.1 与 §七.3）。第一版依据 `pnpm install --frozen-lockfile --offline` 的失败写了「无网络」——那个失败是我自己加了 `--offline` 造成的（`ERR_PNPM_NO_OFFLINE_TARBALL`：pnpm store 缺 tarball），**不是**网络不可达。直接探测后事实相反：`git ls-remote origin HEAD` **EXIT=0**、`curl https://registry.npmmirror.com/` **HTTP 200**、`pnpm install --frozen-lockfile` **EXIT=0 / 15.4s / 551 包**。⇒ 教训：**环境限制必须用不带人为标志的直接探测来判**；拿自己中间产物的失败当证据，会把「我没装依赖」误判成「环境不允许」。
-5. **「本机不能推送」也是错的**（已改正 §七.3/§七.4）：`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` → **EXIT=0**，凭据齐备。⇒ 「开 CI」在本机**可执行**，只是**要不要动共享远端**属人类决策。
+5. **「沙箱无网络」是错的**（已改正 §三.1 与 §七.3）。第一版依据 `pnpm install --frozen-lockfile --offline` 的失败写了「无网络」——那个失败是我自己加了 `--offline` 造成的（`ERR_PNPM_NO_OFFLINE_TARBALL`：pnpm store 缺 tarball），**不是**网络不可达。直接探测后事实相反：`git ls-remote origin HEAD` **EXIT=0**、`curl https://registry.npmmirror.com/` **HTTP 200**、`pnpm install --frozen-lockfile` **EXIT=0 / 15.4s / 551 包**。⇒ 教训：**环境限制必须用不带人为标志的直接探测来判**；拿自己中间产物的失败当证据，会把「我没装依赖」误判成「环境不允许」。
+6. **「本机不能推送」也是错的**（已改正 §七.3/§七.4）：`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` → **EXIT=0**，凭据齐备。⇒ 「开 CI」在本机**可执行**，只是**要不要动共享远端**属人类决策。

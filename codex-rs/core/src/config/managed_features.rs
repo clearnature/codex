@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::collections::BTreeMap;
 
 use codex_config::Constrained;
@@ -229,9 +231,14 @@ fn parse_feature_requirements(
         if let Some(feature) = feature_for_key(&key) {
             push_feature_requirement_warning(
                 &mut startup_warnings,
-                format!(
-                    "Using legacy `features` requirement `{key}` from {source}; prefer canonical feature key `{}`",
-                    feature.key()
+                tr_with(
+                    current(),
+                    "Using legacy `features` requirement `{0}` from {1}; prefer canonical feature key `{2}`",
+                    &[
+                        &key.to_string(),
+                        &source.to_string(),
+                        &feature.key().to_string(),
+                    ],
                 ),
             );
             pinned_features.insert(feature, enabled);
@@ -240,7 +247,11 @@ fn parse_feature_requirements(
 
         push_feature_requirement_warning(
             &mut startup_warnings,
-            format!("Ignoring unknown `features` requirement `{key}` from {source}"),
+            tr_with(
+                current(),
+                "Ignoring unknown `features` requirement `{0}` from {1}",
+                &[&key.to_string(), &source.to_string()],
+            ),
         );
     }
 

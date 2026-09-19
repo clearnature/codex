@@ -1100,3 +1100,16 @@ audio content omitted because you do not support audio input	codex-rs/core/src/c
 	codex-rs/core/src/context/user_instructions.rs:24	[空键形态·值: # AGENTS.md instructions…] **类级判据**：该文件 `impl ContextualUserFragment`（`context/` 下 22/22 个文件均如此）⇒ 片段注入**模型上下文** ⇒ §12.2
  for {directory}	codex-rs/core/src/context/user_instructions.rs:31	**类级判据**：该文件 `impl ContextualUserFragment`（`context/` 下 22/22 个文件均如此）⇒ 片段注入**模型上下文** ⇒ §12.2
 \n<command>\n{}\n</command>\n<result>\nExit code: {}\nDuration: {:.4} seconds\nOutput:\n{}\n</result>\n	codex-rs/core/src/context/user_shell_command.rs:49	**类级判据**：该文件 `impl ContextualUserFragment`（`context/` 下 22/22 个文件均如此）⇒ 片段注入**模型上下文** ⇒ §12.2
+use ThreadManager	codex-rs/core/src/lib.rs:134	**`#[deprecated(note = "use ThreadManager")]` 等属性文本**（编译期诊断）⇒ 不译
+use NewThread	codex-rs/core/src/lib.rs:136	同上（deprecated note）⇒ 不译
+use CodexThread	codex-rs/core/src/lib.rs:138	同上（deprecated note）⇒ 不译
+use find_thread_path_by_id_str	codex-rs/core/src/lib.rs:175	同上（deprecated note）⇒ 不译
+Exit code: {}	codex-rs/core/src/tools/mod.rs:109	工具输出表头字段（`Exit code:` 等）⇒ §12.31 负载 ⇒ 不译
+Wall time: {duration_seconds} seconds	codex-rs/core/src/tools/mod.rs:110	同上（`Wall time:`）⇒ §12.31
+Total output lines: {total_lines}	codex-rs/core/src/tools/mod.rs:112	同上（`Total output lines:`）⇒ §12.31
+command timed out after {} milliseconds\n{}	codex-rs/core/src/tools/mod.rs:135	同上（超时后的工具输出文本）⇒ §12.31
+tool task failed to receive: {err:?}	codex-rs/core/src/tools/parallel.rs:216	内部 task 通道错误（anyhow/日志）⇒ §12.3
+Wall time: {secs:.1} seconds\naborted by user	codex-rs/core/src/tools/parallel.rs:259	工具输出文本（`…\naborted by user`，与 `command aborted by user` 同族）⇒ §12.31
+aborted by user after {secs:.1}s	codex-rs/core/src/tools/parallel.rs:261	同上（工具输出里的中止提示）⇒ §12.31
+tool call completed	codex-rs/core/src/tools/parallel.rs:332	追踪/遥测标签（trace 记录）⇒ §12.3/§3.6
+Output exceeded the available model context and was truncated	codex-rs/core/src/compact_remote.rs:53	`CONTEXT_WINDOW_TRUNCATED_OUTPUT_MESSAGE` 经 `FunctionCallOutputBody::Text(..)`（:520）⇒ 工具输出负载 ⇒ §12.31

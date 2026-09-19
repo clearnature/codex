@@ -1204,10 +1204,11 @@ impl Session {
                     }
                 } else {
                     shell::get_shell(shell::ShellType::Zsh).ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "zsh fork feature enabled, but packaged zsh fork `{}` is not usable",
-                            zsh_path.display()
-                        )
+                        anyhow::anyhow!(tr_with(
+                            current(),
+                            "zsh fork feature enabled, but packaged zsh fork `{0}` is not usable",
+                            &[&zsh_path.display().to_string()],
+                        ))
                     })?
                 }
             } else {

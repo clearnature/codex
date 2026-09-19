@@ -9,6 +9,8 @@ use codex_analytics::build_track_events_context;
 use codex_apply_patch::AppliedPatchDelta;
 use codex_core_plugins::PluginCommandAttribution;
 use codex_core_plugins::recognize_artifact_operation;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::ARTIFACT_OPERATION_EXPECTED_OUTPUT_COUNT_METRIC;
 use codex_otel::ARTIFACT_OPERATION_STARTED_METRIC;
 use codex_protocol::error::CodexErrorDetails;
@@ -440,8 +442,12 @@ impl ToolEmitter {
                 // TODO: We should add a new ToolError variant for user-declined approvals.
                 let normalized = if msg == "rejected by user" {
                     match self {
-                        Self::UnifiedExec { .. } => "exec command rejected by user".to_string(),
-                        Self::ApplyPatch { .. } => "patch rejected by user".to_string(),
+                        Self::UnifiedExec { .. } => {
+                            tr(current(), "exec command rejected by user").to_string()()
+                        }
+                        Self::ApplyPatch { .. } => {
+                            tr(current(), "patch rejected by user").to_string()()
+                        }
                     }
                 } else {
                     msg

@@ -4,6 +4,8 @@ use codex_config::SandboxModeRequirement;
 use codex_config::Sourced;
 use codex_config::permissions_toml::PermissionsToml;
 use codex_config::sandbox_mode_requirement_for_permission_profile;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::models::PermissionProfile;
 
 use super::ConstraintError;
@@ -132,7 +134,7 @@ pub(super) fn validate_permission_profile_for_deny_read(
             Err(ConstraintError::InvalidValue {
                 field_name: "sandbox_mode",
                 candidate: format!("{mode:?}"),
-                allowed: "[read-only, workspace-write]".to_string(),
+                allowed: tr(current(), "[read-only, workspace-write]").to_string(),
                 requirement_source: requirement_source.clone(),
             })
         }

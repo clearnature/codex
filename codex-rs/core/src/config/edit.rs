@@ -8,6 +8,8 @@ use codex_config::types::ResumeCwdMode;
 use codex_config::types::SessionPickerViewMode;
 use codex_config::types::ToolSuggestDisabledTool;
 use codex_features::FEATURES;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::Personality;
 use codex_protocol::config_types::ServiceTier;
 use codex_protocol::config_types::TrustLevel;
@@ -774,9 +776,10 @@ fn apply_blocking_to_resolved_file(
     }
 
     write_atomically(&write_paths.write_path, &document.doc.to_string()).with_context(|| {
-        format!(
-            "failed to persist config at {}",
-            write_paths.write_path.display()
+        tr_with(
+            current(),
+            "failed to persist config at {0}",
+            &[&write_paths.write_path.display().to_string()],
         )
     })?;
 

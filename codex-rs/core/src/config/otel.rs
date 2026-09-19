@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::collections::BTreeMap;
 use std::fmt::Display;
 
@@ -112,7 +114,11 @@ fn push_invalid_config_warning(
     err: impl Display,
     startup_warnings: &mut Vec<String>,
 ) {
-    let message = format!("Ignoring invalid `{config_key}` config: {err}");
+    let message = tr_with(
+        current(),
+        "Ignoring invalid `{0}` config: {1}",
+        &[config_key, &err.to_string()],
+    );
     tracing::warn!("{message}");
     startup_warnings.push(message);
 }

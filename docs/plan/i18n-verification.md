@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **69** | 第 512 轮清 34 站点（译 1：`current_time.rs:51`；登记 33：`context/` 整目录，类级判据）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **47** | 第 515 轮清 22 站点（译 8：拒绝族/启动警告/配置持久化；登记 13：deprecated note、工具输出表头、追踪标签）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -2041,3 +2041,29 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
 
 **残留风险（如实记）**：类级判据的前提是「实现 `ContextualUserFragment` ⇒ 只进模型上下文」。
 若某个片段**同时**被 TUI 渲染，那它就该译 —— 本批未逐个追渲染点，属**已声明的不确定**，不是「已验证」。
+
+### 12.52 第 515 轮：拒绝族收尾、启动警告族、以及 `#[deprecated(note = …)]` 又一次
+
+**译 8**：
+
+| 站点 | 依据 |
+| --- | --- |
+| `tools/events.rs:443`/`:444` | 哨兵归一化的产物（`exec command rejected by user` / `patch rejected by user`）经 `ToolEventFailure::Rejected{message}`（:450）**渲染** + `RespondToModel`（:454）⇒ 用户可见。**输入侧哨兵 `rejected by user` 仍留英文**（:441 的比较键），这是本会话记过第 3 次的「混语代价」|
+| `session/session.rs:1208` | `Session::new` 里的 `anyhow!`（zsh fork 不可用），与已译的 `:1178` 同族 |
+| `config/otel.rs:115`、`config/managed_features.rs:233`/`:243` | 三条都 `startup_warnings.push(..)`（`:115` 还带 `tracing::warn!`）⇒ 启动警告会渲染（§12.42 已定）|
+| `config/edit.rs:778` | `with_context(..)` 的配置持久化失败提示 ⇒ 面向用户 |
+| `config/permission_profile_catalog.rs:135` | `ConstraintError::InvalidValue { allowed: "[read-only, workspace-write]" }` ⇒ 该 `allowed` **确实进 Display**（§12.49 已核）|
+
+**登记 13**：`lib.rs` 的 4 条 **`#[deprecated(note = "use ThreadManager")]` 属性文本**（编译期诊断，与 `turn_context.rs:225` 同类）、
+`tools/mod.rs` 的 4 条工具输出表头（`Exit code:` / `Wall time:` / `Total output lines:` / 超时文本）、
+`tools/parallel.rs` 的 4 条（内部通道错误、两条中止输出文本、追踪标签）、`compact_remote.rs:53` 的
+`CONTEXT_WINDOW_TRUNCATED_OUTPUT_MESSAGE`（经 `FunctionCallOutputBody::Text(..)` 进模型侧工具输出）。
+
+**新增待裁决（跨 crate 的语种一致性）**：`ConstraintError` 的 **Display 在 `codex-rs/config`**，
+而 §3.1 的依赖图只列 `tui`/`cli`/`exec`/`core`/`mcp` ⇒ 我把 **core 侧**的 `allowed` 值译了，
+但**包装文案（Display）本身仍是英文**，于是错误消息会是「英文骨架 + 中文 allowed 列表」。
+候选处置：① 把 `codex-rs/config` 的错误包装也纳入范围（需范围变更）；② 回退 core 侧这几处（保持纯英文）；
+③ 接受混语并写进术语表。**建议 ①**（一致性最好），但属范围决策，等人拍板。
+
+**流程（同一批第 2 次同型）**：写替换前我又猜了宏名（写成 `format!`，源码是 `anyhow::anyhow!`）⇒ 断言拦下、未落盘。
+判据：**替换前先把源码原文 `sed` 出来**，不要凭记忆写模式（本会话 `safety.rs` 与 `session.rs` 各踩一次）。

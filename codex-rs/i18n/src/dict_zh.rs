@@ -7622,6 +7622,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "features.current_time_reminder.clock_source is external, but no external current-time provider is available",
         "特性current_time_reminder.clock_source设为external，但没有可用的外部当前时间提供者",
     ),
+    ("exec command rejected by user", "用户拒绝了exec命令"),
+    ("patch rejected by user", "用户拒绝了补丁"),
+    (
+        "zsh fork feature enabled, but packaged zsh fork `{0}` is not usable",
+        "已启用zsh fork特性，但打包的zsh fork`{0}`不可用",
+    ),
+    (
+        "Ignoring invalid `{0}` config: {1}",
+        "忽略无效的`{0}`配置：{1}",
+    ),
+    (
+        "Using legacy `features` requirement `{0}` from {1}; prefer canonical feature key `{2}`",
+        "使用了来自{1}的旧版`features`要求`{0}`；建议改用规范特性键`{2}`",
+    ),
+    (
+        "Ignoring unknown `features` requirement `{0}` from {1}",
+        "忽略来自{1}的未知`features`要求`{0}`",
+    ),
+    ("failed to persist config at {0}", "保存配置失败（{0}）"),
+    ("[read-only, workspace-write]", "[只读, 工作区可写]"),
 ];
 
 /// English source text -> Simplified Chinese.

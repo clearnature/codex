@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **241** | 第 478 轮再清 28 条（全为登记：spec 描述 / 模型注入片段 / 匹配键）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **241** | 第 478 轮再清 28 条（全为登记：spec 描述 15 / world state 5 / 插件说明 4 / 匹配键 4）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1786,3 +1786,22 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 **判据教训（第 4 次同型，值得单独记）**：`update_plan_instructions.rs` 的四个 `## …` 标题若只按字形判，
 会被当成「Markdown 标题 → 该译」；真正的判据是**谁在使用它**（这里是 `matches!` 比较）。
 `--traps` 报告正是为这类造的：它列「被比较的值的生产者」，本批这四条应当在其中可见。
+
+#### 补记（第 479 轮）：**登记会静默不生效**，以及 `--audit-rows` 不变量
+
+写这 28 行时有 **9 行没生效**（候选只降 19 而非 28）。两类成因，都是「行写了、机制没吃到」：
+
+1. **键以 `#` 开头 ⇒ 被 TSV 当注释整行吞掉**（7 行：`## Plugins`、`### How to use plugins`、
+   `## Planning`、`` ## `update_plan` ``、`## Plan tool`、`## Plan Mode vs update_plan tool`、
+   `# Tool discovery…`）。这正是 `known_issues: tsv-hash-prefixed-rows-are-comments` 记过的坑 ——
+   **记过不等于不会犯**，所以要有机器检查而不是记性。
+2. **值含真换行 / 在列表里被截断**（2 行：`plan_spec.rs:44`、`available_plugins_instructions.rs:38` 的
+   多行 raw string）。列表输出把值截到 90 字符并做 repr，照抄出来的键**永远匹配不上**。
+
+**修法**：这 9 行统一改成**空键 + 站点形态**（`<空>\t<path:line>\t<理由>`，理由列首部保留值的可见前缀），
+站点匹配是精确的，与值的字形无关。改完候选严格 269 − 28 = **241**。
+
+**新不变量（`python3 scripts/i18n_todo.py --root <R> --audit-rows`）**：凡是**引用了站点**的登记行，
+该站点都**不应**再是未译候选；若仍是，说明这行是静默空操作，直接以非零退出报出来。
+实测四个在范围内 scope（core / tui / cli / exec）均 **0 条空操作**（700 行有站点列的登记）。
+配套：`--dump` 输出**不截断**的 `repr(value)<TAB>site`，写行时照它抄，不要再从列表里抄。

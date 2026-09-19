@@ -948,17 +948,17 @@ Task step text.	codex-rs/core/src/tools/handlers/plan_spec.rs:11	工具定义（
 Step status.	codex-rs/core/src/tools/handlers/plan_spec.rs:17	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 Optional explanation for this plan update.	codex-rs/core/src/tools/handlers/plan_spec.rs:26	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 The list of steps	codex-rs/core/src/tools/handlers/plan_spec.rs:37	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
-Updates the task plan.\nProvide an optional explanation and a list of plan items, each with	codex-rs/core/src/tools/handlers/plan_spec.rs:44	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+	codex-rs/core/src/tools/handlers/plan_spec.rs:44	[空键形态·值: Updates the task plan.\nProvide an optional explanation and …] 工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 Search query for deferred tools.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:24	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 Maximum number of tools to return. Defaults to {default_limit}.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:29	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 None currently enabled.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:49	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
 \n\nYou have access to tools from the following sources:\n{source_descriptions}\n	codex-rs/core/src/tools/handlers/tool_search_spec.rs:87	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
-# Tool discovery\n\nSearches over deferred tool metadata with BM25 and exposes matching to	codex-rs/core/src/tools/handlers/tool_search_spec.rs:94	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
-## Plugins	codex-rs/core/src/context/available_plugins_instructions.rs:32	注入模型的插件说明片段（Codex 自有 prompt 文本）⇒ §12.2
+	codex-rs/core/src/tools/handlers/tool_search_spec.rs:94	[空键形态·值: # Tool discovery\n\nSearches over deferred tool metadata wit…] 工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+	codex-rs/core/src/context/available_plugins_instructions.rs:32	[空键形态·值: ## Plugins…] 注入模型的插件说明片段（Codex 自有 prompt 文本）⇒ §12.2
 A plugin is a local bundle of skills, MCP servers, and apps.	codex-rs/core/src/context/available_plugins_instructions.rs:33	同上（注入模型的 prompt 片段）⇒ §12.2
-### How to use plugins	codex-rs/core/src/context/available_plugins_instructions.rs:36	同上 ⇒ §12.2
-- Skill naming: If a plugin contributes skills, those skill entries are prefixed with `plu	codex-rs/core/src/context/available_plugins_instructions.rs:38	同上 ⇒ §12.2
-## Planning	codex-rs/core/src/context/update_plan_instructions.rs:12	**匹配键**：`without_update_plan_instructions` 用 `matches!(line, "## Planning" | …)` 从 prompt 文本里剥掉 checklist 段 ⇒ 译了就不匹配（§12.34）
-## `update_plan`	codex-rs/core/src/context/update_plan_instructions.rs:13	同上（匹配键，非展示文案）⇒ §12.34
-## Plan tool	codex-rs/core/src/context/update_plan_instructions.rs:14	同上（匹配键）⇒ §12.34
-## Plan Mode vs update_plan tool	codex-rs/core/src/context/update_plan_instructions.rs:15	同上（匹配键）⇒ §12.34
+	codex-rs/core/src/context/available_plugins_instructions.rs:36	[空键形态·值: ### How to use plugins…] 同上 ⇒ §12.2
+	codex-rs/core/src/context/available_plugins_instructions.rs:38	[空键形态·值: - Skill naming: If a plugin contributes skills, those skill …] 同上 ⇒ §12.2
+	codex-rs/core/src/context/update_plan_instructions.rs:12	[空键形态·值: ## Planning…] **匹配键**：`without_update_plan_instructions` 用 `matches!(line, "## Planning" | …)` 从 prompt 文本里剥掉 checklist 段 ⇒ 译了就不匹配（§12.34）
+	codex-rs/core/src/context/update_plan_instructions.rs:13	[空键形态·值: ## `update_plan`…] 同上（匹配键，非展示文案）⇒ §12.34
+	codex-rs/core/src/context/update_plan_instructions.rs:14	[空键形态·值: ## Plan tool…] 同上（匹配键）⇒ §12.34
+	codex-rs/core/src/context/update_plan_instructions.rs:15	[空键形态·值: ## Plan Mode vs update_plan tool…] 同上（匹配键）⇒ §12.34

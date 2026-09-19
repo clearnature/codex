@@ -266,6 +266,25 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--top", type=int, default=10, help="how many files to list")
     parser.add_argument("--file", help="list every remaining literal in one file")
     parser.add_argument(
+        "--audit-rows",
+        action="store_true",
+        help=(
+            "verify every dossier row that cites a site actually took effect: a row whose "
+            "`path:line` is STILL an unwrapped candidate is a silent no-op (typical causes: "
+            "a key starting with `#` is read as a comment; a value with real newlines cannot be "
+            "a TSV key; a truncated value was copied from a listing)."
+        ),
+    )
+    parser.add_argument(
+        "--dump",
+        action="store_true",
+        help=(
+            "print FULL candidate values (never truncated) as `repr(value)<TAB>path:line`. "
+            "Listing modes truncate at 90 chars: copying a truncated value into the dossier "
+            "silently produces a row that never matches."
+        ),
+    )
+    parser.add_argument(
         "--all",
         action="store_true",
         help="with --fanout: also list rows already marked [fanout-reviewed]",
@@ -516,6 +535,43 @@ def main(argv: list[str]) -> int:
             print(f"  {len(where)}x {row[:70]!r}  files={len(files)}")
             for w in where:
                 print(f"        {w}")
+        return 0
+
+    if args.audit_rows:
+        rows = []
+        for line in (
+            (REPO / "codex-rs/i18n/not-translated-unwrapped.tsv")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ):
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) >= 2 and ":" in parts[1]:
+                rows.append((parts[0], parts[1]))
+        remaining_sites = {f"{f['path']}:{f['line']}" for f in remaining}
+        remaining_values = {f["value"] for f in remaining}
+        nop = [r for r in rows if r[1] in remaining_sites]
+        inert = [
+            r
+            for r in rows
+            if r[0] and r[0] not in remaining_values and r[1] not in remaining_sites
+        ]
+        print(f"dossier rows with a site column: {len(rows)}")
+        print(f"  silent no-ops (site is still a candidate): {len(nop)}")
+        for value, site in nop:
+            print(f"    {site}: {value[:70]!r}")
+        print(f"  inert value-rows (value matches no candidate here): {len(inert)}")
+        return 0 if not nop else 1
+
+    if args.dump:
+        wanted = [
+            f for f in remaining if not args.file or f["path"].endswith(args.file)
+        ]
+        scope = f"*{args.file}" if args.file else "the scanned roots"
+        print(f"{len(wanted)} remaining candidates ({scope}) — repr(value)<TAB>site")
+        for f in wanted:
+            print(f"{f['value']!r}\t{f['path']}:{f['line']}")
         return 0
 
     if args.file:

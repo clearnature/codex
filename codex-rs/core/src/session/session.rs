@@ -18,6 +18,9 @@ use crate::state::ActiveTurn;
 use codex_extension_api::ExtensionDataInit;
 use codex_http_client::ClientRouteClass;
 use codex_http_client::RouteAwareClientPool;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::auth::AgentIdentityAuthPolicy;
 use codex_model_provider::SharedModelProvider;
 use codex_protocol::SessionId;
@@ -417,8 +420,10 @@ impl SessionConfiguration {
                     .map_err(|err| ConstraintError::InvalidValue {
                         field_name: "default_permissions",
                         candidate: active_permission_profile.id.clone(),
-                        allowed: format!(
-                            "configured permission profile with valid network policy ({err})"
+                        allowed: tr_with(
+                            current(),
+                            "configured permission profile with valid network policy ({0})",
+                            &[&err.to_string()],
                         ),
                         requirement_source: codex_config::RequirementSource::Unknown,
                     })?;
@@ -768,9 +773,10 @@ impl Session {
             }
             (InitialHistory::Resumed(resumed_history), None) => resumed_history.conversation_id,
             (InitialHistory::Resumed(_), Some(_)) => {
-                return Err(anyhow::anyhow!(
-                    "reserved thread ID cannot be used when resuming a thread"
-                ));
+                return Err(anyhow::anyhow!(tr(
+                    current(),
+                    "reserved thread ID cannot be used when resuming a thread",
+                )));
             }
         };
         let resumed_session_id = match &initial_history {
@@ -1037,9 +1043,17 @@ impl Session {
                 session_source: session_configuration.session_source.clone(),
                 cwd: session_configuration.cwd().to_path_buf(),
                 rollout_path: rollout_path.clone(),
-                model: session_configuration.step_settings.collaboration_mode.model().to_string(),
+                model: session_configuration
+                    .step_settings
+                    .collaboration_mode
+                    .model()
+                    .to_string(),
                 provider_name: config.model_provider_id.clone(),
-                approval_policy: session_configuration.step_settings.approval_policy.value().to_string(),
+                approval_policy: session_configuration
+                    .step_settings
+                    .approval_policy
+                    .value()
+                    .to_string(),
                 sandbox_policy: format!(
                     "{:?}",
                     session_configuration.sandbox_policy(environment_selections)
@@ -1097,7 +1111,11 @@ impl Session {
             let account_email = telemetry_auth.and_then(CodexAuth::get_account_email);
             let originator = session_configuration.originator.clone();
             let terminal_type = user_agent();
-            let session_model = session_configuration.step_settings.collaboration_mode.model().to_string();
+            let session_model = session_configuration
+                .step_settings
+                .collaboration_mode
+                .model()
+                .to_string();
             let auth_env_telemetry = collect_auth_env_telemetry(
                 session_configuration.provider.info(),
                 auth_manager.codex_api_key_env_enabled(),
@@ -1145,16 +1163,16 @@ impl Session {
             );
 
             let mcp_server_names =
-                codex_mcp::effective_mcp_servers(
-                    &mcp_projection.config,
-                    auth.as_ref(),
-                )
+                codex_mcp::effective_mcp_servers(&mcp_projection.config, auth.as_ref())
                     .into_iter()
                     .filter_map(|(name, server)| server.enabled().then_some(name))
                     .collect::<Vec<_>>();
             session_telemetry.conversation_starts(
                 config.model_provider.name.as_str(),
-                session_configuration.step_settings.collaboration_mode.reasoning_effort(),
+                session_configuration
+                    .step_settings
+                    .collaboration_mode
+                    .reasoning_effort(),
                 config
                     .model_reasoning_summary
                     .unwrap_or(ReasoningSummaryConfig::Auto),
@@ -1174,9 +1192,10 @@ impl Session {
                 user_shell_override
             } else if use_zsh_fork_shell {
                 let zsh_path = config.zsh_path.as_ref().ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "zsh fork feature enabled, but no packaged zsh fork is available for this install"
-                    )
+                    anyhow::anyhow!(tr(
+                current(),
+                "zsh fork feature enabled, but no packaged zsh fork is available for this install",
+            ))
                 })?;
                 if zsh_path.is_file() {
                     shell::Shell {
@@ -1278,7 +1297,8 @@ impl Session {
                 .requirements_toml()
                 .network
                 .is_some();
-            let managed_network_requirements_enabled = config.managed_network_requirements_enabled();
+            let managed_network_requirements_enabled =
+                config.managed_network_requirements_enabled();
             let network_approval = Arc::new(NetworkApprovalService::default());
             // The managed proxy can call back into core for allowlist-miss decisions.
             let network_policy_decider_session = if managed_network_requirements_configured {
@@ -1304,34 +1324,33 @@ impl Session {
                             Arc::clone(network_policy_decider_session),
                         )
                     });
-            let (network_proxy, session_network_proxy) =
-                if let Some(spec) = config
-                    .permissions
-                    .network
-                    .as_ref()
-                    .filter(|spec| spec.enabled())
-                {
-                    let current_exec_policy = exec_policy.current();
-                    let (network_proxy, session_network_proxy) = Self::start_managed_network_proxy(
-                        spec,
-                        current_exec_policy.as_ref(),
-                        config.permissions.permission_profile(),
-                        network_policy_decider.as_ref().map(Arc::clone),
-                        blocked_request_observer.as_ref().map(Arc::clone),
-                        managed_network_requirements_configured,
-                        network_proxy_audit_metadata.clone(),
-                    )
-                    .instrument(info_span!(
-                        "session_init.network_proxy",
-                        otel.name = "session_init.network_proxy",
-                        session_init.managed_network_requirements_enabled =
-                            managed_network_requirements_enabled,
-                    ))
-                    .await?;
-                    (Some(network_proxy), Some(session_network_proxy))
-                } else {
-                    (None, None)
-                };
+            let (network_proxy, session_network_proxy) = if let Some(spec) = config
+                .permissions
+                .network
+                .as_ref()
+                .filter(|spec| spec.enabled())
+            {
+                let current_exec_policy = exec_policy.current();
+                let (network_proxy, session_network_proxy) = Self::start_managed_network_proxy(
+                    spec,
+                    current_exec_policy.as_ref(),
+                    config.permissions.permission_profile(),
+                    network_policy_decider.as_ref().map(Arc::clone),
+                    blocked_request_observer.as_ref().map(Arc::clone),
+                    managed_network_requirements_configured,
+                    network_proxy_audit_metadata.clone(),
+                )
+                .instrument(info_span!(
+                    "session_init.network_proxy",
+                    otel.name = "session_init.network_proxy",
+                    session_init.managed_network_requirements_enabled =
+                        managed_network_requirements_enabled,
+                ))
+                .await?;
+                (Some(network_proxy), Some(session_network_proxy))
+            } else {
+                (None, None)
+            };
 
             // Hooks and extensions share one stable thread-owned MCP runtime handle.
             let mcp_runtime = Arc::new(McpRuntime::empty(
@@ -1394,16 +1413,18 @@ impl Session {
             let extension_metrics =
                 extension_metrics::from_session_telemetry(session_telemetry.clone());
             for contributor in extensions.thread_lifecycle_contributors() {
-                contributor.on_thread_start(codex_extension_api::ThreadStartInput {
-                    config: config.as_ref(),
-                    session_source: &session_configuration.session_source,
-                    persistent_thread_state_available: state_db_ctx.is_some(),
-                    environments: environment_selections,
-                    mcp_resource_client: Some(Arc::clone(&mcp_resource_client)),
-                    extension_metrics: Some(Arc::clone(&extension_metrics)),
-                    session_store: &session_extension_data,
-                    thread_store: &thread_extension_data,
-                }).await;
+                contributor
+                    .on_thread_start(codex_extension_api::ThreadStartInput {
+                        config: config.as_ref(),
+                        session_source: &session_configuration.session_source,
+                        persistent_thread_state_available: state_db_ctx.is_some(),
+                        environments: environment_selections,
+                        mcp_resource_client: Some(Arc::clone(&mcp_resource_client)),
+                        extension_metrics: Some(Arc::clone(&extension_metrics)),
+                        session_store: &session_extension_data,
+                        thread_store: &thread_extension_data,
+                    })
+                    .await;
             }
 
             let executed_tool_calls = config
@@ -1476,7 +1497,8 @@ impl Session {
                     config.features.enabled(Feature::EnableRequestCompression),
                     config.features.enabled(Feature::RuntimeMetrics),
                     Self::build_model_client_beta_features_header(config.as_ref()),
-                    /*concurrent_reasoning_summaries_enabled*/ config
+                    /*concurrent_reasoning_summaries_enabled*/
+                    config
                         .features
                         .enabled(Feature::ConcurrentReasoningSummaries),
                     attestation_provider,
@@ -1519,7 +1541,8 @@ impl Session {
                 mcp_prewarm_shutdown: CancellationToken::new(),
                 mcp_prewarm_task: std::sync::Mutex::new(None),
                 conversation: Arc::new(RealtimeConversationManager::new()),
-                realtime_history: (session_configuration.history_mode == ThreadHistoryMode::Paginated
+                realtime_history: (session_configuration.history_mode
+                    == ThreadHistoryMode::Paginated
                     && services.live_thread.is_some())
                 .then(|| Mutex::new(Default::default())),
                 active_turn: Mutex::new(None),
@@ -1579,29 +1602,28 @@ impl Session {
                 mcp_auth_changes.mark_unchanged();
             }
             let latest_auth = sess.services.auth_manager.auth().await;
-            let mcp_projection = if startup_auth_changed
-                || mcp_auth_changes.has_changed().unwrap_or(false)
-            {
-                sess.services
-                    .mcp_manager
-                    .runtime_config_for_step(
-                        config.as_ref(),
-                        &sess.services.mcp_thread_init,
-                        &sess.services.thread_extension_data,
-                        McpThreadIdentity {
-                            session_source: &session_configuration.session_source,
-                            originator: &session_configuration.originator,
-                            environments: McpEnvironmentScope::Live(
-                                &sess.services.turn_environments,
-                            ),
-                        },
-                        /*ready_selected_capability_roots*/ &[],
-                        /*executor_capability_discovery*/ None,
-                    )
-                    .await
-            } else {
-                mcp_projection
-            };
+            let mcp_projection =
+                if startup_auth_changed || mcp_auth_changes.has_changed().unwrap_or(false) {
+                    sess.services
+                        .mcp_manager
+                        .runtime_config_for_step(
+                            config.as_ref(),
+                            &sess.services.mcp_thread_init,
+                            &sess.services.thread_extension_data,
+                            McpThreadIdentity {
+                                session_source: &session_configuration.session_source,
+                                originator: &session_configuration.originator,
+                                environments: McpEnvironmentScope::Live(
+                                    &sess.services.turn_environments,
+                                ),
+                            },
+                            /*ready_selected_capability_roots*/ &[],
+                            /*executor_capability_discovery*/ None,
+                        )
+                        .await
+                } else {
+                    mcp_projection
+                };
             sess.install_initial_mcp_runtime(
                 &session_configuration,
                 latest_auth,

@@ -1,5 +1,7 @@
 use codex_features::Feature;
 use codex_features::Features;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::openai_models::ModelInfo;
 
 pub(super) fn unsupported_code_mode_warning(
@@ -15,9 +17,10 @@ pub(super) fn unsupported_code_mode_warning(
         return None;
     }
 
-    let model = &model_info.slug;
-    Some(format!(
-        "Code Mode is enabled in configuration, but model `{model}` does not advertise Code Mode support. This may degrade model performance. Disable `features.code_mode` and `features.code_mode_only`, or select a model whose metadata enables Code Mode."
+    Some(tr_with(
+        current(),
+        "Code Mode is enabled in configuration, but model `{0}` does not advertise Code Mode support. This may degrade model performance. Disable `features.code_mode` and `features.code_mode_only`, or select a model whose metadata enables Code Mode.",
+        &[model_info.slug.as_str()],
     ))
 }
 

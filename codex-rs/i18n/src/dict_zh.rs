@@ -7596,6 +7596,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无效的线程设置覆盖：{0}",
     ),
     ("failed to submit turn input: {0}", "提交回合输入失败：{0}"),
+    (
+        "Code Mode is enabled in configuration, but model `{0}` does not advertise Code Mode support. This may degrade model performance. Disable `features.code_mode` and `features.code_mode_only`, or select a model whose metadata enables Code Mode.",
+        "配置中已启用Code Mode，但模型`{0}`未声明支持Code Mode。这可能降低模型性能。请禁用`features.code_mode`与`features.code_mode_only`，或选择元数据启用了Code Mode的模型。",
+    ),
+    (
+        "configured permission profile with valid network policy ({0})",
+        "配置了有效网络策略的权限档位（{0}）",
+    ),
+    (
+        "zsh fork feature enabled, but no packaged zsh fork is available for this install",
+        "已启用zsh fork特性，但本次安装没有可用的打包zsh fork",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

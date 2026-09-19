@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **119** | 第 500 轮清 11 站点（译 6 + 登记 5），`codex-rs/core/src/session/` 尚余 4 站点判据未闭合；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **115** | 第 503 轮闭合 §12.48 的 4 处判据（全部判为该译）；`session/` 已清；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1961,3 +1961,24 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 
 **流程验证**：本批登记行的**值按站点从 `--dump` 结果程序化提取**（不再手抄），`--audit-rows` 显示
 **0 空操作** —— 前两批的两次抄写错没有第三次。判据：**手抄一次都不行，按站点取**。
+
+### 12.49 第 503 轮：§12.48 的 4 处判据**全部闭合**（结论：都该译）
+
+| 站点 | 判据链（每一环都可指到 `文件:行`）| 结论 |
+| --- | --- | --- |
+| `codex-rs/core/src/session/code_mode_warning.rs:20` | `unsupported_code_mode_warning(..)` 的返回值在 `turn_context.rs:1087-1091` 被 `self.send_event(tc, EventMsg::Warning(WarningEvent { message }))` 发出 | **译** |
+| `codex-rs/core/src/session/session.rs:421` | `ConstraintError::InvalidValue` 的 thiserror Display 是 `"invalid value for …: … is not in the allowed set {allowed} (set by …)"`（`codex-rs/config/src/constraint.rs:10-18`）⇒ `{allowed}` **确实进消息**；`SessionConfiguration::validate` 的调用点 `session/mod.rs:793` 是 `.map_err(\|err\| CodexErr::InvalidRequest(err.to_string()))?` | **译** |
+| `codex-rs/core/src/session/session.rs:772` | `Session::new` 在 `spawn_internal(args) -> CodexResult<(Arc<Self>, SessionIo)>`（`session/mod.rs:526`）内，两处 `anyhow::anyhow!` 经 `?` 转成 `CodexErr` | **译** |
+| `codex-rs/core/src/session/session.rs:1178` | 同上 | **译** |
+
+**顺带第 3 次遇到「已译串未包 tr 出现」**：这 4 条里 `configured permission profile with valid network policy ({0})`
+的词条**字典里早就有了**（加词条时被判重跳过）⇒ 说明该串在别处已译、这里只是没包 `tr`。
+（前两次：`{0} handler received unsupported payload` 族、`failed to read current time: {0}`。）
+**判据**：给候选站点补 `tr` **一定要先查字典**——已存在就只包不添；这也让 `[duplicate]` 门禁保持零。
+
+**方法小结（本会话已固化）**：
+1. 候选桶是启发式的 ⇒ **按类 grep 全量对账**（`ReviewDecision::denied` / `CodexErr::*` / `EventMsg::*` / `Fatal`）；
+2. 判据写成「**接收者链**」而不是「像不像文案」：产生点 → `?`/`map_err` → 渲染点/事件；
+3. 拿不准的**不要猜着判**：显式落成待办（本轮 §12.48 的 4 条）+ 机器可查回执证明「记录在案且未跳过」；
+4. 登记行从 `--dump-rows` 抄或按站点程序化提取（手抄两次都出错）；
+5. 补 `tr` 前查字典。

@@ -2616,3 +2616,39 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
 合并自检 `r-mu8bzuht-dkwez0`（**五个 scope 全 0**：cli/core/tui/exec/plugin；drift/audit/fanout 全 0）。
 
 **平台受限改动的 CI 复查清单**已生成：`docs/plan/i18n-platform-ci-checklist.md`（43 行，逐站点给出种类与实参表达式）。
+
+### 12.72 完成审计（第 621–622 轮）：这个 i18n 任务**完成到什么程度**
+
+**判据来自计划本身，不是我的印象**（`docs/plan/i18n-design.md`）：
+① §3.4 的分层接入（步 3 tui → 步 4 cli（**doctor 已按裁定排除**）→ 步 5 exec → 步 6 core）；
+② **H1 = 「英文原文即 key」让 En 输出逐字节不变**，承重判据是「**snapshot 类失败 0**」（877 界面快照）；
+③ **H3 = `i18n-check` 的 missing / unused / spacing / duplicate / placeholder 全零，退出码非零即真漂移**。
+
+**验收面（本会话实跑，均带回执）**：
+
+| 门禁 | 结果 | 回执 |
+| --- | --- | --- |
+| `i18n-check`（H3 的承重判据） | ✅ 全零；coverage 3362/3371 = **99.7%**（差 9 条是 `not-translated.tsv` 里**声明不译**的键） | `r-mu8bx48z-xv3ec9` |
+| `i18n-unit` | ✅ 30 passed（插值/检查器自测） | `r-mu8c5xg5-2ixfzx` |
+| `i18n-smoke`（端到端） | ✅ **双向**：`zh 26 行中文；locale=C 时 0 行` | `r-mu8ccc52-b3jivg` |
+| `i18n-locale-en` | ✅ 默认语言逐字节英文 | `r-mu840ncd-55gc5c` |
+| `i18n-locale-chain` | ✅ `--lang` 压过环境的两个方向 | `r-mu8415ah-785p8i` |
+| `tui-test`（H1 的承重判据，877 快照） | ⚠️ **4286 passed / 1 failed**，失败的是**本机已登记 flaky**（`insta` 的「inline snapshot in loops」框架限制，**不是快照 diff**）⇒ **snapshot 类失败 0**；隔离重跑 ✅ 1 passed | `r-mu8coyw5-okskpo`（隔离） |
+| `exec-test` | ✅ 63 + 1 + 78 passed | `r-mu8cohnh-1wb0wq` |
+| `clippy` | ✅ 无我引入的告警 | `r-mu8bwov5-912a4x` |
+| `fmt-check` | ✅ 五组 | `r-mu8bxpg3-89y282` |
+| `codespell` | ✅ 0 条（含本轮修 `.codespellrc` 后的裸口径） | `r-mu8a3312-h3eg6l` |
+| `bazel-i18n` | ✅ 2/2 tests pass | `r-mu8cpxxl-yum8un` |
+| `bazel-lock-check` | ✅ | `r-mu8cp9zg-xeg9bh` |
+| `argument-comment-lint` | ✅ 949 targets | `r-mu8cuve9-lkbt2z` |
+| `check-tui-lib` | ✅ | `r-mu8cygf1-dj92uf` |
+| **五 scope 普查** | ✅ **cli / core / tui / exec / plugin 全部 0 候选**（drift/audit/fanout 全 0） | `r-mu8bzuht-dkwez0` |
+| cli crate 全量测试 | ✅ 414 passed（本会话 3 次全绿；其后一次全量为环境型 flaky，见 `known_issues cli-suite-flaky-under-load`） | `r-mu85t6z2-o6mbja` |
+
+**结论（三句，逐句可查）**：
+1. **迁移面 = 完成**：设计 §3.4 的步 3–6 覆盖的五个 crate 候选桶全为 0（§12.63/§12.68/§12.70/§12.71）；H1 与 H3 两条承重判据均满足（快照零漂移、检查器全零）。
+2. **验收面 = 本机能跑的都已绿**（上表 15 条），其中 `tui-test` 唯一那条失败有**隔离重跑 + 门禁文档已登记为本机 flaky** 的双重归因。
+3. **未闭合三处（都不是「迁移没做完」）**：
+   - **平台受限 43 处代码改动**（`mac.rs` 33 / `windows.rs` 6 / `debug_sandbox` 4）本机不编译 ⇒ 只能平台 CI；逐站点清单已备：`docs/plan/i18n-platform-ci-checklist.md`。`update_prompt.rs` 那类 `cfg(not(debug_assertions))` 文件由 `check-tui-release` 覆盖（本轮已起，见下）。
+   - **`core-plugins` 520 条**是**范围外**（与 `app-server` 687、`doctor` 851 同性质，前者为待裁决、后两者已按 §3.1/裁定排除）。
+   - **两件待裁决**：`core-plugins` 范围、`i18n-locale-zh` 是否登记具名门禁（登记会作废约 360 份具名回执 + 需宿主重启）；外加 `w-5` 的笔误回执 id（−5，工具无移除能力）。

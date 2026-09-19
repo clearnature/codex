@@ -2649,6 +2649,6 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
 1. **迁移面 = 完成**：设计 §3.4 的步 3–6 覆盖的五个 crate 候选桶全为 0（§12.63/§12.68/§12.70/§12.71）；H1 与 H3 两条承重判据均满足（快照零漂移、检查器全零）。
 2. **验收面 = 本机能跑的都已绿**（上表 15 条），其中 `tui-test` 唯一那条失败有**隔离重跑 + 门禁文档已登记为本机 flaky** 的双重归因。
 3. **未闭合三处（都不是「迁移没做完」）**：
-   - **平台受限 43 处代码改动**（`mac.rs` 33 / `windows.rs` 6 / `debug_sandbox` 4）本机不编译 ⇒ 只能平台 CI；逐站点清单已备：`docs/plan/i18n-platform-ci-checklist.md`。`update_prompt.rs` 那类 `cfg(not(debug_assertions))` 文件由 `check-tui-release` 覆盖（本轮已起，见下）。
+   - **平台受限 43 处代码改动**（`mac.rs` 33 / `windows.rs` 6 / `debug_sandbox` 4）本机不编译 ⇒ 只能平台 CI；逐站点清单已备：`docs/plan/i18n-platform-ci-checklist.md`。`update_prompt.rs`（**6 处 tr**）那类 `cfg(not(debug_assertions))` 文件已由 `check-tui-release` 实际覆盖：`cargo check -p codex-tui --lib --release` ✅（`r-mu8d1zyy-nl89n9`；唯一告警在 `codex-app-server` 的 `unused_mut`，非本次改动）。另：`check-tui-lib` ✅ `r-mu8cygf1-dj92uf`、`argument-comment-lint` ✅ `r-mu8cuve9-lkbt2z`（949 targets）、`bazel-i18n` ✅ `r-mu8cpxxl-yum8un`、`bazel-lock-check` ✅ `r-mu8cp9zg-xeg9bh`。
    - **`core-plugins` 520 条**是**范围外**（与 `app-server` 687、`doctor` 851 同性质，前者为待裁决、后两者已按 §3.1/裁定排除）。
    - **两件待裁决**：`core-plugins` 范围、`i18n-locale-zh` 是否登记具名门禁（登记会作废约 360 份具名回执 + 需宿主重启）；外加 `w-5` 的笔误回执 id（−5，工具无移除能力）。

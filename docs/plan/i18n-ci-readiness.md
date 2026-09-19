@@ -1,0 +1,92 @@
+# i18n 云端 CI 就绪度评估
+
+问题：**现在可以开云端 CI（PR 门禁）了吗？**
+结论：**可以开**。CI 与本机之间只剩「本机跑不了、只能由 CI 判」的少数几项；
+下面把每一项标成**本机已取证**或**CI-first（未验证）**，并给出预期最可能红的一项。
+
+## 一、CI required 门槛 ↔ 本机可验性映射
+
+`blocking-ci.yml` 的 required 集合是：Bazel / Blob size policy / cargo-deny / Codespell /
+repo-checks / rust-ci / sdk。
+
+| CI job | 具体步骤 | 本机对应门禁 | 状态 |
+| --- | --- | --- | --- |
+| repo-checks | `just fmt-check` | `fmt-check` | **已取证** `r-mu8hhteb-t7ukc3`（最终树） |
+| repo-checks | `just i18n-check` | `i18n-check` | **已取证** `r-mu8h8wsf-e70wvp`（全零） |
+| repo-checks | `just i18n-smoke` | `i18n-smoke` | **已取证** `r-mu8hgswh-xaqrtf`（zh 26 行 / C 0 行，双向） |
+| repo-checks | `pnpm run format`（prettier） | ——（无对应门禁） | **CI-first**：本机无 `node_modules`、沙箱无网络 ⇒ 见 §三.1 |
+| repo-checks | `check-clean-worktree` | `git status` | **已核实**：工作树干净（提交 `4220d82d2` 后） |
+| Codespell | `codespell` | `codespell` | **已取证** `r-mu8hh72k-8b04t2` |
+| Bazel | `bazel test` 多平台矩阵 + `check-module-bazel-lock.sh` | `bazel-lock-check` / `bazel-i18n` | 锁与 i18n 目标**已取证**（`r-mu8e783e-zo6pia` / `r-mu8cpxxl-yum8un`）；**bazel test 全矩阵本机从未跑**（按预算约束不跑）⇒ CI-first |
+| cargo-deny | 许可证/advisory/ban | —— | **CI-first**：本机无 `cargo-deny` 二进制 |
+| rust-ci | 三平台 cargo test/clippy 矩阵 | `clippy` / `exec-test` / `tui-test` / `i18n-unit` / 各 crate 套件 | Linux 侧**已取证**（`clippy r-mu8e2qwp-f6dzc6`、`i18n-unit r-mu8e7bt8-x6r03f`、core-plugins 438 passed `r-mu8ejqmb-26i4ea` 等）；**macOS/Windows 侧只能由 CI 判**（本机无跨目标类型检查，见 `known_issues no-cross-target-typecheck-local`） |
+| sdk | TS/Python SDK | —— | 本批未触碰 SDK ⇒ 预期无影响，但**未验证** |
+| Blob size policy | 变更 blob ≤ 512000 字节 | 本机只量了尺寸 | **已量**：`not-translated-unwrapped.tsv` = 385 091 B（75% 上限）⇒ 见 §三.2 |
+
+## 二、已在本机取证的门禁（一页索引）
+
+`fmt-check` · `i18n-check` · `i18n-smoke` · `codespell` · `clippy` · `i18n-unit` ·
+`bazel-lock-check` · `bazel-i18n` · `argument-comment-lint` · `check-tui-lib` / `check-tui-release` ·
+`exec-test` · `tui-test` · `i18n-locale-en` · `i18n-locale-chain`。
+回执都在 `~/.dsh/state/swe-mode/receipts/`，可用 `verify action:"receipts"` 复核**当前是否仍有效**
+（门禁定义改过、回执文件被删、或本就没过都会报出来）。
+
+## 三、CI-first 清单与预判风险（按「最可能红」排序）
+
+### 1. prettier（`pnpm run format`）——**预期最可能红**
+
+* glob 是 `*.json *.md docs/**/*.md .github/workflows/*.yml **/*.js` ⇒
+  **`docs/plan/**` 的所有 md 都在检查范围内**，而本项目的规划文档从未跑过 prettier。
+* 本机不可跑（实测：`pnpm run format` → `prettier: not found`；
+  `pnpm install --frozen-lockfile --offline` → `ERR_PNPM_NO_OFFLINE_TARBALL`，
+  沙箱内 `CODEX_SANDBOX_NETWORK_DISABLED=1` 无网络）⇒ **无法本机预判，只能由 CI 判**。
+* 处方：有网络的环境跑 `pnpm install --frozen-lockfile && pnpm run format:fix`，再复核 `fmt-check`；
+  CI 报红时按报红文件改，**不要**把 prettier 从 required 里拿掉。
+
+### 2. Blob size policy——**还有余量，但已进入可行动区**
+
+* `codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B**，上限 **512 000 B**（差 126 909 B ≈ +700 行登记行）。
+* 本轮 80 行登记让它长了约 30 KB（平均 ≈ 380 B/行，理由列很长）⇒ 剩余预算约 **330 行**。
+* 处方（三选一，先做哪个都行）：
+  ① 缩短理由列（现在每行都复制了同一段 §12.3 说明，可改成 `见 §12.3（manager.rs:3276）` 之类短引用）；
+  ② 在 `.github/blob-size-allowlist.txt` 里登记该文件；
+  ③ 按包/按 crate 拆分登记文件。
+  **建议 ①**（信息量不降，体积立减），并在下次登记批次前做。
+
+### 3. cargo-deny——预期无影响，但未验证
+
+* 本轮给 `codex-plugins` 加了 `codex-i18n = { workspace = true }`。
+  `codex-i18n` 本来就已在依赖图里（cli/tui/exec 都依赖它），**没有新 crate 进入图** ⇒
+  许可证/advisory 面不变；风险只在 `bans` 类规则（重复版本/wildcard），本改动不新增版本。
+* 判据：CI 的 cargo-deny job 绿。若红，先看是不是**既有**问题（用 baseline 提交对照）。
+
+### 4. Bazel 侧的新依赖——预期无需手改
+
+* `codex-rs/core-plugins/BUILD.bazel` 只有一句 `codex_rust_crate(...)`；
+  `defs.bzl` 用 `all_crate_deps()`（`defs.bzl:319/333/355`）从 `Cargo.toml` 推导依赖 ⇒
+  加 `codex-i18n` 依赖**不需要手改 BUILD.bazel**。
+* `MODULE.bazel.lock` 本机已验：`bazel-lock-check` `r-mu8e783e-zo6pia` 通过、`git diff` 为空。
+
+### 5. 平台门控的 43 处未完成——**不会让 CI 红**
+
+* 没有任何 required 门禁要求「候选数为 0」；未包的字符串只是「还没做」，不是失败。
+* 见 `docs/plan/i18n-platform-ci-checklist.md`（43 处代码改动 + 2 行登记），等 macOS/Windows CI 跑起来后逐条落。
+
+## 四、开 CI 前的本机收尾清单（都已做）
+
+- [x] `just fmt` 已跑（含文档、词典、测试）
+- [x] 工作树干净（`git status --short` 空）
+- [x] 生成物无漂移：未改 `ConfigToml` / app-server schema ⇒ 无需 `write-config-schema` / `write-app-server-schema`
+- [x] 六范围候选普查：cli/core/tui/exec/plugin = 0，core-plugins = 382（见 §12.72 与本文件 §二）
+- [x] 本机可跑的 CI 同款门禁全部重跑并取证（§一表前三行 + Codespell）
+
+## 五、对抗自检：这份评估最可能错在哪
+
+1. **「prettier 会红」只是预判，不是事实**：我没跑过它，也没找到本仓库 `docs/**` 下 prettier-clean 的
+   对照物（`third_party/voice/README.md` 的表格不补空格，但它不在 prettier 的 glob 里 ⇒ 不构成证据）。
+   所以这一条应当读作「**未验证 + 风险最高**」，而不是「已知会红」。
+2. **映射表可能漏项**：我只读了 `repo-checks.yml` 全文与 `blocking-ci.yml` 的 required 列表；
+   `bazel.yml` / `rust-ci.yml` / `sdk.yml` 的内部步骤没有逐行读 ⇒ 其中若有额外的 i18n 相关门槛，
+   本表会漏。
+3. **`check-clean-worktree` 的判据我按 `git status` 推的**，没有读过该 action 的实现；
+   若它还检查未跟踪文件或特定生成物，我的「已核实」就偏窄。

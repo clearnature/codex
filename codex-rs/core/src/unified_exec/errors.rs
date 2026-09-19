@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::exec_output::ExecToolCallOutput;
 use codex_utils_path_uri::PathUri;
 use std::num::NonZeroUsize;
@@ -5,31 +8,35 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub(crate) enum UnifiedExecError {
-    #[error("Failed to create unified exec process: {message}")]
+    #[error("{}", tr_with(current(), "Failed to create unified exec process: {0}", &[message]))]
     CreateProcess { message: String },
-    #[error("Unified exec process failed: {message}")]
+    #[error("{}", tr_with(current(), "Unified exec process failed: {0}", &[message]))]
     ProcessFailed { message: String },
     // The model is trained on `session_id`, but internally we track a `process_id`.
-    #[error("Unknown process id {process_id}")]
+    #[error("{}", tr_with(current(), "Unknown process id {0}", &[&process_id.to_string()]))]
     UnknownProcessId { process_id: i32 },
-    #[error("stdin approval failed: {0:?}")]
+    #[error("{}", tr_with(current(), "stdin approval failed: {0}", &[&format!("{_0:?}")]))]
     StdinApproval(crate::tools::sandboxing::ToolError),
-    #[error("failed to write to stdin")]
+    #[error("{}", tr(current(), "failed to write to stdin"))]
     WriteToStdin,
     #[error(
-        "stdin is closed for this session; rerun exec_command with tty=true to keep stdin open"
+        "{}",
+        tr(
+            current(),
+            "stdin is closed for this session; rerun exec_command with tty=true to keep stdin open"
+        )
     )]
     StdinClosed,
-    #[error("missing command line for unified exec request")]
+    #[error("{}", tr(current(), "missing command line for unified exec request"))]
     MissingCommandLine,
-    #[error("Command denied by sandbox: {message}")]
+    #[error("{}", tr_with(current(), "Command denied by sandbox: {0}", &[message]))]
     SandboxDenied {
         message: String,
         output: ExecToolCallOutput,
         original_token_count: Option<usize>,
         output_omitted_bytes: Option<NonZeroUsize>,
     },
-    #[error("{path} is not valid on {}", std::env::consts::OS)]
+    #[error("{}", tr_with(current(), "{0} is not valid on {1}", &[&path.to_string(), std::env::consts::OS]))]
     ForeignPath { path: PathUri },
 }
 

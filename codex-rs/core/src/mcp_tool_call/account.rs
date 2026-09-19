@@ -2,13 +2,21 @@
 //! must be valid; optional catalog identities never block legacy calls.
 
 use super::MCP_TOOL_LINK_ID_META_KEY;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_mcp::MCP_TOOL_CODEX_APPS_META_KEY;
 use codex_mcp::ToolInfo;
 use serde_json::Value as JsonValue;
 
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub(super) enum McpToolAccountError {
-    #[error("This app tool requires a non-empty string link_id argument")]
+    #[error(
+        "{}",
+        tr(
+            current(),
+            "This app tool requires a non-empty string link_id argument"
+        )
+    )]
     InvalidSelector,
 }
 

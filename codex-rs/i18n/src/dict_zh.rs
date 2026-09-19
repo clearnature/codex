@@ -8440,6 +8440,28 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("no .app bundle found at {0}", "在{0}处没有找到.app bundle"),
     ("failed to invoke `ditto`", "调用`ditto`失败"),
     ("ditto copy failed with {0}", "ditto复制失败，状态为{0}"),
+    (
+        "Failed to create unified exec process: {0}",
+        "创建统一执行进程失败：{0}",
+    ),
+    ("Unified exec process failed: {0}", "统一执行进程失败：{0}"),
+    ("Unknown process id {0}", "未知的进程ID {0}"),
+    ("stdin approval failed: {0}", "标准输入审批失败：{0}"),
+    ("failed to write to stdin", "写入标准输入失败"),
+    (
+        "stdin is closed for this session; rerun exec_command with tty=true to keep stdin open",
+        "本会话的标准输入已关闭；要保留标准输入，请用tty=true重新运行exec_command",
+    ),
+    (
+        "missing command line for unified exec request",
+        "统一执行请求缺少命令行",
+    ),
+    ("Command denied by sandbox: {0}", "命令被沙箱拒绝：{0}"),
+    ("{0} is not valid on {1}", "{0} 在 {1} 上无效"),
+    (
+        "This app tool requires a non-empty string link_id argument",
+        "此应用工具要求link_id参数为非空字符串",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

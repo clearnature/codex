@@ -236,6 +236,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--top", type=int, default=10, help="how many files to list")
     parser.add_argument("--file", help="list every remaining literal in one file")
     parser.add_argument(
+        "--fanout",
+        action="store_true",
+        help=(
+            "rows that exempt more than one site (matching is by VALUE, so one row "
+            "silently exempts every same-text site in every file): list them so each "
+            "site gets adjudicated"
+        ),
+    )
+    parser.add_argument(
         "--precise",
         action="store_true",
         help=(
@@ -410,7 +419,48 @@ def main(argv: list[str]) -> int:
             )
         return 0
 
+    if args.fanout:
+        # A dossier row is keyed by VALUE (falling back to an exact `path:line`).
+        # So one row can exempt sites the author never looked at -- and there is
+        # no gate that notices: the exemption is silent by construction.
+        by_row = {}
+        for finding in findings:
+            if finding["bucket"] != "candidates":
+                continue
+            site = f"{finding['path']}:{finding['line']}"
+            if finding["value"] in not_translated[0]:
+                row = finding["value"]
+            elif site in not_translated[1]:
+                row = site
+            else:
+                continue
+            path = finding["path"]
+            if path not in cache:
+                source = (REPO / path).read_text(encoding="utf-8", errors="replace")
+                cache[path] = (source, scanner.mask_source(source), source.splitlines())
+            if is_wrapped(cache[path][2], finding["line"]):
+                continue  # already translated here: not a masked site
+            by_row.setdefault(row, []).append(site)
+        multi = {r: s for r, s in by_row.items() if len(s) > 1}
+        sites = sum(len(s) for s in multi.values())
+        print(
+            f"{len(multi)} rows exempt >1 unwrapped site "
+            f"({sites} sites across {len(multi)} rows)"
+        )
+        for row, where in sorted(multi.items(), key=lambda kv: -len(kv[1])):
+            files = sorted({w.split(":")[0] for w in where})
+            print(f"  {len(where)}x {row[:70]!r}  files={len(files)}")
+            for w in where:
+                print(f"        {w}")
+        return 0
+
     if args.file:
+        if not any(f["path"].endswith(args.file) for f in scanned):
+            print(
+                f"error: --file {args.file!r} matched no scanned file "
+                f"(scan scope: {', '.join(str(r) for r in roots)})"
+            )
+            return 2
         wanted = [f for f in remaining if f["path"].endswith(args.file)]
         # Report the exemptions *per file* too: without it, a file whose
         # remaining candidates are all exemptions prints `0 unwrapped` and the

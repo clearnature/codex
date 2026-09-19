@@ -7517,6 +7517,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "构建websocket预热客户端失败：{0}",
     ),
     ("websocket connection is unavailable", "websocket连接不可用"),
+    (
+        "remote compaction v2 stream closed before response.completed",
+        "远程压缩v2的流在response.completed之前关闭",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

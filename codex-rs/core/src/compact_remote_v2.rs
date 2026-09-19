@@ -38,6 +38,8 @@ use codex_context_fragments::to_annotated_content;
 use codex_features::Feature;
 use codex_history::CodexHarnessMetadata;
 use codex_history::ResponseItemEnvelope;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::CodexErrorDetails;
 use codex_protocol::error::Result as CodexResult;
@@ -463,7 +465,11 @@ async fn collect_compaction_output(
 
     let Some(response_id) = completed_response_id else {
         return Err(CodexErr::Stream(
-            "remote compaction v2 stream closed before response.completed".to_string(),
+            tr(
+                current(),
+                "remote compaction v2 stream closed before response.completed",
+            )
+            .to_string(),
         ));
     };
 

@@ -47,6 +47,10 @@ repo-checks / rust-ci / sdk。
 
 ⚠ 之前无法本机验证的原因**不是「没有网络」**（那是误判，见 §六.4），而是当时还没装 `node_modules`。
 
+**工作流规矩（本批踩了两次）**：本机已装 `node_modules`+prettier ⇒ **任何手工改动的 md 之后都要立刻跑
+`pnpm run format:fix`**，再提交。否则 CI 的 `pnpm run format` 会红在同一条上（本批在
+`i18n-ci-readiness.md` 上连着犯了两次：先是我手写的段落，后是索引式拼接写坏文件后的重写）。
+
 ### 2. Blob size policy——**已处置（选处方 ①：缩短理由列）**
 
 - 处置前：`codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B** / 上限 **512 000 B**。

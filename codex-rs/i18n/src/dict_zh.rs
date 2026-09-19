@@ -7980,6 +7980,109 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "marketplace root does not contain a supported manifest",
         "市场源根目录不包含受支持的清单文件",
     ),
+    (
+        "Warning: failed to resolve login log directory: {0}",
+        "警告：无法解析登录日志目录：{0}",
+    ),
+    (
+        "Warning: failed to create login log directory {1}: {0}",
+        "警告：无法创建登录日志目录{0}：{1}",
+    ),
+    (
+        "Warning: failed to open login log file {1}: {0}",
+        "警告：无法打开登录日志文件{0}：{1}",
+    ),
+    (
+        "Warning: failed to initialize login log file {1}: {0}",
+        "警告：无法初始化登录日志文件{0}：{1}",
+    ),
+    (
+        "Starting local login server on http://localhost:{0}.\nIf your browser did not open, navigate to this URL to authenticate:\n\n{1}\n\nOn a remote or headless machine? Use `codex login --device-auth` instead.",
+        "正在http://localhost:{0}启动本地登录服务器。\n如果浏览器没有自动打开，请访问此URL完成认证：\n\n{1}\n\n在远程或无头机器上？请改用`codex login --device-auth`。",
+    ),
+    ("Error logging in: {0}", "登录出错：{0}"),
+    (
+        "Error logging in with access token: {0}",
+        "使用访问令牌登录出错：{0}",
+    ),
+    (
+        "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`.",
+        "--with-api-key需要从标准输入读取API密钥。试试用管道传入，例如`printenv OPENAI_API_KEY | codex login --with-api-key`",
+    ),
+    (
+        "Reading API key from stdin...",
+        "正在从标准输入读取API密钥…",
+    ),
+    (
+        "No API key provided via stdin.",
+        "没有通过标准输入提供API密钥。",
+    ),
+    (
+        "--with-access-token expects the access token on stdin. Try piping it, e.g. `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`.",
+        "--with-access-token需要从标准输入读取访问令牌。试试用管道传入，例如`printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`",
+    ),
+    (
+        "Reading access token from stdin...",
+        "正在从标准输入读取访问令牌…",
+    ),
+    (
+        "No access token provided via stdin.",
+        "没有通过标准输入提供访问令牌。",
+    ),
+    ("Failed to read stdin: {0}", "读取标准输入失败：{0}"),
+    (
+        "Error logging in with device code: {0}",
+        "使用设备码登录出错：{0}",
+    ),
+    (
+        "Device code login is not enabled; falling back to browser login.",
+        "未启用设备码登录；回退到浏览器登录。",
+    ),
+    (
+        "Logged in using workload identity",
+        "已使用工作负载身份登录",
+    ),
+    ("Error checking login status: {0}", "检查登录状态出错：{0}"),
+    (
+        "Logged in using an API key - {0}",
+        "已使用API密钥登录 - {0}",
+    ),
+    (
+        "Unexpected error retrieving API key: {0}",
+        "获取API密钥时出现意外错误：{0}",
+    ),
+    ("Logged in using ChatGPT", "已使用ChatGPT登录"),
+    (
+        "Logged in using personal access token",
+        "已使用个人访问令牌登录",
+    ),
+    (
+        "Logged in using Amazon Bedrock API key",
+        "已使用Amazon Bedrock API密钥登录",
+    ),
+    (
+        "Logged in using Amazon Bedrock AWS access keys",
+        "已使用Amazon Bedrock AWS访问密钥登录",
+    ),
+    ("Error logging out: {0}", "注销出错：{0}"),
+    (
+        "Error clearing Amazon Bedrock configuration after logout: {0}",
+        "注销后清除Amazon Bedrock配置出错：{0}",
+    ),
+    ("Successfully logged out", "已成功注销"),
+    (
+        "ChatGPT login is disabled. Use API key login instead.",
+        "ChatGPT登录已被禁用。请改用API密钥登录。",
+    ),
+    (
+        "API key login is disabled. Use ChatGPT login instead.",
+        "API密钥登录已被禁用。请改用ChatGPT登录。",
+    ),
+    (
+        "Access token login is disabled. Use API key login instead.",
+        "访问令牌登录已被禁用。请改用API密钥登录。",
+    ),
+    ("Successfully logged in", "登录成功"),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **208** | 第 556 轮清 `plugin_cmd.rs` 47 站点（27 译 + 20 登记，§12.60）；已扣 doctor 851（裁定排除）；最密文件 `login.rs` 41、`main.rs` 37 |
+| `codex-rs/cli/src` | **167** | 第 562 轮清 `login.rs` 41 站点（全译，§12.61）；已扣 doctor 851（裁定排除）；最密文件 `main.rs` 37、`desktop_app/mac.rs` 34 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2285,3 +2285,40 @@ spacing 0 / duplicate 0 / placeholder 0）、`clippy` `r-mu7yt21u-rqfher`、合�
 duplicate 0 / placeholder 0）、`clippy r-mu8015xq-mdd5t9`、合并自检 `r-mu803c2i-ri1cs1`
 （drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=208）。失败回执保留：
 `r-mu7zzviy-atowt0`（needless-borrow 红，修正后转绿）。
+
+### 12.61 第 562 轮：`login.rs` 整文件全译（41 站点 → 35 条词条），并沉淀批量工具
+
+`login.rs` 的 41 个候选站点**全部译、无登记**：`--file cli/src/login.rs` 报 **0 unwrapped**；
+`cli/src` 208 → **167**，字典 3212 → **3243**。
+
+三处需要特别处理：
+
+| 位置 | 处理 | 依据 |
+| --- | --- | --- |
+| `:40-46` 四个常量（`CHATGPT_LOGIN_DISABLED_MESSAGE` / `API_KEY_…` / `ACCESS_TOKEN_…` / `LOGIN_SUCCESS_MESSAGE`） | **删常量、字面量放回调用点**：11 个 `eprintln!("{CONST}")` 站点改成 `eprintln!("{}", tr(current(), "<英文原文>"))` | `const` 里不能调 `tr`（`E0015`），而检查器的 `const_is_rendered` 只在含 6 个渲染槽之一的行上认可常量名（cli 的 `eprintln!` 不在其中）⇒ 保留常量会让键既 `[unused]` 又留候选。删前已 `grep -rn` 全仓（含 `*_tests.rs`）：只有 `login.rs` 自己引用 |
+| `:279`/`:287` 的 6 条 stdin 提示 | 用 `kind:"arg"` **只包字面量** | `read_stdin_secret(terminal_message, reading_message, empty_message)` 三个参数都会 `eprintln!` ⇒ 文本流向用户 |
+| `:467` | 实参写成 `safe_format_key(&api_key).as_str()` | 该签名是 `fn safe_format_key(key: &str) -> String` ⇒ 要 `&str` 不是 `String` |
+
+**新工具 `scripts/i18n_apply.py`（本轮沉淀）**：把前两批反复手写的改写逻辑固化成 spec 驱动（`--plan` 默认、`--apply` 才写）：
+键与实参**一律从磁盘源码推导**（不再手抄字面量），每条断言「命中数 + 行/列区间 + 占位符个数」，
+`extra_edits` 承担常量删除与调用点改写，`extra_dict` 承担「只经 `extra_edits` 引入的词条」。
+动机是前两批各踩一次的坑：按改前形态写正则（`j-mu7yxybn-crgn`）、实参形状靠猜（`j-mu80hswy-bbol`）。
+
+**本轮被门禁抓回两次（都值得记）**：
+
+1. `i18n-check` 的 `[spacing]` 报 **3 条**：我在三条长文案里写了「CJK↔拉丁」边界空格
+   （`正在 http://localhost:{0} 启动…`）。规则实现是 `has_mixed_boundary_space`
+   （`codex-rs/i18n-check/src/main.rs:431-441`）：**CJK 与 ASCII 字母数字之间夹一个空格**即违规；
+   占位符 `{0}` 和标点（反引号、括号）**不算边界** ⇒ 现有词条 `（例如 `printenv …`` 是合法的。
+   修完 9 处（其中 7 处是我新增的）后 0 violations。
+   顺带自我纠错：修的时候**顺手改了 2 条既有词条**（那两处的空格落在 CJK↔反引号上，本不违规）
+   ⇒ 已按最小入侵**还原**，只留真正违规的改动。
+2. `clippy` 报 `redundant_clone`（**同样是 `-D`**）：`:705` 的 `e` 本身是 `String`，
+   `&[&e.to_string()]` 是多余克隆 ⇒ 改 `&[&e]`。
+   ⇒ 「实参形状」这一族现在有**两个 `-D` lint** 在管：`needless-borrow`（`&str` 上多余的 `&`）
+   与 `redundant-clone`（`String` 上多余的 `.to_string()`）；拿不准就先 grep 被调函数签名。
+
+**证据**：`fmt-check r-mu80udwr-x0gga3`、`i18n-check r-mu80zhns-qp8pfi`（3243 词条 / missing 0 /
+unused 0 / spacing 0 / duplicate 0 / placeholder 0）、`clippy r-mu813jbq-win5up`、
+合并自检 `r-mu815o3i-5iy9zv`（drift=0 / 四 scope audit=0 / fanout=0 / census cli=167）。
+失败回执保留：`r-mu80y1ep-mdyyfn`（3 条 spacing）、`r-mu812hqt-5ske2r`（redundant_clone）。

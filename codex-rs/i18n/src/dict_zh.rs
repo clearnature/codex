@@ -7445,6 +7445,28 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Network access to \"{0}\" was blocked: {1}.",
         "对\"{0}\"的网络访问被阻止：{1}。",
     ),
+    ("{0} is not supported yet", "{0}尚不支持"),
+    (
+        "Codex cannot access session files at {0} (permission denied). If sessions were created using sudo, fix ownership: sudo chown -R $(whoami) {1}",
+        "Codex无法访问位于{0}的会话文件（权限不足）。若这些会话是用sudo创建的，请修复所有权：sudo chown -R $(whoami) {1}",
+    ),
+    (
+        "Session storage missing at {0}. Create the directory or choose a different Codex home.",
+        "会话存储缺失：{0}。请创建该目录，或改用其他Codex home。",
+    ),
+    (
+        "Session storage path {0} is blocked by an existing file. Remove or rename it so Codex can create sessions.",
+        "会话存储路径{0}被一个已存在的文件占用。请移除或重命名它，以便Codex创建会话。",
+    ),
+    (
+        "Session data under {0} looks corrupt or unreadable. Clearing the sessions directory may help (this will remove saved threads).",
+        "{0}下的会话数据看起来已损坏或不可读。清空sessions目录可能有帮助（这会删除已保存的线程）。",
+    ),
+    (
+        "Session storage path {0} has an unexpected type. Ensure it is a directory Codex can use for session files.",
+        "会话存储路径{0}的类型不符合预期。请确保它是Codex可用于会话文件的目录。",
+    ),
+    ("{0} (underlying error: {1})", "{0}（底层错误：{1}）"),
 ];
 
 /// English source text -> Simplified Chinese.

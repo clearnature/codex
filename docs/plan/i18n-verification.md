@@ -1865,3 +1865,13 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 
 **判据提醒**：`Fatal` vs `RespondToModel` 只差一个词，接收者却一个是用户、一个是模型 ——
 这是本仓最容易「一眼看错」的一对（同族还有 `ToolError::Rejected` vs `ToolError::Codex`）。
+
+**同一批的第三个发现（检查器的 const 通道）**：给 `current_time.rs` 加 `codex_i18n` import 后，
+`i18n-check` 立刻报 `[missing] "curr_time"`（`:25` 的 `const TOOL_NAME`）——因为检查器有一条
+**const 通道**：`const NAME: &str = "text"` 若被 `format!("…{NAME}…")` 拼进渲染串，就按「已渲染的 key」
+查字典；而**只有引用了 `codex_i18n` 的文件才进入扫描范围**（`file_contributes_keys`）。
+
+判据：这不是检查器出错，也不是该去译 `curr_time`（它是**工具名标识符**，进 `ToolSpec` 与
+`ToolName::namespaced`，还进发给模型的错误模板）。正确处置是登记进**渲染侧档案**
+`codex-rs/i18n/not-translated.tsv`（该表早有同族先例：`clock`/`sleep` 来自 `sleep.rs:26`/`:27`）。
+**预期这会反复出现**：以后每给一个 handler 文件加 import，都可能把它的 `*_NAME` 常量带进扫描范围。

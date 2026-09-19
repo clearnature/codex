@@ -1763,3 +1763,11 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 | `tools/approvals.rs:304` `missing exec command cwd convention` | 登记：`std::io::Error::other` 内部不变式错误 ⇒ §12.3 |
 | `tools/handlers/dynamic.rs:102`/`:103` | 登记：`ToolSearchSourceInfo` 的 name/description，进**工具搜索索引**（模型侧元数据）⇒ §12.2 |
 | `tools/handlers/dynamic.rs:133`/`:149`/`:242` | 登记：`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）|
+
+#### 待裁决（第 476 轮新增）：`DynamicToolCallItem.error` 是否被**其它客户端**渲染
+
+`dynamic.rs:242` 与 `:149` 是同一个字符串的两个站点，接收者却不同（`RespondToModel` vs
+`TurnItem::DynamicToolCall` 的 `error` 字段）。本 TUI 明确不渲染它（`chatwidget/replay.rs:287` 忽略该 item、
+`realtime_history/presentation.rs:66` 只比较 `status`），所以本仓**无法自证**该字段对用户可见与否；
+若 app-server 之外的客户端（IDE 插件等）会渲染，则 `:242` 应改为 `tr`。
+判据：找到任一消费 `DynamicToolCallItem.error` 的渲染点即可定案。

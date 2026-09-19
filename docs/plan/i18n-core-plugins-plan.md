@@ -109,3 +109,44 @@
 `core-plugins/Cargo.toml` 新增 `codex-i18n = { workspace = true }` ⇒ 按 AGENTS.md 必须
 `just bazel-lock-update` 并检查 `MODULE.bazel.lock` 漂移（`bazel-lock-check`）。
 `BUILD.bazel` 经 `codex_rust_crate` 宏自动处理，无需手改。
+
+## 八、第二批：startup_sync.rs 80 条全部「登记」（不译）
+
+`core-plugins/src/startup_sync.rs` 是全 crate 最大的热点（80 条），但**一条都不译**——
+这不是省的，是判据要求的。
+
+### 8.1 判据（`docs/plan/i18n-design.md:186` 明文）
+
+该文的甄别规则是**按调用点分类**，不是按「像不像一句话」：进
+`add_error_message` / `add_info_message` / `add_warning_message` /
+`add_to_history(new_error_event(…))`、`SelectionViewParams` 标题条目、直接渲染进
+`Line`/`Span` 的字面量 ⇒ **要译**；`tracing::*` 日志、`.wrap_err("…")` 错误链上下文、
+遥测属性名与值、喂模型的提示词、内部 id 与配置键 ⇒ **不译**。
+
+### 8.2 本文件的文本流向（逐链查到终点）
+
+* 唯一生产调用点：`manager.rs:3253`，在 `std::thread::Builder::new().name("plugins-curated-repo-sync")`
+  起的 **detached 后台线程**里；`Err(err)` 的归宿是 `manager.rs:3276` 的
+  `warn!("failed to sync curated plugins repo: {err}")`（`Ok` 分支的刷新失败同样是 `warn!`）。
+* 文件自身的 `warn!` 调用点（`:119` `:134` `:144` `:404` `:417` `:441` `:452` `:463` `:476`）直接是日志参数。
+* 其余 80 条是 `Result<_, String>` / `.context(…)` 链上的中间串，最终都汇进上面那条 `warn!`。
+* 反向核对：`tui/src` 与 `core/src` 中不存在把 curated plugins 同步错误渲染成
+  `Line`/`Span`/`add_*_message` 的调用点（grep 无命中）。
+
+⇒ 80 条全部登记，登记行 80 条（`codex-rs/i18n/not-translated-unwrapped.tsv`，逐站点 `值 / path:line / 理由`），
+词条与代码改动各 0。`i18n_todo.py --file …/startup_sync.rs` 复核：**0 candidates / 80 exempted**；
+crate 总量 **462 → 374**。
+
+### 8.3 顺带修掉的工具缺陷（会咬第二次）
+
+`scripts/i18n_apply.py` 的 `_used_imports()` 以 `used = {"current"}` 起步，于是**纯登记**
+（`translate: {}`）的 spec 也会往源文件插 `use codex_i18n::current;` —— 未用 import，
+`clippy` 会红。本次实测踩到并已修（只有存在翻译站点时才加 `current`），
+复核：同一 spec 的 plan 输出「将按需插入的 import： []」，误插的那一行已 `git checkout` 回退。
+
+### 8.4 判据复核（对抗自检）
+
+最可能被反驳的是「80 条里有一条其实到人眼」。逐条排除的依据是**调用点唯一性**：
+全仓 `sync_openai_plugins_repo(` 只有 `manager.rs:3253` 与测试；中间串不离开本文件与 manager
+的错误链。若将来有人在 UI 侧消费这条错误（例如插件面板显示同步失败原因），
+**这批登记行必须重判**——判据是「谁渲染它」，不是「当初怎么登的」。

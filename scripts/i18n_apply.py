@@ -74,9 +74,14 @@ def import_name(line: str) -> str:
 
 def _used_imports(spec: dict) -> set[str]:
     """只插入实际用得到的 import —— 无条件插入会产生 unused_imports 告警（实测两次）。"""
-    used = {"current"}
+    used: set[str] = set()
     for entry in spec.get("translate", {}).values():
         used.add("tr_with" if entry.get("args") else "tr")
+    if used:
+        # 纯 `register` 的 spec（0 翻译站点）不该插入任何 import：实测一次
+        # `used = {"current"}` 的初值让「只登记」的批次往源文件里插了未用的
+        # `use codex_i18n::current;`（会触发 unused_imports）。
+        used.add("current")
     for e in spec.get("extra_edits", []):
         body = e.get("replace", "")
         if "tr_with(" in body:

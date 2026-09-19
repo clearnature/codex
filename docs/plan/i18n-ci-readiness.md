@@ -43,15 +43,16 @@ repo-checks / rust-ci / sdk。
 * 处方：有网络的环境跑 `pnpm install --frozen-lockfile && pnpm run format:fix`，再复核 `fmt-check`；
   CI 报红时按报红文件改，**不要**把 prettier 从 required 里拿掉。
 
-### 2. Blob size policy——**还有余量，但已进入可行动区**
+### 2. Blob size policy——**已处置（选处方 ①：缩短理由列）**
 
-* `codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B**，上限 **512 000 B**（差 126 909 B ≈ +700 行登记行）。
-* 本轮 80 行登记让它长了约 30 KB（平均 ≈ 380 B/行，理由列很长）⇒ 剩余预算约 **330 行**。
-* 处方（三选一，先做哪个都行）：
-  ① 缩短理由列（现在每行都复制了同一段 §12.3 说明，可改成 `见 §12.3（manager.rs:3276）` 之类短引用）；
-  ② 在 `.github/blob-size-allowlist.txt` 里登记该文件；
-  ③ 按包/按 crate 拆分登记文件。
-  **建议 ①**（信息量不降，体积立减），并在下次登记批次前做。
+* 处置前：`codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B** / 上限 **512 000 B**。
+* 处置：本批 80 行（startup_sync）复制了同一段 §12.3 长说明（每行 ≈235 B 的重复文本），
+  改为短引用 `§12.3 日志/诊断链（详情 docs/plan/i18n-core-plugins-plan.md §8.2；终点 manager.rs:3276 warn!）`。
+* 处置后：**366 291 B**（−18 800 B，仍 1316 行）；豁免语义不变（`startup_sync.rs` 仍 0 candidates / 80 exempted，
+  crate 仍 382）。
+* 剩余预算 **145 709 B**；按新样式每行 ≈240 B 估算 ⇒ 还能放 **约 600 行**登记行。
+* 判据（下次登记批次后复核）：文件 < 512 000 B；若再逼近，按同样方式压缩**重复的理由文本**
+  （处方 ① 优先），其次才考虑 allowlist（②）或拆分（③）。
 
 ### 3. cargo-deny——预期无影响，但未验证
 

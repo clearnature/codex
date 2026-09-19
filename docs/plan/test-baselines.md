@@ -179,3 +179,32 @@ cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pi
 
 配套的另一个教训：`--update` 曾用 `dict(observed)` 覆盖整条记录，**把 `flaky_notes`/`note` 手写注记
 一起抹掉**（= 一个 scope 悄悄失去「为什么容忍这些失败」的证据）。现在是显式保留这些字段。
+
+## 语言环境必须钉住（第 547 轮实测）
+
+**规矩**：在本机跑 CLI/TUI 的 crate 测试时，语言环境必须显式钉住 —— `LANG=C LC_ALL=C just test -p codex-cli`。
+
+**为什么**：`docs/plan/i18n-design.md:204` 的语言优先级是
+`--lang > config.toml 的 locale > LC_ALL > LANG > 系统 locale`。本机 `LANG=zh_CN.UTF-8`，
+未显式指定语言的进程渲染中文；而仓库里有一批测试直接断言英文文案、自身不钉语言。
+
+**实测（双向控制，决定性）**：
+
+| 环境 | 命令 | 结果 |
+| --- | --- | --- |
+| `LANG=zh_CN.UTF-8`（本机默认） | `just test -p codex-cli -E 'test(queue_) \| test(worktree)'` | exit 100：9 run / 4 passed / **5 failed** |
+| `LANG=C LC_ALL=C` | 同上 | **exit 0：9 passed** |
+| 本机默认 | `just test -p codex-cli` | 414 run / 409 passed / 5 failed |
+
+失败名单：`queue_rejects_local_daemon_that_does_not_support_queueing`、
+`queue_does_not_fallback_from_unsupported_explicit_remote`、`queue_submits_message_to_remote_app_server`、
+`queue_rejects_overrides_that_bypass_local_daemon`、`interactive_worktree_start_and_fork_bind_owner_before_turn`。
+归档：`known_issues zh-locale-breaks-english-cli-tests`（high/environment）、`journal j-mu7zk7gi-6s3q`。
+
+**对测试的要求（标准条目）**：
+
+1. 断言**用户可见文案**的测试必须在**测试内部**钉住语言（`--lang en`，或把 `LANG`/`LC_ALL` 置为 `C`），
+   不得依赖运行环境 —— 否则同一份代码在 zh 机器与 CI 上结论不同；
+2. 不得用**会被翻译的字符串**做控制流判据（§9.1 匹配键类老坑的测试版）；
+3. 只测一侧语言的断言是**半个断言**：文案行为必须成对验证（环境/缺省一侧 + 显式覆盖一侧），
+   双向探针见 `i18n-verification.md` §12.59。

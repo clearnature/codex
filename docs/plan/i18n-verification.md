@@ -2215,3 +2215,31 @@ spacing 0 / duplicate 0 / placeholder 0）、`clippy` `r-mu7yt21u-rqfher`、合�
 而 `--dump`/`--dump-rows`/`--audit-rows` 对**不匹配的 `--file` 静默返回 0 行**（只有清单模式有 `exit 2` 守卫）。
 于是「文件已清空」与「路径根本没匹配上」输出相同 —— 本轮第一次 `--dump-rows` 就拿到了 0 行，差点据此宣布清空。
 
+### 12.59 第 547 轮：语言链的**双向**运行时探针（补上 `i18n-locale-en` 覆盖不到的那一侧）
+
+**发现的缺口**：具名门禁 `i18n-locale-en` 的命令**自带** `LC_ALL=C LANG=C`（领域包 `codex-repo.json`）——
+它断言的是「**把 locale 压成 C 之后**输出无 CJK」，即「缺省 `--lang` 且在 C 环境下 ⇒ 英文」。
+可设计链（`i18n-design.md:204`）里 `LANG`/系统 locale 是**参与解析的**，因此
+「zh locale + 不传 `--lang`」这一侧**此前没有任何门禁覆盖** —— 而它正是本机（`LANG=zh_CN.UTF-8`）用户的真实路径。
+两侧都测才是完整断言：只测 C 侧等于把「环境被压平」当成「默认行为正确」。
+
+**本轮补的双向探针（均已签回执）**：
+
+| 方向 | 命令要点 | 实测 | 回执 |
+| --- | --- | --- | --- |
+| zh 侧（环境 locale 生效） | `LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8 codex --help \| grep -c CJK` | **26**（>0） | `r-mu7zjwu8-8n4zsf` |
+| zh 侧（本轮新译文案到达运行时） | 同上 + `codex mcp remove ___absent___` 的 CJK 行数 | **1**（>0） | 同上 |
+| 覆盖方向（`--lang en` 压过 zh 环境） | `… --lang en --help` 的 CJK 行数 | **0** | 同上 |
+| 覆盖方向（同上，mcp 路径） | `… --lang en mcp remove ___absent___` | **0** | 同上 |
+| **负向控制**（故意断言 en 侧 >0） | 同上命令 + `[ "$en" -gt 0 ]` | exit 1，输出 `en-side=0` | `r-mu7zk1v0-l6y1qj`（`expectFail` 签为**通过**） |
+
+**顺带确认（与 §12.58 的登记裁定一致）**：zh locale 下 `codex mcp list` 的两张表仍为英文表头、
+`enabled`/`Unsupported` 等 token 保持原样 —— 列对齐表键与状态 token 按裁定不译，运行时表现与裁定吻合。
+
+**测试侧同源缺口（已归档）**：本机 `just test -p codex-cli` 稳定 5 条失败；双向控制证明是 locale 所致
+（默认 5 failed / `LANG=C` 9 passed）⇒ `known_issues zh-locale-breaks-english-cli-tests`、
+`journal j-mu7zk7gi-6s3q`、标准条目见 `test-baselines.md`「语言环境必须钉住」。
+
+**建议（本轮**未**做，留待宿主重启窗口）**：把上表登记为具名门禁 `i18n-locale-zh`，与 `i18n-locale-en` 成对。
+领域包改动会改 `gatesHash` 并使既有回执 stale，且 `impl/ruleset.mjs:25` 的 `loadPack()` 是模块级
+⇒ 需宿主重启才生效；故本轮以 `gate:"custom"` 签回执，不擅自改领域包定义。

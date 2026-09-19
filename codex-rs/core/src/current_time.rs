@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -47,9 +49,10 @@ pub(crate) fn resolve_time_provider(
     match config.map(|config| config.clock_source).unwrap_or_default() {
         CurrentTimeSource::System => Ok(Arc::new(SystemTimeProvider)),
         CurrentTimeSource::External => external_provider.ok_or_else(|| {
-            anyhow!(
-                "features.current_time_reminder.clock_source is external, but no external current-time provider is available"
-            )
+            anyhow!(tr(
+                current(),
+                "features.current_time_reminder.clock_source is external, but no external current-time provider is available",
+            ))
         }),
     }
 }

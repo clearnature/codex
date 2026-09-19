@@ -7618,6 +7618,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "写入被只读沙箱阻止；已被用户审批设置拒绝",
     ),
     ("empty patch", "空补丁"),
+    (
+        "features.current_time_reminder.clock_source is external, but no external current-time provider is available",
+        "特性current_time_reminder.clock_source设为external，但没有可用的外部当前时间提供者",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

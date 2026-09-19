@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **103** | 第 507 轮清 11 站点（译 5 + 登记 6：src 顶层与 `context/`）；`current_time.rs:51` 的调用链未坐实、留在候选；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **69** | 第 512 轮清 34 站点（译 1：`current_time.rs:51`；登记 33：`context/` 整目录，类级判据）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -2018,3 +2018,26 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
    本处的槽是 `SafetyCheck::Reject { reason: … }` —— **`reason:` 不在槽列表里**，所以此路不通。
 3. 最终采用 docs 里点明的**结构性修法**：把常量变回**字面量写进调用点**（保持 `tr(current(), "…")`），
    并**同步 `safety_tests.rs` 的两处引用**为字面量。这样：键在真实调用点（检查器看得见）、无重复副本、无 dead code。
+
+### 12.51 第 512 轮：用**类级判据**清掉 `context/` 整目录（33 站点）
+
+`context/` 剩下的 33 个候选逐个判会得到同一个结论，所以先做**类级核验**再一次性登记：
+
+```
+对 /tmp 候选清单里出现的 22 个 context/ 文件逐个查 "ContextualUserFragment" → 22/22 命中
+```
+
+⇒ 该目录的片段都实现 `ContextualUserFragment`（注入模型上下文）⇒ 整类登记（§12.2），
+每行理由都写明这条类级判据，而不是逐行编不同说法。
+
+**同一轮闭合最后一处待判**：`current_time.rs:51` 的 `resolve_time_provider(..)?` 在
+`Session::new(..) -> anyhow::Result<Arc<Self>>`（`session/session.rs:646-681`）内，而 `Session::new` 由
+`spawn_internal -> CodexResult`（`session/mod.rs:800`）调用 ⇒ anyhow 转 `CodexErr` ⇒ 用户可见 ⇒ **译**。
+（与上一批 `session.rs:772`/`:1178` 同一条判据链；`current_time.rs:51` 至此不再是待办。）
+
+**登记写法（本轮起固定）**：值一律先用 `ast.literal_eval` 对 `--dump` 的 repr 取**真实值**，再决定形态 ——
+含真换行/制表符或以 `#` 开头 ⇒ 用空键 + 站点形态；否则用值形态。本批 33 行里有 3 行走空键形态，
+`--audit-rows` 显示 **0 空操作**（前几批手抄/`strip` 造成的空操作至此消失）。
+
+**残留风险（如实记）**：类级判据的前提是「实现 `ContextualUserFragment` ⇒ 只进模型上下文」。
+若某个片段**同时**被 TUI 渲染，那它就该译 —— 本批未逐个追渲染点，属**已声明的不确定**，不是「已验证」。

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -153,13 +156,13 @@ fn build_filter(args: &Args) -> anyhow::Result<LogFilter> {
         .as_deref()
         .map(parse_timestamp)
         .transpose()
-        .context("failed to parse --from")?;
+        .context(tr(current(), "failed to parse --from"))?;
     let to_ts = args
         .to
         .as_deref()
         .map(parse_timestamp)
         .transpose()
-        .context("failed to parse --to")?;
+        .context(tr(current(), "failed to parse --to"))?;
 
     let levels_upper = args
         .level
@@ -200,8 +203,13 @@ fn parse_timestamp(value: &str) -> anyhow::Result<i64> {
         return Ok(secs);
     }
 
-    let dt = DateTime::parse_from_rfc3339(value)
-        .with_context(|| format!("expected RFC3339 or unix seconds, got {value}"))?;
+    let dt = DateTime::parse_from_rfc3339(value).with_context(|| {
+        tr_with(
+            current(),
+            "expected RFC3339 or unix seconds, got {0}",
+            &[value],
+        )
+    })?;
     Ok(dt.timestamp())
 }
 
@@ -240,7 +248,7 @@ async fn fetch_backfill(
     runtime
         .query_logs(&query)
         .await
-        .context("failed to fetch backfill logs")
+        .context(tr(current(), "failed to fetch backfill logs"))
 }
 
 async fn fetch_new_rows(
@@ -257,7 +265,7 @@ async fn fetch_new_rows(
     runtime
         .query_logs(&query)
         .await
-        .context("failed to fetch new logs")
+        .context(tr(current(), "failed to fetch new logs"))
 }
 
 async fn fetch_max_id(runtime: &StateRuntime, filter: &LogFilter) -> anyhow::Result<i64> {
@@ -267,7 +275,7 @@ async fn fetch_max_id(runtime: &StateRuntime, filter: &LogFilter) -> anyhow::Res
     runtime
         .max_log_id(&query)
         .await
-        .context("failed to fetch max log id")
+        .context(tr(current(), "failed to fetch max log id"))
 }
 
 fn to_log_query(

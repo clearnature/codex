@@ -10,6 +10,8 @@ use codex_core::config::LoaderOverrides;
 use codex_core::config::bootstrap_auth_config;
 use codex_core::config::find_codex_home;
 use codex_core::config::load_config_toml_with_layer_stack;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_cli::CliConfigOverrides;
 
@@ -25,7 +27,7 @@ pub(crate) async fn load_config(
     .await?
     .build()
     .await
-    .context("failed to load configuration")
+    .context(tr(current(), "failed to load configuration"))
 }
 
 pub(crate) async fn config_builder(
@@ -36,12 +38,12 @@ pub(crate) async fn config_builder(
     let cli_overrides = config_overrides
         .parse_overrides()
         .map_err(anyhow::Error::msg)?;
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_codex_home().context(tr(current(), "failed to resolve CODEX_HOME"))?;
     let cwd = match harness_overrides.cwd.as_deref() {
         Some(cwd) => AbsolutePathBuf::relative_to_current_dir(cwd),
         None => AbsolutePathBuf::current_dir(),
     }
-    .context("failed to resolve current directory")?;
+    .context(tr(current(), "failed to resolve current directory"))?;
     let bootstrap_config = load_config_toml_with_layer_stack(
         codex_home.as_path(),
         Some(&cwd),
@@ -53,14 +55,19 @@ pub(crate) async fn config_builder(
         },
     )
     .await
-    .context("failed to load bootstrap configuration")?;
+    .context(tr(current(), "failed to load bootstrap configuration"))?;
     let cloud_config_bundle = cloud_config_bundle_loader_for_storage(
-        bootstrap_auth_config(codex_home.as_path(), &bootstrap_config)
-            .context("failed to resolve cloud configuration authentication")?,
+        bootstrap_auth_config(codex_home.as_path(), &bootstrap_config).context(tr(
+            current(),
+            "failed to resolve cloud configuration authentication",
+        ))?,
         /*enable_codex_api_key_env*/ false,
     )
     .await
-    .context("failed to initialize cloud configuration authentication")?;
+    .context(tr(
+        current(),
+        "failed to initialize cloud configuration authentication",
+    ))?;
 
     Ok(ConfigBuilder::default()
         .codex_home(codex_home.to_path_buf())

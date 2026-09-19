@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **76** | 第 583 轮清 `remote_control_cmd.rs` 27 站点（22 译 + 4 登记 + 1 手工改造，§12.64）；已扣 doctor 851（裁定排除）；最密文件 `desktop_app/mac.rs` 34（macOS-only）、`debug_sandbox.rs` 11、`bin/logs_client.rs` 7、`desktop_app/windows.rs` 7 |
+| `codex-rs/cli/src` | **42** | 第 590 轮一次清 6 个 Linux 可验文件 34 站点（32 译 + 2 登记，§12.66）；已扣 doctor 851（裁定排除）；剩余全是平台受限：`desktop_app/mac.rs` 34（macOS-only）+ `desktop_app/windows.rs` 7（Windows-only）+ 1 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2439,3 +2439,31 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 
    ⇒ 处置建议：**领域包里的 `codespell` 定义应改为 CI 口径**，或让 `.codespellrc` 的 `ignore-words-list` 直接引入 `.codespellignore`。
    这是**门禁定义问题，不是代码问题**；把它留在待裁决里，不要用「加白名单」掩盖自己文件里的真拼错（本轮我文件里的 3 条经查全是误报，已在源头改写）。
+
+### 12.66 第 590 轮：cli 剩余 Linux 可验的 6 个文件一次清空（34 站点：译 32 / 登记 2）
+
+工具新增 `--specs`（一个 JSON 里放多批次）后，一次批次走完 6 个文件：
+
+| 文件 | 站点 | 译 | 登记 |
+| --- | --- | --- | --- |
+| `debug_sandbox.rs` | 11 | 10 | 1（Seatbelt/SBPL 策略语法行 `(deny file-ioctl (ioctl-command TIOCSTI))` ⇒ 机器策略文本，译了会破坏策略） |
+| `bin/logs_client.rs` | 7 | 6 | 1（clap `about` 属性，编译期常量） |
+| `sandbox_setup.rs` | 7 | 7 | 0 |
+| `cloud_config.rs` | 6 | 6（其中 2 条复用既有键） | 0 |
+| `exec_server_telemetry.rs` | 2 | 2（同键两站点） | 0 |
+| `lib.rs` | 1 | 1 | 0 |
+
+`cli/src` 76 → **42**，字典 3293 → **3321**。剩余 42 全是平台受限：`desktop_app/mac.rs` 34（macOS-only）+ `desktop_app/windows.rs` 7（Windows-only）+ 1。
+
+**平台门控的如实标注**：`mod sandbox_setup;`（`main.rs:78`）**没有 cfg** ⇒ 该文件在 Linux 也编译。本批 32 处编辑里只有 **4 处**不被本机类型检查：
+`debug_sandbox.rs:402`/`:466`（`#[cfg(target_os = "macos")]` 块内）与 `:501`/`:533`（`#[cfg(target_os = "windows")]` 函数内）。
+这 4 处是机械替换（`anyhow::bail!("…")` → `bail!(tr(…))`），`i18n-check` 的**文本级**检查覆盖了它们（键存在、无嵌套、无命名占位符），
+但**类型检查与运行在本机未验证** ⇒ 交接里标注为「未验证」，等 macOS/Windows CI。其余 28 处在 Linux 编译路径上，由 clippy + crate 测试覆盖。
+
+**本轮暴露并修掉我自己工具的一处真缺陷**：`i18n_apply.py` 原先**无条件**插入 `current`/`tr`/`tr_with` 三个 import，
+于是「只用了 `tr_with`」的 `lib.rs`、「只用了 `tr`」的 `cloud_config.rs`/`exec_server_telemetry.rs` 各多一个 `unused_imports` 告警
+（clippy 首跑出 3 条）。已改为**按实际用到插入**并回修这 3 个文件；复跑后只剩既存的 vendor C 告警（`r-mu84hhum-ackcam`）。
+
+**证据**：`i18n-check r-mu84baqn-g6cbo6`（3321 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0 / coverage 99.7%）、
+`fmt-check r-mu84bver-dcukkb`、`clippy r-mu84hhum-ackcam`、
+合并自检 `r-mu84jliz-dc4pgv`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=42）。

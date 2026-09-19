@@ -4,6 +4,8 @@ pub(crate) mod login;
 
 use clap::Args;
 use clap::Parser;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_cli::CliConfigOverrides;
 use codex_utils_cli::ProfileV2Name;
@@ -100,7 +102,7 @@ pub struct SeatbeltCommand {
 
 fn parse_absolute_path(raw: &str) -> Result<AbsolutePathBuf, String> {
     AbsolutePathBuf::relative_to_current_dir(raw)
-        .map_err(|err| format!("invalid path {raw}: {err}"))
+        .map_err(|err| tr_with(current(), "invalid path {0}: {1}", &[raw, &err.to_string()]))
 }
 
 #[derive(Debug, Parser)]

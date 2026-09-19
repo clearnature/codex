@@ -4,6 +4,9 @@ mod pid_tracker;
 #[cfg(target_os = "macos")]
 mod seatbelt;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::PathBuf;
 use std::process::Stdio;
 
@@ -89,7 +92,7 @@ pub async fn run_command_under_seatbelt(
     _codex_linux_sandbox_exe: Option<PathBuf>,
     _loader_overrides: LoaderOverrides,
 ) -> anyhow::Result<()> {
-    anyhow::bail!("Seatbelt sandbox is only available on macOS");
+    anyhow::bail!(tr(current(), "Seatbelt sandbox is only available on macOS"));
 }
 
 pub async fn run_command_under_landlock(
@@ -215,7 +218,13 @@ async fn run_command_under_sandbox(
         .as_deref()
         .map(serde_json::from_str::<codex_mcp::SandboxState>)
         .transpose()
-        .map_err(|err| anyhow::anyhow!("invalid --sandbox-state-json value: {err}"))?;
+        .map_err(|err| {
+            anyhow::anyhow!(tr_with(
+                current(),
+                "invalid --sandbox-state-json value: {0}",
+                &[&err.to_string()]
+            ))
+        })?;
     let sandbox_state_readable_root = config_options
         .sandbox_state
         .sandbox_state_readable_root
@@ -227,7 +236,10 @@ async fn run_command_under_sandbox(
                 state
                     .sandbox_cwd
                     .to_abs_path()
-                    .context("sandbox state cwd is not native to this host")?
+                    .context(tr(
+                        current(),
+                        "sandbox state cwd is not native to this host",
+                    ))?
                     .to_path_buf(),
             );
             state
@@ -275,9 +287,10 @@ async fn run_command_under_sandbox(
         None => config.permissions.effective_permission_profile(),
     };
     if matches!(permission_profile, PermissionProfile::Disabled) && sandbox_state_disable_network {
-        anyhow::bail!(
+        anyhow::bail!(tr(
+            current(),
             "--sandbox-state-disable-network cannot be applied to a disabled permission profile"
-        );
+        ));
     }
     if !matches!(permission_profile, PermissionProfile::Disabled)
         && (!sandbox_state_readable_root.is_empty() || sandbox_state_disable_network)
@@ -302,7 +315,7 @@ async fn run_command_under_sandbox(
         SandboxEnforcement::Disabled | SandboxEnforcement::External => {
             let (program, args) = command
                 .split_first()
-                .context("sandbox command must not be empty")?;
+                .context(tr(current(), "sandbox command must not be empty"))?;
             let mut child = spawn_debug_sandbox_child(
                 PathBuf::from(program),
                 args.to_vec(),
@@ -333,7 +346,10 @@ async fn run_command_under_sandbox(
         }
         #[cfg(not(target_os = "windows"))]
         {
-            anyhow::bail!("Windows sandbox is only available on Windows");
+            anyhow::bail!(tr(
+                current(),
+                "Windows sandbox is only available on Windows"
+            ));
         }
     }
 
@@ -399,7 +415,10 @@ async fn run_command_under_sandbox(
                 [flag, policy, ..] if flag.as_str() == "-p" => {
                     policy.push_str("\n(deny file-ioctl (ioctl-command TIOCSTI))");
                 }
-                _ => anyhow::bail!("Seatbelt command is missing its generated policy"),
+                _ => anyhow::bail!(tr(
+                    current(),
+                    "Seatbelt command is missing its generated policy"
+                )),
             }
             spawn_debug_sandbox_child(
                 PathBuf::from("/usr/bin/sandbox-exec"),
@@ -463,7 +482,7 @@ async fn run_command_under_sandbox(
         let denials = denial_logger.finish().await;
         eprintln!("\n=== Sandbox denials ===");
         if denials.is_empty() {
-            eprintln!("None found.");
+            eprintln!("{}", tr(current(), "None found."));
         } else {
             for seatbelt::SandboxDenial { name, capability } in denials {
                 eprintln!("({name}) {capability}");
@@ -498,7 +517,14 @@ async fn run_command_under_windows_session(
     let deny_read_paths = match resolve_windows_deny_read_paths(&file_system, &cwd) {
         Ok(paths) => paths,
         Err(err) => {
-            eprintln!("windows sandbox failed: {err}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "windows sandbox failed: {0}",
+                    &[&err.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };
@@ -530,7 +556,14 @@ async fn run_command_under_windows_session(
     let spawned = match spawned {
         Ok(spawned) => spawned,
         Err(err) => {
-            eprintln!("windows sandbox failed: {err}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "windows sandbox failed: {0}",
+                    &[&err.to_string()]
+                )
+            );
             std::process::exit(1);
         }
     };

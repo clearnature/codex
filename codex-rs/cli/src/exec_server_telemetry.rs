@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::future::Future;
 
 use tracing_subscriber::EnvFilter;
@@ -89,7 +91,14 @@ where
     let shutdown_signal = match shutdown_signal() {
         Ok(signal) => Some(signal),
         Err(error) => {
-            eprintln!("Could not listen for exec-server shutdown signal: {error}");
+            eprintln!(
+                "{}",
+                tr_with(
+                    current(),
+                    "Could not listen for exec-server shutdown signal: {0}",
+                    &[&error.to_string()]
+                )
+            );
             None
         }
     };
@@ -128,7 +137,7 @@ where
                 match signal {
                     Ok(()) => break,
                     Err(error) => {
-                        eprintln!("Could not listen for exec-server shutdown signal: {error}");
+                        eprintln!("{}", tr_with(current(), "Could not listen for exec-server shutdown signal: {0}", &[&error.to_string()]));
                         signal_enabled = false;
                     }
                 }

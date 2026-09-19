@@ -8247,6 +8247,85 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Remote control stop completed with status {0}.",
         "远程控制停止完成，状态为{0}。",
     ),
+    (
+        "Seatbelt sandbox is only available on macOS",
+        "Seatbelt沙箱仅在macOS上可用",
+    ),
+    (
+        "invalid --sandbox-state-json value: {0}",
+        "无效的--sandbox-state-json值：{0}",
+    ),
+    (
+        "sandbox state cwd is not native to this host",
+        "沙箱状态的工作目录不属于本机",
+    ),
+    (
+        "--sandbox-state-disable-network cannot be applied to a disabled permission profile",
+        "--sandbox-state-disable-network无法应用于已禁用的权限配置",
+    ),
+    ("sandbox command must not be empty", "沙箱命令不能为空"),
+    (
+        "Windows sandbox is only available on Windows",
+        "Windows沙箱仅在Windows上可用",
+    ),
+    (
+        "Seatbelt command is missing its generated policy",
+        "Seatbelt命令缺少其生成的策略",
+    ),
+    ("None found.", "未找到。"),
+    ("windows sandbox failed: {0}", "windows沙箱失败：{0}"),
+    ("failed to parse --from", "无法解析--from"),
+    ("failed to parse --to", "无法解析--to"),
+    (
+        "expected RFC3339 or unix seconds, got {0}",
+        "期望RFC3339或Unix秒，实际为{0}",
+    ),
+    ("failed to fetch backfill logs", "无法获取回填日志"),
+    ("failed to fetch new logs", "无法获取新日志"),
+    ("failed to fetch max log id", "无法获取最大日志ID"),
+    (
+        "`codex sandbox setup` currently requires --elevated",
+        "`codex sandbox setup`当前需要--elevated",
+    ),
+    (
+        "failed to load target user's Codex config for sandbox provisioning",
+        "无法加载目标用户的Codex配置以进行沙箱配置",
+    ),
+    (
+        "sandbox provisioning succeeded, but failed to persist elevated sandbox config: {0}",
+        "沙箱配置成功，但持久化提权沙箱配置失败：{0}",
+    ),
+    (
+        "Windows elevated sandbox setup completed for {0} at {1}.",
+        "已完成{0}的Windows提权沙箱设置（{1}）。",
+    ),
+    (
+        "failed to determine current user from environment: {0}",
+        "无法从环境确定当前用户：{0}",
+    ),
+    (
+        "--user or --current-user is required",
+        "需要--user或--current-user",
+    ),
+    (
+        "--codex-home is required with --user",
+        "使用--user时需要--codex-home",
+    ),
+    ("failed to resolve current directory", "无法解析当前目录"),
+    ("failed to load bootstrap configuration", "无法加载引导配置"),
+    (
+        "failed to resolve cloud configuration authentication",
+        "无法解析云配置认证",
+    ),
+    (
+        "failed to initialize cloud configuration authentication",
+        "无法初始化云配置认证",
+    ),
+    (
+        "Could not listen for exec-server shutdown signal: {0}",
+        "无法监听exec-server关闭信号：{0}",
+    ),
+    ("invalid path {0}: {1}", "无效路径{0}：{1}"),
 ];
 
 /// English source text -> Simplified Chinese.

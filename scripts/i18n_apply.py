@@ -328,9 +328,26 @@ def dump_rows(spec: dict) -> dict[int, str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--spec", required=True)
+    ap.add_argument("--spec")
+    ap.add_argument(
+        "--specs", help='批量：JSON 文件里放 {"batches": [<spec>, ...]}，逐个跑 --spec'
+    )
     ap.add_argument("--apply", action="store_true", help="写入（默认只做 plan）")
     args = ap.parse_args()
+    if args.specs:
+        batches = json.loads(Path(args.specs).read_text(encoding="utf-8"))["batches"]
+        rc = 0
+        for i, one in enumerate(batches):
+            tmp = f"/tmp/i18n_batch_{i}.json"
+            Path(tmp).write_text(json.dumps(one, ensure_ascii=False), encoding="utf-8")
+            cmd = [sys.executable, __file__, "--spec", tmp] + (
+                ["--apply"] if args.apply else []
+            )
+            print(f"---- batch {i + 1}/{len(batches)}: {one.get('file')}")
+            rc |= subprocess.call(cmd)
+        return rc
+    if not args.spec:
+        ap.error("需要 --spec 或 --specs")
     spec = json.loads(Path(args.spec).read_text(encoding="utf-8"))
 
     edits, meta = plan(spec)

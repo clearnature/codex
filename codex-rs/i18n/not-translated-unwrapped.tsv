@@ -1226,3 +1226,5 @@ remote-control start	codex-rs/cli/src/remote_control_cmd.rs:48	命令名标识�
 remote-control stop	codex-rs/cli/src/remote_control_cmd.rs:49	命令名标识符：`RemoteControlCommand::subcommand_name()` 的返回值，被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；且测试 main.rs:4763/:4781 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立
 remote-control pair	codex-rs/cli/src/remote_control_cmd.rs:50	命令名标识符：`RemoteControlCommand::subcommand_name()` 的返回值，被 `unsupported_subcommand_name_for_strict_config` / `--remote` 拒绝路径插进用户可见模板；且测试 main.rs:4763/:4781 断言了这些字符串 ⇒ 不译才能让断言在两种语言下都成立
   path: {}	codex-rs/cli/src/remote_control_cmd.rs:469	同一 `key: value` 转储块里的字段行（`  path: {}`；同块 `  version: {}` 已被形状规则排除）—— 字段名是机器键（§12.5.6 口径）；块标题 :429 按 debug_config 先例单独译（§12.5：标题译、字段名不译）
+\n(deny file-ioctl (ioctl-command TIOCSTI))	codex-rs/cli/src/debug_sandbox.rs:416	Seatbelt(SBPL) 策略语法行：`policy.push_str("\n(deny file-ioctl (ioctl-command TIOCSTI))")` 是喂给 macOS 沙箱的机器策略文本，译了会破坏策略（§12.1/§12.7 数据格式）；且该块为 `#[cfg(target_os = "macos")]`
+Tail Codex logs from the dedicated logs SQLite DB with simple filters	codex-rs/cli/src/bin/logs_client.rs:21	clap `about` 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）

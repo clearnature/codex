@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -53,7 +56,10 @@ impl SandboxSetupCommand {
         if self.elevated_sandbox_level {
             Ok(SandboxSetupLevel::Elevated)
         } else {
-            anyhow::bail!("`codex sandbox setup` currently requires --elevated");
+            anyhow::bail!(tr(
+                current(),
+                "`codex sandbox setup` currently requires --elevated"
+            ));
         }
     }
 }
@@ -99,7 +105,10 @@ async fn run_elevated(
         .cli_overrides(cli_overrides)
         .build()
         .await
-        .context("failed to load target user's Codex config for sandbox provisioning")?;
+        .context(tr(
+            current(),
+            "failed to load target user's Codex config for sandbox provisioning",
+        ))?;
 
     codex_core::windows_sandbox::run_elevated_provisioning_setup(
         identity.codex_home.as_path(),
@@ -111,15 +120,19 @@ async fn run_elevated(
         .apply()
         .await
         .map_err(|err| {
-            anyhow::anyhow!(
-                "sandbox provisioning succeeded, but failed to persist elevated sandbox config: {err}"
-            )
+            anyhow::anyhow!(tr_with(current(), "sandbox provisioning succeeded, but failed to persist elevated sandbox config: {0}", &[&err.to_string()]))
         })?;
 
     println!(
-        "Windows elevated sandbox setup completed for {} at {}.",
-        identity.real_user,
-        identity.codex_home.display()
+        "{}",
+        tr_with(
+            current(),
+            "Windows elevated sandbox setup completed for {0} at {1}.",
+            &[
+                identity.real_user.as_str(),
+                &identity.codex_home.display().to_string()
+            ]
+        )
     );
     Ok(())
 }
@@ -136,7 +149,11 @@ fn resolve_sandbox_setup_identity(
         let real_user = std::env::var("USERNAME")
             .or_else(|_| std::env::var("USER"))
             .map_err(|err| {
-                anyhow::anyhow!("failed to determine current user from environment: {err}")
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "failed to determine current user from environment: {0}",
+                    &[&err.to_string()]
+                ))
             })?;
         let codex_home = match cmd.codex_home.clone() {
             Some(codex_home) => codex_home,
@@ -151,11 +168,11 @@ fn resolve_sandbox_setup_identity(
     let real_user = cmd
         .user
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("--user or --current-user is required"))?;
+        .ok_or_else(|| anyhow::anyhow!(tr(current(), "--user or --current-user is required")))?;
     let codex_home = cmd
         .codex_home
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("--codex-home is required with --user"))?;
+        .ok_or_else(|| anyhow::anyhow!(tr(current(), "--codex-home is required with --user")))?;
     Ok(SandboxSetupIdentity {
         real_user,
         codex_home,

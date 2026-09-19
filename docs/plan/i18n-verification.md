@@ -2405,6 +2405,37 @@ duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu83fflw-qzroa9`、
 crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 
 **顺带（本轮会计修正，见 §12.65 与流水）**：`codespell` 具名门禁在本机**已生效**（定义 `codespell`，读仓库 `.codespellrc`），
-首跑 13 条里 3 条落在我的文件 —— 全是**误报**（TSV 空键行的预览被我截断在词中 `…metadata wit…`；`st/nd/rd/th` 的 `nd` 被当成 `and`），
+首跑 13 条里 3 条落在我的文件 —— 全是**误报**（TSV 空键行的预览被截断在词中（英文词只留下前三个字母加省略号）；序数后缀列表里的第二项被当成 `and`），
 已在**源头**消掉（预览按词边界截断、序数后缀改写为 `1st/2nd/3rd/4th`）；复跑后 **9 条全部不在我触碰的文件里**
 （`.codespellignore` ×4、skills 资产 ×2、`utils/pty` / `utils/audio` / `exec-server` 各 1）⇒ 回执 `r-mu843u76-gcnh4b`。
+
+### 12.65 第 588 轮：会计修正与普查快照（回应「做到哪了」）
+
+**普查快照（同回合机器实测）**：
+
+| scope | candidates | wrapped | remaining |
+| --- | --- | --- | --- |
+| `cli/src` | 1281 | 1205 | **76** |
+| `core/src` | 1164 | 1154 | **10** |
+| `tui/src` | 3229 | 3226 | **3** |
+| `exec/src` | 75 | 75 | **0** |
+| **合计** | 5749 | 5660（**98.5%**） | 89 |
+
+`cli` 剩余 TOP：`desktop_app/mac.rs` 34（macOS-only）、`debug_sandbox.rs` 11、`bin/logs_client.rs` 7、
+`desktop_app/windows.rs` 7（Windows-only）、`sandbox_setup.rs` 7、`cloud_config.rs` 6、`exec_server_telemetry.rs` 2、`lib.rs` 1。
+
+**本轮三处会计修正（都是「账本与事实不一致」，不是新增工作）**：
+
+1. **失效回执 `w-5`**：该条目把 `r-mu7qejy0-u6if6p` 误录成 `r-mu7qejy0-u6if6p6`（多一个字符）⇒ `check` 报「回执失效 −5」。
+   真实回执在盘上；已按 5 条有效回执重建，并补登记 3 条验收要求（范围裁定机制 / 普查与队列 / 当时的门禁口径）。
+2. **「声明了门禁却没跑过」×3**：`i18n.test.locale-pinning` 声明了 `i18n-locale-en` / `i18n-locale-chain`，
+   但当时只跑了自定义探针 ⇒ 本轮**实跑**两条（`r-mu840ncd-55gc5c` 202s / `r-mu8415ah-785p8i` 20.8s，均绿）并把回执挂回条目。
+   顺带确认：`i18n-locale-chain` 覆盖的是**显式 `--lang`** 的两侧（zh 环境 + `--lang en` ⇒ 0 CJK；C 环境 + `--lang zh` ⇒ >0 CJK），
+   **不含**「zh 环境 + 缺省 `--lang`」⇒ §12.59 的缺口结论成立。
+3. **`codespell` 门禁口径不一致**：具名门禁定义是裸 `codespell`（读 `.codespellrc`，其 `ignore-words-list` 不含 `.codespellignore` 里的词），
+   而 `i18n.plan.core-triage-table` 的 verify 写的是 CI 口径 `codespell --ignore-words .codespellignore`。实测：
+   - 裸 `codespell` ⇒ **9 条**（`.codespellignore` 自身 4 条 + skills 资产 2 条 + `utils/pty`/`utils/audio`/`exec-server` 各 1）——**全不在我触碰的文件里**（`r-mu843u76-gcnh4b`）；
+   - CI 口径 ⇒ 先 3 条（都在我 §12.64 的那一行里，是我引用误报 token 造成的），**改写该行后 0 条**（`r-mu845s2x-zwq071`）。
+
+   ⇒ 处置建议：**领域包里的 `codespell` 定义应改为 CI 口径**，或让 `.codespellrc` 的 `ignore-words-list` 直接引入 `.codespellignore`。
+   这是**门禁定义问题，不是代码问题**；把它留在待裁决里，不要用「加白名单」掩盖自己文件里的真拼错（本轮我文件里的 3 条经查全是误报，已在源头改写）。

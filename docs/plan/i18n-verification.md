@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **183** | 第 487 轮清 18 条（译 1：`Fatal`；登记 17）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **163** | 第 492 轮清 21 站点（译 3：`Fatal`；登记 18）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1875,3 +1875,22 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 `ToolName::namespaced`，还进发给模型的错误模板）。正确处置是登记进**渲染侧档案**
 `codex-rs/i18n/not-translated.tsv`（该表早有同族先例：`clock`/`sleep` 来自 `sleep.rs:26`/`:27`）。
 **预期这会反复出现**：以后每给一个 handler 文件加 import，都可能把它的 `*_NAME` 常量带进扫描范围。
+
+### 12.45 第 492 轮：**「同族」不等于「同接收者」**（`Fatal` 混在 `RespondToModel` 族里）
+
+`tools/handlers` 剩余的 `… handler received unsupported payload` 一族 21 条里，**18 条**是 `RespondToModel`
+（模型面 ⇒ 登记），**3 条却是 `FunctionCallError::Fatal`**（⇒ `CodexErr::Fatal`，用户可见 ⇒ **译**）：
+
+| 站点 | 接收者 |
+| --- | --- |
+| `list_available_plugins_to_install.rs:88` `{…_TOOL_NAME} handler received unsupported payload` | **Fatal ⇒ 译** |
+| `list_available_plugins_to_install.rs:95` `failed to serialize {…_TOOL_NAME} response: {err}` | **Fatal ⇒ 译** |
+| `tool_search.rs:201` `{TOOL_SEARCH_TOOL_NAME} handler received unsupported payload` | **Fatal ⇒ 译** |
+| `get_context_remaining.rs:77`、`mcp_resource/list_mcp_resources.rs:60`、`list_mcp_resource_templates.rs:60`、`read_mcp_resource.rs:63`、`tool_search.rs:209`/`:216`、`send_message_to_user_async.rs:80` | `RespondToModel` ⇒ 登记 |
+
+这三条与它们「看起来一模一样」的兄弟只差 `Fatal` vs `RespondToModel` 一个词 —— 与 §12.44 的
+`current_time.rs` 同型，**第 2 次**在字面相同的族里出现两种接收者。判据写成一句：
+**先看 `Err(...)` 的构造器，再看文案**；`RespondToModel` 之外的一切（`Fatal`/`Rejected`/`Codex`）都按用户面处理。
+
+其余 18 条登记：`*_spec.rs` 的 `ToolSpec` description 9 条、`apply_patch_spec.rs` 的 **Lark 语法** 2 条
+（`APPLY_PATCH_LARK_GRAMMAR.replace(..)` 的匹配目标 + 进 spec ⇒ 译了破坏替换）、`RespondToModel` 7 条。

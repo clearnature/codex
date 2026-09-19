@@ -12,6 +12,8 @@ use crate::tools::context::boxed_tool_output;
 use crate::tools::handlers::list_available_plugins_to_install_spec::create_list_available_plugins_to_install_tool;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 const MAX_LIST_AVAILABLE_PLUGINS_TO_INSTALL_DESCRIPTION_CHARS: usize = 240;
 
@@ -84,15 +86,22 @@ impl ListAvailablePluginsToInstallHandler {
         match payload {
             ToolPayload::Function { .. } => {}
             _ => {
-                return Err(FunctionCallError::Fatal(format!(
-                    "{LIST_AVAILABLE_PLUGINS_TO_INSTALL_TOOL_NAME} handler received unsupported payload"
+                return Err(FunctionCallError::Fatal(tr_with(
+                    current(),
+                    "{0} handler received unsupported payload",
+                    &[LIST_AVAILABLE_PLUGINS_TO_INSTALL_TOOL_NAME],
                 )));
             }
         }
 
         let content = serde_json::to_string(&self.result()).map_err(|err| {
-            FunctionCallError::Fatal(format!(
-                "failed to serialize {LIST_AVAILABLE_PLUGINS_TO_INSTALL_TOOL_NAME} response: {err}"
+            FunctionCallError::Fatal(tr_with(
+                current(),
+                "failed to serialize {0} response: {1}",
+                &[
+                    LIST_AVAILABLE_PLUGINS_TO_INSTALL_TOOL_NAME,
+                    &err.to_string(),
+                ],
             ))
         })?;
 

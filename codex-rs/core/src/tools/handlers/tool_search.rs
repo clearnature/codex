@@ -12,6 +12,8 @@ use bm25::Document;
 use bm25::Language;
 use bm25::SearchEngine;
 use bm25::SearchEngineBuilder;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_tools::LoadableToolSpec;
 use codex_tools::TOOL_SEARCH_DEFAULT_LIMIT;
 use codex_tools::TOOL_SEARCH_TOOL_NAME;
@@ -197,8 +199,10 @@ impl ToolSearchHandler {
         let args = match payload {
             ToolPayload::ToolSearch { arguments } => arguments,
             _ => {
-                return Err(FunctionCallError::Fatal(format!(
-                    "{TOOL_SEARCH_TOOL_NAME} handler received unsupported payload"
+                return Err(FunctionCallError::Fatal(tr_with(
+                    current(),
+                    "{0} handler received unsupported payload",
+                    &[TOOL_SEARCH_TOOL_NAME],
                 )));
             }
         };

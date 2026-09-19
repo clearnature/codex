@@ -7562,6 +7562,14 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`{0}`下的配置值被来自{1}的要求覆盖。",
     ),
     ("failed to read current time: {0}", "读取当前时间失败：{0}"),
+    (
+        "{0} handler received unsupported payload",
+        "{0}处理器收到了不支持的载荷",
+    ),
+    (
+        "failed to serialize {0} response: {1}",
+        "序列化{0}响应失败：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

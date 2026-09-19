@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **42** | 第 590 轮一次清 6 个 Linux 可验文件 34 站点（32 译 + 2 登记，§12.66）；已扣 doctor 851（裁定排除）；剩余全是平台受限：`desktop_app/mac.rs` 34（macOS-only）+ `desktop_app/windows.rs` 7（Windows-only）+ 1 |
+| `codex-rs/cli/src` | **42** | 第 590 轮一次清 6 个 Linux 可验文件 34 站点（32 译 + 2 登记，§12.66）；已扣 doctor 851（裁定排除）；剩余 42 = 平台受限 41（`desktop_app/mac.rs` 34 macOS-only、`desktop_app/windows.rs` 7 Windows-only）+ `queue_cmd.rs` 1（Linux 可验）|
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2453,7 +2453,7 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 | `exec_server_telemetry.rs` | 2 | 2（同键两站点） | 0 |
 | `lib.rs` | 1 | 1 | 0 |
 
-`cli/src` 76 → **42**，字典 3293 → **3321**。剩余 42 全是平台受限：`desktop_app/mac.rs` 34（macOS-only）+ `desktop_app/windows.rs` 7（Windows-only）+ 1。
+`cli/src` 76 → **42**，字典 3293 → **3321**。剩余 42 的构成：**平台受限 41**（`desktop_app/mac.rs` 34 macOS-only + `desktop_app/windows.rs` 7 Windows-only）+ **`queue_cmd.rs` 1**（Linux 可验，下一批顺手做）。
 
 **平台门控的如实标注**：`mod sandbox_setup;`（`main.rs:78`）**没有 cfg** ⇒ 该文件在 Linux 也编译。本批 32 处编辑里只有 **4 处**不被本机类型检查：
 `debug_sandbox.rs:402`/`:466`（`#[cfg(target_os = "macos")]` 块内）与 `:501`/`:533`（`#[cfg(target_os = "windows")]` 函数内）。

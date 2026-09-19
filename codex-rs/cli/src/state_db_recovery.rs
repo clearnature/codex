@@ -164,11 +164,7 @@ fn print_technical_details(startup_error: &LocalStateDbStartupError) {
     );
     eprintln!(
         "{}",
-        tr_with(
-            current(),
-            "  Cause: {0}",
-            &[&startup_error.detail().to_string()]
-        )
+        tr_with(current(), "  Cause: {0}", &[startup_error.detail()])
     );
 }
 

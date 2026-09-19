@@ -20,7 +20,7 @@ repo-checks / rust-ci / sdk。
 | Bazel | `bazel test` 多平台矩阵 + `check-module-bazel-lock.sh` | `bazel-lock-check` / `bazel-i18n` | 锁与 i18n 目标**已取证**（`r-mu8e783e-zo6pia` / `r-mu8cpxxl-yum8un`）；**bazel test 全矩阵本机从未跑**（按预算约束不跑）⇒ CI-first |
 | cargo-deny | 许可证/advisory/ban | —— | **CI-first**：本机无 `cargo-deny` 二进制 |
 | rust-ci | 三平台 cargo test/clippy 矩阵 | `clippy` / `exec-test` / `tui-test` / `i18n-unit` / 各 crate 套件 | Linux 侧**已取证**（`clippy r-mu8e2qwp-f6dzc6`、`i18n-unit r-mu8e7bt8-x6r03f`、core-plugins 438 passed `r-mu8ejqmb-26i4ea` 等）；**macOS/Windows 侧只能由 CI 判**（本机无跨目标类型检查，见 `known_issues no-cross-target-typecheck-local`） |
-| sdk | TS/Python SDK | —— | 本批未触碰 SDK ⇒ 预期无影响，但**未验证** |
+| sdk | Python SDK：`ruff check` + `ruff format --check` + `pytest`（**cwd = `sdk/python`**，见 `sdk.yml:26/36`） | 本机无 ruff 可执行文件，但 `scripts/` 有独立的一步 | **作用域澄清**：CI 的 ruff 只在 `sdk/python` 里跑 ⇒ `scripts/*.py` **不在 CI ruff 范围**；而 `fmt-check` 的 `python_scripts_formatter_group`（`scripts/format.py:118`）会用 `uv run --project scripts ruff format` 检查 `scripts/` ⇒ 本批对 `scripts/i18n_apply.py` 的补丁**已取证**：`r-mu8hiz5w-oruj3d`（format ✓ / check ✓ / 全仓仍只有预存的 9 条） |
 | Blob size policy | 变更 blob ≤ 512000 字节 | 本机只量了尺寸 | **已量**：`not-translated-unwrapped.tsv` = 385 091 B（75% 上限）⇒ 见 §三.2 |
 
 ## 二、已在本机取证的门禁（一页索引）
@@ -90,3 +90,19 @@ repo-checks / rust-ci / sdk。
    本表会漏。
 3. **`check-clean-worktree` 的判据我按 `git status` 推的**，没有读过该 action 的实现；
    若它还检查未跟踪文件或特定生成物，我的「已核实」就偏窄。
+
+## 六、修订记录（第一版之后被新证据推翻/补强的说法）
+
+1. **「本批未触碰 SDK」这条不够精确**（已改 §一 sdk 行）。实际是：CI 的 ruff 只在 `sdk/python` 跑
+   （`sdk.yml` 的 `-w ${GITHUB_WORKSPACE}/sdk/python`），而 `scripts/` 的 Python 由本机门禁
+   `fmt-check` 的 `python_scripts_formatter_group`（`scripts/format.py:118`）覆盖。
+   查证后**本批的 `scripts/i18n_apply.py` 补丁是有证据的**（`r-mu8hiz5w-oruj3d`），
+   不是「未验证」——第一版把它列进 sdk 行的「未验证」是错的。
+   另：`ruff check .` 的 9 条预存 findings 在 CI 里**没有**对应的 required 步骤（workflows 里只有
+   `sdk.yml` 那两行 ruff，且作用域是 `sdk/python`）⇒ 本地 `lint-python-scripts` 红**不阻塞 CI**。
+2. **「开 CI」的动作要说清**：本仓库有远端
+   （`origin https://github.com/clearnature/codex.git`，当前分支 `feat/i18n`）
+   ⇒ 这一步是 **push + 开/更新 PR**，不是本机能「跑」的东西。本机的贡献是把 required 门槛里
+   **可本机验的部分全部取证**（§一、§二），把不可本机验的部分**显式列出**（§三）。
+3. **§三.1（prettier）仍是「未验证 + 风险最高」**，没有新证据改变它：本机既无 `node_modules`
+   也无网络（`ERR_PNPM_NO_OFFLINE_TARBALL`），且 `docs/**/*.md` 确实在它的 glob 里。

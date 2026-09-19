@@ -33,15 +33,19 @@ repo-checks / rust-ci / sdk。
 
 ## 三、CI-first 清单与预判风险（按「最可能红」排序）
 
-### 1. prettier（`pnpm run format`）——**预期最可能红**
+### 1. prettier（`pnpm run format`）——**已实测确认会红，并已修复**
 
-- glob 是 `*.json *.md docs/**/*.md .github/workflows/*.yml **/*.js` ⇒
-  **`docs/plan/**` 的所有 md 都在检查范围内\*\*，而本项目的规划文档从未跑过 prettier。
-- 本机不可跑（实测：`pnpm run format` → `prettier: not found`；
-  `pnpm install --frozen-lockfile --offline` → `ERR_PNPM_NO_OFFLINE_TARBALL`，
-  沙箱内 `CODEX_SANDBOX_NETWORK_DISABLED=1` 无网络）⇒ **无法本机预判，只能由 CI 判**。
-- 处方：有网络的环境跑 `pnpm install --frozen-lockfile && pnpm run format:fix`，再复核 `fmt-check`；
-  CI 报红时按报红文件改，**不要**把 prettier 从 required 里拿掉。
+第一版把这条写成「未验证 + 风险最高」。装上依赖后**实测确认了预判**：
+
+* `pnpm run format`（= `prettier --check *.json *.md docs/**/*.md .github/workflows/*.yml **/*.js`）
+  → **EXIT=1，16 个文件不合格**：`docs/plan/` 的 i18n 文档族 10 个、`docs/maps/*` 6 个、
+  以及 `docs/plan/{build-and-versioning,desktop-architecture,test-baselines}.md`。
+  后两类**不是本任务写的**，但 CI 检查的是**全量匹配文件**而非变更集 ⇒ 必须一起修。
+* `pnpm run format:fix` → 16 files changed, 1370 insertions(+), 1357 deletions(-)。
+* 复核：`pnpm run format` → `All matched files use Prettier code style!` **EXIT=0**
+  （回执 `r-mu8i2854-ytho4y`）；`just fmt-check` 复跑仍绿（`r-mu8i2shd-6ec8cu`）。
+
+⚠ 之前无法本机验证的原因**不是「没有网络」**（那是误判，见 §六.4），而是当时还没装 `node_modules`。
 
 ### 2. Blob size policy——**已处置（选处方 ①：缩短理由列）**
 
@@ -148,7 +152,7 @@ repo-checks / rust-ci / sdk。
   正是「推功能分支不触发任何 workflow」的结果）。
 - 本地引用：`HEAD` 比 `origin/feat/i18n` **领先 308 个提交**（`git rev-list --left-right --count HEAD...origin/feat/i18n`
   = `308 0`）⇒ 最近的工作都还没推。
-- 本机**不能推送**：沙箱无网络（`CODEX_SANDBOX_NETWORK_DISABLED=1`），`git ls-remote origin` 实测超时/失败。
+* 本机**可以推送**（第一版写错了）：`git ls-remote origin HEAD` EXIT=0、`pnpm install --frozen-lockfile` EXIT=0（551 包 / 15.4s）、`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` **EXIT=0**（dry-run 不创建远端引用），且 `credential.helper = store` + `~/.git-credentials` 存在。⇒ 触发 CI 的动作在本机**做得到**；「推哪个分支 / 要不要开 PR」是人类的决策。
 
 ### 7.4 建议（附判据）
 
@@ -160,4 +164,7 @@ repo-checks / rust-ci / sdk。
 3. **i18n 三闸其实不依赖云**：它们就是本机的 `just fmt-check` / `just i18n-check` / `just i18n-smoke`
    （本仓库已有回执，见 §一、§二）。真正 CI-only 的只有：**prettier / cargo-deny / bazel test 矩阵 /
    macOS·Windows / sdk / blob-size checker**。
-4. **动作前置**：推 PR / dispatch 都需要**有网络的机器 + 仓库写权限**，本机沙箱做不到。
+4. **动作前置（已核实）**：本机有网络与推送凭据（§六.5）⇒ 推分支做得到；开 PR / 手动 dispatch 需要 `gh` 或 API token（凭据在 `~/.git-credentials`，但**用不用它去动共享远端**要人拍板）。本文件只记录能力与代价，**不代表已经推过**：截至本提交，远端 `origin/feat/i18n` 仍停在 `aa944d6b9`，本地领先 310 个提交。
+
+4. **「沙箱无网络」是错的**（已改正 §三.1 与 §七.3）。第一版依据 `pnpm install --frozen-lockfile --offline` 的失败写了「无网络」——那个失败是我自己加了 `--offline` 造成的（`ERR_PNPM_NO_OFFLINE_TARBALL`：pnpm store 缺 tarball），**不是**网络不可达。直接探测后事实相反：`git ls-remote origin HEAD` **EXIT=0**、`curl https://registry.npmmirror.com/` **HTTP 200**、`pnpm install --frozen-lockfile` **EXIT=0 / 15.4s / 551 包**。⇒ 教训：**环境限制必须用不带人为标志的直接探测来判**；拿自己中间产物的失败当证据，会把「我没装依赖」误判成「环境不允许」。
+5. **「本机不能推送」也是错的**（已改正 §七.3/§七.4）：`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` → **EXIT=0**，凭据齐备。⇒ 「开 CI」在本机**可执行**，只是**要不要动共享远端**属人类决策。

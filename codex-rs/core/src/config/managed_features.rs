@@ -234,11 +234,7 @@ fn parse_feature_requirements(
                 tr_with(
                     current(),
                     "Using legacy `features` requirement `{0}` from {1}; prefer canonical feature key `{2}`",
-                    &[
-                        &key.to_string(),
-                        &source.to_string(),
-                        &feature.key().to_string(),
-                    ],
+                    &[&key.to_string(), &source.to_string(), feature.key()],
                 ),
             );
             pinned_features.insert(feature, enabled);

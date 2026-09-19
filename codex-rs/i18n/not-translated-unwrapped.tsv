@@ -1103,7 +1103,7 @@ audio content omitted because you do not support audio input	codex-rs/core/src/c
 use ThreadManager	codex-rs/core/src/lib.rs:134	**`#[deprecated(note = "use ThreadManager")]` 等属性文本**（编译期诊断）⇒ 不译
 use NewThread	codex-rs/core/src/lib.rs:136	同上（deprecated note）⇒ 不译
 use CodexThread	codex-rs/core/src/lib.rs:138	同上（deprecated note）⇒ 不译
-use find_thread_path_by_id_str	codex-rs/core/src/lib.rs:175	同上（deprecated note）⇒ 不译
+use find_thread_path_by_id_str	codex-rs/core/src/lib.rs:175	同上（deprecated note）⇒ 不译 〔fanout 补核〕两站点（`lib.rs:175` 与 `rollout.rs:15`）同为 `#[deprecated(note = "use find_thread_path_by_id_str")]` 属性文本（编译期诊断）⇒ 不译[fanout-reviewed]
 Exit code: {}	codex-rs/core/src/tools/mod.rs:109	工具输出表头字段（`Exit code:` 等）⇒ §12.31 负载 ⇒ 不译
 Wall time: {duration_seconds} seconds	codex-rs/core/src/tools/mod.rs:110	同上（`Wall time:`）⇒ §12.31
 Total output lines: {total_lines}	codex-rs/core/src/tools/mod.rs:112	同上（`Total output lines:`）⇒ §12.31

@@ -443,10 +443,10 @@ impl ToolEmitter {
                 let normalized = if msg == "rejected by user" {
                     match self {
                         Self::UnifiedExec { .. } => {
-                            tr(current(), "exec command rejected by user").to_string()()
+                            tr(current(), "exec command rejected by user").to_string()
                         }
                         Self::ApplyPatch { .. } => {
-                            tr(current(), "patch rejected by user").to_string()()
+                            tr(current(), "patch rejected by user").to_string()
                         }
                     }
                 } else {

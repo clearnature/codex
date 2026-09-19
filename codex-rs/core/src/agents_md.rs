@@ -29,6 +29,8 @@ use codex_extension_api::Instructions;
 use codex_file_system::FileSystemSandboxContext;
 use codex_file_system::FindUpErrorPolicy;
 use codex_file_system::find_nearest_ancestor_with_markers;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_path_uri::PathUri;
 use futures::StreamExt;
@@ -100,9 +102,13 @@ pub(crate) async fn load_project_instructions(
             Err(error) => {
                 return Err(io::Error::new(
                     error.kind(),
-                    format!(
-                        "failed to load AGENTS.md instructions for environment `{}`: {error}",
-                        turn_environment.selection.environment_id
+                    tr_with(
+                        current(),
+                        "failed to load AGENTS.md instructions for environment `{0}`: {1}",
+                        &[
+                            &turn_environment.selection.environment_id.to_string(),
+                            &error.to_string(),
+                        ],
                     ),
                 ));
             }

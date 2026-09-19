@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **25** | 第 519 轮清 22 站点（译 1 + 登记 21）；剩余 25 = `unified_exec/errors.rs` 9 条（卡裁决）+ 16 处待判；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **11** | 第 522 轮清 14 站点（译 10 + 登记 4）；**剩余 11 = thiserror 族 10 条（卡裁决 j-mu7lh6vq-fp6o）+ `environment_selection.rs:625` 1 条（渲染未坐实）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -2099,3 +2099,31 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
 | `config/edit/document_helpers.rs:201` | `anyhow::context` 的配置写入错误是否冒到用户 |
 
 ⇒ 这 16 处**全都可从调用链判**，只是本批没读完；**没有把它们当成「不译」**。
+
+### 12.54 第 522 轮：把 §12.53 的队列清到只剩**一个待裁决族**
+
+**译 10**：
+
+| 站点 | 依据 |
+| --- | --- |
+| `windows_sandbox.rs:167`/`:176`/`:224`/`:236`/`:312`/`:321`（6）| 调用链：`app-server/src/request_processors/windows_sandbox_processor.rs:159` 调 `run_windows_sandbox_setup(..)`，结果**经 JSON-RPC 回客户端** ⇒ 用户可见。⚠ 4 条 `only supported on Windows` 的实际路径**本机（Linux）不可运行验证**，按平台记未验证 |
+| `agents_md.rs:104` | `agents_md_manager.refresh(..).await?`（`session/mod.rs:3592`）⇒ 冒到回合/session 建立路径 |
+| `shell.rs:69` | `Shell::from_environment_shell_info` 由 `environment_selection.rs:639` 调用（环境选择失败面）|
+| `tools/sandboxing.rs:217` | `ExecApprovalRequirement::Forbidden { reason }` —— 与已判该译的 `SafetyCheck::Reject { reason }` 同族 |
+| `config/edit/document_helpers.rs:201` | 配置写入的 `anyhow::context`（与已译的 `failed to persist config at {0}` 同族）|
+
+**登记 4（`responses_metadata.rs:471`/`:474`/`:479`/`:482`）**，依据比「未渲染」更强：`filter_extra_metadata`
+（`:488-495`）**只按保留键过滤、根本不调用** `validate_extra_metadata`；后者的错误只被测试可达，
+生产侧 setter（`turn_metadata.rs:346`/`:358`）直接赋值过滤结果 ⇒ **不可达** ⇒ §12.3。
+
+**剩余 11 的构成（重要）**：
+
+- `unified_exec/errors.rs` 9 条 **+** `mcp_tool_call/account.rs:11` 1 条 —— **同族**：都是 thiserror 的
+  `#[error("…")]` 属性，内联 `tr` 已被证不可行（`E0609`/`E0658`）。`account.rs:11` 的接收者链本轮坐实：
+  `mcp_tool_metadata(..) -> Result<_, McpToolAccountError>` 的错误在 `mcp_tool_call.rs:186-211`
+  经 `notify_mcp_tool_call_skip(.., message, ..)` → `notify_mcp_tool_call_completed(.., Err(message))`
+  **进工具调用事件**，并以 `Err(message)` 返回 ⇒ **属于用户可见**，因此它**加入待裁决族**（裁决需覆盖 10 条）。
+- `environment_selection.rs:625`（`ExecServerError::Protocol("environment configuration was canceled")`）——
+  `wait_until_ready()` 的调用方渲染点未读完 ⇒ **留着，不猜**。
+
+⇒ 也就是说：**core 的候选清理已经收敛到「一个等人类裁决的族 + 一处待读」**，不再有零散工作。

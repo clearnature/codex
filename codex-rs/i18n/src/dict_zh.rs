@@ -7642,6 +7642,39 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("failed to persist config at {0}", "保存配置失败（{0}）"),
     ("[read-only, workspace-write]", "[只读, 工作区可写]"),
+    (
+        "elevated Windows sandbox setup is only supported on Windows",
+        "提升权限的Windows沙箱设置仅在Windows上受支持",
+    ),
+    (
+        "legacy Windows sandbox setup is only supported on Windows",
+        "旧版Windows沙箱设置仅在Windows上受支持",
+    ),
+    (
+        "Windows sandbox read-root refresh is only supported on Windows",
+        "Windows沙箱读根刷新仅在Windows上受支持",
+    ),
+    (
+        "windows sandbox setup task failed: {0}",
+        "Windows沙箱设置任务失败：{0}",
+    ),
+    (
+        "failed to persist windows sandbox mode: {0}",
+        "保存Windows沙箱模式失败：{0}",
+    ),
+    (
+        "failed to load AGENTS.md instructions for environment `{0}`: {1}",
+        "无法为环境`{0}`加载AGENTS.md指令：{1}",
+    ),
+    ("unknown environment shell `{0}`", "未知的环境shell`{0}`"),
+    (
+        "approval policy disallowed sandbox approval prompt",
+        "审批策略不允许沙箱审批提示",
+    ),
+    (
+        "output_token_limit exceeds the TOML integer range",
+        "output_token_limit超出TOML整数范围",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

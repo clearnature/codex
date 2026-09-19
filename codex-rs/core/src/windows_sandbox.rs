@@ -5,6 +5,9 @@ use codex_config::types::WindowsSandboxModeToml;
 use codex_features::Feature;
 use codex_features::Features;
 use codex_features::FeaturesToml;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::default_client::originator;
 use codex_otel::sanitize_metric_tag_value;
 use codex_protocol::config_types::WindowsSandboxLevel;
@@ -164,7 +167,10 @@ pub fn prepare_elevated_sandbox(
     _env_map: &HashMap<String, String>,
     _codex_home: &Path,
 ) -> anyhow::Result<()> {
-    anyhow::bail!("elevated Windows sandbox setup is only supported on Windows")
+    anyhow::bail!(tr(
+        current(),
+        "elevated Windows sandbox setup is only supported on Windows",
+    ))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -173,7 +179,10 @@ pub fn run_elevated_provisioning_setup(
     _real_user: &str,
     _network: Option<&crate::config::NetworkProxySpec>,
 ) -> anyhow::Result<()> {
-    anyhow::bail!("elevated Windows sandbox setup is only supported on Windows")
+    anyhow::bail!(tr(
+        current(),
+        "elevated Windows sandbox setup is only supported on Windows",
+    ))
 }
 
 #[cfg(target_os = "windows")]
@@ -221,7 +230,10 @@ pub fn run_legacy_setup_preflight(
     _env_map: &HashMap<String, String>,
     _codex_home: &Path,
 ) -> anyhow::Result<()> {
-    anyhow::bail!("legacy Windows sandbox setup is only supported on Windows")
+    anyhow::bail!(tr(
+        current(),
+        "legacy Windows sandbox setup is only supported on Windows",
+    ))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -233,7 +245,10 @@ pub fn run_setup_refresh_with_extra_read_roots(
     _codex_home: &Path,
     _extra_read_roots: Vec<PathBuf>,
 ) -> anyhow::Result<()> {
-    anyhow::bail!("Windows sandbox read-root refresh is only supported on Windows")
+    anyhow::bail!(tr(
+        current(),
+        "Windows sandbox read-root refresh is only supported on Windows",
+    ))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -309,7 +324,13 @@ async fn run_windows_sandbox_setup_and_persist(
         Ok(())
     })
     .await
-    .map_err(|join_err| anyhow::anyhow!("windows sandbox setup task failed: {join_err}"))?;
+    .map_err(|join_err| {
+        anyhow::anyhow!(tr_with(
+            current(),
+            "windows sandbox setup task failed: {0}",
+            &[&join_err.to_string()],
+        ))
+    })?;
 
     setup_result?;
 
@@ -318,7 +339,13 @@ async fn run_windows_sandbox_setup_and_persist(
         .clear_legacy_windows_sandbox_keys()
         .apply()
         .await
-        .map_err(|err| anyhow::anyhow!("failed to persist windows sandbox mode: {err}"))
+        .map_err(|err| {
+            anyhow::anyhow!(tr_with(
+                current(),
+                "failed to persist windows sandbox mode: {0}",
+                &[&err.to_string()],
+            ))
+        })
 }
 
 fn emit_windows_sandbox_setup_success_metrics(

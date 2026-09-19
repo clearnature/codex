@@ -13,6 +13,8 @@ use crate::state::SessionServices;
 use crate::tools::hook_names::HookToolName;
 use crate::tools::network_approval::NetworkApprovalSpec;
 use codex_file_system::FileSystemSandboxContext;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::approvals::ExecPolicyAmendment;
 use codex_protocol::config_types::WindowsSandboxLevel;
@@ -214,7 +216,11 @@ pub(crate) fn default_exec_approval_requirement(
         )
     {
         ExecApprovalRequirement::Forbidden {
-            reason: "approval policy disallowed sandbox approval prompt".to_string(),
+            reason: tr(
+                current(),
+                "approval policy disallowed sandbox approval prompt",
+            )
+            .to_string(),
         }
     } else if needs_approval {
         ExecApprovalRequirement::NeedsApproval {

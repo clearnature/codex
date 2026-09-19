@@ -7,6 +7,8 @@ use codex_config::types::McpServerToolConfig;
 use codex_config::types::McpServerTransportConfig;
 use codex_config::types::ToolSuggestDisabledTool;
 use codex_config::types::ToolSuggestDiscoverableType;
+use codex_i18n::current;
+use codex_i18n::tr;
 use toml_edit::Array as TomlArray;
 use toml_edit::InlineTable;
 use toml_edit::Item as TomlItem;
@@ -196,10 +198,11 @@ fn serialize_mcp_server_tool(config: &McpServerToolConfig) -> anyhow::Result<Tom
         });
     }
     if let Some(output_token_limit) = config.output_token_limit {
-        entry["output_token_limit"] = value(
-            i64::try_from(output_token_limit.get())
-                .context("output_token_limit exceeds the TOML integer range")?,
-        );
+        entry["output_token_limit"] =
+            value(i64::try_from(output_token_limit.get()).context(tr(
+                current(),
+                "output_token_limit exceeds the TOML integer range",
+            ))?);
     }
     Ok(TomlItem::Table(entry))
 }

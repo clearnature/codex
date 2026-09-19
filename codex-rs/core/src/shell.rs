@@ -1,4 +1,6 @@
 use codex_exec_server::ShellInfo;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_shell_command::shell_detect::DetectedShell;
 use serde::Deserialize;
 use serde::Serialize;
@@ -66,7 +68,11 @@ impl Shell {
             "powershell" => ShellType::PowerShell,
             "sh" => ShellType::Sh,
             "cmd" => ShellType::Cmd,
-            name => anyhow::bail!("unknown environment shell `{name}`"),
+            name => anyhow::bail!(tr_with(
+                current(),
+                "unknown environment shell `{0}`",
+                &[name]
+            )),
         };
 
         Ok(Self {

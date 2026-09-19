@@ -1113,8 +1113,8 @@ Wall time: {secs:.1} seconds\naborted by user	codex-rs/core/src/tools/parallel.r
 aborted by user after {secs:.1}s	codex-rs/core/src/tools/parallel.rs:261	同上（工具输出里的中止提示）⇒ §12.31
 tool call completed	codex-rs/core/src/tools/parallel.rs:332	追踪/遥测标签（trace 记录）⇒ §12.3/§3.6
 Output exceeded the available model context and was truncated	codex-rs/core/src/compact_remote.rs:53	`CONTEXT_WINDOW_TRUNCATED_OUTPUT_MESSAGE` 经 `FunctionCallOutputBody::Text(..)`（:520）⇒ 工具输出负载 ⇒ §12.31
-\n\n--- project-doc ---\n\n	codex-rs/core/src/agents_md.rs:46	AGENTS.md 片段的**结构分隔标记**（`--- project-doc ---`，注入模型的 prompt 拼接）⇒ §12.2
-for `{}` with root {}\n\n	codex-rs/core/src/agents_md.rs:404	同上（片段标题拼接 `for `{}` with root {}`）⇒ §12.2
+\n\n--- project-doc ---\n\n	codex-rs/core/src/agents_md.rs:48	AGENTS.md 片段的**结构分隔标记**（`--- project-doc ---`，注入模型的 prompt 拼接）⇒ §12.2
+for `{}` with root {}\n\n	codex-rs/core/src/agents_md.rs:410	同上（片段标题拼接 `for `{}` with root {}`）⇒ §12.2
 agent communication	codex-rs/core/src/agent_communication.rs:76	标签/标识符（通信来源标记）⇒ §12.7
 delegate turn input was not started: {submission:?}	codex-rs/core/src/codex_delegate.rs:230	内部 anyhow（delegate 会话未启动）⇒ §12.3
 previous-model compaction failed; retried with current model	codex-rs/core/src/compact_model_fallback.rs:62	`tracing::warn!` 日志行 ⇒ §12.3
@@ -1134,3 +1134,7 @@ conflicting MCP server actions; using resolved catalog outcome	codex-rs/core/src
 	codex-rs/core/src/tools/handlers/list_available_plugins_to_install_spec.rs:9	[空键形态·值: …] 工具定义（`ToolSpec` description，进模型）⇒ §12.2
 	codex-rs/core/src/tools/code_mode/execute_spec.rs:16	[空键形态·值: …] 工具定义（`ToolSpec` description，进模型）⇒ §12.2
 MCP tool returned an error: {text}	codex-rs/core/src/hook_mcp_executor.rs:50	hook 执行 MCP 工具失败的错误文本（回给 hook 发起方/模型）⇒ §12.31
+responses_api_metadata may contain at most 16 entries	codex-rs/core/src/responses_metadata.rs:471	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
+responses_api_metadata keys must be short ASCII identifiers	codex-rs/core/src/responses_metadata.rs:474	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
+responses_api_metadata contains a reserved key	codex-rs/core/src/responses_metadata.rs:479	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
+responses_api_metadata values may contain at most 128 bytes	codex-rs/core/src/responses_metadata.rs:482	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3

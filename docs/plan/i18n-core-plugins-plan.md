@@ -150,3 +150,35 @@ crate 总量 **462 → 374**。
 全仓 `sync_openai_plugins_repo(` 只有 `manager.rs:3253` 与测试；中间串不离开本文件与 manager
 的错误链。若将来有人在 UI 侧消费这条错误（例如插件面板显示同步失败原因），
 **这批登记行必须重判**——判据是「谁渲染它」，不是「当初怎么登的」。
+
+### 8.5 对抗自检抓到的一处真缺陷：按值登记会**连带豁免**别人的站点
+
+§8.4 写的「若将来有人在 UI 侧消费这条错误，这批登记行必须重判」当场就应验了，而且**不是将来**。
+
+**症状**：本批登记 80 行后，crate 候选总数是 462 → **374**，即 **−88**，比登记的 80 条多出 8 条。
+
+**归因**（先量后猜）：`i18n_todo.py --fanout` 报「17 rows exempt >1 unwrapped site (41 sites)」，
+其中 10 行的值同时出现在 `marketplace_upgrade/git.rs`；实测该文件从「25 candidates / 0 exempted」
+变成「17 candidates / **8 exempted**」——**登记行的值是按值匹配的**，于是 startup_sync 的
+`failed to run {context}: {err}` 这一行，把 `git.rs:193` 同值站点一并静默了。
+
+**为什么这 8 条不能静默**：`marketplace_upgrade.rs:178` 把 git 助手的 `Err(String)` 推进
+`outcome.errors`（`ConfiguredMarketplaceUpgradeError`），而 `cli/src/marketplace_cmd.rs` 会把
+`errors` 渲染成用户可见输出（含 `--json`）。⇒ 它们是**用户面**，要译；与只看日志的
+startup_sync 同值但**不同接收者**。
+
+**修法**：同值不同接收者时，登记行必须用**站点式**（值列留空，只写 `path:line`）——
+仓里既有 60 行就是这么写的（例如值跨行写不进 TSV 的那些）。本批把 10 行
+（8 个值）改成站点式。
+
+**复核**（回执 `r-mu8h8plx-xdis7p`）：`git.rs` 25 candidates / 0 exempted；
+`startup_sync.rs` 0 candidates / 80 exempted；crate **382**（= 374 + 8）✓ 差额完全对上。
+
+**收录为判据**：新增登记行前，先跑 `--fanout`；**值会在别的文件出现时，一律用站点式**，
+否则就是把一个没做过的裁决顺手做掉了（"静默放行"）。
+
+### 8.6 下一批（顺延）
+
+`marketplace_upgrade/git.rs`（25 candidates）成为下一个高优先批次：它的 8 条模板错误
+**终点在 CLI 用户面**（`marketplace_upgrade.rs:178` → `marketplace_cmd.rs` 的 errors 渲染），
+按判据是**译**，而不是像 startup_sync 那样登记——**同一个值，两个文件，两个裁决**。

@@ -182,3 +182,46 @@ startup_sync 同值但**不同接收者**。
 `marketplace_upgrade/git.rs`（25 candidates）成为下一个高优先批次：它的 8 条模板错误
 **终点在 CLI 用户面**（`marketplace_upgrade.rs:178` → `marketplace_cmd.rs` 的 errors 渲染），
 按判据是**译**，而不是像 startup_sync 那样登记——**同一个值，两个文件，两个裁决**。
+
+## 九、第三批：marketplace_upgrade/git.rs 25 条全部「译」
+
+这是 §8.5 那 8 条「被误登记」站点的正主，也是**同一个值两种裁决**的活样本：
+`startup_sync.rs` 的 `failed to run {context}: {err}` 只进日志（登记），
+`git.rs` 的同值站点进 CLI（译）。
+
+### 9.1 接收方判据（逐链接到终点）
+
+* 两个入口：`git_remote_revision`（`marketplace_upgrade.rs:241` 调用）、
+  `clone_git_source`（`marketplace_upgrade.rs:274` 调用）。
+* 两者都在 `upgrade_configured_git_marketplace` 内，其 `Err(err)` 在
+  `marketplace_upgrade.rs:145-151` 被推进 `ConfiguredMarketplaceUpgradeError{ message: err }`
+  ⇒ `outcome.errors` ⇒ `cli/src/marketplace_cmd.rs` 渲染成人类可读输出（并有 `--json` 形态）。
+* 内部全部是 `?` 链（`run_git_command_with_timeout` / `ensure_git_success` 返回 `Result<_, String>`），
+  本文件**没有** `tracing::warn!` ⇒ 25 条**无一例外**到达用户面。
+⇒ 25 条全译、登记 0 条。
+
+### 9.2 字形与占位符（两个易错点）
+
+* 13 条 `{context}` 实参（`git ls-remote 市场来源` 类）译成「命令名 + 中文宾语」形式，
+  且**不留 CJK/Latin 边界空格**（`git ls-remote市场来源`）——`i18n-check` 的 `[spacing]` 是硬门禁。
+* 8 条模板同时含命名占位符与空占位符，工具的重编号是「先命名后空」，于是键变成
+  `{0} timed out after {2}s: {1}` / `{0} failed with status {2}: {1}` 这种**乱序**形态，
+  `zh` 必须按同一套索引写（`{0}在{2}秒后超时：{1}`）。若按源码顺序给 `args`，
+  占位符个数断言照样通过、渲染却会串位（§7.2 的同一个坑）。
+* 模板译法沿用词典既有风格：`("{0} failed with status {1}", "{0}失败，状态码{1}")`。
+
+### 9.3 收尾对账（沿用 §8.5 的护栏）
+
+* `git.rs`：25 candidates → **0**；crate：382 → **357**，差额**正好 25**（无越权/漏账）。
+* 门禁：`i18n-check` `r-mu8hrc1w-omwgo8`（3449 词条 / missing 0 / spacing 0 / dup 0）、
+  `clippy` `r-mu8hviva-ux41eu`（46 crate 真编）、`cargo check -p codex-core-plugins --all-targets` EXIT=0、
+  `just test -p codex-core-plugins` **438 passed** `r-mu8hwzn5-aoqa7x`。
+
+### 9.4 对抗自检
+
+最可能错的是「25 条全到用户面」这个全称判断。反例候选与排除：
+① 有没有 `warn!` 分支？——本文件 grep 无 `warn!`；
+② 有没有别的调用点（例如某个不经 `outcome.errors` 的后台刷新）？——全仓 `clone_git_source(`/`git_remote_revision(`
+只有 `marketplace_upgrade.rs:241/274` 两处（另有 `marketplace_add/install.rs` 里**同名但不同模块**的函数，不在本文件链上）；
+③ 有没有测试断言这些英文串（若有，默认 En 下仍会绿，等于没测到）？——crate 438 测试全绿，未新增语言相关断言，
+**这一条只做到「没红」，不等于「zh 下确实出现中文」**（与 §12.72 的 `receiver-these-strings` 同一缺口）。

@@ -8677,6 +8677,44 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "检查插件源条目失败",
     ),
     ("failed to copy plugin file", "复制插件文件失败"),
+    ("git ls-remote marketplace source", "git ls-remote市场来源"),
+    (
+        "git ls-remote returned empty output for marketplace source",
+        "git ls-remote对市场来源返回了空输出",
+    ),
+    (
+        "unexpected git ls-remote output for marketplace source: {0}",
+        "git ls-remote对市场来源的输出异常：{0}",
+    ),
+    (
+        "git ls-remote returned empty revision for marketplace source",
+        "git ls-remote对市场来源返回了空修订版本",
+    ),
+    ("git clone marketplace source", "git clone市场来源"),
+    ("git checkout marketplace ref", "git checkout市场引用"),
+    (
+        "git sparse-checkout marketplace source",
+        "git sparse-checkout市场来源",
+    ),
+    (
+        "git rev-parse marketplace revision",
+        "git rev-parse市场修订版本",
+    ),
+    (
+        "git rev-parse returned empty revision for marketplace source",
+        "git rev-parse对市场来源返回了空修订版本",
+    ),
+    ("failed to run {0}: {1}", "运行{0}失败：{1}"),
+    ("failed to wait for {0}: {1}", "等待{0}失败：{1}"),
+    ("failed to poll {0}: {1}", "轮询{0}失败：{1}"),
+    (
+        "failed to wait for {0} after timeout: {1}",
+        "超时后等待{0}失败：{1}",
+    ),
+    ("{0} timed out after {1}s", "{0}在{1}秒后超时"),
+    ("{0} timed out after {2}s: {1}", "{0}在{2}秒后超时：{1}"),
+    ("{0} failed with status {1}", "{0}失败，状态码{1}"),
+    ("{0} failed with status {2}: {1}", "{0}失败，状态码{2}：{1}"),
 ];
 
 /// English source text -> Simplified Chinese.

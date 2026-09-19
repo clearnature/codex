@@ -1,4 +1,7 @@
 use crate::PluginGitMode;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -26,23 +29,33 @@ pub(super) fn git_remote_revision(
         .transpose()?;
     let output = run_git_command_with_timeout(
         command.arg("ls-remote").arg(source).arg(ref_name),
-        "git ls-remote marketplace source",
+        tr(current(), "git ls-remote marketplace source"),
         timeout,
     )?;
-    ensure_git_success(&output, "git ls-remote marketplace source")?;
+    ensure_git_success(&output, tr(current(), "git ls-remote marketplace source"))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let Some(first_line) = stdout.lines().next() else {
-        return Err("git ls-remote returned empty output for marketplace source".to_string());
+        return Err(tr(
+            current(),
+            "git ls-remote returned empty output for marketplace source",
+        )
+        .to_string());
     };
     let Some((revision, _)) = first_line.split_once('\t') else {
-        return Err(format!(
-            "unexpected git ls-remote output for marketplace source: {first_line}"
+        return Err(tr_with(
+            current(),
+            "unexpected git ls-remote output for marketplace source: {0}",
+            &[first_line],
         ));
     };
     let revision = revision.trim();
     if revision.is_empty() {
-        return Err("git ls-remote returned empty revision for marketplace source".to_string());
+        return Err(tr(
+            current(),
+            "git ls-remote returned empty revision for marketplace source",
+        )
+        .to_string());
     }
     Ok(revision.to_string())
 }
@@ -64,10 +77,10 @@ pub(super) fn clone_git_source(
     if sparse_paths.is_empty() {
         let output = run_git_command_with_timeout(
             command.arg("clone").arg(source).arg(&git_destination),
-            "git clone marketplace source",
+            tr(current(), "git clone marketplace source"),
             timeout,
         )?;
-        ensure_git_success(&output, "git clone marketplace source")?;
+        ensure_git_success(&output, tr(current(), "git clone marketplace source"))?;
         if let Some(ref_name) = ref_name {
             let output = run_git_command_with_timeout(
                 git_command(mode)
@@ -75,10 +88,10 @@ pub(super) fn clone_git_source(
                     .arg(&git_destination)
                     .arg("checkout")
                     .arg(ref_name),
-                "git checkout marketplace ref",
+                tr(current(), "git checkout marketplace ref"),
                 timeout,
             )?;
-            ensure_git_success(&output, "git checkout marketplace ref")?;
+            ensure_git_success(&output, tr(current(), "git checkout marketplace ref"))?;
         }
         return git_worktree_revision(&git_destination, timeout, mode);
     }
@@ -90,10 +103,10 @@ pub(super) fn clone_git_source(
             .arg("--no-checkout")
             .arg(source)
             .arg(&git_destination),
-        "git clone marketplace source",
+        tr(current(), "git clone marketplace source"),
         timeout,
     )?;
-    ensure_git_success(&output, "git clone marketplace source")?;
+    ensure_git_success(&output, tr(current(), "git clone marketplace source"))?;
 
     let mut sparse_checkout = git_command(mode);
     sparse_checkout
@@ -104,10 +117,13 @@ pub(super) fn clone_git_source(
         .args(sparse_paths);
     let output = run_git_command_with_timeout(
         &mut sparse_checkout,
-        "git sparse-checkout marketplace source",
+        tr(current(), "git sparse-checkout marketplace source"),
         timeout,
     )?;
-    ensure_git_success(&output, "git sparse-checkout marketplace source")?;
+    ensure_git_success(
+        &output,
+        tr(current(), "git sparse-checkout marketplace source"),
+    )?;
 
     let output = run_git_command_with_timeout(
         git_command(mode)
@@ -118,7 +134,7 @@ pub(super) fn clone_git_source(
         "git checkout marketplace ref",
         timeout,
     )?;
-    ensure_git_success(&output, "git checkout marketplace ref")?;
+    ensure_git_success(&output, tr(current(), "git checkout marketplace ref"))?;
     git_worktree_revision(&git_destination, timeout, mode)
 }
 
@@ -133,14 +149,18 @@ fn git_worktree_revision(
             .arg(destination)
             .arg("rev-parse")
             .arg("HEAD"),
-        "git rev-parse marketplace revision",
+        tr(current(), "git rev-parse marketplace revision"),
         timeout,
     )?;
-    ensure_git_success(&output, "git rev-parse marketplace revision")?;
+    ensure_git_success(&output, tr(current(), "git rev-parse marketplace revision"))?;
 
     let revision = String::from_utf8_lossy(&output.stdout).trim().to_string();
     if revision.is_empty() {
-        Err("git rev-parse returned empty revision for marketplace source".to_string())
+        Err(tr(
+            current(),
+            "git rev-parse returned empty revision for marketplace source",
+        )
+        .to_string())
     } else {
         Ok(revision)
     }
@@ -190,31 +210,56 @@ fn run_git_command_with_timeout(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|err| format!("failed to run {context}: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to run {0}: {1}",
+                &[context, &err.to_string()],
+            )
+        })?;
     let start = std::time::Instant::now();
     loop {
         match child.try_wait() {
             Ok(Some(_)) => {
-                return child
-                    .wait_with_output()
-                    .map_err(|err| format!("failed to wait for {context}: {err}"));
+                return child.wait_with_output().map_err(|err| {
+                    tr_with(
+                        current(),
+                        "failed to wait for {0}: {1}",
+                        &[context, &err.to_string()],
+                    )
+                });
             }
             Ok(None) => {}
-            Err(err) => return Err(format!("failed to poll {context}: {err}")),
+            Err(err) => {
+                return Err(tr_with(
+                    current(),
+                    "failed to poll {0}: {1}",
+                    &[context, &err.to_string()],
+                ));
+            }
         }
 
         if start.elapsed() >= timeout {
             let _ = child.kill();
-            let output = child
-                .wait_with_output()
-                .map_err(|err| format!("failed to wait for {context} after timeout: {err}"))?;
+            let output = child.wait_with_output().map_err(|err| {
+                tr_with(
+                    current(),
+                    "failed to wait for {0} after timeout: {1}",
+                    &[context, &err.to_string()],
+                )
+            })?;
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
             return if stderr.is_empty() {
-                Err(format!("{context} timed out after {}s", timeout.as_secs()))
+                Err(tr_with(
+                    current(),
+                    "{0} timed out after {1}s",
+                    &[context, &timeout.as_secs().to_string()],
+                ))
             } else {
-                Err(format!(
-                    "{context} timed out after {}s: {stderr}",
-                    timeout.as_secs()
+                Err(tr_with(
+                    current(),
+                    "{0} timed out after {2}s: {1}",
+                    &[context, stderr.as_str(), &timeout.as_secs().to_string()],
                 ))
             };
         }
@@ -229,11 +274,16 @@ fn ensure_git_success(output: &Output, context: &str) -> Result<(), String> {
     }
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     if stderr.is_empty() {
-        Err(format!("{context} failed with status {}", output.status))
+        Err(tr_with(
+            current(),
+            "{0} failed with status {1}",
+            &[context, &output.status.to_string()],
+        ))
     } else {
-        Err(format!(
-            "{context} failed with status {}: {stderr}",
-            output.status
+        Err(tr_with(
+            current(),
+            "{0} failed with status {2}: {1}",
+            &[context, stderr.as_str(), &output.status.to_string()],
         ))
     }
 }

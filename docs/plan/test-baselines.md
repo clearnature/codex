@@ -214,3 +214,28 @@ cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pi
    若脚本把观察到的失败吞掉（最后一条语句成功、`exit 0`），回执会被判为未通过。
    实测（第 565 轮）：包装脚本先 echo「OK(负向)」再 `exit 0` ⇒ `r-mu81l71v-lc020g` 判未通过；
    改成 `exit "$rc"` 后签成通过。
+
+## 本机全量编译（第 670 轮实测）
+
+**标准命令**：`cargo build --workspace --all-targets`（所有 crate + 所有 target：lib/bin/test/bench/example）。
+本仓库**没有** `just build` 配方；`just build-for-release` 走的是 Bazel 的 release 二进制，不是「全量编译」。
+
+**本机约束：必须限并行度。** 默认并行度 = `nproc`（本机 36），而每个 `rustc` 峰值 RSS 约 1~1.5G，
+本机 61G 内存且**无 swap** ⇒ 36 并发会把内存吃穿。实测（第 670 轮）：
+
+| 命令                                               | 结果                                                                                      |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `cargo build --workspace --all-targets`（默认 -j） | **卡死**：日志冻结在 12 个 crate、10 分钟 0 进展，`used=57G / available=3G`，随后负载被杀 |
+| `cargo build --workspace -j 12`（lib+bin）         | `Finished dev profile in 5m 37s`，**EXIT=0**，62 crate                                    |
+| `cargo build --workspace --all-targets -j 12`      | `Finished dev profile in 32m 16s`，**EXIT=0**，58 crate / **0 error**                     |
+| 事后默认并行度复跑（增量空跑）                     | `Finished … in 22.66s`，**EXIT=0**（回执 `r-mu8uaeza-132axl`）                            |
+
+**因此本机规矩**：全量构建一律 `-j 12`（或 `CARGO_BUILD_JOBS=12`），并优先**分两段**跑，
+这样 lib+bin 的里程碑 5 分钟就能拿到。**不要**用 `CARGO_PROFILE_DEV_DEBUG=0` 之类改动提速——
+那会得到一份与仓库默认配置不同的产物，证据强度下降。
+
+**另两条实测到的陷阱（都写进了 `known_issues`）**：
+
+1. `pgrep -f "cargo build"` 会**匹配到你自己那条命令行**（假阳性），判断构建是否存活要用 `pgrep -x cargo`／`pgrep -x rustc`。
+2. 后台任务在**回合结束时会被杀**（本环境下 `setsid nohup` 也保不住）⇒ 长构建要在**同一回合内轮询**等它结束，
+   或者把输出落到日志文件以便续跑（cargo 增量会接着编）。

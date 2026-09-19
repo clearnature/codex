@@ -962,3 +962,15 @@ A plugin is a local bundle of skills, MCP servers, and apps.	codex-rs/core/src/c
 	codex-rs/core/src/context/update_plan_instructions.rs:13	[空键形态·值: ## `update_plan`…] 同上（匹配键，非展示文案）⇒ §12.34
 	codex-rs/core/src/context/update_plan_instructions.rs:14	[空键形态·值: ## Plan tool…] 同上（匹配键）⇒ §12.34
 	codex-rs/core/src/context/update_plan_instructions.rs:15	[空键形态·值: ## Plan Mode vs update_plan tool…] 同上（匹配键）⇒ §12.34
+MCP server '{server}' is disabled by `orchestrator.mcp.enabled`	codex-rs/core/src/tools/handlers/mcp_resource.rs:55	工具参数校验错误，`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+cursor can only be used when a server is specified	codex-rs/core/src/tools/handlers/mcp_resource.rs:90	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+{field} must be provided	codex-rs/core/src/tools/handlers/mcp_resource.rs:341	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+failed to serialize MCP resource response: {err}	codex-rs/core/src/tools/handlers/mcp_resource.rs:355	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+failed to parse function arguments: expected value	codex-rs/core/src/tools/handlers/mcp_resource.rs:389	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+timeout_ms must be at most {max_timeout_ms}	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:60	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+Wait completed.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:145	`WaitAgentResult` 实现 `ToolOutput`（multi_agents/wait.rs:289）⇒ 工具输出负载（§12.31）
+Wait interrupted by new input.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:146	同上：ToolOutput 负载 ⇒ §12.31
+Wait timed out.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:147	同上：ToolOutput 负载 ⇒ §12.31
+{message}\n\nRequested timeout of {requested_timeout_ms}ms was clamped to the minimum of {timeout_ms}ms.	codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs:151	同上：ToolOutput 负载拼接 ⇒ §12.31
+  <subagents>\n  </subagents>\n	codex-rs/core/src/agent/control.rs:533	**XML 标记**（模型上下文的 subagents 块容器）⇒ §12.7
+<agent name="{agent_path}" />	codex-rs/core/src/agent/control.rs:538	同上：XML 标记 ⇒ §12.7

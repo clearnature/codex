@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **241** | 第 478 轮再清 28 条（全为登记：spec 描述 15 / world state 5 / 插件说明 4 / 匹配键 4）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **223** | 第 481 轮再清 18 条（译 6 + 登记 12）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1805,3 +1805,20 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 该站点都**不应**再是未译候选；若仍是，说明这行是静默空操作，直接以非零退出报出来。
 实测四个在范围内 scope（core / tui / cli / exec）均 **0 条空操作**（700 行有站点列的登记）。
 配套：`--dump` 输出**不截断**的 `repr(value)<TAB>site`，写行时照它抄，不要再从列表里抄。
+
+### 12.42 第 481 轮：启动警告 / `CodexErr` / 工具输出负载的 18 条
+
+| 文件:行 | 判决 | 依据 |
+| --- | --- | --- |
+| `config/requirements.rs:63`/`:104`/`:163`/`:183` | **译**（4 条）| 四条都进 `startup_warnings`（`:63` 除了 `tracing::warn!` 还 `push`），而启动警告**会渲染**：`tui/src/lib.rs:611` 读 `config.startup_warnings`；同族先例 `config/mod.rs:4775` 已经用 `tr_with` |
+| `agent/control.rs:213`/`:464` | **译**（2 条）| `CodexErr::InvalidRequest` / `CodexErr::UnsupportedOperation` ⇒ `CodexErr::*` 面向用户（§12.2/§12.11）|
+| `tools/handlers/mcp_resource.rs:55`/`:90`/`:341`/`:355`/`:389` | 登记（5）| 全部 `FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）|
+| `tools/handlers/multi_agents_v2/wait.rs:60` | 登记 | `RespondToModel` ⇒ 模型面 |
+| `tools/handlers/multi_agents_v2/wait.rs:145`/`:146`/`:147`/`:151` | 登记（4）| `WaitAgentResult` 实现 `ToolOutput`（`multi_agents/wait.rs:289`）⇒ 工具输出负载（§12.31）。⚠ 这四条**看着最像 UI 状态文案**（「Wait completed.」），判据仍是接收者 |
+| `agent/control.rs:533`/`:538` | 登记（2）| XML 标记（`<subagents>` 容器、`<agent name=… />`）⇒ §12.7 |
+
+**流程教训（本轮踩到，记下来）**：多文件批处理脚本把「断言在写盘前」当作安全网**只保护当前文件**——
+本轮脚本在第二个文件（`requirements.rs`，它没有 `use crate::` 那行，我的 import 锚点失效）抛异常，
+而**第一个文件（`control.rs`）的改动已经落盘**、字典与登记还没写。结果是一个「半个批次」的仓库状态：
+若不看门禁就以为整批没生效，`i18n-check` 迟早会因为缺字典条目变红。
+判据：**批处理脚本失败后必须重跑门禁并核对候选数差值**，不能只看脚本自己的输出。

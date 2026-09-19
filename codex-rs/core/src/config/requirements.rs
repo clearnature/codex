@@ -5,6 +5,8 @@ use codex_config::config_toml::ConfigToml;
 use codex_config::types::ApprovalsReviewer;
 use codex_config::types::FeedbackConfigToml;
 use codex_features::FeatureToml;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_login::default_client::RESIDENCY_HEADER_NAME;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::collections::HashMap;
@@ -59,8 +61,10 @@ pub(super) fn apply_to_config(
                 .any(|name| name.eq_ignore_ascii_case(RESIDENCY_HEADER_NAME));
 
             if has_residency_header {
-                let warning = format!(
-                    "Ignoring `{RESIDENCY_HEADER_NAME}` in `model_providers.{provider_name}` because managed residency is required."
+                let warning = tr_with(
+                    current(),
+                    "Ignoring `{0}` in `model_providers.{1}` because managed residency is required.",
+                    &[RESIDENCY_HEADER_NAME, provider_name],
                 );
                 tracing::warn!(provider = provider_name, "{warning}");
                 startup_warnings.push(warning);
@@ -100,8 +104,10 @@ fn apply_exact_requirement<T>(
             ?value,
             "configured value is overridden by an exact requirement for {field_name}"
         );
-        startup_warnings.push(format!(
-            "Configured value for `{field_name}` is overridden by the required value {value:?} from {source}."
+        startup_warnings.push(tr_with(
+            current(),
+            "Configured value for `{0}` is overridden by the required value {1} from {2}.",
+            &[field_name, &format!("{value:?}"), source],
         ));
     }
     *configured_value = Some(value.clone());
@@ -159,9 +165,11 @@ pub(super) fn push_sqlite_home_env_override_warning(
         ?value,
         "`CODEX_SQLITE_HOME` is overridden by an exact requirement for sqlite_home"
     );
-    startup_warnings.push(format!(
-        "Environment value for `$CODEX_SQLITE_HOME` is overridden by the required `sqlite_home` value {value:?} from {source}."
-    ));
+    startup_warnings.push(tr_with(
+            current(),
+            "Environment value for `$CODEX_SQLITE_HOME` is overridden by the required `sqlite_home` value {0} from {1}.",
+            &[&format!("{value:?}"), source],
+        ));
 }
 
 /// Emits one source-aware warning when a structured requirement replaces one
@@ -179,7 +187,9 @@ fn push_structured_requirement_override_warning(
         ?source,
         "configured values are overridden by requirements for {field_name}"
     );
-    startup_warnings.push(format!(
-        "Configured values under `{field_name}` are overridden by requirements from {source}."
+    startup_warnings.push(tr_with(
+        current(),
+        "Configured values under `{0}` are overridden by requirements from {1}.",
+        &[field_name, source],
     ));
 }

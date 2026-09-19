@@ -7540,6 +7540,27 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "automatic approval review was cancelled",
         "自动审批复核已取消",
     ),
+    ("turn input was not submitted: {0}", "回合输入未提交：{0}"),
+    (
+        "live agent path `{0}` not found",
+        "找不到活动agent路径`{0}`",
+    ),
+    (
+        "Ignoring `{0}` in `model_providers.{1}` because managed residency is required.",
+        "已忽略`{0}`（位于`model_providers.{1}`）：托管驻留是强制要求。",
+    ),
+    (
+        "Configured value for `{0}` is overridden by the required value {1} from {2}.",
+        "`{0}`的配置值被来自{2}的必需值{1}覆盖。",
+    ),
+    (
+        "Environment value for `$CODEX_SQLITE_HOME` is overridden by the required `sqlite_home` value {0} from {1}.",
+        "环境变量`$CODEX_SQLITE_HOME`被来自{1}的必需`sqlite_home`值{0}覆盖。",
+    ),
+    (
+        "Configured values under `{0}` are overridden by requirements from {1}.",
+        "`{0}`下的配置值被来自{1}的要求覆盖。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -29,6 +29,8 @@ use arc_swap::ArcSwapOption;
 use codex_history::InitialHistory;
 use codex_history::ResumedHistory;
 use codex_history::RolloutItem;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::AgentPath;
 use codex_protocol::SessionId;
 use codex_protocol::ThreadId;
@@ -209,9 +211,13 @@ impl AgentControl {
                 // unique without adding a submission receipt back to Core.
                 Ok(Uuid::now_v7().to_string())
             }
-            Ok(TurnInputSubmission::NotSubmitted { reason }) => Err(CodexErr::InvalidRequest(
-                format!("turn input was not submitted: {reason:?}"),
-            )),
+            Ok(TurnInputSubmission::NotSubmitted { reason }) => {
+                Err(CodexErr::InvalidRequest(tr_with(
+                    current(),
+                    "turn input was not submitted: {0}",
+                    &[&format!("{reason:?}")],
+                )))
+            }
             Err(err) => Err(err),
         };
         self.handle_thread_request_result(agent_id, &state, result)
@@ -460,9 +466,10 @@ impl AgentControl {
         if let Some(thread_id) = self.state.agent_id_for_path(&agent_path) {
             return Ok(thread_id);
         }
-        Err(CodexErr::UnsupportedOperation(format!(
-            "live agent path `{}` not found",
-            agent_path.as_str()
+        Err(CodexErr::UnsupportedOperation(tr_with(
+            current(),
+            "live agent path `{0}` not found",
+            &[agent_path.as_str()],
         )))
     }
 

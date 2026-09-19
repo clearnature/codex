@@ -1954,9 +1954,10 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 
 | 站点 | 待查 |
 | --- | --- |
-| `session/code_mode_warning.rs:20` | 该 `Option<String>` 警告的消费点（是否进 `startup_warnings`/`EventMsg::Warning`）|
-| `session/session.rs:421` | `ConstraintError::InvalidValue { allowed: format!("configured permission profile with valid network policy ({err})") }` 的 `Display` 是否渲染 `allowed` |
-| `session/session.rs:772`、`:1178` | `Session::new` 里的两处 `anyhow::anyhow!` 是否会随会话创建失败冒到用户 |
+| `codex-rs/core/src/session/code_mode_warning.rs:20` | 该 `Option<String>` 警告的消费点（是否进 `startup_warnings`/`EventMsg::Warning`）|
+| `codex-rs/core/src/session/session.rs:421` | `ConstraintError::InvalidValue { allowed: format!("configured permission profile with valid network policy ({err})") }` 的 `Display` 是否渲染 `allowed` |
+| `codex-rs/core/src/session/session.rs:772` | `Session::new` 的 `anyhow::anyhow!`（reserved thread ID）是否随会话创建失败冒到用户 |
+| `codex-rs/core/src/session/session.rs:1178` | `Session::new` 的 `anyhow::anyhow!`（zsh fork 不可用）是否随会话创建失败冒到用户 |
 
 **流程验证**：本批登记行的**值按站点从 `--dump` 结果程序化提取**（不再手抄），`--audit-rows` 显示
 **0 空操作** —— 前两批的两次抄写错没有第三次。判据：**手抄一次都不行，按站点取**。

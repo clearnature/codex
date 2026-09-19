@@ -5,6 +5,8 @@ use super::session::Session;
 use super::session::SessionSettingsUpdate;
 use super::step_settings::StepSettingsUpdate;
 use crate::config::ConstraintResult;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::CodexErrorInfo;
 use codex_protocol::protocol::ErrorEvent;
 use codex_protocol::protocol::Event;
@@ -29,7 +31,11 @@ pub(super) async fn update(
                 id: submission_id,
                 msg: EventMsg::Error(ErrorEvent {
                     misalignment: None,
-                    message: format!("invalid thread settings override: {error}"),
+                    message: tr_with(
+                        current(),
+                        "invalid thread settings override: {0}",
+                        &[&error.to_string()],
+                    ),
                     codex_error_info: Some(CodexErrorInfo::BadRequest),
                 }),
             })

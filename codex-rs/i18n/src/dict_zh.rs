@@ -7583,6 +7583,19 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "automatic approval review cannot access the terminal's environment; select it before retrying",
         "自动审批复核无法访问该终端环境；请先选择它再重试",
     ),
+    (
+        "only user input or standalone function-call outputs can start or steer a turn",
+        "只有用户输入或独立的函数调用输出才能启动或引导回合",
+    ),
+    (
+        "only user input can steer a turn",
+        "只有用户输入才能引导回合",
+    ),
+    (
+        "invalid thread settings override: {0}",
+        "无效的线程设置覆盖：{0}",
+    ),
+    ("failed to submit turn input: {0}", "提交回合输入失败：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

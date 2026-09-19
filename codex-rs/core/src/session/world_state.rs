@@ -26,6 +26,8 @@ use crate::context::world_state::WorldState;
 use codex_connectors::AppToolPolicyEvaluator;
 use codex_extension_api::WorldStateContributionInput;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
 use codex_protocol::models::BaseInstructionsProvenance;
@@ -233,7 +235,13 @@ impl Session {
                 .time_provider
                 .current_time(self.thread_id())
                 .await
-                .map_err(|err| CodexErr::Fatal(format!("failed to read current time: {err:#}")))?
+                .map_err(|err| {
+                    CodexErr::Fatal(tr_with(
+                        current(),
+                        "failed to read current time: {0}",
+                        &[&format!("{err:#}")],
+                    ))
+                })?
                 .with_timezone(&chrono::Local)
                 .format("%Y-%m-%d")
                 .to_string();

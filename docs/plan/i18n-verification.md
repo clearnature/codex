@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **130** | 第 498 轮清 16 站点（译 2：`ReviewDecision::denied` ×2；登记 14：guardian 内部诊断/提示词）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **119** | 第 500 轮清 11 站点（译 6 + 登记 5），`codex-rs/core/src/session/` 尚余 4 站点判据未闭合；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1934,3 +1934,29 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 **可粘贴的登记行**：新增 `python3 scripts/i18n_todo.py --root <R> --dump-rows`，输出
 `<key>\t<site>\t`；**不能做 TSV 键的值**（含真换行/制表符、或以 `#` 开头会被当注释）自动改成
 `<空>\t<site>\t[空键形态·值: 前缀…] `。判据：**登记行只从 `--dump-rows` 抄**，不再从列表或 `--dump` 抄。
+
+### 12.48 第 500 轮：`session/` 11 站点；`#[deprecated(note = …)]` 是编译期诊断不是文案
+
+**译 6 条**（都落在「构造器 = 用户面」上）：
+
+| 站点 | 依据 |
+| --- | --- |
+| `session/time_reminder.rs:118`、`session/world_state.rs:236` | `CodexErr::Fatal(format!("failed to read current time: {err:#}"))` ⇒ 模板**字典里已有**（`current_time.rs` 那条）⇒ 属「**已译串的未包 tr 出现**」，只补 `tr_with`、不加词条 |
+| `session/turn_input.rs:258`/`:440` | `CodexErr::InvalidRequest(..)` ⇒ 用户面 |
+| `session/thread_settings.rs:32`、`session/turn_input.rs:486` | `EventMsg::Error(ErrorEvent { message: .. })` ⇒ 渲染的事件 |
+
+**登记 5 条**：`input_queue.rs:54`（serde 序列化守卫）、`realtime_history.rs:36`（持久化标签）、
+`review.rs:76`/`turn_context.rs:687`（`tracing::warn!`），以及
+**`turn_context.rs:225` 的 `#[deprecated(note = "use the selected turn environment cwd instead")]`** ——
+它是**编译器诊断文本**，字形上却像 UI 提示；判据是「谁读它」（rustc 读，不是渲染器）⇒ 不译。
+
+**本批显式留下的 4 个未闭合判据**（下一批先做，别让它们沉底）：
+
+| 站点 | 待查 |
+| --- | --- |
+| `session/code_mode_warning.rs:20` | 该 `Option<String>` 警告的消费点（是否进 `startup_warnings`/`EventMsg::Warning`）|
+| `session/session.rs:421` | `ConstraintError::InvalidValue { allowed: format!("configured permission profile with valid network policy ({err})") }` 的 `Display` 是否渲染 `allowed` |
+| `session/session.rs:772`、`:1178` | `Session::new` 里的两处 `anyhow::anyhow!` 是否会随会话创建失败冒到用户 |
+
+**流程验证**：本批登记行的**值按站点从 `--dump` 结果程序化提取**（不再手抄），`--audit-rows` 显示
+**0 空操作** —— 前两批的两次抄写错没有第三次。判据：**手抄一次都不行，按站点取**。

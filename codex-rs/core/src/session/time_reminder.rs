@@ -12,6 +12,8 @@ use crate::config::Config;
 use crate::config::CurrentTimeReminderConfig;
 use crate::context::ContextualUserFragment;
 use crate::context_manager::is_user_turn_boundary;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 pub(super) fn apply_persistent_defaults(config: &mut Config) {
     if config.current_time_reminder.is_some()
@@ -115,7 +117,13 @@ pub(super) async fn maybe_record_current_time_reminder(
         .time_provider
         .current_time(sess.thread_id)
         .await
-        .map_err(|err| CodexErr::Fatal(format!("failed to read current time: {err:#}")))?;
+        .map_err(|err| {
+            CodexErr::Fatal(tr_with(
+                current(),
+                "failed to read current time: {0}",
+                &[&format!("{err:#}")],
+            ))
+        })?;
 
     let reminder_is_due = {
         let mut state = sess.state.lock().await;

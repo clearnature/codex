@@ -1056,3 +1056,8 @@ parent compaction checkpoint is unusable for Guardian review	codex-rs/core/src/g
 guardian review session could not set permission profile: {err}	codex-rs/core/src/guardian/reviewer_config.rs:65	复核会话配置失败的 `anyhow::anyhow!` ⇒ **内部诊断**：`feedback.rs:56-58` 把 `Completed(Err(_))`/`SessionFailed` 一律归类成 `("failed", None)`，**错误文本被丢弃** ⇒ 无渲染方 ⇒ §12.3
 guardian review session could not clear MCP servers: {err}	codex-rs/core/src/guardian/reviewer_config.rs:72	**内部诊断**：`feedback.rs:56-58` 把 `Completed(Err(_))`/`SessionFailed` 一律归类成 `("failed", None)`，**错误文本被丢弃** ⇒ 无渲染方 ⇒ §12.3
 guardian review session could not disable `features.{}`: {err}	codex-rs/core/src/guardian/reviewer_config.rs:101	**内部诊断**：`feedback.rs:56-58` 把 `Completed(Err(_))`/`SessionFailed` 一律归类成 `("failed", None)`，**错误文本被丢弃** ⇒ 无渲染方 ⇒ §12.3
+annotated response items cannot cross the turn-input serialization boundary	codex-rs/core/src/session/input_queue.rs:54	`S::Error::custom(..)`（serde 序列化守卫）⇒ 内部不变式 ⇒ §12.3
+append realtime history	codex-rs/core/src/session/realtime_history.rs:36	`live_thread_for_persistence(..)` 的**标签参数** ⇒ 标识符 ⇒ §12.7
+review web_search_mode is disallowed by requirements; keeping constrained value	codex-rs/core/src/session/review.rs:76	`tracing::warn!` 日志行 ⇒ §12.3
+resolved web_search_mode is disallowed by requirements; keeping constrained value	codex-rs/core/src/session/turn_context.rs:687	`tracing::warn!` 日志行 ⇒ §12.3
+use the selected turn environment cwd instead	codex-rs/core/src/session/turn_context.rs:225	**Rust `#[deprecated(note = …)]` 属性文本**（编译期诊断，不是应用文案）⇒ 不译

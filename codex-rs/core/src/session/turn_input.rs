@@ -18,6 +18,9 @@ use super::turn_context::TurnContext;
 use crate::state::ActiveTurn;
 use crate::state::TurnState;
 use crate::tasks::RegularTask;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
@@ -255,8 +258,11 @@ async fn start_or_steer(
         }) => true,
         _ => {
             return Err(CodexErr::InvalidRequest(
-                "only user input or standalone function-call outputs can start or steer a turn"
-                    .to_string(),
+                tr(
+                    current(),
+                    "only user input or standalone function-call outputs can start or steer a turn",
+                )
+                .to_string(),
             ));
         }
     };
@@ -437,7 +443,7 @@ async fn steer(
     } = request;
     if !matches!(&input, SubmittedTurnInput::UserInput { .. }) {
         return Err(CodexErr::InvalidRequest(
-            "only user input can steer a turn".to_string(),
+            tr(current(), "only user input can steer a turn").to_string(),
         ));
     }
     let settings = PreparedTurnInputSettings::prepare(session, thread_settings, start).await?;
@@ -483,7 +489,11 @@ impl Session {
                     id: submission_id,
                     msg: EventMsg::Error(ErrorEvent {
                         misalignment: None,
-                        message: format!("failed to submit turn input: {reason:?}"),
+                        message: tr_with(
+                            current(),
+                            "failed to submit turn input: {0}",
+                            &[&format!("{reason:?}")],
+                        ),
                         codex_error_info: Some(CodexErrorInfo::BadRequest),
                     }),
                 })

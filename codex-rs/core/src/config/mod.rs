@@ -4574,8 +4574,10 @@ impl Config {
             .map_err(|err| {
                 std::io::Error::new(
                     ErrorKind::InvalidInput,
-                    format!(
-                        "failed to read effective config for selected permission profile: {err}"
+                    tr_with(
+                        current(),
+                        "failed to read effective config for selected permission profile: {0}",
+                        &[&err.to_string()],
                     ),
                 )
             })?;
@@ -4603,8 +4605,10 @@ impl Config {
                 .map_err(|err| {
                     std::io::Error::new(
                         ErrorKind::InvalidInput,
-                        format!(
-                            "failed to read effective config for selected permission profile: {err}"
+                        tr_with(
+                            current(),
+                            "failed to read effective config for selected permission profile: {0}",
+                            &[&err.to_string()],
                         ),
                     )
                 })?;

@@ -1608,7 +1608,9 @@ for f in m.scan(Path("codex-rs/core")):
 
 - `python3 scripts/i18n_todo.py --fanout [--all]` 列出「一行豁免 >1 个未译站点」的登记；
 - 逐站点裁决后，在该行**理由列**追加 `[fanout-reviewed]`；`--fanout` 默认只列**未核**行（队列口径）；
-- 第 454 轮实测：core 32 行/79 站点（已核 6 行、**待核 26 行/59 站点**）、tui 10 行/21 站点（**待核 10 行/21 站点**）。
+- 第 454 轮实测：core 32 行/79 站点（已核 6 行、待核 26 行/59 站点）、tui 10 行/21 站点（待核 10 行/21 站点）；
+- **第 460 轮实测：core 31 行/77 站点，已核 30 行、待核 1 行/2 站点**（`MCP runtime refresh semaphore closed`）、
+  tui 待核 10 行/21 站点。历史数字保留在此仅供对照，**以最后一次实测为准**。
 
 **本轮已核 6 行的裁决**（每个站点都读过接收者，不是抽样）：
 
@@ -1628,3 +1630,36 @@ for f in m.scan(Path("codex-rs/core")):
 **顺带堵住的工具坑**：`scripts/i18n_todo.py` 的扫描根默认是 `codex-rs/tui/src`，
 此前 `--file codex-rs/core/…` 不带 `--root` 会**静默打印 `0 unwrapped candidates`**（假 0，本轮踩到）。
 现在空匹配一律 `exit 2` 并打印真实扫描范围（负向控制回执 `r-mu7pds41-9lqoup`）。
+
+#### 补核（第 460 轮）：core 队列压到 1 行
+
+第二批把 core 的跨多站点登记逐处核完（**每个站点**都读了接收者）：
+
+| 值 | 站点数 | 判决与依据 |
+| --- | --- | --- |
+| `failed to read effective config for selected permission profile: {err}` | 2 | **缺陷，已修**（`tr_with`）：同文件 `permissions.rs:347`/`:441`/`:463` 的同类 `io::Error::new(InvalidInput, …)` **本来就已译**——原登记理由只给了「小写 I/O 诊断」这种**风格依据**，与文件内先例矛盾。提交 `8a8de4d37` |
+| `code mode session is shutting down` | 5 | 同一 `Err(String)`，handlers 逐处 `map_err` 成 `RespondToModel`（`code_mode/mod.rs:173`/`:226`/`:231`/`:236`/`:244`） |
+| `code mode notification cancelled` / `code mode nested tool call cancelled` | 5 | `CodeModeSessionDelegate` 的 `Err(String)`（协议面回模型；trait 见 `code-mode-protocol/src/session.rs:99`） |
+| `apply_patch verification failed: {parse_error}` | 3 | 三处均为 `FunctionCallError::RespondToModel`（`apply_patch.rs:384`/`:431`/`:536`） |
+| `Environment id from <environment_context>…` / `Output token budget…` / `Reasoning effort override…` / `Tools for reading and waiting on time.` | 7 | 全部是 `JsonSchema::*` / `ResponsesApiNamespace { description }` **工具定义描述** ⇒ §12.2 |
+| `<completed without visible text>\n` / `[REPL response {} {}]\n` | 5 | `ContextualUserFragment` 渲染结果注入模型（`node_repl_review_evidence.rs:301` 起）⇒ §12.2 |
+| `\n{}: {}` | 2 | `question_text` 拼接格式（把用户数据拼进 guardian 证据）|
+| `    <environment id=\"` | 2 | XML 标记（`world_state/environment.rs:261`/`:276`）|
+| `>>> APPROVAL REQUEST START\n` | 2 | 注入模型的 guardian 审批提示词 |
+| `missing url/command…` / `unsupported transport {transport}` | 6 | `canonical_mcp_dependency_key` 的 `Err(String)`，调用点只 `warn!("unable to auto-install MCP dependency …")`（`mcp_skill_dependencies.rs:513`/`:530`）|
+| `standalone handoff` | 2 | `request_create` 请求标签 |
+| `Wall time: … seconds\nOutput:` | 2 | 工具输出表头负载（§12.31）|
+| `network approval was not applied` | 2 | 只进 `session_telemetry.tool_decision(…)`（`network_approval.rs:1048`/`:1054`）|
+| `collab manager unavailable` | 2 | `RespondToModel`（`multi_agents_common.rs:87`/`:105`）|
+| `tool {tool_name} already registered` | 2 | `error_or_panic`（release 下只 `error!`）|
+| `timeout_ms is too large` | 2 | `UnifiedExecError::process_failed` ⇒ 模型面 |
+| `No corresponding config content` | 2 | `anyhow!` 内部链，`role.rs:63-66` 统一替换成 `AGENT_TYPE_UNAVAILABLE_ERROR` |
+| `ChatGPT auth is required to upload files for Codex Apps tools` | 2 | 进 `mcp_tool_call.rs:505`→`:536` 的 `tool call error: {error:?}` ⇒ 明细不译 |
+| `exec policy update semaphore closed` | 2 | 被 `session/handlers.rs:186-196` 收进**已译**警告的 `{0}` 明细 ⇒ 明细不译 |
+
+**唯一留队列**：`MCP runtime refresh semaphore closed`（`session/mcp.rs:269`/`:282`）。
+`refresh_codex_apps_tools` 返回 `anyhow::Result`，其中 `app-server/src/request_processors/apps_processor/installed.rs:75`
+的 `?` 会把它冒成 RPC 错误 —— 该路径是否渲染**本轮未判定**，故**不打勾**、留作待裁决（宁缺勿滥）。
+
+**一条判据教训（值得复用）**：理由栏若只写**成因/风格**（「小写 I/O 诊断」「内部并发状态」），它是**不可复核**的；
+必须写**接收者类别 + 站点证据**。本轮的缺陷正是因为理由写了风格，而同文件先例恰好相反才被抓出。

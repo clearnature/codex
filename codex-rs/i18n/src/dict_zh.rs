@@ -7521,6 +7521,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "remote compaction v2 stream closed before response.completed",
         "远程压缩v2的流在response.completed之前关闭",
     ),
+    (
+        "failed to read effective config for selected permission profile: {0}",
+        "读取所选权限档位的有效配置失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

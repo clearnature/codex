@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **34** | 第 595 轮清 `queue_cmd.rs` 1 + `desktop_app/windows.rs` 7（§12.67）；已扣 doctor 851（裁定排除）；**只剩 `desktop_app/mac.rs` 34（macOS-only）** |
+| `codex-rs/cli/src` | **0** | 第 599 轮清 `desktop_app/mac.rs` 34 站点（33 译 + 1 登记，§12.68）⇒ **cli 全范围清空**；已扣 doctor 851（裁定排除） |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2494,3 +2494,32 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 **证据**：`fmt-check r-mu857tsh-gpskjb`、`i18n-check r-mu8583gm-njcczr`（3328 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
 `clippy r-mu85fcmv-4bpxkn`（未用 import 已清零；中间回执 `r-mu85cpuu-h6nq1m` 保留为缺陷证据）、
 合并自检 `r-mu85hino-3rmyd3`（drift=0 / 四 scope audit=0 / fanout=0 / census cli=34）。
+
+### 12.68 第 599 轮：`desktop_app/mac.rs` 清空 ⇒ **`cli/src` 候选数归 0**
+
+`desktop_app/mac.rs` 34 站点 → **译 33 + 登记 1**；`cli/src` 34 → **0**，字典 3328 → **3360**。
+`cli/src` 的候选桶到此清空（`--file cli/src/desktop_app/mac.rs` 与 `--root codex-rs/cli/src` 均报 0 unwrapped）。
+
+**登记 1 条**：`:152` 的 **代码签名要求串**（`codesign -R=` 的语法）
+`` identifier "{CODEX_BUNDLE_IDENTIFIER}" and anchor apple generic and certificate leaf[subject.OU] = "{OPENAI_APPLE_TEAM_IDENTIFIER}" ``
+—— 机器语法，译了会让签名校验失效（§12.1/§12.7 数据格式/机器契约）。
+
+**本批的三种实参形态**（都从源码读出、不是猜的）：
+1. 具名格式实参：`eprintln!("… {app_path} …", app_path = app_path.display())` ⇒ 该占位符的值是 **`.display()`**（Display），
+   故实参写成 `&app_path.display().to_string()`（若照抄 `app_path` 会得到 `&Path` 类型错误）；
+2. **内联捕获常量**：`… (team {OPENAI_APPLE_TEAM_IDENTIFIER}, bundle {CODEX_BUNDLE_IDENTIFIER}): {}` ⇒ 直接传 `&'static str` 常量；
+3. `Cow<str>` 形参：`String::from_utf8_lossy(&output.stderr).trim()`（`&str`）与 `&String::from_utf8_lossy(&output.stderr)`（deref 到 `&str`，保持原文不 trim）。
+
+**平台受限标注**：`desktop_app/mod.rs:1-2` 是 `#[cfg(target_os = "macos")] mod mac;` ⇒ 本机（只有 linux target）**不编译**该文件。
+可用的机器证据：`fmt-check`（rustfmt 解析 ⇒ 语法合法）`r-mu85xeer-awr9lq`；
+`i18n-check` 文本级 `r-mu85xnh3-7x4d31`（该回执 `scanned … 326 referencing codex_i18n` 即含它）；
+**类型与运行未验证** ⇒ 等 macOS CI。
+
+**工具第三次被输入逼出新能力（每次都是输入先于能力）**：`:334` 的行是
+`std::env::var_os("HOME").context("HOME is not set")?` —— **一行两个字面量**，工具原先取行内第一个，
+于是把包围调用认成 `var_os(` 并在 `kind:"context"` 断言处**拒写**（没有任何半成品落盘）。
+已加 `entry.literal`（按文本选定字面量）并复跑成功。三条同类教训累计成一句：
+**工具每次「拒绝写」都要当成能力缺口修掉，而不是绕过**（前两次：改前形态的正则、多行调用；本次：一行多字面量）。
+
+**证据**：`fmt-check r-mu85xeer-awr9lq`、`i18n-check r-mu85xnh3-7x4d31`（3360 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
+`clippy r-mu8626fv-c0a23m`、合并自检 `r-mu864b8x-j4d4sa`（drift=0 / 四 scope audit=0 / fanout=0 / **census cli=0**、core=10、tui=3、exec=0）。

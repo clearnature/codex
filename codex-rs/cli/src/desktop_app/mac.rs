@@ -1,4 +1,7 @@
 use anyhow::Context as _;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::ffi::CString;
 use std::path::Path;
 use std::path::PathBuf;
@@ -17,13 +20,20 @@ pub async fn run_mac_app_open_or_install(
 ) -> anyhow::Result<()> {
     if let Some(app_path) = find_existing_codex_app_path(&codex_app_search_dirs()) {
         eprintln!(
-            "Opening Desktop app at {app_path}...",
-            app_path = app_path.display()
+            "{}",
+            tr_with(
+                current(),
+                "Opening Desktop app at {0}...",
+                &[&app_path.display().to_string()]
+            )
         );
         open_codex_app(&app_path, &workspace).await?;
         return Ok(());
     }
-    eprintln!("Desktop app not found; downloading installer...");
+    eprintln!(
+        "{}",
+        tr(current(), "Desktop app not found; downloading installer...")
+    );
     let download_url = download_url_override.unwrap_or_else(|| {
         let default_url = if is_apple_silicon_mac() {
             CODEX_DMG_URL_ARM64
@@ -34,10 +44,14 @@ pub async fn run_mac_app_open_or_install(
     });
     let installed_app = download_and_install_codex_to_user_applications(&download_url)
         .await
-        .context("failed to download/install Desktop app")?;
+        .context(tr(current(), "failed to download/install Desktop app"))?;
     eprintln!(
-        "Launching Desktop app from {installed_app}...",
-        installed_app = installed_app.display()
+        "{}",
+        tr_with(
+            current(),
+            "Launching Desktop app from {0}...",
+            &[&installed_app.display().to_string()]
+        )
     );
     open_codex_app(&installed_app, &workspace).await?;
     Ok(())
@@ -102,8 +116,12 @@ fn is_codex_app_bundle(app_path: &Path) -> bool {
 async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()> {
     verify_codex_app_bundle(app_path).await?;
     eprintln!(
-        "Opening workspace {workspace}...",
-        workspace = workspace.display()
+        "{}",
+        tr_with(
+            current(),
+            "Opening workspace {0}...",
+            &[&workspace.display().to_string()]
+        )
     );
     let url = codex_new_thread_url(workspace);
     let status = Command::new("open")
@@ -112,17 +130,21 @@ async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()>
         .arg(&url)
         .status()
         .await
-        .context("failed to invoke `open`")?;
+        .context(tr(current(), "failed to invoke `open`"))?;
 
     if status.success() {
         return Ok(());
     }
 
-    anyhow::bail!(
-        "`open -a {app_path} {url}` exited with {status}",
-        app_path = app_path.display(),
-        url = url
-    );
+    anyhow::bail!(tr_with(
+        current(),
+        "`open -a {0} {1}` exited with {2}",
+        &[
+            &app_path.display().to_string(),
+            url.as_str(),
+            &status.to_string()
+        ]
+    ));
 }
 
 async fn verify_codex_app_bundle(app_path: &Path) -> anyhow::Result<()> {
@@ -135,17 +157,22 @@ async fn verify_codex_app_bundle(app_path: &Path) -> anyhow::Result<()> {
         .arg(app_path)
         .output()
         .await
-        .context("failed to verify Desktop app signature")?;
+        .context(tr(current(), "failed to verify Desktop app signature"))?;
 
     if output.status.success() {
         return Ok(());
     }
 
-    anyhow::bail!(
-        "Desktop app at {} failed OpenAI signature verification (team {OPENAI_APPLE_TEAM_IDENTIFIER}, bundle {CODEX_BUNDLE_IDENTIFIER}): {}",
-        app_path.display(),
-        String::from_utf8_lossy(&output.stderr).trim()
-    );
+    anyhow::bail!(tr_with(
+        current(),
+        "Desktop app at {2} failed OpenAI signature verification (team {0}, bundle {1}): {3}",
+        &[
+            &app_path.display().to_string(),
+            OPENAI_APPLE_TEAM_IDENTIFIER,
+            CODEX_BUNDLE_IDENTIFIER,
+            String::from_utf8_lossy(&output.stderr).trim()
+        ]
+    ));
 }
 
 fn codex_new_thread_url(workspace: &Path) -> String {
@@ -160,25 +187,30 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     let temp_dir = Builder::new()
         .prefix("codex-app-installer-")
         .tempdir()
-        .context("failed to create temp dir")?;
+        .context(tr(current(), "failed to create temp dir"))?;
     let tmp_root = temp_dir.path().to_path_buf();
     let _temp_dir = temp_dir;
 
     let dmg_path = tmp_root.join("Codex.dmg");
     download_dmg(dmg_url, &dmg_path).await?;
 
-    eprintln!("Mounting Desktop app installer...");
+    eprintln!("{}", tr(current(), "Mounting Desktop app installer..."));
     let mount_point = mount_dmg(&dmg_path).await?;
     eprintln!(
-        "Installer mounted at {mount_point}.",
-        mount_point = mount_point.display()
+        "{}",
+        tr_with(
+            current(),
+            "Installer mounted at {0}.",
+            &[&mount_point.display().to_string()]
+        )
     );
     let result = async {
         let app_in_volume = find_codex_app_in_mount(&mount_point)
-            .context("failed to locate Codex.app in mounted dmg")?;
-        verify_codex_app_bundle(&app_in_volume)
-            .await
-            .context("refusing to install an unverified Desktop app")?;
+            .context(tr(current(), "failed to locate Codex.app in mounted dmg"))?;
+        verify_codex_app_bundle(&app_in_volume).await.context(tr(
+            current(),
+            "refusing to install an unverified Desktop app",
+        ))?;
         install_codex_app_bundle(&app_in_volume).await
     }
     .await;
@@ -186,8 +218,12 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     let detach_result = detach_dmg(&mount_point).await;
     if let Err(err) = detach_result {
         eprintln!(
-            "warning: failed to detach dmg at {mount_point}: {err}",
-            mount_point = mount_point.display()
+            "{}",
+            tr_with(
+                current(),
+                "warning: failed to detach dmg at {0}: {1}",
+                &[&mount_point.display().to_string(), &err.to_string()]
+            )
         );
     }
 
@@ -197,13 +233,18 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
 async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
     for applications_dir in candidate_applications_dirs()? {
         eprintln!(
-            "Installing Desktop app into {applications_dir}...",
-            applications_dir = applications_dir.display()
+            "{}",
+            tr_with(
+                current(),
+                "Installing Desktop app into {0}...",
+                &[&applications_dir.display().to_string()]
+            )
         );
         std::fs::create_dir_all(&applications_dir).with_context(|| {
-            format!(
-                "failed to create applications dir {applications_dir}",
-                applications_dir = applications_dir.display()
+            tr_with(
+                current(),
+                "failed to create applications dir {0}",
+                &[&applications_dir.display().to_string()],
             )
         })?;
 
@@ -216,14 +257,21 @@ async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBu
             Ok(()) => return Ok(dest_app),
             Err(err) => {
                 eprintln!(
-                    "warning: failed to install Codex.app to {applications_dir}: {err}",
-                    applications_dir = applications_dir.display()
+                    "{}",
+                    tr_with(
+                        current(),
+                        "warning: failed to install Codex.app to {0}: {1}",
+                        &[&applications_dir.display().to_string(), &err.to_string()]
+                    )
                 );
             }
         }
     }
 
-    anyhow::bail!("failed to install Codex.app to any applications directory");
+    anyhow::bail!(tr(
+        current(),
+        "failed to install Codex.app to any applications directory"
+    ));
 }
 
 fn candidate_applications_dirs() -> anyhow::Result<Vec<PathBuf>> {
@@ -233,7 +281,7 @@ fn candidate_applications_dirs() -> anyhow::Result<Vec<PathBuf>> {
 }
 
 async fn download_dmg(url: &str, dest: &Path) -> anyhow::Result<()> {
-    eprintln!("Downloading installer...");
+    eprintln!("{}", tr(current(), "Downloading installer..."));
     let status = Command::new("curl")
         .arg("-fL")
         .arg("--retry")
@@ -245,12 +293,16 @@ async fn download_dmg(url: &str, dest: &Path) -> anyhow::Result<()> {
         .arg(url)
         .status()
         .await
-        .context("failed to invoke `curl`")?;
+        .context(tr(current(), "failed to invoke `curl`"))?;
 
     if status.success() {
         return Ok(());
     }
-    anyhow::bail!("curl download failed with {status}");
+    anyhow::bail!(tr_with(
+        current(),
+        "curl download failed with {0}",
+        &[&status.to_string()]
+    ));
 }
 
 async fn mount_dmg(dmg_path: &Path) -> anyhow::Result<PathBuf> {
@@ -261,20 +313,29 @@ async fn mount_dmg(dmg_path: &Path) -> anyhow::Result<PathBuf> {
         .arg(dmg_path)
         .output()
         .await
-        .context("failed to invoke `hdiutil attach`")?;
+        .context(tr(current(), "failed to invoke `hdiutil attach`"))?;
 
     if !output.status.success() {
-        anyhow::bail!(
-            "`hdiutil attach` failed with {status}: {stderr}",
-            status = output.status,
-            stderr = String::from_utf8_lossy(&output.stderr)
-        );
+        anyhow::bail!(tr_with(
+            current(),
+            "`hdiutil attach` failed with {0}: {1}",
+            &[
+                &output.status.to_string(),
+                &String::from_utf8_lossy(&output.stderr)
+            ]
+        ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     parse_hdiutil_attach_mount_point(&stdout)
         .map(PathBuf::from)
-        .with_context(|| format!("failed to parse mount point from hdiutil output:\n{stdout}"))
+        .with_context(|| {
+            tr_with(
+                current(),
+                "failed to parse mount point from hdiutil output:\n{0}",
+                &[&stdout],
+            )
+        })
 }
 
 async fn detach_dmg(mount_point: &Path) -> anyhow::Result<()> {
@@ -283,12 +344,16 @@ async fn detach_dmg(mount_point: &Path) -> anyhow::Result<()> {
         .arg(mount_point)
         .status()
         .await
-        .context("failed to invoke `hdiutil detach`")?;
+        .context(tr(current(), "failed to invoke `hdiutil detach`"))?;
 
     if status.success() {
         return Ok(());
     }
-    anyhow::bail!("hdiutil detach failed with {status}");
+    anyhow::bail!(tr_with(
+        current(),
+        "hdiutil detach failed with {0}",
+        &[&status.to_string()]
+    ));
 }
 
 fn find_codex_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
@@ -298,22 +363,24 @@ fn find_codex_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
     }
 
     for entry in std::fs::read_dir(mount_point).with_context(|| {
-        format!(
-            "failed to read {mount_point}",
-            mount_point = mount_point.display()
+        tr_with(
+            current(),
+            "failed to read {0}",
+            &[&mount_point.display().to_string()],
         )
     })? {
-        let entry = entry.context("failed to read mount directory entry")?;
+        let entry = entry.context(tr(current(), "failed to read mount directory entry"))?;
         let path = entry.path();
         if path.extension().is_some_and(|ext| ext == "app") && path.is_dir() {
             return Ok(path);
         }
     }
 
-    anyhow::bail!(
-        "no .app bundle found at {mount_point}",
-        mount_point = mount_point.display()
-    );
+    anyhow::bail!(tr_with(
+        current(),
+        "no .app bundle found at {0}",
+        &[&mount_point.display().to_string()]
+    ));
 }
 
 async fn copy_app_bundle(src_app: &Path, dest_app: &Path) -> anyhow::Result<()> {
@@ -322,16 +389,20 @@ async fn copy_app_bundle(src_app: &Path, dest_app: &Path) -> anyhow::Result<()> 
         .arg(dest_app)
         .status()
         .await
-        .context("failed to invoke `ditto`")?;
+        .context(tr(current(), "failed to invoke `ditto`"))?;
 
     if status.success() {
         return Ok(());
     }
-    anyhow::bail!("ditto copy failed with {status}");
+    anyhow::bail!(tr_with(
+        current(),
+        "ditto copy failed with {0}",
+        &[&status.to_string()]
+    ));
 }
 
 fn user_applications_dir() -> anyhow::Result<PathBuf> {
-    let home = std::env::var_os("HOME").context("HOME is not set")?;
+    let home = std::env::var_os("HOME").context(tr(current(), "HOME is not set"))?;
     Ok(PathBuf::from(home).join("Applications"))
 }
 

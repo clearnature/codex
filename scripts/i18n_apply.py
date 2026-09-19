@@ -90,23 +90,49 @@ def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines()
 
 
-def literal_at(lines: list[str], line_no: int) -> tuple[int, int, str]:
-    """Column span (start, end) of the first string literal on `line_no`."""
-    ln = lines[line_no - 1]
-    i = ln.find('"')
-    if i < 0:
+def literals_on(line: str) -> list[tuple[int, int, str]]:
+    """Every string literal on `line` as (start, end, inner)."""
+    out: list[tuple[int, int, str]] = []
+    k = 0
+    while True:
+        i = line.find('"', k)
+        if i < 0:
+            return out
+        j = i + 1
+        while j < len(line):
+            if line[j] == "\\":
+                j += 2
+                continue
+            if line[j] == '"':
+                break
+            j += 1
+        if j >= len(line):
+            raise AssertionError("字面量未闭合")
+        out.append((i, j, line[i + 1 : j]))
+        k = j + 1
+
+
+def literal_at(
+    lines: list[str], line_no: int, want: str | None = None
+) -> tuple[int, int, str]:
+    """Column span of the string literal on `line_no`.
+
+    `want` selects by text when the line holds more than one literal (e.g.
+    `std::env::var_os("HOME").context("HOME is not set")?` -- taking the first
+    one silently targets the wrong call; the enclosing-call assertion catches it,
+    but naming the literal is cheaper than debugging the failure).
+    """
+    found = literals_on(lines[line_no - 1])
+    if not found:
         raise AssertionError(f":{line_no} 行内没有字符串字面量")
-    j = i + 1
-    while j < len(ln):
-        if ln[j] == "\\":
-            j += 2
-            continue
-        if ln[j] == '"':
-            break
-        j += 1
-    if j >= len(ln):
-        raise AssertionError(f":{line_no} 的字面量未闭合")
-    return i, j, ln[i + 1 : j]
+    if want is None:
+        return found[0]
+    matches = [f for f in found if f[2] == want]
+    if len(matches) != 1:
+        raise AssertionError(
+            f":{line_no} 期望恰好 1 个字面量等于 {want!r}，实际 {len(matches)} 个"
+        )
+    return matches[0]
 
 
 def abs_pos(lines: list[str], line_no: int, col: int) -> int:
@@ -208,7 +234,7 @@ def plan(spec: dict) -> tuple[list[tuple[int, int, str, str]], dict]:
         kind = entry["kind"]
         exprs = entry.get("args", [])
         zh = entry.get("zh")
-        i, j, lit = literal_at(lines, line_no)
+        i, j, lit = literal_at(lines, line_no, entry.get("literal"))
         ai, aj = abs_pos(lines, line_no, i), abs_pos(lines, line_no, j)
         ph = re.findall(r"\{([A-Za-z_][A-Za-z0-9_]*)?\}", lit)
         if len(ph) != len(exprs):

@@ -8348,6 +8348,98 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("failed to open {0}", "打开{0}失败"),
     ("failed to open {0} with {1}", "打开{0}失败（{1}）"),
+    ("Opening Desktop app at {0}...", "正在打开桌面应用：{0}…"),
+    (
+        "Desktop app not found; downloading installer...",
+        "未找到桌面应用；正在下载安装程序…",
+    ),
+    (
+        "failed to download/install Desktop app",
+        "下载/安装桌面应用失败",
+    ),
+    (
+        "Launching Desktop app from {0}...",
+        "正在从{0}启动桌面应用…",
+    ),
+    ("Opening workspace {0}...", "正在打开工作区{0}…"),
+    ("failed to invoke `open`", "调用`open`失败"),
+    (
+        "`open -a {0} {1}` exited with {2}",
+        "`open -a {0} {1}` 以 {2} 退出",
+    ),
+    (
+        "failed to verify Desktop app signature",
+        "校验桌面应用签名失败",
+    ),
+    (
+        "Desktop app at {2} failed OpenAI signature verification (team {0}, bundle {1}): {3}",
+        "桌面应用位于{0}，未通过OpenAI签名校验（团队{1}，bundle{2}）：{3}",
+    ),
+    ("failed to create temp dir", "创建临时目录失败"),
+    (
+        "Mounting Desktop app installer...",
+        "正在挂载桌面应用安装程序…",
+    ),
+    ("Installer mounted at {0}.", "安装程序已挂载到{0}。"),
+    (
+        "failed to locate Codex.app in mounted dmg",
+        "在已挂载的dmg中找不到Codex.app",
+    ),
+    (
+        "refusing to install an unverified Desktop app",
+        "拒绝安装未经验证的桌面应用",
+    ),
+    (
+        "warning: failed to detach dmg at {0}: {1}",
+        "警告：无法卸载{0}处的dmg：{1}",
+    ),
+    (
+        "Installing Desktop app into {0}...",
+        "正在把桌面应用安装到{0}…",
+    ),
+    (
+        "failed to create applications dir {0}",
+        "创建应用目录{0}失败",
+    ),
+    (
+        "warning: failed to install Codex.app to {0}: {1}",
+        "警告：无法把Codex.app安装到{0}：{1}",
+    ),
+    (
+        "failed to install Codex.app to any applications directory",
+        "无法把Codex.app安装到任何应用目录",
+    ),
+    ("Downloading installer...", "正在下载安装程序…"),
+    ("failed to invoke `curl`", "调用`curl`失败"),
+    ("curl download failed with {0}", "curl下载失败，状态为{0}"),
+    (
+        "failed to invoke `hdiutil attach`",
+        "调用`hdiutil attach`失败",
+    ),
+    (
+        "`hdiutil attach` failed with {0}: {1}",
+        "`hdiutil attach` 以 {0} 失败：{1}",
+    ),
+    (
+        "failed to parse mount point from hdiutil output:\n{0}",
+        "无法从hdiutil输出解析挂载点：\n{0}",
+    ),
+    (
+        "failed to invoke `hdiutil detach`",
+        "调用`hdiutil detach`失败",
+    ),
+    (
+        "hdiutil detach failed with {0}",
+        "hdiutil detach失败，状态为{0}",
+    ),
+    ("failed to read {0}", "读取{0}失败"),
+    (
+        "failed to read mount directory entry",
+        "读取挂载目录条目失败",
+    ),
+    ("no .app bundle found at {0}", "在{0}处没有找到.app bundle"),
+    ("failed to invoke `ditto`", "调用`ditto`失败"),
+    ("ditto copy failed with {0}", "ditto复制失败，状态为{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

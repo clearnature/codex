@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **104** | 第 507 轮清 11 站点（译 5 + 登记 6：src 顶层与 `context/`）；`current_time.rs:51` 的调用链未坐实、留在候选；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **103** | 第 507 轮清 11 站点（译 5 + 登记 6：src 顶层与 `context/`）；`current_time.rs:51` 的调用链未坐实、留在候选；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -2005,3 +2005,16 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 
 **未坐实而留在候选的 1 处**：`codex-rs/core/src/current_time.rs:51`（`resolve_time_provider` 的 `anyhow!`，
 config 误配的提示）—— 调用链未读到渲染点，**不猜着判**。
+
+**补充（第 510 轮，同一批的返工）**：`safety.rs` 的两个常量改法**返工了两次**，值得记下来：
+
+1. 直接删常量、字面量进 `tr` ⇒ **clippy 红**：`safety_tests.rs:279`/`:310` 还引用着常量（`E0425`）。
+   教训：**删 `const` 前要 grep 全 crate（含 `*_tests.rs`）**，不能只在本文件里找使用点。
+2. 改为「保留常量 + `tr(current(), CONST)`」⇒ **i18n-check 红**：`[unused] 2`。读检查器源码
+   （`i18n-check/src/main.rs:906-930` 的 `const_is_rendered`）才明白：const 通道**只在含渲染槽的行**上生效
+   （`name:` / `title:` / `label:` / `description:` / `Line::from` / `Span::from`），
+   而 `tr(current(), CONST)` 那行**没有槽** ⇒ 键不被计入「已渲染」。先例
+   `tui/.../request_user_input/mod.rs:479` 之所以行得通，是因为那一行有 `description:`。
+   本处的槽是 `SafetyCheck::Reject { reason: … }` —— **`reason:` 不在槽列表里**，所以此路不通。
+3. 最终采用 docs 里点明的**结构性修法**：把常量变回**字面量写进调用点**（保持 `tr(current(), "…")`），
+   并**同步 `safety_tests.rs` 的两处引用**为字面量。这样：键在真实调用点（检查器看得见）、无重复副本、无 dead code。

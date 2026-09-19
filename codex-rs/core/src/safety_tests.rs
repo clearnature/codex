@@ -276,7 +276,8 @@ fn granular_sandbox_approval_false_rejects_out_of_root_patch() {
             PatchSandboxRoute::Platform(WindowsSandboxLevel::Disabled),
         ),
         SafetyCheck::Reject {
-            reason: PATCH_REJECTED_OUTSIDE_PROJECT_REASON.to_string(),
+            reason: "writing outside of the project; rejected by user approval settings"
+                .to_string(),
         },
     );
 }
@@ -307,7 +308,8 @@ fn read_only_policy_rejects_patch_with_read_only_reason() {
             PatchSandboxRoute::Platform(WindowsSandboxLevel::Disabled),
         ),
         SafetyCheck::Reject {
-            reason: PATCH_REJECTED_READ_ONLY_REASON.to_string(),
+            reason: "writing is blocked by read-only sandbox; rejected by user approval settings"
+                .to_string(),
         },
     );
 }

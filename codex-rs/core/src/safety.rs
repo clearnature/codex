@@ -33,7 +33,7 @@ pub fn assess_patch_safety(
 ) -> SafetyCheck {
     if action.is_empty() {
         return SafetyCheck::Reject {
-            reason: "empty patch".to_string(),
+            reason: tr(current(), "empty patch").to_string(),
         };
     }
 

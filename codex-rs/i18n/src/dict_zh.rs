@@ -7617,6 +7617,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "writing is blocked by read-only sandbox; rejected by user approval settings",
         "写入被只读沙箱阻止；已被用户审批设置拒绝",
     ),
+    ("empty patch", "空补丁"),
 ];
 
 /// English source text -> Simplified Chinese.

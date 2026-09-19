@@ -2367,7 +2367,7 @@ duplicate 0 / placeholder 0 / coverage 99.7%）、`clippy r-mu81xa4b-kmdqkn`、
 - 同句多站点按值合并：`` Failed to upgrade marketplace `{}`: {} ``（`:451`/`:506`）、`{} upgrade failure(s) occurred.`（`:456`/`:511`）、
   `Installed marketplace root: {}`（`:188`/`:526`/`:531` 三站点共享一条键）。
 
-**登记 8 站点**：`:37`/`:65`/`:100`/`:115` 的 clap `bin_name` 与 `:66`/`:101`/`:116` 的 `after_help`（编译期常量，同 §12.60 口径）。
+**登记 8 站点**：clap `bin_name` :37/:65/:91/:100/:115（5 条）与 `after_help` :66/:101/:116（3 条）—— 都是编译期常量，同 §12.60 口径（初版把这批写成「4+3」，与 TSV 的 8 行不符，按机器事实改正）。
 
 **行号漂移已是常态（本批第 3 次遇到）**：插入 import（+3 行）后 8 条登记行里 4 条（`bin_name`）行号漂移；
 `i18n_dossier_lines.py --fix` 处理了另外 4 条（`after_help`），这 4 条用「值唯一 ⇒ 自动重指」修好并逐条复核命中。

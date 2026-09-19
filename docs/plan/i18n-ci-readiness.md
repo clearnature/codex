@@ -146,7 +146,7 @@ repo-checks / rust-ci / sdk。
 | `bazel` / `rust-ci`（含平台矩阵）                                                               | ✅（手动） | `workflow_dispatch`（网页 Run workflow 或 `gh workflow run`）       |
 | `postmerge-ci`（rust-ci-full + v8-canary）                                                      | ❌         | 仅 `push: main`                                                     |
 
-### 7.3 这个 fork 的实际状态（外部证据，2026-09-14 之后）
+### 7.3 这个 fork 的实际状态（2026-09-14 之后；**§八 有首次运行后的更新**）
 
 - `GET /repos/clearnature/codex/actions/runs?per_page=8` → **`total_count: 0`**：**这个 fork 从来没跑过一次 workflow**。
 - `GET /repos/clearnature/codex/actions/workflows` → 29 个，关键各条（`blocking-ci`/`repo-checks`/`bazel`/`rust-ci`/
@@ -173,3 +173,61 @@ repo-checks / rust-ci / sdk。
 
 5. **「沙箱无网络」是错的**（已改正 §三.1 与 §七.3）。第一版依据 `pnpm install --frozen-lockfile --offline` 的失败写了「无网络」——那个失败是我自己加了 `--offline` 造成的（`ERR_PNPM_NO_OFFLINE_TARBALL`：pnpm store 缺 tarball），**不是**网络不可达。直接探测后事实相反：`git ls-remote origin HEAD` **EXIT=0**、`curl https://registry.npmmirror.com/` **HTTP 200**、`pnpm install --frozen-lockfile` **EXIT=0 / 15.4s / 551 包**。⇒ 教训：**环境限制必须用不带人为标志的直接探测来判**；拿自己中间产物的失败当证据，会把「我没装依赖」误判成「环境不允许」。
 6. **「本机不能推送」也是错的**（已改正 §七.3/§七.4）：`git push --dry-run origin HEAD:refs/heads/i18n-push-probe` → **EXIT=0**，凭据齐备。⇒ 「开 CI」在本机**可执行**，只是**要不要动共享远端**属人类决策。
+
+## 八、fork 上跑 CI 的**首次实测**（2026-09-19）
+
+### 8.1 做了什么
+
+1. **推送 `feat/i18n`**：`aa944d6b9..f015c527f`（313 个提交），远端 `refs/heads/feat/i18n` == 本地 HEAD。
+2. **验证「推功能分支是否触发 CI」**：推完立刻查
+   `GET /repos/clearnature/codex/actions/runs?event=push` → 仍是 **`total_count: 0`**
+   ⇒ **证实**：在本仓库配置下，推普通功能分支**不触发任何 workflow**（§七.1 的表格读对了）。
+3. **改用 dispatch 触发**（不开 PR、不动 main）：
+   - `rust-ci` → run [35450055551](https://github.com/clearnature/codex/actions/runs/35450055551)
+   - `Bazel` → run [35450058371](https://github.com/clearnature/codex/actions/runs/35450058371)
+     这是该 fork **历史上第一次**运行 workflow。
+
+### 8.2 踩到的工具坑：`gh` 默认解析到 **upstream**，不是 fork
+
+第一次 dispatch 直接失败：
+
+```
+could not create workflow dispatch event: HTTP 403: Must have admin rights to Repository.
+   (https://api.github.com/repos/openai/codex/actions/workflows/158138315/dispatches)
+```
+
+注意 URL 里的 **`openai/codex`** —— 本仓库同时有 `origin=clearnature/codex` 与 `upstream=openai/codex` 时，
+`gh` 默认选了**上游**，于是拿 fork 的凭据去要上游的 admin 权限。
+处方：显式 `--repo clearnature/codex`，或先 `gh repo set-default clearnature/codex`（本次两条都做了，之后 dispatch 成功）。
+`gh run list` 也会因此列出**上游**的运行（本次实测：改前列出的全是 openai/codex 的 Issue/CLA 运行）。
+
+### 8.3 结果分类：红的是**基础设施**，不是我们的代码
+
+大量 job 直接红在**启动阶段**，注解原文：
+
+| 注解原文                                                                                                            | 含义                                                    | 归类     |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------- |
+| `Required runner group 'codex-runners' not found`                                                                   | 工作流要上游组织级**自建 runner 组**，fork 里没有       | 环境限制 |
+| `The job was not started because recent account payments have failed or your spending limit needs to be increased.` | `macos-15-xlarge` 等**计费机型**起不来（账单/额度问题） | 环境限制 |
+| fork 的 `gh secret list` / `gh variable list` 都是 **0 条**                                                         | 需要机密的 job（远程缓存/签名等）也无从满足             | 环境限制 |
+
+**能真正跑起来的**（标准 `ubuntu-24.04`、无机密依赖）：
+
+- `changed`（Detect changed areas）— **completed success**
+- `general`（步骤里有 `Format / etc` = `just fmt-check` 一类）— in_progress
+- `cargo_shear` — in_progress
+- `argument_comment_lint_package`（Linux、按包安装工具链）— in_progress
+- 一条 `Bazel test on ubuntu-24.04 for x86_64-unknown-linux-musl`（标准 runner）— in_progress
+
+⇒ 恰好是**我们最关心的几条**（格式、argument-comment-lint、shear）能跑；平台矩阵与 Bazel 的多平台/自建 runner 在个人 fork 上**结构性跑不了**。
+
+### 8.4 结论（对应「不 PR 能不能 CI」）
+
+- **能拿到远端信号的**：`rust-ci` 与 `bazel` 的手动 dispatch（`gh workflow run … --repo clearnature/codex --ref <branch>`），
+  或推一个 `*full-ci` 分支跑 `rust-ci-full`。
+- **仍然拿不到 i18n 三闸（`just fmt-check` / `just i18n-check` / `just i18n-smoke`）**：
+  它们在 `repo-checks` 里，而 `repo-checks` 只有 `workflow_call`、由 `blocking-ci` 在 `pull_request` / `push: main` 时带起。
+  ⇒ **想在远端跑那三道，必须开 PR**（或推 main）。好消息：`repo-checks` 跑在 `ubuntu-latest`、不依赖上游机密，
+  所以在个人 fork 上**它本身是能跑的**（不像 Bazel 的多平台矩阵）。
+- **平台矩阵（macOS/Windows）在本 fork 上结构性不可用**：要么缺 `codex-runners` 组，要么计费机型起不来。
+  ⇒ 43 处平台门控站点的验签仍只能靠**上游 CI** 或人工平台验证，本 fork 帮不上。

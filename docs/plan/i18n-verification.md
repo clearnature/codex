@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **42** | 第 590 轮一次清 6 个 Linux 可验文件 34 站点（32 译 + 2 登记，§12.66）；已扣 doctor 851（裁定排除）；剩余 42 = 平台受限 41（`desktop_app/mac.rs` 34 macOS-only、`desktop_app/windows.rs` 7 Windows-only）+ `queue_cmd.rs` 1（Linux 可验）|
+| `codex-rs/cli/src` | **34** | 第 595 轮清 `queue_cmd.rs` 1 + `desktop_app/windows.rs` 7（§12.67）；已扣 doctor 851（裁定排除）；**只剩 `desktop_app/mac.rs` 34（macOS-only）** |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2467,3 +2467,30 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 **证据**：`i18n-check r-mu84baqn-g6cbo6`（3321 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0 / coverage 99.7%）、
 `fmt-check r-mu84bver-dcukkb`、`clippy r-mu84hhum-ackcam`、
 合并自检 `r-mu84jliz-dc4pgv`（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=42）。
+
+### 12.67 第 595 轮：`queue_cmd.rs` + `desktop_app/windows.rs`（8 站点：译 7 / 登记 1）
+
+- `queue_cmd.rs` 1 条：`` `codex queue` does not support image attachments `` ⇒ 译（**Linux 编译路径**，clippy 覆盖）。
+- `desktop_app/windows.rs` 7 条：译 6（桌面应用打开/安装提示、PowerShell 调用失败、打开 URL 失败）+ 登记 1
+  （`:62` 的 PowerShell 脚本文本 `Get-StartApps | Where-Object AppID -Like …` ⇒ 机器命令，译了会破坏功能；
+  同函数 `:56` 的 `& { param($target) Start-Process … }` 同理，因形状规则未入候选表）。
+- `cli/src` 42 → **34**（只剩 `desktop_app/mac.rs`），字典 3321 → **3328**。
+
+**平台受限的如实标注（本批的一半）**：本机只装了 `x86_64-unknown-linux-gnu` / `x86_64-unknown-linux-musl`（`rustup target list --installed`），
+而 `desktop_app/mod.rs:1-4` 是 `#[cfg(target_os = "macos")] mod mac;` / `#[cfg(target_os = "windows")] mod windows;`
+⇒ **windows.rs 整个文件不在本机编译范围内**。对它只有三类机器证据：
+
+1. `fmt-check`（rustfmt 必须解析该文件 ⇒ 语法合法）`r-mu857tsh-gpskjb`；
+2. `i18n-check`（文本级：键存在、无命名占位符、无嵌套）`r-mu8583gm-njcczr` —— 该回执里 `scanned … 325 referencing codex_i18n` 就包含它；
+3. 逐实参的**类型依据**（写在规格里、可复核）：`display_workspace: String`（`windows.rs:76`）、`url: &str`（`:52`）、`status: ExitStatus`（`:58` 的 `.status().await`）。
+
+**类型检查与运行未验证** ⇒ 等 Windows CI。这也把「平台受限改动怎么做」定成了流程：*静态分类 + 逐实参类型依据 + 明确标未验证 + 平台 CI 兜底*。
+
+**生成器两次修复（含一次自纠）**：`i18n_apply.py` 原先无条件插入 `current`/`tr`/`tr_with`；
+§12.66 记录我改成按需插入并回修了 3 个文件 —— 但本轮 `queue_cmd.rs` 又出现同一条 `unused_imports`，
+查 `git show HEAD:scripts/i18n_apply.py | grep -c "used = "` = **0**：那次补丁**从未进提交**（原因未查明；当时只验证了产物，没验证生成器，也没验证提交内容）。
+现已重做，并让 **plan 阶段打印「将按需插入的 import」**（实测 `['current']`），使生成器行为在 plan 阶段即可复核。
+
+**证据**：`fmt-check r-mu857tsh-gpskjb`、`i18n-check r-mu8583gm-njcczr`（3328 词条 / missing 0 / unused 0 / spacing 0 / duplicate 0 / placeholder 0）、
+`clippy r-mu85fcmv-4bpxkn`（未用 import 已清零；中间回执 `r-mu85cpuu-h6nq1m` 保留为缺陷证据）、
+合并自检 `r-mu85hino-3rmyd3`（drift=0 / 四 scope audit=0 / fanout=0 / census cli=34）。

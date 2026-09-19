@@ -1707,6 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **0** | 第 599 轮清 `desktop_app/mac.rs` 34 站点（33 译 + 1 登记，§12.68）⇒ **cli 全范围清空**；已扣 doctor 851（裁定排除） |
+| `codex-rs/core/src` | **0** | 第 611 轮用**属性级最小改法**清空最后 10 条（§12.70） |
 | `codex-rs/tui/src` | **0** | 第 603 轮把最后 3 条按「机器语法/匹配键」登记（§12.69） |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
@@ -2545,3 +2546,38 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 
 **平台受限批次的**逐实参类型依据**已提交入库**：`docs/plan/i18n-specs/`（`macos-desktop-app.json` 等四份，见该目录 README）。
 这样「本机不编译的那 39 处」的每个实参类型都能被第三方回溯到源码声明处，而不依赖会话记录。
+
+### 12.70 第 611 轮：core 最后 10 条用**属性级最小改法**清空 ⇒ **四个 scope 候选数全为 0**
+
+**结论先行**：`#[derive(Error)]` 的 `#[error(...)]` 里**可以**把本地化调用放在**格式实参位置**（不是格式串里），
+于是这 10 条只需改属性、**不动类型形状**（不手写 `Display`、不手写 `impl Error`、不删 `derive`）：
+
+```rust
+#[error("{}", tr_with(current(), "Failed to create unified exec process: {0}", &[message]))]
+```
+
+**先做可编译实验（不猜）**：在独立 crate 里验证四种形态**全部编译过** —— 无参 `tr(current(), "…")`、
+命名字段 `&[message]`、元组字段 + Debug `&[&format!("{_0:?}")]`、常量表达式 `&[std::env::consts::OS]`；
+随后在真实 crate 上验证（`clippy` 编译通过）。
+
+**对前文的更正（重要）**：§12.9/§12.54 记的「`#[error(..)]` 里放不下 `tr()`（`E0609`/`E0658`）」
+说的是把调用放进**格式串**（`"{tr(…)}"`）那条路；**格式实参位置是另一条路，且可用**。
+旧结论保留在案（它解释了当时为什么改走手写 `Display`），但**路线以本文为准**：最小入侵 = 属性级。
+
+**10 处改动**（`core/src/unified_exec/errors.rs` 9 + `core/src/mcp_tool_call/account.rs` 1），
+规格与逐站点类型依据已入库：`docs/plan/i18n-specs/core-thiserror-attributes.json`。
+要点：`{message}`→`{0}` + `&[message]`；`{process_id}`（i32）→ `&[&process_id.to_string()]`；
+`{0:?}` → `&[&format!("{_0:?}")]`（**内联格式参数**，否则撞 `-D uninlined_format_args` —— clippy 首跑即抓，回执 `r-mu8atqia-0hgpu4`）；
+`{path} is not valid on {}` → `"{0} is not valid on {1}"` + `&[&path.to_string(), std::env::consts::OS]`。
+
+**英文逐字节不变有现成断言**：`core/src/unified_exec/mod_tests.rs:887` 断言
+`"Failed to create unified exec process: remote exec-server does not support inherited file descriptors"`；
+连同 `invalid_selector` 单跑通过（`r-mu8b7e36-a432qg`）。
+
+**证据**：`clippy r-mu8ay5vl-ohhzep`、`i18n-check r-mu8aywmn-6myfzp`（3370 词条 / missing 0 / unused 0 / spacing 0 /
+duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt-check r-mu8azn97-3d36ik`、
+合并自检 `r-mu8b1vxw-w5b21g`（**cli=0 / core=0 / tui=0 / exec=0**，drift/audit/fanout 全 0）、定向测试 `r-mu8b7e36-a432qg`。
+
+**环境限制（如实记，不归因于本批）**：同批定向测试里 `suite::unified_exec_zsh_fork_approvals::…preserves_denied_reads`
+失败于 **bubblewrap 在临时目录的 glob 限制**（`unreadable glob …/secret.env`，发生在**会话初始化**阶段），
+与本批消息改动无关；另有 2 条 FLAKY 重试后通过（与 `known_issues cli-suite-flaky-under-load` 同族）。

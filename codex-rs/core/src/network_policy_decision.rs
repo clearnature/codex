@@ -1,5 +1,8 @@
 use codex_execpolicy::Decision as ExecPolicyDecision;
 use codex_execpolicy::NetworkRuleProtocol as ExecPolicyNetworkRuleProtocol;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::BlockedRequest;
 use codex_network_proxy::NetworkPolicyDecision;
 use codex_protocol::approvals::NetworkApprovalContext;
@@ -54,20 +57,34 @@ pub(crate) fn denied_network_policy_message(blocked: &BlockedRequest) -> Option<
 
     let host = blocked.host.trim();
     if host.is_empty() {
-        return Some("Network access was blocked by policy.".to_string());
+        return Some(tr(current(), "Network access was blocked by policy.").to_string());
     }
 
     let detail = match blocked.reason.as_str() {
-        "denied" => "domain is explicitly denied by policy and cannot be approved from this prompt",
-        "not_allowed" => "domain is not on the allowlist for the current sandbox mode",
-        "not_allowed_local" => "local/private network addresses are blocked by the sandbox policy",
-        "method_not_allowed" => "request method is blocked by the current network mode",
-        "proxy_disabled" => "network proxy is disabled",
-        _ => "request is blocked by network policy",
+        "denied" => tr(
+            current(),
+            "domain is explicitly denied by policy and cannot be approved from this prompt",
+        ),
+        "not_allowed" => tr(
+            current(),
+            "domain is not on the allowlist for the current sandbox mode",
+        ),
+        "not_allowed_local" => tr(
+            current(),
+            "local/private network addresses are blocked by the sandbox policy",
+        ),
+        "method_not_allowed" => tr(
+            current(),
+            "request method is blocked by the current network mode",
+        ),
+        "proxy_disabled" => tr(current(), "network proxy is disabled"),
+        _ => tr(current(), "request is blocked by network policy"),
     };
 
-    Some(format!(
-        "Network access to \"{host}\" was blocked: {detail}."
+    Some(tr_with(
+        current(),
+        "Network access to \"{0}\" was blocked: {1}.",
+        &[host, detail],
     ))
 }
 

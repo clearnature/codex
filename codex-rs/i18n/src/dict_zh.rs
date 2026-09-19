@@ -7419,6 +7419,32 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "wait_for_environment handler received unsupported payload",
         "wait_for_environment处理器收到不支持的负载",
     ),
+    (
+        "Network access was blocked by policy.",
+        "网络访问被策略阻止。",
+    ),
+    (
+        "domain is explicitly denied by policy and cannot be approved from this prompt",
+        "该域名被策略明确拒绝，无法在此提示中批准",
+    ),
+    (
+        "domain is not on the allowlist for the current sandbox mode",
+        "该域名不在当前沙箱模式的允许列表中",
+    ),
+    (
+        "local/private network addresses are blocked by the sandbox policy",
+        "本地/私有网络地址被沙箱策略阻止",
+    ),
+    (
+        "request method is blocked by the current network mode",
+        "请求方法被当前网络模式阻止",
+    ),
+    ("network proxy is disabled", "网络代理已禁用"),
+    ("request is blocked by network policy", "请求被网络策略阻止"),
+    (
+        "Network access to \"{0}\" was blocked: {1}.",
+        "对\"{0}\"的网络访问被阻止：{1}。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

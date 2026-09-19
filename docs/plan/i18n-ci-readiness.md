@@ -107,3 +107,57 @@ repo-checks / rust-ci / sdk。
    **可本机验的部分全部取证**（§一、§二），把不可本机验的部分**显式列出**（§三）。
 3. **§三.1（prettier）仍是「未验证 + 风险最高」**，没有新证据改变它：本机既无 `node_modules`
    也无网络（`ERR_PNPM_NO_OFFLINE_TARBALL`），且 `docs/**/*.md` 确实在它的 glob 里。
+
+## 七、这个 fork 上「怎么触发 CI」（不 PR 到底行不行）
+
+问题：仓库是 fork（`origin = https://github.com/clearnature/codex.git`，当前分支 `feat/i18n`），
+**不 PR 就无法 CI 吗？** 答：**分档** —— 有一半能、有一半不能。
+
+### 7.1 触发器事实（本机 `.github/workflows/*.yml` 全文读出，非推测）
+
+| 触发器 | 谁有 |
+| --- | --- |
+| `pull_request` | `blocking-ci`、`cla`、`v8-canary` |
+| `push: branches: [main]` | `blocking-ci`、`postmerge-ci` |
+| `push: branches: ["**full-ci**"]` | `rust-ci-full`（注释原文：*Keep this opt-in branch trigger for developers who want the full suite before merging*） |
+| `push: tags` | 各 release workflow（与本任务无关） |
+| `workflow_dispatch`（可手动跑） | `bazel`、`rust-ci`、`rust-ci-full`、`v8-canary`、`python-runtime-release`、`rust-release-prepare`（fork 上 disabled）、`close-stale-contributor-prs`（同上） |
+| **只有 `workflow_call`**（不能自己触发） | `repo-checks`、`codespell`、`cargo-deny`、`blob-size-policy`、`sdk`、`rust-release-windows` 等 |
+
+`blocking-ci.yml` 的注释把设计意图写明了：*"It also runs after pushes to main so the same check family stays grouped in the Actions UI."*
+它的 `CI required` 聚合 job 的 `needs` 是：
+`bazel / blob-size-policy / cargo-deny / codespell / repo-checks / rust-ci / sdk`。
+
+### 7.2 所以：不 PR 能/不能拿到什么
+
+| 想要的结果 | 不 PR 能否 | 路径 |
+| --- | --- | --- |
+| **`repo-checks`（内含 `just fmt-check` / `just i18n-check` / `just i18n-smoke` 三道 i18n 闸）** | ❌ | 只有 `pull_request` 或 `push: main`；它自己没有 `workflow_dispatch` |
+| `codespell` / `cargo-deny` / `blob-size-policy` / `sdk` | ❌ | 同上（仅 `workflow_call`） |
+| **完整 rust 套件**（`rust-ci-full`，比 blocking 里的 `rust-ci` 更全） | ✅ | 推一个**以 `full-ci` 结尾**的分支名，或手动 dispatch `rust-ci-full` |
+| `bazel` / `rust-ci`（含平台矩阵） | ✅（手动） | `workflow_dispatch`（网页 Run workflow 或 `gh workflow run`） |
+| `postmerge-ci`（rust-ci-full + v8-canary） | ❌ | 仅 `push: main` |
+
+### 7.3 这个 fork 的实际状态（外部证据，2026-09-14 之后）
+
+* `GET /repos/clearnature/codex/actions/runs?per_page=8` → **`total_count: 0`**：**这个 fork 从来没跑过一次 workflow**。
+* `GET /repos/clearnature/codex/actions/workflows` → 29 个，关键各条（`blocking-ci`/`repo-checks`/`bazel`/`rust-ci`/
+  `rust-ci-full`/`codespell`/`cargo-deny`/`postmerge-ci`/`sdk`）都是 **`state: active`**
+  ⇒ **Actions 没有被禁用**（只有 `close-stale-contributor-prs` 与 `rust-release-prepare` 是 `disabled_fork`）。
+* 两者合起来自洽：**往功能分支 push 在本仓库配置下什么都不触发**（`origin/feat/i18n` 存在，但 0 次运行
+  正是「推功能分支不触发任何 workflow」的结果）。
+* 本地引用：`HEAD` 比 `origin/feat/i18n` **领先 308 个提交**（`git rev-list --left-right --count HEAD...origin/feat/i18n`
+  = `308 0`）⇒ 最近的工作都还没推。
+* 本机**不能推送**：沙箱无网络（`CODEX_SANDBOX_NETWORK_DISABLED=1`），`git ls-remote origin` 实测超时/失败。
+
+### 7.4 建议（附判据）
+
+1. **开 PR（首选）**：一次带起 7 个 required job + 平台矩阵；且 `cla.yml:46` 的
+   `path-to-document` 指向 `blob/feat/i18n/docs/policies/CLA.md` ⇒ 作者本就预期 PR 往 `feat/i18n` 走。
+   判据：PR 上出现 `blocking-ci` 的 `CI required` 结论。
+2. **不开 PR 也能拿全量 rust**：把分支名改成 `*-full-ci` 再推，或手动 dispatch `bazel.yml`/`rust-ci.yml`。
+   判据：Actions 里出现对应 run。**注意这仍拿不到 repo-checks 的三道 i18n 闸。**
+3. **i18n 三闸其实不依赖云**：它们就是本机的 `just fmt-check` / `just i18n-check` / `just i18n-smoke`
+   （本仓库已有回执，见 §一、§二）。真正 CI-only 的只有：**prettier / cargo-deny / bazel test 矩阵 /
+   macOS·Windows / sdk / blob-size checker**。
+4. **动作前置**：推 PR / dispatch 都需要**有网络的机器 + 仓库写权限**，本机沙箱做不到。

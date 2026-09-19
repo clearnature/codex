@@ -130,6 +130,9 @@ use crate::responses_metadata::subagent_header_value;
 use crate::util::emit_feedback_auth_recovery_tags;
 use codex_feedback::FeedbackRequestTags;
 use codex_feedback::emit_feedback_request_tags_with_auth_env;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::auth::AgentIdentityAuthPolicy;
 use codex_login::auth_env_telemetry::AuthEnvTelemetry;
 use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
@@ -1427,8 +1430,10 @@ impl ModelClientSession {
         }
 
         let client_setup = self.client.current_client_setup().await.map_err(|err| {
-            ApiError::Stream(format!(
-                "failed to build websocket prewarm client setup: {err}"
+            ApiError::Stream(tr_with(
+                current(),
+                "failed to build websocket prewarm client setup: {0}",
+                &[&err.to_string()],
             ))
         })?;
         let auth_context = AuthRequestTelemetryContext::new(
@@ -1527,7 +1532,7 @@ impl ModelClientSession {
             .connection
             .as_ref()
             .ok_or(ApiError::Stream(
-                "websocket connection is unavailable".to_string(),
+                tr(current(), "websocket connection is unavailable").to_string(),
             ))
     }
 
@@ -1889,7 +1894,7 @@ impl ModelClientSession {
             let websocket_connection =
                 self.websocket_session.connection.as_ref().ok_or_else(|| {
                     self.client.state.provider.map_api_error(ApiError::Stream(
-                        "websocket connection is unavailable".to_string(),
+                        tr(current(), "websocket connection is unavailable").to_string(),
                     ))
                 })?;
             let stream_result = websocket_connection

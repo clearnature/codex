@@ -7512,6 +7512,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "beforeTurnId '{0}' was not found in the source thread",
         "在源线程中找不到beforeTurnId '{0}'",
     ),
+    (
+        "failed to build websocket prewarm client setup: {0}",
+        "构建websocket预热客户端失败：{0}",
+    ),
+    ("websocket connection is unavailable", "websocket连接不可用"),
 ];
 
 /// English source text -> Simplified Chinese.

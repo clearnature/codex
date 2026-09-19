@@ -995,3 +995,20 @@ spawned agent is missing a canonical task name	codex-rs/core/src/tools/handlers/
 fork_context is not supported in MultiAgentV2; use fork_turns instead	codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs:294	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
 fork_turns must be `none`, `all`, or a positive integer string	codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs:314	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31） 〔fanout 补核〕两站点（:314 解析失败 / :319 取值校验）同为 RespondToModel ⇒ 模型面 [fanout-reviewed]
 timeout_ms must be greater than zero	codex-rs/core/src/tools/handlers/multi_agents/wait.rs:96	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+write_stdin handler received unsupported payload	codex-rs/core/src/tools/handlers/unified_exec/write_stdin.rs:76	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+write_stdin rejected: {reason}	codex-rs/core/src/tools/handlers/unified_exec/write_stdin.rs:105	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）（三条 match 分支的 message 统一交给 RespondToModel，write_stdin.rs:112）
+write_stdin approval failed: {err}	codex-rs/core/src/tools/handlers/unified_exec/write_stdin.rs:108	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+write_stdin failed: {err}	codex-rs/core/src/tools/handlers/unified_exec/write_stdin.rs:110	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+login shell is disabled by config; omit `login` or set it to false.	codex-rs/core/src/tools/handlers/unified_exec.rs:108	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）（`get_command` 的 `Result<_, String>` 在 exec_command.rs:295 被 `.map_err(FunctionCallError::RespondToModel)`）
+`shell` is not supported for local zsh-fork exec; omit `shell` to use zsh-fork, or target a remote environment where `shell` is supported.	codex-rs/core/src/tools/handlers/unified_exec.rs:130	同上：`get_command` 的 String 经 RespondToModel ⇒ 模型面
+A new context window will start without summarizing conversation history.	codex-rs/core/src/tools/handlers/new_context_window.rs:14	`NEW_CONTEXT_WINDOW_MESSAGE` 经 `FunctionToolOutput::from_text`（:41）⇒ 工具输出负载（§12.31）
+new_context handler received unsupported payload	codex-rs/core/src/tools/handlers/new_context_window.rs:34	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+Plan updated	codex-rs/core/src/tools/handlers/plan.rs:22	`PLAN_UPDATED_MESSAGE` 经 `FunctionCallOutputPayload::from_text`（:26/:34）⇒ 工具输出负载（§12.31）
+update_plan handler received unsupported payload	codex-rs/core/src/tools/handlers/plan.rs:82	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+update_plan is a TODO/checklist tool and is not allowed in Plan mode	codex-rs/core/src/tools/handlers/plan.rs:89	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+failed to parse function arguments: {e}	codex-rs/core/src/tools/handlers/plan.rs:110	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+Return the current time in UTC.	codex-rs/core/src/tools/handlers/current_time.rs:62	工具定义（`ToolSpec` description，进模型）⇒ §12.2
+mcp handler received unsupported payload	codex-rs/core/src/tools/handlers/mcp.rs:216	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+failed to serialize rewritten MCP arguments: {err}	codex-rs/core/src/tools/handlers/mcp.rs:432	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+tool {} does not support hook input rewriting for payload {payload:?}	codex-rs/core/src/tools/handlers/mcp.rs:438	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
+Tools for working with {connector_name}.	codex-rs/core/src/tools/handlers/mcp.rs:487	工具搜索源的 description（连接器工具索引元数据）⇒ §12.2/§12.7

@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **201** | 第 484 轮清 22 条（全登记：多智能体族）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **183** | 第 487 轮清 18 条（译 1：`Fatal`；登记 17）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1846,3 +1846,22 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 **流程改进（本批起用）**：写登记行时若已知该值有多个站点，**同一行就把 `[fanout-reviewed]` 与逐站点理由写上**，
 不要等 `--fanout` 事后提醒。本批 3 个多站点值里 1 个预先标好、2 个是事后补的 —— 后者多花了一轮。
 另记：**同一个值常对应多条物理登记行**（每站点一行），标记脚本按「值」匹配时命中数会是站点数，别按 1 行去断言。
+
+### 12.44 第 487 轮：`FunctionCallError::Fatal` 是用户可见（第 5 类「该译」的信号）
+
+`current_time.rs:101` 的 `failed to read current time: {err:#}` 包在 **`FunctionCallError::Fatal`** 里 ——
+按 §12.2/§12.11：`Fatal` 经 `tools/parallel.rs:85` 映射成 `CodexErr::Fatal`，**面向用户**；同族的
+`RespondToModel` 才是模型面。所以这一条**译**，而它周围 17 条（全 `RespondToModel` / 工具负载 / spec）**登记**。
+
+| 文件:行 | 判决 | 依据 |
+| --- | --- | --- |
+| `current_time.rs:101` | **译** | `FunctionCallError::Fatal` ⇒ `CodexErr::Fatal`（`tools/parallel.rs:85`）|
+| `unified_exec/write_stdin.rs:76`/`:105`/`:108`/`:110` | 登记（4）| 三条 match 分支的 message 统一交给 `FunctionCallError::RespondToModel`（`write_stdin.rs:112`）|
+| `unified_exec.rs:108`/`:130` | 登记（2）| `get_command(...) -> Result<_, String>`，调用点 `exec_command.rs:295` `.map_err(FunctionCallError::RespondToModel)` |
+| `new_context_window.rs:14` | 登记 | `NEW_CONTEXT_WINDOW_MESSAGE` 经 `FunctionToolOutput::from_text`（`:41`）⇒ 工具输出负载 |
+| `new_context_window.rs:34`、`plan.rs:82`/`:89`/`:110`、`mcp.rs:216`/`:432`/`:438` | 登记（7）| 全部 `RespondToModel` ⇒ 模型面 |
+| `plan.rs:22` | 登记 | `PLAN_UPDATED_MESSAGE` 经 `FunctionCallOutputPayload::from_text`（`:26`/`:34`）⇒ 工具输出负载 |
+| `current_time.rs:60`、`mcp.rs:487` | 登记（2）| 工具 spec 描述 / 工具搜索源 description ⇒ §12.2/§12.7 |
+
+**判据提醒**：`Fatal` vs `RespondToModel` 只差一个词，接收者却一个是用户、一个是模型 ——
+这是本仓最容易「一眼看错」的一对（同族还有 `ToolError::Rejected` vs `ToolError::Codex`）。

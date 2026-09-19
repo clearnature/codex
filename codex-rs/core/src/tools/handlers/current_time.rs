@@ -8,6 +8,8 @@ use crate::tools::context::ToolPayload;
 use crate::tools::context::boxed_tool_output;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::models::ResponseInputItem;
 use codex_tools::JsonSchema;
 use codex_tools::ResponsesApiNamespace;
@@ -98,7 +100,11 @@ impl ToolExecutor<ToolInvocation> for CurrentTimeHandler {
                 .current_time(invocation.session.thread_id)
                 .await
                 .map_err(|err| {
-                    FunctionCallError::Fatal(format!("failed to read current time: {err:#}"))
+                    FunctionCallError::Fatal(tr_with(
+                        current(),
+                        "failed to read current time: {0}",
+                        &[&format!("{err:#}")],
+                    ))
                 })?;
             Ok(boxed_tool_output(CurrentTimeOutput(
                 CurrentTimeReminder::new(current_time),

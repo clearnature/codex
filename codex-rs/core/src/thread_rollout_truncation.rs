@@ -9,6 +9,8 @@ use codex_app_server_protocol::TurnStatus;
 use codex_app_server_protocol::build_turns_from_rollout_items;
 use codex_history::InitialHistory;
 use codex_history::RolloutItem;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
 use codex_protocol::items::TurnItem;
@@ -170,8 +172,10 @@ pub fn truncate_rollout_after_turn_id(
         .iter()
         .find(|turn| turn.id == last_turn_id)
         .ok_or_else(|| {
-            CodexErr::InvalidRequest(format!(
-                "lastTurnId '{last_turn_id}' was not found in the source thread"
+            CodexErr::InvalidRequest(tr_with(
+                current(),
+                "lastTurnId '{0}' was not found in the source thread",
+                &[last_turn_id],
             ))
         })?;
 
@@ -185,14 +189,18 @@ pub fn truncate_rollout_after_turn_id(
             )
         })
         .ok_or_else(|| {
-            CodexErr::InvalidRequest(format!(
-                "lastTurnId '{last_turn_id}' is not a persisted canonical turn in the source thread"
+            CodexErr::InvalidRequest(tr_with(
+                current(),
+                "lastTurnId '{0}' is not a persisted canonical turn in the source thread",
+                &[last_turn_id],
             ))
         })?;
 
     if matches!(turn.status, TurnStatus::InProgress) {
-        return Err(CodexErr::InvalidRequest(format!(
-            "lastTurnId '{last_turn_id}' identifies an in-progress turn"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "lastTurnId '{0}' identifies an in-progress turn",
+            &[last_turn_id],
         )));
     }
 
@@ -227,13 +235,17 @@ pub fn truncate_rollout_before_turn_id(
             .iter()
             .any(|turn| turn.id == before_turn_id)
         {
-            return Err(CodexErr::InvalidRequest(format!(
-                "beforeTurnId '{before_turn_id}' is not a persisted canonical turn in the source thread"
+            return Err(CodexErr::InvalidRequest(tr_with(
+                current(),
+                "beforeTurnId '{0}' is not a persisted canonical turn in the source thread",
+                &[before_turn_id],
             )));
         }
 
-        return Err(CodexErr::InvalidRequest(format!(
-            "beforeTurnId '{before_turn_id}' was not found in the source thread"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "beforeTurnId '{0}' was not found in the source thread",
+            &[before_turn_id],
         )));
     };
 
@@ -245,8 +257,10 @@ pub fn truncate_rollout_before_turn_id(
             .iter()
             .any(|turn| turn.id == before_turn_id)
     {
-        return Err(CodexErr::InvalidRequest(format!(
-            "beforeTurnId '{before_turn_id}' was not found in the source thread"
+        return Err(CodexErr::InvalidRequest(tr_with(
+            current(),
+            "beforeTurnId '{0}' was not found in the source thread",
+            &[before_turn_id],
         )));
     }
 

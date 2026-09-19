@@ -1,6 +1,9 @@
 use super::handlers;
 use super::session::Session;
 use crate::state::TaskKind;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CodexResult;
 use codex_protocol::protocol::Event;
@@ -38,11 +41,15 @@ pub(super) async fn suspend_turn_and_shutdown(
     }
 
     let live_thread = session
-        .live_thread_for_persistence("suspend an unfinished root turn")
+        .live_thread_for_persistence(tr(current(), "suspend an unfinished root turn"))
         .map_err(|error| CodexErr::Fatal(error.to_string()))?;
     // Flush before canceling execution so a persistence failure leaves the original turn running.
     live_thread.flush().await.map_err(|error| {
-        CodexErr::Fatal(format!("flush before root turn suspension failed: {error}"))
+        CodexErr::Fatal(tr_with(
+            current(),
+            "flush before root turn suspension failed: {0}",
+            &[&error.to_string()],
+        ))
     })?;
 
     // The flush can yield while the active turn completes or changes. Recheck its
@@ -59,12 +66,24 @@ pub(super) async fn suspend_turn_and_shutdown(
             return Ok(SuspendTurnOutcome::UnsupportedTask);
         }
         active.take().ok_or_else(|| {
-            CodexErr::Fatal("accepted root turn suspension had no running turn".to_string())
+            CodexErr::Fatal(
+                tr(
+                    current(),
+                    "accepted root turn suspension had no running turn",
+                )
+                .to_string(),
+            )
         })?
     };
 
     let task = turn.task.take().ok_or_else(|| {
-        CodexErr::Fatal("accepted root turn suspension had no running task".to_string())
+        CodexErr::Fatal(
+            tr(
+                current(),
+                "accepted root turn suspension had no running task",
+            )
+            .to_string(),
+        )
     })?;
     let turn_id = task.turn_context.sub_id.clone();
     // Normal shutdown records a terminal turn event, preventing another worker from
@@ -102,10 +121,18 @@ pub(super) async fn suspend_turn_and_shutdown(
     // retains ownership until worker-failure recovery can take responsibility.
     handlers::shutdown_session_runtime(session).await;
     live_thread.flush().await.map_err(|error| {
-        CodexErr::Fatal(format!("flush after root turn suspension failed: {error}"))
+        CodexErr::Fatal(tr_with(
+            current(),
+            "flush after root turn suspension failed: {0}",
+            &[&error.to_string()],
+        ))
     })?;
     live_thread.shutdown().await.map_err(|error| {
-        CodexErr::Fatal(format!("close suspended root turn writer failed: {error}"))
+        CodexErr::Fatal(tr_with(
+            current(),
+            "close suspended root turn writer failed: {0}",
+            &[&error.to_string()],
+        ))
     })?;
     // Announce thread shutdown only after its writer closes so a replacement worker
     // cannot write the same thread concurrently.

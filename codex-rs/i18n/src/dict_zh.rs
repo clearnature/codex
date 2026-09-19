@@ -7471,6 +7471,47 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "tool {0} invoked with incompatible payload",
         "工具{0}的调用负载类型不匹配",
     ),
+    ("suspend an unfinished root turn", "暂停未完成的根回合"),
+    (
+        "flush before root turn suspension failed: {0}",
+        "根回合挂起前刷写失败：{0}",
+    ),
+    (
+        "accepted root turn suspension had no running turn",
+        "已接受的根回合挂起没有正在运行的回合",
+    ),
+    (
+        "accepted root turn suspension had no running task",
+        "已接受的根回合挂起没有正在运行的任务",
+    ),
+    (
+        "flush after root turn suspension failed: {0}",
+        "根回合挂起后刷写失败：{0}",
+    ),
+    (
+        "close suspended root turn writer failed: {0}",
+        "关闭已挂起根回合的写入器失败：{0}",
+    ),
+    (
+        "lastTurnId '{0}' was not found in the source thread",
+        "在源线程中找不到lastTurnId '{0}'",
+    ),
+    (
+        "lastTurnId '{0}' is not a persisted canonical turn in the source thread",
+        "lastTurnId '{0}'不是源线程中已持久化的规范回合",
+    ),
+    (
+        "lastTurnId '{0}' identifies an in-progress turn",
+        "lastTurnId '{0}'指向一个进行中的回合",
+    ),
+    (
+        "beforeTurnId '{0}' is not a persisted canonical turn in the source thread",
+        "beforeTurnId '{0}'不是源线程中已持久化的规范回合",
+    ),
+    (
+        "beforeTurnId '{0}' was not found in the source thread",
+        "在源线程中找不到beforeTurnId '{0}'",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

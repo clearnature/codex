@@ -35,13 +35,13 @@
 
 ## 实测依赖关系
 
-| crate | 依赖的 workspace crate 数 | 直接依赖 `core` | 角色 |
-| --- | ---: | :---: | --- |
-| `cli` | 48 | ✅ | 聚合入口，同时依赖 `tui`、`exec`、`app-server` |
-| `tui` | 49 | **❌** | 经 `app-server-client` / `app-server-protocol` 通信 |
-| `exec` | 22 | ✅ | 非交互模式，直接构建 core |
-| `app-server` | 60 | ✅ | 外部客户端协议服务端 |
-| `core` | 73 | — | 依赖面最广，是事实上的中枢 |
+| crate        | 依赖的 workspace crate 数 | 直接依赖 `core` | 角色                                                |
+| ------------ | ------------------------: | :-------------: | --------------------------------------------------- |
+| `cli`        |                        48 |       ✅        | 聚合入口，同时依赖 `tui`、`exec`、`app-server`      |
+| `tui`        |                        49 |     **❌**      | 经 `app-server-client` / `app-server-protocol` 通信 |
+| `exec`       |                        22 |       ✅        | 非交互模式，直接构建 core                           |
+| `app-server` |                        60 |       ✅        | 外部客户端协议服务端                                |
+| `core`       |                        73 |        —        | 依赖面最广，是事实上的中枢                          |
 
 ### 最重要的一条：TUI 与 core 是客户端-服务端关系
 
@@ -62,17 +62,17 @@
 GitNexus 从调用图中提取了 **300 条执行流**（`Process` 节点，通过 `STEP_IN_PROCESS`
 边串联，共 1,554 步）。按步数排序的代表性流程：
 
-| 流程 | 类型 | 步数 |
-| --- | --- | ---: |
-| `Start_inner → JSONRPCErrorError` | cross_community | 10 |
-| `Run_main → As_path` | cross_community | 9 |
-| `Run_main → All_layers_low_to_high` | cross_community | 9 |
-| `Handle_key_event → New` | cross_community | 9 |
-| `Run_turn → Auth_cached` | cross_community | 9 |
-| `Handle_history_search_key → Text` | cross_community | 8 |
-| `Spawn_windows_sandbox_session_elevated_for_permission_profile → Native` | cross_community | 8 |
-| `Multi_agent_v2_interrupt_agent_accepts_task_name_target → Verify_layer_ordering` | cross_community | 8 |
-| `Apply_bespoke_event_handling → PendingTurnStartState` | cross_community | 7 |
+| 流程                                                                              | 类型            | 步数 |
+| --------------------------------------------------------------------------------- | --------------- | ---: |
+| `Start_inner → JSONRPCErrorError`                                                 | cross_community |   10 |
+| `Run_main → As_path`                                                              | cross_community |    9 |
+| `Run_main → All_layers_low_to_high`                                               | cross_community |    9 |
+| `Handle_key_event → New`                                                          | cross_community |    9 |
+| `Run_turn → Auth_cached`                                                          | cross_community |    9 |
+| `Handle_history_search_key → Text`                                                | cross_community |    8 |
+| `Spawn_windows_sandbox_session_elevated_for_permission_profile → Native`          | cross_community |    8 |
+| `Multi_agent_v2_interrupt_agent_accepts_task_name_target → Verify_layer_ordering` | cross_community |    8 |
+| `Apply_bespoke_event_handling → PendingTurnStartState`                            | cross_community |    7 |
 
 从命名可读出的骨架：
 
@@ -87,14 +87,14 @@ GitNexus 从调用图中提取了 **300 条执行流**（`Process` 节点，通�
 
 ## 调用图规模
 
-| 关系 | 数量 | 含义 |
-| --- | ---: | --- |
-| `CALLS` | 109,590 | 函数调用 |
-| `ACCESSES` | 70,245 | 符号访问 |
-| `DEFINES` | 54,055 | 定义关系 |
-| `MEMBER_OF` | 32,510 | 成员归属 |
-| `CONTAINS` | 7,424 | 结构包含 |
-| `IMPORTS` | 6,898 | 模块导入 |
+| 关系                                           |             数量 | 含义       |
+| ---------------------------------------------- | ---------------: | ---------- |
+| `CALLS`                                        |          109,590 | 函数调用   |
+| `ACCESSES`                                     |           70,245 | 符号访问   |
+| `DEFINES`                                      |           54,055 | 定义关系   |
+| `MEMBER_OF`                                    |           32,510 | 成员归属   |
+| `CONTAINS`                                     |            7,424 | 结构包含   |
+| `IMPORTS`                                      |            6,898 | 模块导入   |
 | `IMPLEMENTS` / `METHOD_IMPLEMENTS` / `EXTENDS` | 876 / 2,075 / 12 | 继承与实现 |
 
 节点以函数为主（`Function` 50,611，占 46.7%），其次属性与结构体——

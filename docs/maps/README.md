@@ -7,25 +7,25 @@
 
 ## 本目录内容
 
-| 文件 | 内容 | 主要依据 |
-| --- | --- | --- |
-| [project-map.md](./project-map.md) | 仓库布局、workspace 成员分区、文件规模 | 目录结构 + GitNexus 知识图谱 |
-| [architecture.md](./architecture.md) | 分层架构、依赖方向、关键执行流 | 各 crate 的 `Cargo.toml` 实测依赖 + 图谱 |
-| [tech-stack.md](./tech-stack.md) | 语言、构建系统、工具链、关键依赖 | 仓库配置 + 本机实测 |
-| [references.md](./references.md) | 关键文件索引、命令速查、外部资料、i18n 落点 | 实测可用性 |
-| [gitnexus.md](./gitnexus.md) | **GitNexus 使用说明**：调用方式、图谱 schema、查询范式与已知坑 | 本机实测 |
+| 文件                                 | 内容                                                           | 主要依据                                 |
+| ------------------------------------ | -------------------------------------------------------------- | ---------------------------------------- |
+| [project-map.md](./project-map.md)   | 仓库布局、workspace 成员分区、文件规模                         | 目录结构 + GitNexus 知识图谱             |
+| [architecture.md](./architecture.md) | 分层架构、依赖方向、关键执行流                                 | 各 crate 的 `Cargo.toml` 实测依赖 + 图谱 |
+| [tech-stack.md](./tech-stack.md)     | 语言、构建系统、工具链、关键依赖                               | 仓库配置 + 本机实测                      |
+| [references.md](./references.md)     | 关键文件索引、命令速查、外部资料、i18n 落点                    | 实测可用性                               |
+| [gitnexus.md](./gitnexus.md)         | **GitNexus 使用说明**：调用方式、图谱 schema、查询范式与已知坑 | 本机实测                                 |
 
 ## 基线
 
 本目录描述的是 `feat/i18n` 分支上的 **`rust-v0.154.0`** 代码：
 
-| 项 | 值 |
-| --- | --- |
-| 分支 | `feat/i18n` |
-| 基线 commit | `6b9826e3aa83b1a5947db50f4332cb9c65f1b340` |
+| 项           | 值                                                |
+| ------------ | ------------------------------------------------- |
+| 分支         | `feat/i18n`                                       |
+| 基线 commit  | `6b9826e3aa83b1a5947db50f4332cb9c65f1b340`        |
 | 对应上游 tag | `rust-v0.154.0`（北京时间 2026-09-10 06:35 发布） |
-| fork 远端 | `clearnature/codex` |
-| upstream | `openai/codex` |
+| fork 远端    | `clearnature/codex`                               |
+| upstream     | `openai/codex`                                    |
 
 > **分支约定**：`main` 用于镜像上游 `openai/codex`，开发发生在 `feat/i18n`。
 > 本文档描述的内容若与 `main` 不一致，以 `feat/i18n` 为准。
@@ -40,34 +40,34 @@ TypeScript 用于**代码生成**的协议绑定，Python 提供独立的 SDK。
 
 索引时间：北京时间 2026-09-15 06:59 · 索引提交 `85f4d67` · 耗时 493.1s
 
-| 指标 | 数值 |
-| --- | --- |
-| 节点 | 108,320 |
-| 边 | 312,008 |
-| 聚类 | 4,777 |
-| 执行流 | 300 |
+| 指标   | 数值    |
+| ------ | ------- |
+| 节点   | 108,320 |
+| 边     | 312,008 |
+| 聚类   | 4,777   |
+| 执行流 | 300     |
 
 **节点构成**（前 10 类）：
 
-| 标签 | 数量 | | 标签 | 数量 |
-| --- | ---: | --- | --- | ---: |
-| `Function` | 50,611 | | `Community` | 4,399 |
-| `Property` | 24,696 | | `Module` | 4,089 |
-| `Struct` | 6,048 | | `Impl` | 2,549 |
-| `File` | 5,968 | | `Enum` | 1,948 |
-| `Const` | 4,436 | | `Process` | 300 |
+| 标签       |   数量 |     | 标签        |  数量 |
+| ---------- | -----: | --- | ----------- | ----: |
+| `Function` | 50,611 |     | `Community` | 4,399 |
+| `Property` | 24,696 |     | `Module`    | 4,089 |
+| `Struct`   |  6,048 |     | `Impl`      | 2,549 |
+| `File`     |  5,968 |     | `Enum`      | 1,948 |
+| `Const`    |  4,436 |     | `Process`   |   300 |
 
 **边构成**（全部关系类型）：
 
-| 类型 | 数量 | 类型 | 数量 |
-| --- | ---: | --- | ---: |
-| `CALLS` | 109,590 | `HAS_METHOD` | 3,793 |
-| `ACCESSES` | 70,245 | `METHOD_IMPLEMENTS` | 2,075 |
-| `DEFINES` | 54,055 | `STEP_IN_PROCESS` | 1,554 |
-| `MEMBER_OF` | 32,510 | `IMPLEMENTS` | 876 |
-| `HAS_PROPERTY` | 22,598 | `USES` | 378 |
-| `CONTAINS` | 7,424 | `EXTENDS` | 12 |
-| `IMPORTS` | 6,898 | | |
+| 类型           |    数量 | 类型                |  数量 |
+| -------------- | ------: | ------------------- | ----: |
+| `CALLS`        | 109,590 | `HAS_METHOD`        | 3,793 |
+| `ACCESSES`     |  70,245 | `METHOD_IMPLEMENTS` | 2,075 |
+| `DEFINES`      |  54,055 | `STEP_IN_PROCESS`   | 1,554 |
+| `MEMBER_OF`    |  32,510 | `IMPLEMENTS`        |   876 |
+| `HAS_PROPERTY` |  22,598 | `USES`              |   378 |
+| `CONTAINS`     |   7,424 | `EXTENDS`           |    12 |
+| `IMPORTS`      |   6,898 |                     |       |
 
 ## 复现方式
 

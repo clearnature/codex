@@ -18,11 +18,11 @@
 
 ## 2. 三个哈希
 
-| 字段 | 含义 |
-| --- | --- |
-| `pass_hash` | 通过的测试名（排序后）的 sha1 |
-| `fail` / `fail_hash` | **失败集**：失败测试名（排序后）与它的 sha1 |
-| `state_hash` | `sha1(command + pass_hash + fail_hash)` —— 「**这个 scope 在这个状态**」的身份 |
+| 字段                 | 含义                                                                           |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `pass_hash`          | 通过的测试名（排序后）的 sha1                                                  |
+| `fail` / `fail_hash` | **失败集**：失败测试名（排序后）与它的 sha1                                    |
+| `state_hash`         | `sha1(command + pass_hash + fail_hash)` —— 「**这个 scope 在这个状态**」的身份 |
 
 **报告里引用哈希，而不是转述"测试是绿的"**。例如：`core-session` 的
 `state_hash=b28e4bd9cdd1…` 就精确表示「`cargo test -p codex-core --lib session` 下
@@ -32,13 +32,13 @@
 
 `--check` **只把一件事当回归**：某个测试现在失败，而它既不在记录的失败集里，也没有被声明为 `flaky`。
 
-| 观察 | 处置 | 是否红 |
-| --- | --- | --- |
-| 失败集与记录逐名相同、`pass_hash` 相同 | 打印 `identical success set and failure set` | 否 |
-| 记录的失败现在通过了 | 提示 `was failing, now passing (re-record with --update)` | 否 |
-| 通过集变了（新增/删除测试） | 打印计数变化与新 `pass_hash` | 否 |
-| 出现**未记录**的失败 | `NEW FAILURES: …` | **是（exit 1）** |
-| 失败在 `flaky` 名单里 | `known flaky, tolerated: <名字> -- <说明>` | 否 |
+| 观察                                   | 处置                                                      | 是否红           |
+| -------------------------------------- | --------------------------------------------------------- | ---------------- |
+| 失败集与记录逐名相同、`pass_hash` 相同 | 打印 `identical success set and failure set`              | 否               |
+| 记录的失败现在通过了                   | 提示 `was failing, now passing (re-record with --update)` | 否               |
+| 通过集变了（新增/删除测试）            | 打印计数变化与新 `pass_hash`                              | 否               |
+| 出现**未记录**的失败                   | `NEW FAILURES: …`                                         | **是（exit 1）** |
+| 失败在 `flaky` 名单里                  | `known flaky, tolerated: <名字> -- <说明>`                | 否               |
 
 **`flaky` 不是"忽略名单"，是"需要证据的声明"**：声明时必须写 `flaky_notes`（观测次数、
 红/绿分布、单独运行结果、为什么不归因本次改动），并且**不得**用它掩盖集合稳定的失败
@@ -54,25 +54,25 @@
    （或在提交前 `git stash`），**在同一条命令、同一过滤范围**上重跑，比较失败集合的**名字**：
    - 名字逐字相同 ⇒ 与本次改动无关（预先存在）；把它记录进基线，别算进本批；
    - 出现新名字 ⇒ 是自己的改动，去修。
-   ⚠ 只跑失败的那一条会得出相反结论（顺序相关失败单独跑会通过）。
+     ⚠ 只跑失败的那一条会得出相反结论（顺序相关失败单独跑会通过）。
 4. **重录基线**：`--update`（只在"失败集变化已被解释"之后做；`--update` 会覆盖记录）。
 5. **不要**"重试到绿"。同一命令两次失败集合不同 ⇒ 记为 flaky 并声明（第 3 节），
    或者如实标注"未验证"。
 
 ## 5. 现有 scope
 
-| scope | 命令（`cwd=codex-rs`） |
-| --- | --- |
-| `core-session` | `cargo test -p codex-core --lib session` |
-| `core-unified-exec` | `… --lib unified_exec` |
-| `core-stdin-approval` | `… --lib stdin_approval` |
-| `core-guardian` | `… --lib guardian` |
-| `core-approvals` | `… --lib approvals` |
-| `core-thread-manager` | `… --lib thread_manager` |
-| `core-tools-handlers` | `… --lib handlers` |
-| `core-exec` | `… --lib exec` |
-| `core-code-mode` | `… --lib code_mode` |
-| `tui-lib` | `cargo test -p codex-tui --lib -- --skip ide_context::ipc`（877 快照 + 全 lib 测试；约 60s） |
+| scope                 | 命令（`cwd=codex-rs`）                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `core-session`        | `cargo test -p codex-core --lib session`                                                     |
+| `core-unified-exec`   | `… --lib unified_exec`                                                                       |
+| `core-stdin-approval` | `… --lib stdin_approval`                                                                     |
+| `core-guardian`       | `… --lib guardian`                                                                           |
+| `core-approvals`      | `… --lib approvals`                                                                          |
+| `core-thread-manager` | `… --lib thread_manager`                                                                     |
+| `core-tools-handlers` | `… --lib handlers`                                                                           |
+| `core-exec`           | `… --lib exec`                                                                               |
+| `core-code-mode`      | `… --lib code_mode`                                                                          |
+| `tui-lib`             | `cargo test -p codex-tui --lib -- --skip ide_context::ipc`（877 快照 + 全 lib 测试；约 60s） |
 
 全部带 `RUST_MIN_STACK=16777216`（默认 2 MiB 线程栈会让部分测试 SIGABRT）。
 加 scope 就在 `SCOPES` 表里加一行；可选 `skip` 字段会追加成 `-- --skip <名字>`（`tui-lib` 用它排掉
@@ -89,15 +89,15 @@
   （4 次同过滤观测：1 次 7/1、3 次 8/0；单独运行 2 次均通过；耗时约 6s ⇒ 时序相关）。
 - `tui-lib` 的失败集**不稳定**：同一命令同一二进制**七次**观测得到七种组合 ——
 
-  | # | 结果 | 失败集合 |
-  | --- | --- | --- |
-  | 1 | 4285P/2F | `agents_overview_acknowledges_inactive_steer_before_interrupt`、`cached_legacy_resume_revalidates_history_across_migration_settings` |
-  | 2 | 4285P/2F | `agents_overview…`、`startup_draft_preserves_non_bracketed_multiline_pastes_without_submitting`（门禁回执 `r-mu7g6yu2-9s9yb6`） |
-  | 3 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`startup_draft_…` |
-  | 4 | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`background_exit_tests::exit_interrupts_before_requesting_shutdown`（回执 `r-mu7gb1vo-a7j2s3`） |
-  | 5 | 4286P/1F | 只有 `agents_overview…` |
-  | 6 | 4284P/3F | 同 #4（另有 1 条未解析，见 §8.5） |
-  | 7 | 4285P/2F | `background_exit_tests::exit_interrupts…`、`safety_buffering::active_turn_interrupt_is_nonblocking_and_coalesces_repeated_requests`、`cached_legacy_resume…`（第 5 条名字首次出现） |
+  | #   | 结果     | 失败集合                                                                                                                                                                            |
+  | --- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | 1   | 4285P/2F | `agents_overview_acknowledges_inactive_steer_before_interrupt`、`cached_legacy_resume_revalidates_history_across_migration_settings`                                                |
+  | 2   | 4285P/2F | `agents_overview…`、`startup_draft_preserves_non_bracketed_multiline_pastes_without_submitting`（门禁回执 `r-mu7g6yu2-9s9yb6`）                                                     |
+  | 3   | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`startup_draft_…`                                                                                                                      |
+  | 4   | 4284P/3F | `agents_overview…`、`cached_legacy_resume…`、`background_exit_tests::exit_interrupts_before_requesting_shutdown`（回执 `r-mu7gb1vo-a7j2s3`）                                        |
+  | 5   | 4286P/1F | 只有 `agents_overview…`                                                                                                                                                             |
+  | 6   | 4284P/3F | 同 #4（另有 1 条未解析，见 §8.5）                                                                                                                                                   |
+  | 7   | 4285P/2F | `background_exit_tests::exit_interrupts…`、`safety_buffering::active_turn_interrupt_is_nonblocking_and_coalesces_repeated_requests`、`cached_legacy_resume…`（第 5 条名字首次出现） |
 
   因此该 scope 的 `fail` 集记为**空**，五条名字都进 `flaky` 并各带 `flaky_notes`：
   五条全部做过 `--exact` 单独复跑，各 3/3 通过（回执 `r-mu7g7zxc-hcn57x`、`r-mu7gtx5c-8gi9yi`）
@@ -105,6 +105,7 @@
   是这批里最稳定的「不稳定项」。
   **判据**：失败集合是否稳定，而不是「有没有失败」——同一命令两次失败集合不同即判 flaky，
   处置是**如实标注**，不是重试到绿、更不是改快照或 `#[ignore]`。
+
 - 该 scope 的声明是**承重的**：删掉四条（当时）声明后 `--check` 报
   `NEW FAILURES: agents_overview…` 且 exit 1（负向控制回执 `r-mu7gwyhv-kg7qp1`）。
   ⚠ 这个控制是**第三次**才有效的 —— 前两次「无效」各自暴露了一个真问题，见 §8.5。
@@ -190,11 +191,11 @@ cmd 2>&1 | grep …; rc=${PIPESTATUS[0]}; exit $rc      # 或者 bash: set -o pi
 
 **实测（双向控制，决定性）**：
 
-| 环境 | 命令 | 结果 |
-| --- | --- | --- |
+| 环境                           | 命令                                                         | 结果                                      |
+| ------------------------------ | ------------------------------------------------------------ | ----------------------------------------- |
 | `LANG=zh_CN.UTF-8`（本机默认） | `just test -p codex-cli -E 'test(queue_) \| test(worktree)'` | exit 100：9 run / 4 passed / **5 failed** |
-| `LANG=C LC_ALL=C` | 同上 | **exit 0：9 passed** |
-| 本机默认 | `just test -p codex-cli` | 414 run / 409 passed / 5 failed |
+| `LANG=C LC_ALL=C`              | 同上                                                         | **exit 0：9 passed**                      |
+| 本机默认                       | `just test -p codex-cli`                                     | 414 run / 409 passed / 5 failed           |
 
 失败名单：`queue_rejects_local_daemon_that_does_not_support_queueing`、
 `queue_does_not_fallback_from_unsupported_explicit_remote`、`queue_submits_message_to_remote_app_server`、

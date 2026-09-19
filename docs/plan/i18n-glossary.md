@@ -11,30 +11,30 @@
 
 因此 qwen 的用法是：
 
-| 用途 | 说明 |
-| --- | --- |
-| **术语与语气参考** | 拿不准某个词怎么译时，先看 qwen 用哪个词（本文件的术语表就是这么做出来的） |
-| **规范参考** | `mustTranslateKeys.ts`（高可见度 key 强制清单）、`check-i18n.ts`（缺失/失效/覆盖率/一致性检查）、`strictParity`（渐进式对齐）——对应我们已经实现的 `codex-i18n-check` 与后续可加的强制清单 |
-| **不是** | ❌ 翻译记忆：不能指望从 qwen 直接抄到 codex 的译文（重合率 1%） |
+| 用途               | 说明                                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **术语与语气参考** | 拿不准某个词怎么译时，先看 qwen 用哪个词（本文件的术语表就是这么做出来的）                                                                                                                |
+| **规范参考**       | `mustTranslateKeys.ts`（高可见度 key 强制清单）、`check-i18n.ts`（缺失/失效/覆盖率/一致性检查）、`strictParity`（渐进式对齐）——对应我们已经实现的 `codex-i18n-check` 与后续可加的强制清单 |
+| **不是**           | ❌ 翻译记忆：不能指望从 qwen 直接抄到 codex 的译文（重合率 1%）                                                                                                                           |
 
 ⚠ 我们与 qwen 的**占位符约定不同**：我们用位置占位 `{0}`/`{1}`（`tr_with`），qwen 用 `{{name}}`。抄词可以，抄整句必须换占位符。
 
 ## 二、术语表（agent 写新条目时以此为准）
 
-| 英文 | 本库采用 | qwen 用法 | 说明 |
-| --- | --- | --- | --- |
-| marketplace | **市场源** | 市场源 | 2026-09-17 对齐：一个插件来源（git 仓库 / 本地路径），译「市场源」比「市场」更准确 |
-| worktree | 工作树 | — | Git 术语；`managed worktree` 统一作「受管工作树」 |
-| thread | 线程 | 会话/线程 | 与 `session`（会话）区分：thread＝线程，session＝会话 |
-| agent / subagent | 代理 / 子代理 | — | |
-| turn | 回合 | — | |
-| tool call | 工具调用 | — | |
-| permission profile | 权限配置 | — | 「profile」在此语境不是「配置文件」；`profile`（配置档）另见 `--profile` |
-| sandbox mode | 沙箱模式 | — | `Full Access mode`/`Agent mode`/`Read-Only mode` 作「完全访问模式 / 代理模式 / 只读模式」 |
-| Plan mode | 计划模式 | — | 模式名，统一 |
-| reasoning effort | 推理强度 | — | |
-| context window | 上下文窗口 | — | |
-| MCP / IDE / Git / token / URL | **不译** | 同 | 产品名与协议名保持原文 |
+| 英文                          | 本库采用      | qwen 用法 | 说明                                                                                      |
+| ----------------------------- | ------------- | --------- | ----------------------------------------------------------------------------------------- |
+| marketplace                   | **市场源**    | 市场源    | 2026-09-17 对齐：一个插件来源（git 仓库 / 本地路径），译「市场源」比「市场」更准确        |
+| worktree                      | 工作树        | —         | Git 术语；`managed worktree` 统一作「受管工作树」                                         |
+| thread                        | 线程          | 会话/线程 | 与 `session`（会话）区分：thread＝线程，session＝会话                                     |
+| agent / subagent              | 代理 / 子代理 | —         |                                                                                           |
+| turn                          | 回合          | —         |                                                                                           |
+| tool call                     | 工具调用      | —         |                                                                                           |
+| permission profile            | 权限配置      | —         | 「profile」在此语境不是「配置文件」；`profile`（配置档）另见 `--profile`                  |
+| sandbox mode                  | 沙箱模式      | —         | `Full Access mode`/`Agent mode`/`Read-Only mode` 作「完全访问模式 / 代理模式 / 只读模式」 |
+| Plan mode                     | 计划模式      | —         | 模式名，统一                                                                              |
+| reasoning effort              | 推理强度      | —         |                                                                                           |
+| context window                | 上下文窗口    | —         |                                                                                           |
+| MCP / IDE / Git / token / URL | **不译**      | 同        | 产品名与协议名保持原文                                                                    |
 
 **不译清单**：产品名（Codex、OpenAI、Fast、Plan…除模式名外）、命令与键位（`/goal`、`/keymap`、`ctrl + c`、`Enter`）、配置键（`config.toml`、`features.multi_agent_v2.…`）、内部 id、以及**喂给模型的提示词资产**（设计 §4 决策 3）。
 

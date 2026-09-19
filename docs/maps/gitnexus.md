@@ -21,14 +21,14 @@ node $GX doctor        # 环境诊断
 
 `doctor` 在本机的输出（用于确认环境可用）：
 
-| 项 | 状态 |
-| --- | --- |
-| 图存储 | available |
-| 全文搜索 | available |
-| 向量索引 | available |
-| native 模块 | `lbugjs.node` 已加载 |
-| ONNX | 1.25.1 |
-| 嵌入后端 | local（设备 auto、4 线程） |
+| 项          | 状态                       |
+| ----------- | -------------------------- |
+| 图存储      | available                  |
+| 全文搜索    | available                  |
+| 向量索引    | available                  |
+| native 模块 | `lbugjs.node` 已加载       |
+| ONNX        | 1.25.1                     |
+| 嵌入后端    | local（设备 auto、4 线程） |
 
 ## 二、索引本仓库
 
@@ -48,15 +48,15 @@ node $GX analyze /data/training/cli/codex --index-only --name codex-i18n
 
 ### 常用参数
 
-| 参数 | 作用 |
-| --- | --- |
-| `-f, --force` | 即使已是最新也强制重建 |
-| `--index-only` | 纯索引，跳过所有文件注入 |
-| `--name <alias>` | 注册自定义别名（本仓库用了 `codex-i18n`） |
-| `--workers <n>` | 解析并发数（默认 `cores-1`，上限 16） |
-| `--max-file-size <kb>` | 跳过超大文件（默认 512，硬上限 32768） |
-| `--embeddings [limit]` | 生成向量嵌入（**默认关闭**，更慢） |
-| `--skip-git` | 把给定路径当作索引根，不向上查找 git 根 |
+| 参数                   | 作用                                      |
+| ---------------------- | ----------------------------------------- |
+| `-f, --force`          | 即使已是最新也强制重建                    |
+| `--index-only`         | 纯索引，跳过所有文件注入                  |
+| `--name <alias>`       | 注册自定义别名（本仓库用了 `codex-i18n`） |
+| `--workers <n>`        | 解析并发数（默认 `cores-1`，上限 16）     |
+| `--max-file-size <kb>` | 跳过超大文件（默认 512，硬上限 32768）    |
+| `--embeddings [limit]` | 生成向量嵌入（**默认关闭**，更慢）        |
+| `--skip-git`           | 把给定路径当作索引根，不向上查找 git 根   |
 
 ## 三、图谱 schema
 
@@ -64,13 +64,13 @@ node $GX analyze /data/training/cli/codex --index-only --name codex-i18n
 
 ### 节点标签
 
-| 标签 | 数量 | 标签 | 数量 |
-| --- | ---: | --- | ---: |
+| 标签       |   数量 | 标签        |  数量 |
+| ---------- | -----: | ----------- | ----: |
 | `Function` | 50,611 | `Community` | 4,399 |
-| `Property` | 24,696 | `Module` | 4,089 |
-| `Struct` | 6,048 | `Impl` | 2,549 |
-| `File` | 5,968 | `Enum` | 1,948 |
-| `Const` | 4,436 | `Process` | 300 |
+| `Property` | 24,696 | `Module`    | 4,089 |
+| `Struct`   |  6,048 | `Impl`      | 2,549 |
+| `File`     |  5,968 | `Enum`      | 1,948 |
+| `Const`    |  4,436 | `Process`   |   300 |
 
 其余：`Section` 788、`Folder` 692、`Variable` 524、`TypeAlias` 411、`Method` 399、
 `Static` 151、`Trait` 145、`Class` 118、`Macro` 48。
@@ -79,35 +79,35 @@ node $GX analyze /data/training/cli/codex --index-only --name codex-i18n
 
 **所有边都是 `CodeRelation`**（312,008 条）。区分语义要靠 `r.type` 属性：
 
-| `r.type` | 数量 | | `r.type` | 数量 |
-| --- | ---: | --- | --- | ---: |
-| `CALLS` | 109,590 | | `HAS_METHOD` | 3,793 |
-| `ACCESSES` | 70,245 | | `METHOD_IMPLEMENTS` | 2,075 |
-| `DEFINES` | 54,055 | | `STEP_IN_PROCESS` | 1,554 |
-| `MEMBER_OF` | 32,510 | | `IMPLEMENTS` | 876 |
-| `HAS_PROPERTY` | 22,598 | | `USES` | 378 |
-| `CONTAINS` | 7,424 | | `EXTENDS` | 12 |
-| `IMPORTS` | 6,898 | | | |
+| `r.type`       |    数量 |     | `r.type`            |  数量 |
+| -------------- | ------: | --- | ------------------- | ----: |
+| `CALLS`        | 109,590 |     | `HAS_METHOD`        | 3,793 |
+| `ACCESSES`     |  70,245 |     | `METHOD_IMPLEMENTS` | 2,075 |
+| `DEFINES`      |  54,055 |     | `STEP_IN_PROCESS`   | 1,554 |
+| `MEMBER_OF`    |  32,510 |     | `IMPLEMENTS`        |   876 |
+| `HAS_PROPERTY` |  22,598 |     | `USES`              |   378 |
+| `CONTAINS`     |   7,424 |     | `EXTENDS`           |    12 |
+| `IMPORTS`      |   6,898 |     |                     |       |
 
 边的属性：`type`、`confidence`、`reason`、`step`。
 
 ### 关键节点类型的属性
 
-| 标签 | 属性 |
-| --- | --- |
-| `Process` | `id`、`label`、`heuristicLabel`、`processType`、`stepCount`、`communities`、`entryPointId`、`terminalId` |
-| `Community` | `id`、`label`、`heuristicLabel`、`keywords`、`description`、`enrichedBy`、`cohesion`、`symbolCount` |
+| 标签        | 属性                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| `Process`   | `id`、`label`、`heuristicLabel`、`processType`、`stepCount`、`communities`、`entryPointId`、`terminalId` |
+| `Community` | `id`、`label`、`heuristicLabel`、`keywords`、`description`、`enrichedBy`、`cohesion`、`symbolCount`      |
 
 ## 四、Cypher 方言的两个坑
 
 LadybugDB 的 Cypher 与 Neo4j **不完全兼容**，实测踩到两处：
 
-| 写法 | 结果 |
-| --- | --- |
-| `labels(n)` | ✅ 可用 |
-| `type(r)` | ❌ 报 `Catalog exception: function TYPE does not exist` |
-| `r.type` | ✅ 用这个取边语义 |
-| `label(r)` | ⚠️ 返回的是节点/边标签（对边恒为 `CodeRelation`），不是语义类型 |
+| 写法        | 结果                                                            |
+| ----------- | --------------------------------------------------------------- |
+| `labels(n)` | ✅ 可用                                                         |
+| `type(r)`   | ❌ 报 `Catalog exception: function TYPE does not exist`         |
+| `r.type`    | ✅ 用这个取边语义                                               |
+| `label(r)`  | ⚠️ 返回的是节点/边标签（对边恒为 `CodeRelation`），不是语义类型 |
 
 另一个坑：**本机已索引多个仓库**（`rtl-sdr`、`DeepSeek-Reasonix`、`putty`、
 `claude-code`、`flash-attention`、`t0-gpu`、`codex-i18n`），
@@ -140,40 +140,40 @@ node $GX cypher -r codex-i18n \
 
 ### 其余查询命令
 
-| 命令 | 用途 |
-| --- | --- |
+| 命令                         | 用途                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
 | `context -r <repo> <symbol>` | 符号 360° 视图：调用者、被调用者、所属流程（`-u <uid>` 可消歧、`--content` 带源码） |
-| `query -r <repo> "<概念>"` | 语义搜索执行流（`-g <goal>`、`-c <context>` 提升排序） |
-| `impact -r <repo> <target>` | 影响面分析：改这个符号会影响什么 |
+| `query -r <repo> "<概念>"`   | 语义搜索执行流（`-g <goal>`、`-c <context>` 提升排序）                              |
+| `impact -r <repo> <target>`  | 影响面分析：改这个符号会影响什么                                                    |
 
 ## 六、其余子命令
 
-| 命令 | 用途 | 注意 |
-| --- | --- | --- |
-| `status` | 当前仓库的索引状态 | 会显示「已是最新」或落后 |
-| `list` | 列出所有已索引仓库 | 本机 7 个 |
-| `doctor` | 运行平台能力诊断 | — |
-| `analyze` | 索引仓库 | 见第二节 |
-| `index [path...]` | 把已有 `.gitnexus/` 注册到全局注册表（不重新分析） | — |
-| `serve` | 启动本地 HTTP 服务，供 Web UI 连接 | — |
-| `mcp` | 启动 MCP server（stdio），供 AI agent 接入 | — |
-| `setup` | 为 Cursor / Claude Code / OpenCode / Codex 配置 MCP | — |
-| `wiki [path]` | 从图谱生成仓库 Wiki | **会调用 LLM，产生费用**，需 `--provider` / `--model` / `--api-key`；支持 `--lang chinese` |
-| `clean` | 删除当前仓库的 GitNexus 索引 | — |
-| `remove <target>` | 删除已注册仓库的索引（可在仓库外执行） | — |
-| `augment` | 用图谱上下文增强搜索（供 hooks 使用） | — |
+| 命令              | 用途                                                | 注意                                                                                       |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `status`          | 当前仓库的索引状态                                  | 会显示「已是最新」或落后                                                                   |
+| `list`            | 列出所有已索引仓库                                  | 本机 7 个                                                                                  |
+| `doctor`          | 运行平台能力诊断                                    | —                                                                                          |
+| `analyze`         | 索引仓库                                            | 见第二节                                                                                   |
+| `index [path...]` | 把已有 `.gitnexus/` 注册到全局注册表（不重新分析）  | —                                                                                          |
+| `serve`           | 启动本地 HTTP 服务，供 Web UI 连接                  | —                                                                                          |
+| `mcp`             | 启动 MCP server（stdio），供 AI agent 接入          | —                                                                                          |
+| `setup`           | 为 Cursor / Claude Code / OpenCode / Codex 配置 MCP | —                                                                                          |
+| `wiki [path]`     | 从图谱生成仓库 Wiki                                 | **会调用 LLM，产生费用**，需 `--provider` / `--model` / `--api-key`；支持 `--lang chinese` |
+| `clean`           | 删除当前仓库的 GitNexus 索引                        | —                                                                                          |
+| `remove <target>` | 删除已注册仓库的索引（可在仓库外执行）              | —                                                                                          |
+| `augment`         | 用图谱上下文增强搜索（供 hooks 使用）               | —                                                                                          |
 
 > **`wiki` 是本仓库唯一会调用外部 LLM 的命令。** 本次生成 `docs/maps/` 的文档时
 > **没有**使用它——所有文档均由人工撰写，数据来自 `cypher` / `context` 查询与源码核对。
 
 ## 七、索引产物与磁盘占用
 
-| 项 | 值 |
-| --- | --- |
-| 位置 | `<repo>/.gitnexus/` |
-| 本仓库实测 | **1.4 GB**（其中 `lbug` 数据库 789 MB） |
+| 项              | 值                                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| 位置            | `<repo>/.gitnexus/`                                                                                |
+| 本仓库实测      | **1.4 GB**（其中 `lbug` 数据库 789 MB）                                                            |
 | 是否被 git 跟踪 | **否**——它自带 `.gitignore`（内容为 `*`），且 `analyze` 会往 `.git/info/exclude` 写入 `.gitnexus/` |
-| 删除方式 | `node $GX clean` |
+| 删除方式        | `node $GX clean`                                                                                   |
 
 正因为有双重忽略，**不需要**往仓库的 `.gitignore` 里添加规则。
 
@@ -195,12 +195,12 @@ node $GX cypher -r codex-i18n \
 
 ## 九、本次索引结果备查
 
-| 项 | 值 |
-| --- | --- |
-| 仓库 | `/data/training/cli/codex` |
-| 别名 | `codex-i18n` |
-| 索引提交 | `85f4d67` |
-| 索引时间 | 北京时间 2026-09-15 06:59 |
-| 耗时 | 493.1 秒 |
-| 节点 / 边 | 108,320 / 312,008 |
-| 聚类 / 流程 | 4,777 / 300 |
+| 项          | 值                         |
+| ----------- | -------------------------- |
+| 仓库        | `/data/training/cli/codex` |
+| 别名        | `codex-i18n`               |
+| 索引提交    | `85f4d67`                  |
+| 索引时间    | 北京时间 2026-09-15 06:59  |
+| 耗时        | 493.1 秒                   |
+| 节点 / 边   | 108,320 / 312,008          |
+| 聚类 / 流程 | 4,777 / 300                |

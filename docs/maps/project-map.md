@@ -2,30 +2,30 @@
 
 ## 顶层布局
 
-| 目录 / 文件 | 作用 | 备注 |
-| --- | --- | --- |
-| `codex-rs/` | **核心**：Rust workspace | `Cargo.toml` 有 145 个成员条目；`rust-toolchain.toml` 固定工具链 |
-| `codex-cli/` | npm 分发包 `@openai/codex` | 仅启动壳，`bin/codex.js` 8,790 B |
-| `sdk/` | 语言 SDK | `sdk/python/`、`sdk/typescript/` |
-| `docs/` | 开发者文档 | `guides/`（指路牌）、`policies/`（贡献与法律）、`maps/`（本目录） |
-| `bazel/` + `BUILD.bazel` + `MODULE.bazel` + `defs.bzl` | Bazel 构建定义 | `MODULE.bazel.lock` 达 1.65 MB |
-| `third_party/` | 内嵌重型依赖 | `v8/`、`wezterm/`、`powershell/`、`wine/`、`voice/` |
-| `patches/` | 26 个 Bazel / 原生依赖补丁 | 以 `rules_rust_*`、`v8_*`、`*_windows_*` 为主 |
-| `scripts/` | 维护脚本（Python / shell） | `codex_package/`、`mcp_conformance/` |
-| `tools/` | 构建与开发辅助 | — |
-| `.github/` | CI、issue 模板、CLA 流程 | `workflows/cla.yml`、`ISSUE_TEMPLATE/` |
-| 根目录文件 | `AGENTS.md`、`justfile`、`package.json`、`LICENSE` | `AGENTS.md` 是仓库约定，动代码前必读 |
+| 目录 / 文件                                            | 作用                                               | 备注                                                              |
+| ------------------------------------------------------ | -------------------------------------------------- | ----------------------------------------------------------------- |
+| `codex-rs/`                                            | **核心**：Rust workspace                           | `Cargo.toml` 有 145 个成员条目；`rust-toolchain.toml` 固定工具链  |
+| `codex-cli/`                                           | npm 分发包 `@openai/codex`                         | 仅启动壳，`bin/codex.js` 8,790 B                                  |
+| `sdk/`                                                 | 语言 SDK                                           | `sdk/python/`、`sdk/typescript/`                                  |
+| `docs/`                                                | 开发者文档                                         | `guides/`（指路牌）、`policies/`（贡献与法律）、`maps/`（本目录） |
+| `bazel/` + `BUILD.bazel` + `MODULE.bazel` + `defs.bzl` | Bazel 构建定义                                     | `MODULE.bazel.lock` 达 1.65 MB                                    |
+| `third_party/`                                         | 内嵌重型依赖                                       | `v8/`、`wezterm/`、`powershell/`、`wine/`、`voice/`               |
+| `patches/`                                             | 26 个 Bazel / 原生依赖补丁                         | 以 `rules_rust_*`、`v8_*`、`*_windows_*` 为主                     |
+| `scripts/`                                             | 维护脚本（Python / shell）                         | `codex_package/`、`mcp_conformance/`                              |
+| `tools/`                                               | 构建与开发辅助                                     | —                                                                 |
+| `.github/`                                             | CI、issue 模板、CLA 流程                           | `workflows/cla.yml`、`ISSUE_TEMPLATE/`                            |
+| 根目录文件                                             | `AGENTS.md`、`justfile`、`package.json`、`LICENSE` | `AGENTS.md` 是仓库约定，动代码前必读                              |
 
 ## 文件规模
 
-| 指标 | 数值 | 口径 |
-| --- | ---: | --- |
-| `.rs` 文件 | 3,792 | 仅 `codex-rs/` |
-| `.rs` 文件 | 4,156 | 全仓库（差额来自 `third_party/` 等） |
-| Rust 代码行数 | ≈ 1,741,939 | 全仓 `.rs` 累计 |
-| 仓库体积 | 361 MB | 不含 `.gitnexus/` 索引 |
-| `.snap` 快照 | 877 / 940 | `tui/` / 全仓 — **i18n 改造的主要回归成本** |
-| 提示词 `.md` | 1,732 行 | `codex-rs/core/` 下 |
+| 指标          |        数值 | 口径                                        |
+| ------------- | ----------: | ------------------------------------------- |
+| `.rs` 文件    |       3,792 | 仅 `codex-rs/`                              |
+| `.rs` 文件    |       4,156 | 全仓库（差额来自 `third_party/` 等）        |
+| Rust 代码行数 | ≈ 1,741,939 | 全仓 `.rs` 累计                             |
+| 仓库体积      |      361 MB | 不含 `.gitnexus/` 索引                      |
+| `.snap` 快照  |   877 / 940 | `tui/` / 全仓 — **i18n 改造的主要回归成本** |
+| 提示词 `.md`  |    1,732 行 | `codex-rs/core/` 下                         |
 
 ## `codex-rs/` 成员分区
 

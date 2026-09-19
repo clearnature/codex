@@ -14,16 +14,16 @@
 
 ## 一、结论先行
 
-| 问题 | 结论 |
-| --- | --- |
-| Bazel 侧缺文件吗？ | **不缺**。构建图完整，`@crates` 从 Cargo metadata 正确解析出新增的两个 crate，`MODULE.bazel.lock` 无漂移。 |
-| 那有没有问题？ | **有一个真的编译失败**：`codex-rs/i18n-check/BUILD.bazel` 缺 `crate_srcs = []`。已修并验证。 |
-| dotslash 是 Bazel 的依赖吗？ | **不是**。`bazel build` / `bazel test` 全程不需要它；它只影响 `just fmt` 一类工具链。本机已装好。 |
+| 问题                         | 结论                                                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Bazel 侧缺文件吗？           | **不缺**。构建图完整，`@crates` 从 Cargo metadata 正确解析出新增的两个 crate，`MODULE.bazel.lock` 无漂移。 |
+| 那有没有问题？               | **有一个真的编译失败**：`codex-rs/i18n-check/BUILD.bazel` 缺 `crate_srcs = []`。已修并验证。               |
+| dotslash 是 Bazel 的依赖吗？ | **不是**。`bazel build` / `bazel test` 全程不需要它；它只影响 `just fmt` 一类工具链。本机已装好。          |
 
 ## 二、交付物：1 个文件改动（**未提交**）
 
-| 文件 | 改动 | 状态 |
-| --- | --- | --- |
+| 文件                              | 改动                                | 状态                          |
+| --------------------------------- | ----------------------------------- | ----------------------------- |
 | `codex-rs/i18n-check/BUILD.bazel` | 加 `crate_srcs = []` + 2 行说明注释 | 未提交，已过 `just fmt-check` |
 
 ```bazel
@@ -60,11 +60,11 @@ error[E0432]: unresolved import `crate::spacing_violations`        --> src/main_
 
 ### 先例与边界（**不要**顺手去"修"别的 crate）
 
-| crate | `src/` 内容 | 是否受影响 | 原因 |
-| --- | --- | --- | --- |
-| `voice-host` | 有 `main_tests.rs` 等多个 `*_tests.rs` | 已写 `crate_srcs = []` | **本仓库既有惯例，照它做** |
-| `config-schema` / `thread-manager-sample` / `bwrap` | 只有 `main.rs` | 不受影响 | glob 为空 → 不建库 |
-| `core/tests/common` | `crate_srcs = glob(["*.rs"])` | 不受影响，**是有意为之** | 它整个目录就是一个测试支持**库**（`core_test_support`），不是 bin crate |
+| crate                                               | `src/` 内容                            | 是否受影响               | 原因                                                                    |
+| --------------------------------------------------- | -------------------------------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `voice-host`                                        | 有 `main_tests.rs` 等多个 `*_tests.rs` | 已写 `crate_srcs = []`   | **本仓库既有惯例，照它做**                                              |
+| `config-schema` / `thread-manager-sample` / `bwrap` | 只有 `main.rs`                         | 不受影响                 | glob 为空 → 不建库                                                      |
+| `core/tests/common`                                 | `crate_srcs = glob(["*.rs"])`          | 不受影响，**是有意为之** | 它整个目录就是一个测试支持**库**（`core_test_support`），不是 bin crate |
 
 **可复用的规则**：新增 crate 时，只要满足「纯 bin（无 `src/lib.rs`）」**且**「`src/` 下除 `main.rs` 外还有别的 `.rs`」，
 就必须显式写 `crate_srcs = []`。
@@ -81,13 +81,13 @@ bazel test  //codex-rs/i18n:all //codex-rs/i18n-check:all
 
 ## 三、Bazel 侧其他检查项（都通过，无需再查）
 
-| 检查 | 命令 | 实测 |
-| --- | --- | --- |
-| 构建图完整性 | `bazel build --nobuild //codex-rs/i18n:all //codex-rs/i18n-check:all` | ✅ 231 packages / 38260 targets configured |
-| lockfile 漂移 | `bazel mod deps --lockfile_mode=error`（= `just bazel-lock-check` 的核心） | ✅ `EXIT=0`，`MODULE.bazel.lock` 无需更新 |
-| 编译期文件读取 | 本分支是否新增 `include_str!` / `include_bytes!` | ✅ 无 → **不需要**补 `compile_data` / `build_script_data` |
-| 消费方 BUILD 是否要改 | `tui` / `cli` / `exec` 各只加了 `codex-i18n = { workspace = true }` | ✅ **不该改**：Bazel 的 crate 依赖从 Cargo metadata 自动解析，已验证解析成功 |
-| 整条链能否编出来 | `bazel build //codex-rs/cli:codex //codex-rs/exec:all` | ✅ 10 targets / 4512 actions / 452.028s / `exit 0`（`core` 486 files → `tui` 630 files → `cli:codex` 全过） |
+| 检查                  | 命令                                                                       | 实测                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 构建图完整性          | `bazel build --nobuild //codex-rs/i18n:all //codex-rs/i18n-check:all`      | ✅ 231 packages / 38260 targets configured                                                                  |
+| lockfile 漂移         | `bazel mod deps --lockfile_mode=error`（= `just bazel-lock-check` 的核心） | ✅ `EXIT=0`，`MODULE.bazel.lock` 无需更新                                                                   |
+| 编译期文件读取        | 本分支是否新增 `include_str!` / `include_bytes!`                           | ✅ 无 → **不需要**补 `compile_data` / `build_script_data`                                                   |
+| 消费方 BUILD 是否要改 | `tui` / `cli` / `exec` 各只加了 `codex-i18n = { workspace = true }`        | ✅ **不该改**：Bazel 的 crate 依赖从 Cargo metadata 自动解析，已验证解析成功                                |
+| 整条链能否编出来      | `bazel build //codex-rs/cli:codex //codex-rs/exec:all`                     | ✅ 10 targets / 4512 actions / 452.028s / `exit 0`（`core` 486 files → `tui` 630 files → `cli:codex` 全过） |
 
 ## 四、环境变更：dotslash 已安装（下一会话须知道）
 
@@ -103,13 +103,13 @@ dotslash tools/buildifier --version →  buildifier version: 8.5.1-3-g0951e28
 
 **dotslash 的适用边界（已实测确认）**：
 
-| 场景 | 需要 dotslash？ |
-| --- | --- |
-| `bazel build` / `bazel test` | ❌ 不需要（今天全程没有它也跑通了） |
-| `just fmt` / `just fmt-check` | ✅ 需要（`scripts/format.py:73` 显式调 `dotslash tools/buildifier`，注释说明是因为 Windows 不认 shebang） |
-| `just argument-comment-lint`（**带参数**，走预编译 wrapper） | ✅ 需要（`tools/argument-comment-lint/wrapper_common.py:234-243`） |
-| `just argument-comment-lint`（不带参数，走 Bazel aspect） | ❌ 不需要 |
-| `just assemble-codex-package` | ✅ 需要（`scripts/codex_package` 的 `rg` / `codex-zsh` / `zstd` 三个 manifest） |
+| 场景                                                         | 需要 dotslash？                                                                                           |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `bazel build` / `bazel test`                                 | ❌ 不需要（今天全程没有它也跑通了）                                                                       |
+| `just fmt` / `just fmt-check`                                | ✅ 需要（`scripts/format.py:73` 显式调 `dotslash tools/buildifier`，注释说明是因为 Windows 不认 shebang） |
+| `just argument-comment-lint`（**带参数**，走预编译 wrapper） | ✅ 需要（`tools/argument-comment-lint/wrapper_common.py:234-243`）                                        |
+| `just argument-comment-lint`（不带参数，走 Bazel aspect）    | ❌ 不需要                                                                                                 |
+| `just assemble-codex-package`                                | ✅ 需要（`scripts/codex_package` 的 `rg` / `codex-zsh` / `zstd` 三个 manifest）                           |
 
 装之前它曾是 `just fmt` **唯一**缺的工具：`format.py` 的 5 个 formatter group（Just / Rust / Bazel-Starlark / Python SDK / Python scripts）
 并行跑，其余四组所需的 `just`、`cargo`、`uv`、`scripts/.venv`、`sdk/python/.venv` 本机都已齐备 —— 这解释了为什么之前报错只出现 Bazel/Starlark 一组。
@@ -119,12 +119,12 @@ dotslash tools/buildifier --version →  buildifier version: 8.5.1-3-g0951e28
 
 ## 五、当前工作区状态（4 个未提交文件）
 
-| 文件 | 归属 | 说明 |
-| --- | --- | --- |
-| `codex-rs/i18n-check/BUILD.bazel` | 本次会话 | 见 §二，待提交 |
-| `codex-rs/exec/src/lib.rs` | **本次会话之前就有** | 未触碰 |
-| `codex-rs/i18n/src/dict_zh.rs` | **本次会话之前就有** | 未触碰 |
-| `codex-rs/core/tests/common/test_codex_exec.rs` | **构建窗口内出现的，非本次会话所写** | 见 §六 |
+| 文件                                            | 归属                                 | 说明           |
+| ----------------------------------------------- | ------------------------------------ | -------------- |
+| `codex-rs/i18n-check/BUILD.bazel`               | 本次会话                             | 见 §二，待提交 |
+| `codex-rs/exec/src/lib.rs`                      | **本次会话之前就有**                 | 未触碰         |
+| `codex-rs/i18n/src/dict_zh.rs`                  | **本次会话之前就有**                 | 未触碰         |
+| `codex-rs/core/tests/common/test_codex_exec.rs` | **构建窗口内出现的，非本次会话所写** | 见 §六         |
 
 ## 六、一个需要留意的观察：构建期间源文件被并发修改
 

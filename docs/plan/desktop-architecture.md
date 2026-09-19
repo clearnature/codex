@@ -22,11 +22,11 @@
 
 **做「codex 核心的一个 GUI 客户端」**，而不是重写一个 agent。
 
-| 是 | 不是 |
-| --- | --- |
-| `app-server` 协议的前端 | 独立实现的 agent |
-| 会话/审批/工具调用的图形化呈现 | 新的推理内核 |
-| 自带 UI 的 i18n | 改 `codex-rs` 源码 |
+| 是                             | 不是               |
+| ------------------------------ | ------------------ |
+| `app-server` 协议的前端        | 独立实现的 agent   |
+| 会话/审批/工具调用的图形化呈现 | 新的推理内核       |
+| 自带 UI 的 i18n                | 改 `codex-rs` 源码 |
 
 理由：上游的核心能力（工具、沙箱、审批、MCP、扩展）已由 `core` + `app-server` 提供，
 重写一遍既不可能也没必要。
@@ -60,12 +60,12 @@ pub enum AppServerTransport {
 
 `codex-rs/app-server-protocol/schema/typescript/` 下有 **711 个 `.ts`**，是从 Rust 生成的协议绑定：
 
-| 文件 | 含义 |
-| --- | --- |
-| `ClientRequest.ts` / `ClientNotification.ts` | 客户端 → 服务端 |
-| `ApplyPatchApprovalParams.ts` / `...Response.ts` | 审批流 |
-| `AuthMode.ts`、`AgentMessageInputContent.ts` | 基础类型 |
-| `v2/Account*.ts`、`v2/ActivePermissionProfile.ts` | v2 协议子集 |
+| 文件                                              | 含义            |
+| ------------------------------------------------- | --------------- |
+| `ClientRequest.ts` / `ClientNotification.ts`      | 客户端 → 服务端 |
+| `ApplyPatchApprovalParams.ts` / `...Response.ts`  | 审批流          |
+| `AuthMode.ts`、`AgentMessageInputContent.ts`      | 基础类型        |
+| `v2/Account*.ts`、`v2/ActivePermissionProfile.ts` | v2 协议子集     |
 
 配套还有 `schema/json/` 下的 JSON Schema。
 
@@ -86,14 +86,14 @@ pub enum AppServerTransport {
 
 ## 三、三条候选路径对比
 
-| | A. stdio 子进程 | B. WebSocket | C. Unix socket |
-| --- | --- | --- | --- |
-| 启动方式 | electron 主进程 `spawn` app-server | spawn 或连常驻 daemon | spawn 或连常驻 daemon |
-| 端口/鉴权 | 不需要 | 需要端口 + `AppServerWebsocketAuthArgs` | 文件系统权限 |
-| 跨平台 | ✅ 全平台 | ✅ 全平台 | ❌ **Windows 不可用** |
-| 多客户端共享 | ❌ 独占 | ✅ | ✅（Unix 内） |
-| 进程生命周期 | 由 electron 管理（简单、明确） | 松耦合，但需自己管崩溃重启 | 同 B |
-| 与 trha 的相似度 | 高（trha 即 spawn + 握手） | 中 | 低 |
+|                  | A. stdio 子进程                    | B. WebSocket                            | C. Unix socket        |
+| ---------------- | ---------------------------------- | --------------------------------------- | --------------------- |
+| 启动方式         | electron 主进程 `spawn` app-server | spawn 或连常驻 daemon                   | spawn 或连常驻 daemon |
+| 端口/鉴权        | 不需要                             | 需要端口 + `AppServerWebsocketAuthArgs` | 文件系统权限          |
+| 跨平台           | ✅ 全平台                          | ✅ 全平台                               | ❌ **Windows 不可用** |
+| 多客户端共享     | ❌ 独占                            | ✅                                      | ✅（Unix 内）         |
+| 进程生命周期     | 由 electron 管理（简单、明确）     | 松耦合，但需自己管崩溃重启              | 同 B                  |
+| 与 trha 的相似度 | 高（trha 即 spawn + 握手）         | 中                                      | 低                    |
 
 **建议：以 A（stdio）起步，架构上为 B 留出切换余地。**
 
@@ -134,25 +134,25 @@ pub enum AppServerTransport {
 
 ### 4.2 技术栈
 
-| 项 | 选择 | 依据 |
-| --- | --- | --- |
-| 外壳 | **electron** | `trha`、`studio` 均用 electron；`Reasonix` 的 tauri 已废弃（`internal/appidentity/identity_windows_test.go:128` 的 `"legacy tauri desktop"`） |
-| electron 版本 | **44.x**，精确锁定 | 与 `Reasonix`（44.2.0）对齐，见 `trha/docs/plans/electron-44-upgrade.md` |
-| 打包 | `electron-builder` 26.x | `trha` 已升级到位 |
-| 协议客户端 | `app-server-protocol` 生成的 TS 类型 | §2.3 |
+| 项            | 选择                                 | 依据                                                                                                                                          |
+| ------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 外壳          | **electron**                         | `trha`、`studio` 均用 electron；`Reasonix` 的 tauri 已废弃（`internal/appidentity/identity_windows_test.go:128` 的 `"legacy tauri desktop"`） |
+| electron 版本 | **44.x**，精确锁定                   | 与 `Reasonix`（44.2.0）对齐，见 `trha/docs/plans/electron-44-upgrade.md`                                                                      |
+| 打包          | `electron-builder` 26.x              | `trha` 已升级到位                                                                                                                             |
+| 协议客户端    | `app-server-protocol` 生成的 TS 类型 | §2.3                                                                                                                                          |
 
 ### 4.3 直接复用 trha 的宿主模式
 
 `trha` 的 `packages/app/Desktop/src/main/index.ts`（215 行）已经解决了同类问题，
 桌面端应照搬它的结构而非重新发明：
 
-| trha 的做法 | 用途 |
-| --- | --- |
-| `startScheduler()` + `handshake.ts` 的 `parseHandshake` / `isSupported` | **握手校验**：版本/名称不符则拒绝启动 |
-| stdout **只解析首行**，其余交给 stderr | 避免日志污染协议通道 |
-| stdin 作为 **租约**：退出时 `end()`，让子进程自行 drain 退出 | 跨平台优雅退出（不依赖信号） |
-| `schedulerRuntime()` | 打包产物里用自带 node runtime，开发时用系统 node |
-| 5s 握手超时 + 明确失败 | 避免"卡住但看不出来" |
+| trha 的做法                                                             | 用途                                             |
+| ----------------------------------------------------------------------- | ------------------------------------------------ |
+| `startScheduler()` + `handshake.ts` 的 `parseHandshake` / `isSupported` | **握手校验**：版本/名称不符则拒绝启动            |
+| stdout **只解析首行**，其余交给 stderr                                  | 避免日志污染协议通道                             |
+| stdin 作为 **租约**：退出时 `end()`，让子进程自行 drain 退出            | 跨平台优雅退出（不依赖信号）                     |
+| `schedulerRuntime()`                                                    | 打包产物里用自带 node runtime，开发时用系统 node |
+| 5s 握手超时 + 明确失败                                                  | 避免"卡住但看不出来"                             |
 
 这套模式与 codex 的 `app-server` 正好契合（app-server 也是长驻子进程 + 结构化通道）。
 
@@ -167,6 +167,7 @@ core 产生的文案（错误 / 审批提示 / 工具输出）
 ```
 
 **含义**：
+
 1. 桌面端 UI（我们自己的代码）→ **自带 i18n，完全可控**；可直接移植 `trha`
    `Desktop/src/renderer/ui/i18n.ts` 的模式（扁平 key 表 + `t()` 插值 + 缺 key 编译报错）。
 2. 核心产生的文案 → **依赖 i18n 那条线的进展**。若只做 `tui` 不做 `core`，
@@ -175,39 +176,39 @@ core 产生的文案（错误 / 审批提示 / 工具输出）
 
 ## 六、与上游的隔离（本设计的核心价值）
 
-| 项 | 状态 |
-| --- | --- |
-| 修改 `codex-rs` 源码 | **零处** |
-| 依赖的上游接口 | 仅 `app-server` 协议（`AGENTS.md` 将其列为 external integration surface，上游会保持兼容） |
-| 上游更新时的影响 | 需要的是「重新构建/获取新版 `codex-app-server` 二进制」，而非 rebase 冲突 |
-| 唯一的同步点 | 协议版本变化（`v2/` 命名空间的存在说明上游对协议做了版本化） |
+| 项                   | 状态                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| 修改 `codex-rs` 源码 | **零处**                                                                                  |
+| 依赖的上游接口       | 仅 `app-server` 协议（`AGENTS.md` 将其列为 external integration surface，上游会保持兼容） |
+| 上游更新时的影响     | 需要的是「重新构建/获取新版 `codex-app-server` 二进制」，而非 rebase 冲突                 |
+| 唯一的同步点         | 协议版本变化（`v2/` 命名空间的存在说明上游对协议做了版本化）                              |
 
 **这与 i18n 那条线形成鲜明对比**：i18n 必须侵入源码（TUI 的中文宽度要求必须在构造文本时翻译），
 需要 codemod + 漂移检测来维持；桌面端则是干净的加法。
 
 ## 七、里程碑建议
 
-| 阶段 | 目标 | 验证方式 |
-| --- | --- | --- |
-| **D0** | 用 `stdio://` spawn `codex-app-server`，完成一次 ping/echo 往返 | 能打印出一次真实响应 |
+| 阶段   | 目标                                                              | 验证方式                          |
+| ------ | ----------------------------------------------------------------- | --------------------------------- |
+| **D0** | 用 `stdio://` spawn `codex-app-server`，完成一次 ping/echo 往返   | 能打印出一次真实响应              |
 | **D1** | 用生成的 TS 类型调通 `ClientRequest` 的最小方法（如 thread 创建） | 类型检查通过 + 实机拿到 thread id |
-| **D2** | electron 壳 + preload 窄接口 + 一次流式事件的端到端渲染 | 界面上能看到流式输出 |
-| **D3** | 会话管理 / 审批交互 / 工具调用呈现 | 手动走通一次真实任务 |
-| **D4** | UI i18n 接入（移植 trha 模式） | 中英切换 |
-| **D5** | 打包分发（electron-builder） | 产出可安装包 |
+| **D2** | electron 壳 + preload 窄接口 + 一次流式事件的端到端渲染           | 界面上能看到流式输出              |
+| **D3** | 会话管理 / 审批交互 / 工具调用呈现                                | 手动走通一次真实任务              |
+| **D4** | UI i18n 接入（移植 trha 模式）                                    | 中英切换                          |
+| **D5** | 打包分发（electron-builder）                                      | 产出可安装包                      |
 
 **D0 是最便宜的可行性验证**，建议优先——它只验证「能不能连上、协议是否可用」，
 不涉及 UI、不涉及 electron。
 
 ## 八、待决策（进入实现前需要拍板）
 
-| # | 决策点 | 候选 |
-| --- | --- | --- |
-| 1 | **传输方式** | `stdio://`（简单）／ `ws://`（灵活、跨平台多客户端）／ daemon 常驻 |
-| 2 | **进程归属** | 随 electron 启动子进程（简单）／ 独立常驻 daemon（多客户端共享） |
-| 3 | **前端框架** | React + Vite（`trha` 路线）／ Next（`studio` 的 `frontend-next` 路线） |
-| 4 | **SDK 用法** | 直接用 app-server 协议（能力全）／ 先用 `@openai/codex-sdk` 快速验证 |
-| 5 | **桌面端目录位置** | 本仓库内（如 `desktop/`）／ 独立仓库（与上游隔离更彻底） |
+| #   | 决策点             | 候选                                                                   |
+| --- | ------------------ | ---------------------------------------------------------------------- |
+| 1   | **传输方式**       | `stdio://`（简单）／ `ws://`（灵活、跨平台多客户端）／ daemon 常驻     |
+| 2   | **进程归属**       | 随 electron 启动子进程（简单）／ 独立常驻 daemon（多客户端共享）       |
+| 3   | **前端框架**       | React + Vite（`trha` 路线）／ Next（`studio` 的 `frontend-next` 路线） |
+| 4   | **SDK 用法**       | 直接用 app-server 协议（能力全）／ 先用 `@openai/codex-sdk` 快速验证   |
+| 5   | **桌面端目录位置** | 本仓库内（如 `desktop/`）／ 独立仓库（与上游隔离更彻底）               |
 
 第 5 点尤其重要：**放本仓库**便于与 i18n 协同、共享 CI；**放独立仓库**则 fork 更干净，
 但需要额外维护协议同步。建议先在本仓库内做（`desktop/` 或 `packages/desktop/`），

@@ -9,19 +9,19 @@
 `blocking-ci.yml` 的 required 集合是：Bazel / Blob size policy / cargo-deny / Codespell /
 repo-checks / rust-ci / sdk。
 
-| CI job | 具体步骤 | 本机对应门禁 | 状态 |
-| --- | --- | --- | --- |
-| repo-checks | `just fmt-check` | `fmt-check` | **已取证** `r-mu8hhteb-t7ukc3`（最终树） |
-| repo-checks | `just i18n-check` | `i18n-check` | **已取证** `r-mu8h8wsf-e70wvp`（全零） |
-| repo-checks | `just i18n-smoke` | `i18n-smoke` | **已取证** `r-mu8hgswh-xaqrtf`（zh 26 行 / C 0 行，双向） |
-| repo-checks | `pnpm run format`（prettier） | ——（无对应门禁） | **CI-first**：本机无 `node_modules`、沙箱无网络 ⇒ 见 §三.1 |
-| repo-checks | `check-clean-worktree` | `git status` | **已核实**：工作树干净（提交 `4220d82d2` 后） |
-| Codespell | `codespell` | `codespell` | **已取证** `r-mu8hh72k-8b04t2` |
-| Bazel | `bazel test` 多平台矩阵 + `check-module-bazel-lock.sh` | `bazel-lock-check` / `bazel-i18n` | 锁与 i18n 目标**已取证**（`r-mu8e783e-zo6pia` / `r-mu8cpxxl-yum8un`）；**bazel test 全矩阵本机从未跑**（按预算约束不跑）⇒ CI-first |
-| cargo-deny | 许可证/advisory/ban | —— | **CI-first**：本机无 `cargo-deny` 二进制 |
-| rust-ci | 三平台 cargo test/clippy 矩阵 | `clippy` / `exec-test` / `tui-test` / `i18n-unit` / 各 crate 套件 | Linux 侧**已取证**（`clippy r-mu8e2qwp-f6dzc6`、`i18n-unit r-mu8e7bt8-x6r03f`、core-plugins 438 passed `r-mu8ejqmb-26i4ea` 等）；**macOS/Windows 侧只能由 CI 判**（本机无跨目标类型检查，见 `known_issues no-cross-target-typecheck-local`） |
-| sdk | Python SDK：`ruff check` + `ruff format --check` + `pytest`（**cwd = `sdk/python`**，见 `sdk.yml:26/36`） | 本机无 ruff 可执行文件，但 `scripts/` 有独立的一步 | **作用域澄清**：CI 的 ruff 只在 `sdk/python` 里跑 ⇒ `scripts/*.py` **不在 CI ruff 范围**；而 `fmt-check` 的 `python_scripts_formatter_group`（`scripts/format.py:118`）会用 `uv run --project scripts ruff format` 检查 `scripts/` ⇒ 本批对 `scripts/i18n_apply.py` 的补丁**已取证**：`r-mu8hiz5w-oruj3d`（format ✓ / check ✓ / 全仓仍只有预存的 9 条） |
-| Blob size policy | 变更 blob ≤ 512000 字节 | 本机只量了尺寸 | **已量**：`not-translated-unwrapped.tsv` = 385 091 B（75% 上限）⇒ 见 §三.2 |
+| CI job           | 具体步骤                                                                                                  | 本机对应门禁                                                      | 状态                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| repo-checks      | `just fmt-check`                                                                                          | `fmt-check`                                                       | **已取证** `r-mu8hhteb-t7ukc3`（最终树）                                                                                                                                                                                                                                                                                                                |
+| repo-checks      | `just i18n-check`                                                                                         | `i18n-check`                                                      | **已取证** `r-mu8h8wsf-e70wvp`（全零）                                                                                                                                                                                                                                                                                                                  |
+| repo-checks      | `just i18n-smoke`                                                                                         | `i18n-smoke`                                                      | **已取证** `r-mu8hgswh-xaqrtf`（zh 26 行 / C 0 行，双向）                                                                                                                                                                                                                                                                                               |
+| repo-checks      | `pnpm run format`（prettier）                                                                             | ——（无对应门禁）                                                  | **CI-first**：本机无 `node_modules`、沙箱无网络 ⇒ 见 §三.1                                                                                                                                                                                                                                                                                              |
+| repo-checks      | `check-clean-worktree`                                                                                    | `git status`                                                      | **已核实**：工作树干净（提交 `4220d82d2` 后）                                                                                                                                                                                                                                                                                                           |
+| Codespell        | `codespell`                                                                                               | `codespell`                                                       | **已取证** `r-mu8hh72k-8b04t2`                                                                                                                                                                                                                                                                                                                          |
+| Bazel            | `bazel test` 多平台矩阵 + `check-module-bazel-lock.sh`                                                    | `bazel-lock-check` / `bazel-i18n`                                 | 锁与 i18n 目标**已取证**（`r-mu8e783e-zo6pia` / `r-mu8cpxxl-yum8un`）；**bazel test 全矩阵本机从未跑**（按预算约束不跑）⇒ CI-first                                                                                                                                                                                                                      |
+| cargo-deny       | 许可证/advisory/ban                                                                                       | ——                                                                | **CI-first**：本机无 `cargo-deny` 二进制                                                                                                                                                                                                                                                                                                                |
+| rust-ci          | 三平台 cargo test/clippy 矩阵                                                                             | `clippy` / `exec-test` / `tui-test` / `i18n-unit` / 各 crate 套件 | Linux 侧**已取证**（`clippy r-mu8e2qwp-f6dzc6`、`i18n-unit r-mu8e7bt8-x6r03f`、core-plugins 438 passed `r-mu8ejqmb-26i4ea` 等）；**macOS/Windows 侧只能由 CI 判**（本机无跨目标类型检查，见 `known_issues no-cross-target-typecheck-local`）                                                                                                            |
+| sdk              | Python SDK：`ruff check` + `ruff format --check` + `pytest`（**cwd = `sdk/python`**，见 `sdk.yml:26/36`） | 本机无 ruff 可执行文件，但 `scripts/` 有独立的一步                | **作用域澄清**：CI 的 ruff 只在 `sdk/python` 里跑 ⇒ `scripts/*.py` **不在 CI ruff 范围**；而 `fmt-check` 的 `python_scripts_formatter_group`（`scripts/format.py:118`）会用 `uv run --project scripts ruff format` 检查 `scripts/` ⇒ 本批对 `scripts/i18n_apply.py` 的补丁**已取证**：`r-mu8hiz5w-oruj3d`（format ✓ / check ✓ / 全仓仍只有预存的 9 条） |
+| Blob size policy | 变更 blob ≤ 512000 字节                                                                                   | 本机只量了尺寸                                                    | **已量**：`not-translated-unwrapped.tsv` = 385 091 B（75% 上限）⇒ 见 §三.2                                                                                                                                                                                                                                                                              |
 
 ## 二、已在本机取证的门禁（一页索引）
 
@@ -35,43 +35,43 @@ repo-checks / rust-ci / sdk。
 
 ### 1. prettier（`pnpm run format`）——**预期最可能红**
 
-* glob 是 `*.json *.md docs/**/*.md .github/workflows/*.yml **/*.js` ⇒
-  **`docs/plan/**` 的所有 md 都在检查范围内**，而本项目的规划文档从未跑过 prettier。
-* 本机不可跑（实测：`pnpm run format` → `prettier: not found`；
+- glob 是 `*.json *.md docs/**/*.md .github/workflows/*.yml **/*.js` ⇒
+  **`docs/plan/**` 的所有 md 都在检查范围内\*\*，而本项目的规划文档从未跑过 prettier。
+- 本机不可跑（实测：`pnpm run format` → `prettier: not found`；
   `pnpm install --frozen-lockfile --offline` → `ERR_PNPM_NO_OFFLINE_TARBALL`，
   沙箱内 `CODEX_SANDBOX_NETWORK_DISABLED=1` 无网络）⇒ **无法本机预判，只能由 CI 判**。
-* 处方：有网络的环境跑 `pnpm install --frozen-lockfile && pnpm run format:fix`，再复核 `fmt-check`；
+- 处方：有网络的环境跑 `pnpm install --frozen-lockfile && pnpm run format:fix`，再复核 `fmt-check`；
   CI 报红时按报红文件改，**不要**把 prettier 从 required 里拿掉。
 
 ### 2. Blob size policy——**已处置（选处方 ①：缩短理由列）**
 
-* 处置前：`codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B** / 上限 **512 000 B**。
-* 处置：本批 80 行（startup_sync）复制了同一段 §12.3 长说明（每行 ≈235 B 的重复文本），
+- 处置前：`codex-rs/i18n/not-translated-unwrapped.tsv` = **385 091 B** / 上限 **512 000 B**。
+- 处置：本批 80 行（startup_sync）复制了同一段 §12.3 长说明（每行 ≈235 B 的重复文本），
   改为短引用 `§12.3 日志/诊断链（详情 docs/plan/i18n-core-plugins-plan.md §8.2；终点 manager.rs:3276 warn!）`。
-* 处置后：**366 291 B**（−18 800 B，仍 1316 行）；豁免语义不变（`startup_sync.rs` 仍 0 candidates / 80 exempted，
+- 处置后：**366 291 B**（−18 800 B，仍 1316 行）；豁免语义不变（`startup_sync.rs` 仍 0 candidates / 80 exempted，
   crate 仍 382）。
-* 剩余预算 **145 709 B**；按新样式每行 ≈240 B 估算 ⇒ 还能放 **约 600 行**登记行。
-* 判据（下次登记批次后复核）：文件 < 512 000 B；若再逼近，按同样方式压缩**重复的理由文本**
+- 剩余预算 **145 709 B**；按新样式每行 ≈240 B 估算 ⇒ 还能放 **约 600 行**登记行。
+- 判据（下次登记批次后复核）：文件 < 512 000 B；若再逼近，按同样方式压缩**重复的理由文本**
   （处方 ① 优先），其次才考虑 allowlist（②）或拆分（③）。
 
 ### 3. cargo-deny——预期无影响，但未验证
 
-* 本轮给 `codex-plugins` 加了 `codex-i18n = { workspace = true }`。
+- 本轮给 `codex-plugins` 加了 `codex-i18n = { workspace = true }`。
   `codex-i18n` 本来就已在依赖图里（cli/tui/exec 都依赖它），**没有新 crate 进入图** ⇒
   许可证/advisory 面不变；风险只在 `bans` 类规则（重复版本/wildcard），本改动不新增版本。
-* 判据：CI 的 cargo-deny job 绿。若红，先看是不是**既有**问题（用 baseline 提交对照）。
+- 判据：CI 的 cargo-deny job 绿。若红，先看是不是**既有**问题（用 baseline 提交对照）。
 
 ### 4. Bazel 侧的新依赖——预期无需手改
 
-* `codex-rs/core-plugins/BUILD.bazel` 只有一句 `codex_rust_crate(...)`；
+- `codex-rs/core-plugins/BUILD.bazel` 只有一句 `codex_rust_crate(...)`；
   `defs.bzl` 用 `all_crate_deps()`（`defs.bzl:319/333/355`）从 `Cargo.toml` 推导依赖 ⇒
   加 `codex-i18n` 依赖**不需要手改 BUILD.bazel**。
-* `MODULE.bazel.lock` 本机已验：`bazel-lock-check` `r-mu8e783e-zo6pia` 通过、`git diff` 为空。
+- `MODULE.bazel.lock` 本机已验：`bazel-lock-check` `r-mu8e783e-zo6pia` 通过、`git diff` 为空。
 
 ### 5. 平台门控的 43 处未完成——**不会让 CI 红**
 
-* 没有任何 required 门禁要求「候选数为 0」；未包的字符串只是「还没做」，不是失败。
-* 见 `docs/plan/i18n-platform-ci-checklist.md`（43 处代码改动 + 2 行登记），等 macOS/Windows CI 跑起来后逐条落。
+- 没有任何 required 门禁要求「候选数为 0」；未包的字符串只是「还没做」，不是失败。
+- 见 `docs/plan/i18n-platform-ci-checklist.md`（43 处代码改动 + 2 行登记），等 macOS/Windows CI 跑起来后逐条落。
 
 ## 四、开 CI 前的本机收尾清单（都已做）
 
@@ -115,40 +115,40 @@ repo-checks / rust-ci / sdk。
 
 ### 7.1 触发器事实（本机 `.github/workflows/*.yml` 全文读出，非推测）
 
-| 触发器 | 谁有 |
-| --- | --- |
-| `pull_request` | `blocking-ci`、`cla`、`v8-canary` |
-| `push: branches: [main]` | `blocking-ci`、`postmerge-ci` |
-| `push: branches: ["**full-ci**"]` | `rust-ci-full`（注释原文：*Keep this opt-in branch trigger for developers who want the full suite before merging*） |
-| `push: tags` | 各 release workflow（与本任务无关） |
-| `workflow_dispatch`（可手动跑） | `bazel`、`rust-ci`、`rust-ci-full`、`v8-canary`、`python-runtime-release`、`rust-release-prepare`（fork 上 disabled）、`close-stale-contributor-prs`（同上） |
-| **只有 `workflow_call`**（不能自己触发） | `repo-checks`、`codespell`、`cargo-deny`、`blob-size-policy`、`sdk`、`rust-release-windows` 等 |
+| 触发器                                   | 谁有                                                                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pull_request`                           | `blocking-ci`、`cla`、`v8-canary`                                                                                                                            |
+| `push: branches: [main]`                 | `blocking-ci`、`postmerge-ci`                                                                                                                                |
+| `push: branches: ["**full-ci**"]`        | `rust-ci-full`（注释原文：_Keep this opt-in branch trigger for developers who want the full suite before merging_）                                          |
+| `push: tags`                             | 各 release workflow（与本任务无关）                                                                                                                          |
+| `workflow_dispatch`（可手动跑）          | `bazel`、`rust-ci`、`rust-ci-full`、`v8-canary`、`python-runtime-release`、`rust-release-prepare`（fork 上 disabled）、`close-stale-contributor-prs`（同上） |
+| **只有 `workflow_call`**（不能自己触发） | `repo-checks`、`codespell`、`cargo-deny`、`blob-size-policy`、`sdk`、`rust-release-windows` 等                                                               |
 
-`blocking-ci.yml` 的注释把设计意图写明了：*"It also runs after pushes to main so the same check family stays grouped in the Actions UI."*
+`blocking-ci.yml` 的注释把设计意图写明了：_"It also runs after pushes to main so the same check family stays grouped in the Actions UI."_
 它的 `CI required` 聚合 job 的 `needs` 是：
 `bazel / blob-size-policy / cargo-deny / codespell / repo-checks / rust-ci / sdk`。
 
 ### 7.2 所以：不 PR 能/不能拿到什么
 
-| 想要的结果 | 不 PR 能否 | 路径 |
-| --- | --- | --- |
-| **`repo-checks`（内含 `just fmt-check` / `just i18n-check` / `just i18n-smoke` 三道 i18n 闸）** | ❌ | 只有 `pull_request` 或 `push: main`；它自己没有 `workflow_dispatch` |
-| `codespell` / `cargo-deny` / `blob-size-policy` / `sdk` | ❌ | 同上（仅 `workflow_call`） |
-| **完整 rust 套件**（`rust-ci-full`，比 blocking 里的 `rust-ci` 更全） | ✅ | 推一个**以 `full-ci` 结尾**的分支名，或手动 dispatch `rust-ci-full` |
-| `bazel` / `rust-ci`（含平台矩阵） | ✅（手动） | `workflow_dispatch`（网页 Run workflow 或 `gh workflow run`） |
-| `postmerge-ci`（rust-ci-full + v8-canary） | ❌ | 仅 `push: main` |
+| 想要的结果                                                                                      | 不 PR 能否 | 路径                                                                |
+| ----------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------- |
+| **`repo-checks`（内含 `just fmt-check` / `just i18n-check` / `just i18n-smoke` 三道 i18n 闸）** | ❌         | 只有 `pull_request` 或 `push: main`；它自己没有 `workflow_dispatch` |
+| `codespell` / `cargo-deny` / `blob-size-policy` / `sdk`                                         | ❌         | 同上（仅 `workflow_call`）                                          |
+| **完整 rust 套件**（`rust-ci-full`，比 blocking 里的 `rust-ci` 更全）                           | ✅         | 推一个**以 `full-ci` 结尾**的分支名，或手动 dispatch `rust-ci-full` |
+| `bazel` / `rust-ci`（含平台矩阵）                                                               | ✅（手动） | `workflow_dispatch`（网页 Run workflow 或 `gh workflow run`）       |
+| `postmerge-ci`（rust-ci-full + v8-canary）                                                      | ❌         | 仅 `push: main`                                                     |
 
 ### 7.3 这个 fork 的实际状态（外部证据，2026-09-14 之后）
 
-* `GET /repos/clearnature/codex/actions/runs?per_page=8` → **`total_count: 0`**：**这个 fork 从来没跑过一次 workflow**。
-* `GET /repos/clearnature/codex/actions/workflows` → 29 个，关键各条（`blocking-ci`/`repo-checks`/`bazel`/`rust-ci`/
+- `GET /repos/clearnature/codex/actions/runs?per_page=8` → **`total_count: 0`**：**这个 fork 从来没跑过一次 workflow**。
+- `GET /repos/clearnature/codex/actions/workflows` → 29 个，关键各条（`blocking-ci`/`repo-checks`/`bazel`/`rust-ci`/
   `rust-ci-full`/`codespell`/`cargo-deny`/`postmerge-ci`/`sdk`）都是 **`state: active`**
   ⇒ **Actions 没有被禁用**（只有 `close-stale-contributor-prs` 与 `rust-release-prepare` 是 `disabled_fork`）。
-* 两者合起来自洽：**往功能分支 push 在本仓库配置下什么都不触发**（`origin/feat/i18n` 存在，但 0 次运行
+- 两者合起来自洽：**往功能分支 push 在本仓库配置下什么都不触发**（`origin/feat/i18n` 存在，但 0 次运行
   正是「推功能分支不触发任何 workflow」的结果）。
-* 本地引用：`HEAD` 比 `origin/feat/i18n` **领先 308 个提交**（`git rev-list --left-right --count HEAD...origin/feat/i18n`
+- 本地引用：`HEAD` 比 `origin/feat/i18n` **领先 308 个提交**（`git rev-list --left-right --count HEAD...origin/feat/i18n`
   = `308 0`）⇒ 最近的工作都还没推。
-* 本机**不能推送**：沙箱无网络（`CODEX_SANDBOX_NETWORK_DISABLED=1`），`git ls-remote origin` 实测超时/失败。
+- 本机**不能推送**：沙箱无网络（`CODEX_SANDBOX_NETWORK_DISABLED=1`），`git ls-remote origin` 实测超时/失败。
 
 ### 7.4 建议（附判据）
 

@@ -37,11 +37,11 @@ codex-rs/target/x86_64-unknown-linux-gnu/release/{...同样四个...}
 
 ## 一、要解决的三个问题
 
-| # | 问题 | 本质 | 上游态度 |
-| --- | --- | --- | --- |
-| **P1** | 编译产物无法携带版本号（恒报 `codex-cli 0.0.0`） | 版本号**只在发版 tag 上写**，`main` 恒为占位值，且 Cargo 不提供构建期覆盖 `CARGO_PKG_VERSION` 的手段 | issue [#14065]，**已 `not_planned` 关闭**，无 PR |
-| **P2** | 本地 `cargo build` 挂在 `v8 v150.4.0`（HTTP 404） | 上游自建 rusty_v8 产物只喂给 CI，本地无对等入口 | issue [#36698] / [#43318]，**均 open**，社区靠手工 workaround |
-| **P3** | musl 目标本地无法构建 | CI 用一整套 musl 交叉工具链（Zig + 自编译 libcap），本地无文档 | 无对应 issue |
+| #      | 问题                                              | 本质                                                                                                 | 上游态度                                                      |
+| ------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **P1** | 编译产物无法携带版本号（恒报 `codex-cli 0.0.0`）  | 版本号**只在发版 tag 上写**，`main` 恒为占位值，且 Cargo 不提供构建期覆盖 `CARGO_PKG_VERSION` 的手段 | issue [#14065]，**已 `not_planned` 关闭**，无 PR              |
+| **P2** | 本地 `cargo build` 挂在 `v8 v150.4.0`（HTTP 404） | 上游自建 rusty_v8 产物只喂给 CI，本地无对等入口                                                      | issue [#36698] / [#43318]，**均 open**，社区靠手工 workaround |
+| **P3** | musl 目标本地无法构建                             | CI 用一整套 musl 交叉工具链（Zig + 自编译 libcap），本地无文档                                       | 无对应 issue                                                  |
 
 [#14065]: https://github.com/openai/codex/issues/14065
 [#36698]: https://github.com/openai/codex/issues/36698
@@ -55,11 +55,11 @@ codex-rs/target/x86_64-unknown-linux-gnu/release/{...同样四个...}
 
 `codex-rs/Cargo.toml` 的 `[workspace.package] version` 被 **150 个 crate** 以 `version.workspace = true` 继承，并在 **101 处**以 `env!("CARGO_PKG_VERSION")` 编译期内联。其中三处是**对外契约**：
 
-| 落点 | 位置 | 后果 |
-| --- | --- | --- |
-| 轮次元数据 `codex_version` | `core/src/turn_metadata.rs:48,255` | 每次 turn 上报给模型的**客户端身份** |
-| HTTP `User-Agent` 前缀 | `login/src/auth/default_client.rs:165` | 请求指纹 |
-| 遥测 `codex_rs_version` | `analytics/src/events.rs:1445`、`otel/` | 数据侧区分客户端版本 |
+| 落点                       | 位置                                    | 后果                                 |
+| -------------------------- | --------------------------------------- | ------------------------------------ |
+| 轮次元数据 `codex_version` | `core/src/turn_metadata.rs:48,255`      | 每次 turn 上报给模型的**客户端身份** |
+| HTTP `User-Agent` 前缀     | `login/src/auth/default_client.rs:165`  | 请求指纹                             |
+| 遥测 `codex_rs_version`    | `analytics/src/events.rs:1445`、`otel/` | 数据侧区分客户端版本                 |
 
 其余为显示、`codex doctor`、rollout 记录、app-server 协议字段等。
 
@@ -74,11 +74,11 @@ codex-rs/target/x86_64-unknown-linux-gnu/release/{...同样四个...}
 
 真实版本只在发版提交里出现一次。tag `rust-v0.154.0` 指向的提交 `6b9826e3a`，**整个提交只改这一行**（`1 file changed, 1 insertion(+), 1 deletion(-)`），且**不在 `main` 上**：
 
-| 位置 | version |
-| --- | --- |
-| `origin/main` | `0.0.0` |
-| tag `rust-v0.154.0` | `0.154.0` |
-| tag `rust-v0.143.0-alpha.10` | `0.0.0` |
+| 位置                         | version   |
+| ---------------------------- | --------- |
+| `origin/main`                | `0.0.0`   |
+| tag `rust-v0.154.0`          | `0.154.0` |
+| tag `rust-v0.143.0-alpha.10` | `0.0.0`   |
 
 ### 2.3 快照与版本号耦合，且"替换式归一化"救不了它
 
@@ -99,26 +99,26 @@ new: │ >_ OpenAI Codex (v<VERSION>)            │     <- 版本号较短时�
 
 ### P1 让产物携带版本号
 
-| 路径 | 做法 | 复杂度 | 同步上游冲突 | 风险 |
-| --- | --- | --- | --- | --- |
-| **① 构建期注入 + 还原**（采用） | 脚本临时写 manifest，构建后 `trap` 还原 | 低 | **零**（不改源码） | 构建期工作区被临时改动；并发会互相污染（已用 lock 消除） |
-| ② `build.rs` 派生 + 改调用点 | 新增 crate，替换 101 处 `env!` | 高（46 文件 + `BUILD.bazel`） | 高（每次同步都冲突） | 触及 `codex-core`，被 `AGENTS.md` 明确劝退 |
-| ③ 提交时 bump 并一起提交 | 改 manifest + lock + 重录 142 个快照文件 | 中 | 中 | 只携带"上次 bump 的版本"；快照噪音极大 |
+| 路径                            | 做法                                     | 复杂度                        | 同步上游冲突         | 风险                                                     |
+| ------------------------------- | ---------------------------------------- | ----------------------------- | -------------------- | -------------------------------------------------------- |
+| **① 构建期注入 + 还原**（采用） | 脚本临时写 manifest，构建后 `trap` 还原  | 低                            | **零**（不改源码）   | 构建期工作区被临时改动；并发会互相污染（已用 lock 消除） |
+| ② `build.rs` 派生 + 改调用点    | 新增 crate，替换 101 处 `env!`           | 高（46 文件 + `BUILD.bazel`） | 高（每次同步都冲突） | 触及 `codex-core`，被 `AGENTS.md` 明确劝退               |
+| ③ 提交时 bump 并一起提交        | 改 manifest + lock + 重录 142 个快照文件 | 中                            | 中                   | 只携带"上次 bump 的版本"；快照噪音极大                   |
 
 ### P2 V8
 
-| 路径 | 做法 | 代价 |
-| --- | --- | --- |
-| **① 固化脚本**（采用） | `scripts/setup-rusty-v8.sh`，双重校验 | 一次 |
-| ② 手工 workaround | 每次照 issue 评论敲一遍 | 每台机器重踩 |
-| ③ `V8_FROM_SOURCE=1` | 源码构建 V8 | 数小时，且 #43318 证明会因缺 ICU 数据失败 |
+| 路径                   | 做法                                  | 代价                                      |
+| ---------------------- | ------------------------------------- | ----------------------------------------- |
+| **① 固化脚本**（采用） | `scripts/setup-rusty-v8.sh`，双重校验 | 一次                                      |
+| ② 手工 workaround      | 每次照 issue 评论敲一遍               | 每台机器重踩                              |
+| ③ `V8_FROM_SOURCE=1`   | 源码构建 V8                           | 数小时，且 #43318 证明会因缺 ICU 数据失败 |
 
 ### P3 musl
 
-| 路径 | 做法 | 代价 |
-| --- | --- | --- |
+| 路径                       | 做法                                     | 代价                                      |
+| -------------------------- | ---------------------------------------- | ----------------------------------------- |
 | **① 复用 CI 逻辑**（采用） | 过滤掉 CI 脚本里的 sudo 行，其余原样执行 | 需一次性 apt 安装（唯一需要 sudo 的地方） |
-| ② 自己重写等价逻辑 | 手抄 libcap 编译 + 20 个环境变量 | 与 CI 漂移，难维护 |
+| ② 自己重写等价逻辑         | 手抄 libcap 编译 + 20 个环境变量         | 与 CI 漂移，难维护                        |
 
 ## 四、落地方案
 
@@ -181,7 +181,7 @@ sudo apt-get update && sudo apt-get install -y \
 
 - **Zig 不是 Rust 的 linker**，而是给 native 依赖（`aws-lc-sys` 等）当 C/C++ 编译器；CI 会生成 `zigcc` / `zigcxx` 包装脚本绕开四个坑（丢 Rust 风格 `--target`、`-I/usr/include` 降级成 `-idirafter`、补 `-fno-sanitize=undefined`）。
 - **apt 的 `libcap-dev` 是 glibc 链接的，musl 用不了** → 必须用 `musl-gcc` 重编 `libcap.a`（脚本下载 `libcap-2.75.tar.xz` 并校验 sha256）。
-- **Rust 的 linker 必须是 `musl-gcc`**（`CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER`），注释写明是为了 *avoid Zig injecting its own CRT*。
+- **Rust 的 linker 必须是 `musl-gcc`**（`CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER`），注释写明是为了 _avoid Zig injecting its own CRT_。
 - 还要 `AWS_LC_SYS_NO_JITTER_ENTROPY=1`。
 
 ### 4.4 CI（待落地）
@@ -194,14 +194,14 @@ sudo apt-get update && sudo apt-get install -y \
 
 ### 5.1 三套产物
 
-| 目标 | 文件 | 大小 | 自报版本 | 链接方式 |
-| --- | --- | --- | --- | --- |
-| **musl** | `codex` | 1.18 G | `codex-cli 0.154.0` | **static-pie / statically linked** |
-| | `codex-code-mode-host` | 173 M | | static-pie |
-| | `codex-responses-api-proxy` | 47 M | | static-pie |
-| | `bwrap` | 517 K | | static-pie（已 strip） |
-| **glibc** | 同样四个 | 1.19 G | `codex-cli 0.154.0` | 动态 |
-| **dev** | `target/debug/codex` | 1.28 G | `codex-cli 0.0.0` | 动态 |
+| 目标      | 文件                        | 大小   | 自报版本            | 链接方式                           |
+| --------- | --------------------------- | ------ | ------------------- | ---------------------------------- |
+| **musl**  | `codex`                     | 1.18 G | `codex-cli 0.154.0` | **static-pie / statically linked** |
+|           | `codex-code-mode-host`      | 173 M  |                     | static-pie                         |
+|           | `codex-responses-api-proxy` | 47 M   |                     | static-pie                         |
+|           | `bwrap`                     | 517 K  |                     | static-pie（已 strip）             |
+| **glibc** | 同样四个                    | 1.19 G | `codex-cli 0.154.0` | 动态                               |
+| **dev**   | `target/debug/codex`        | 1.28 G | `codex-cli 0.0.0`   | 动态                               |
 
 冒烟测试（musl 与 glibc 各跑一遍）：`--version` / `--help` / `exec --help` / `mcp --help` / `code-mode-host --help` 全部通过。
 
@@ -209,21 +209,21 @@ sudo apt-get update && sudo apt-get install -y \
 
 ### 5.2 脚本行为
 
-| 项 | 命令 | 结果 |
-| --- | --- | --- |
-| V8 脚本从零可用 | `CODEX_V8_CACHE=/tmp/v8-test bash scripts/setup-rusty-v8.sh` | 下载 3 文件 + `verified checksums` |
-| V8 幂等 | 第二次运行 | 3 个文件全部命中缓存 |
-| **V8 篡改被拒** | 改归档 1 字节后重跑 | 退出码 `1`，`artifact checksum verification failed` |
-| **产物携带版本** | `target/<t>/release/codex --version` | **`codex-cli 0.154.0`**（manifest 仍为 `0.0.0`） |
-| 工作区零残留 | 构建前后 `md5sum -c` | `Cargo.toml: OK` / `Cargo.lock: OK` |
-| 失败路径还原 | 传不存在的 target | 退出码 `1`，manifest 仍 `md5 OK` |
-| 中断路径还原 | `kill -INT` 脚本 | 还原执行，`md5 OK` |
-| **并发被拒** | 同时起两个实例 | 第一个 `0`、第二个 `1` 且提示 `in progress` |
-| `--help` 任意 cwd | 从 `/tmp` 调用 | 正常输出 |
-| dev 构建不受影响 | `target/debug/codex --version` | `codex-cli 0.0.0` |
-| 快照未被牵动 | 构建前后 `git status` | 142 个 `.snap` 无改动 |
-| 快照与版本一致 | `just test -p codex-tui status_snapshot` | **28 passed / 0 failed** |
-| `bwrap` 摘要自洽 | `grep -a <sha256> codex` | 与当前 `bwrap` 的 sha256 一致 |
+| 项                | 命令                                                         | 结果                                                |
+| ----------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| V8 脚本从零可用   | `CODEX_V8_CACHE=/tmp/v8-test bash scripts/setup-rusty-v8.sh` | 下载 3 文件 + `verified checksums`                  |
+| V8 幂等           | 第二次运行                                                   | 3 个文件全部命中缓存                                |
+| **V8 篡改被拒**   | 改归档 1 字节后重跑                                          | 退出码 `1`，`artifact checksum verification failed` |
+| **产物携带版本**  | `target/<t>/release/codex --version`                         | **`codex-cli 0.154.0`**（manifest 仍为 `0.0.0`）    |
+| 工作区零残留      | 构建前后 `md5sum -c`                                         | `Cargo.toml: OK` / `Cargo.lock: OK`                 |
+| 失败路径还原      | 传不存在的 target                                            | 退出码 `1`，manifest 仍 `md5 OK`                    |
+| 中断路径还原      | `kill -INT` 脚本                                             | 还原执行，`md5 OK`                                  |
+| **并发被拒**      | 同时起两个实例                                               | 第一个 `0`、第二个 `1` 且提示 `in progress`         |
+| `--help` 任意 cwd | 从 `/tmp` 调用                                               | 正常输出                                            |
+| dev 构建不受影响  | `target/debug/codex --version`                               | `codex-cli 0.0.0`                                   |
+| 快照未被牵动      | 构建前后 `git status`                                        | 142 个 `.snap` 无改动                               |
+| 快照与版本一致    | `just test -p codex-tui status_snapshot`                     | **28 passed / 0 failed**                            |
+| `bwrap` 摘要自洽  | `grep -a <sha256> codex`                                     | 与当前 `bwrap` 的 sha256 一致                       |
 
 ## 六、踩坑记录（下次直接看这里）
 

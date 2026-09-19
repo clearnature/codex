@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **223** | 第 481 轮再清 18 条（译 6 + 登记 12）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **201** | 第 484 轮清 22 条（全登记：多智能体族）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1832,3 +1832,17 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 2. 本批**漏跑**五步里的 `python3 scripts/i18n_dossier_lines.py --fix`（我在文件里插入了代码行 ⇒
    站点列漂移），被合成校验抓到（`r-mu7rxmms-3cmr72` 非零退出）。补跑后 `rewrote 2 row(s)`、`drifted 0`。
    **五步清单不是仪式**：漏掉任何一步都有对应的机器检查在等着报。
+
+### 12.43 第 484 轮：多智能体族 21 行覆盖 22 站点（**工具搜索关键词**是第四类「不译」）
+
+`tools/handlers/multi_agents*` 一批 22 个站点，全部**登记不译**，三类接收者：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| **工具搜索关键词**（5）| `close_agent.rs:19`、`resume_agent.rs:22`、`send_input.rs:19`、`spawn.rs:34`、`wait.rs:41` | 这些串是 `multi_agent_tool_search_info("close_agent close shutdown …", spec, ..)` 的**索引词**，供 BM25 检索用（§12.7 索引/标识符）——**不是**给用户看的描述。字形上像「一串英文名词」，最容易误判为可译 |
+| 搜索源元数据（2）| `multi_agents.rs:36`/`:37` | `MULTI_AGENT_TOOL_SEARCH_SOURCE_NAME`/`_DESCRIPTION` ⇒ 索引元数据（§12.2/§12.7）|
+| 校验/深度限制错误（15 站点）| `resume_agent.rs:48`/`:59`、`spawn.rs:72`、`multi_agents.rs:41`/`:50`、`interrupt_agent.rs:58`/`:63`/`:68`、`message_tool.rs:82`/`:86`、`multi_agents_v2/spawn.rs:165`/`:294`/`:314`/`:319`、`wait.rs:96` | 全部 `FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）。其中 `Agent depth limit reached. Solve the task yourself.` 的措辞本身就是**对模型说**的，与接收者一致 |
+
+**流程改进（本批起用）**：写登记行时若已知该值有多个站点，**同一行就把 `[fanout-reviewed]` 与逐站点理由写上**，
+不要等 `--fanout` 事后提醒。本批 3 个多站点值里 1 个预先标好、2 个是事后补的 —— 后者多花了一轮。
+另记：**同一个值常对应多条物理登记行**（每站点一行），标记脚本按「值」匹配时命中数会是站点数，别按 1 行去断言。

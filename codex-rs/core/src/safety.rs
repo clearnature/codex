@@ -1,5 +1,7 @@
 use codex_apply_patch::ApplyPatchAction;
 use codex_apply_patch::ApplyPatchFileChange;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::config_types::WindowsSandboxLevel;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::permissions::FileSystemSandboxPolicy;
@@ -7,11 +9,6 @@ use codex_protocol::permissions::FileSystemSandboxPolicyContext;
 use codex_protocol::protocol::AskForApproval;
 use codex_sandboxing::get_platform_sandbox;
 use codex_utils_path_uri::PathUri;
-
-const PATCH_REJECTED_OUTSIDE_PROJECT_REASON: &str =
-    "writing outside of the project; rejected by user approval settings";
-const PATCH_REJECTED_READ_ONLY_REASON: &str =
-    "writing is blocked by read-only sandbox; rejected by user approval settings";
 
 #[derive(Debug, PartialEq)]
 pub enum SafetyCheck {
@@ -95,11 +92,17 @@ fn patch_rejection_reason(
             if !file_system_sandbox_policy.has_full_disk_write_access_with_context(context)
                 && has_no_writable_roots =>
         {
-            PATCH_REJECTED_READ_ONLY_REASON
+            tr(
+                current(),
+                "writing is blocked by read-only sandbox; rejected by user approval settings",
+            )
         }
         PermissionProfile::Managed { .. }
         | PermissionProfile::Disabled
-        | PermissionProfile::External { .. } => PATCH_REJECTED_OUTSIDE_PROJECT_REASON,
+        | PermissionProfile::External { .. } => tr(
+            current(),
+            "writing outside of the project; rejected by user approval settings",
+        ),
     }
 }
 

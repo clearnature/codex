@@ -7608,6 +7608,15 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "zsh fork feature enabled, but no packaged zsh fork is available for this install",
         "已启用zsh fork特性，但本次安装没有可用的打包zsh fork",
     ),
+    ("Error running remote compact task", "运行远程压缩任务出错"),
+    (
+        "writing outside of the project; rejected by user approval settings",
+        "写入项目之外；已被用户审批设置拒绝",
+    ),
+    (
+        "writing is blocked by read-only sandbox; rejected by user approval settings",
+        "写入被只读沙箱阻止；已被用户审批设置拒绝",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

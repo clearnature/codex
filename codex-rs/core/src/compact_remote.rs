@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
@@ -180,9 +182,9 @@ async fn run_remote_compact_task_inner(
         .await;
     if let Err(err) = result {
         sess.track_turn_codex_error(turn_context, &err);
-        let event = EventMsg::Error(
-            err.to_error_event(Some("Error running remote compact task".to_string())),
-        );
+        let event = EventMsg::Error(err.to_error_event(Some(
+            tr(current(), "Error running remote compact task").to_string(),
+        )));
         sess.send_event(turn_context, event).await;
         return Err(err);
     }

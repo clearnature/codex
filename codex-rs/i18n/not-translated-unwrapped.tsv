@@ -1061,3 +1061,9 @@ append realtime history	codex-rs/core/src/session/realtime_history.rs:36	`live_t
 review web_search_mode is disallowed by requirements; keeping constrained value	codex-rs/core/src/session/review.rs:76	`tracing::warn!` 日志行 ⇒ §12.3
 resolved web_search_mode is disallowed by requirements; keeping constrained value	codex-rs/core/src/session/turn_context.rs:687	`tracing::warn!` 日志行 ⇒ §12.3
 use the selected turn environment cwd instead	codex-rs/core/src/session/turn_context.rs:225	**Rust `#[deprecated(note = …)]` 属性文本**（编译期诊断，不是应用文案）⇒ 不译
+This agent's turn failed. If you still need this agent, use the available collaboration tools to give it another task.	codex-rs/core/src/session_prefix.rs:13	**发给父 agent 的 inter-agent 完成消息**（`format_inter_agent_completion_message`，session/mod.rs:48 消费）⇒ 模型上下文 ⇒ §12.2
+Agent errored: {error}\n\n{ERROR_NEXT_ACTION}	codex-rs/core/src/session_prefix.rs:29	同上（`AgentStatus::Errored` 的消息体）⇒ 模型上下文 ⇒ §12.2
+Agent shut down.	codex-rs/core/src/session_prefix.rs:31	同上（`AgentStatus::Shutdown`）⇒ §12.2
+Agent was not found.	codex-rs/core/src/session_prefix.rs:32	同上（`AgentStatus::NotFound`）⇒ §12.2
+User verification is required. Please respond in the app.	codex-rs/core/src/context/user_verification_notice.rs:26	`impl ContextualUserFragment`（标签 `<user_verification_notice>`）⇒ 模型上下文 ⇒ §12.2
+(no summary available)	codex-rs/core/src/compact.rs:761	`CompactionSummary::new(..)` 的兜底文本（进模型历史的压缩摘要）⇒ 模型上下文 ⇒ §12.2

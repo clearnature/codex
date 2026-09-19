@@ -1,6 +1,7 @@
 use crate::context::GuardianContextMode;
 use codex_i18n::current;
 use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -338,7 +339,11 @@ async fn run_compact_task_inner_impl(
                     let delay = backoff(retries);
                     sess.notify_stream_error(
                         turn_context.as_ref(),
-                        format!("Reconnecting... {retries}/{max_retries}"),
+                        tr_with(
+                            current(),
+                            "Reconnecting... {0}/{1}",
+                            &[&retries.to_string(), &max_retries.to_string()],
+                        ),
                         e,
                     )
                     .await;

@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **115** | 第 503 轮闭合 §12.48 的 4 处判据（全部判为该译）；`session/` 已清；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **104** | 第 507 轮清 11 站点（译 5 + 登记 6：src 顶层与 `context/`）；`current_time.rs:51` 的调用链未坐实、留在候选；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1982,3 +1982,26 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 3. 拿不准的**不要猜着判**：显式落成待办（本轮 §12.48 的 4 条）+ 机器可查回执证明「记录在案且未跳过」；
 4. 登记行从 `--dump-rows` 抄或按站点程序化提取（手抄两次都出错）；
 5. 补 `tr` 前查字典。
+
+### 12.50 第 507 轮：src 顶层 + `context/` 的 11 站点；**repr 不能直接 `strip`**
+
+**译 5**：`compact_remote.rs:184` 与 `compact_remote_v2.rs:216`（`err.to_error_event(Some(..))` ⇒ `EventMsg::Error`）、
+`safety.rs` 的两条**补丁被拒原因**（`PATCH_REJECTED_READ_ONLY_REASON` / `PATCH_REJECTED_OUTSIDE_PROJECT_REASON`）、
+`compact.rs:341` 的 `Reconnecting... {retries}/{max_retries}`（**复用**已译模板 `Reconnecting... {0}/{1}`）。
+
+> `safety.rs` 的处理方式值得记：两个 `const … &str = "…"` **不能**在常量里调 `tr`。
+> 两条路都不好：① 保留常量、在使用处 `tr(current(), CONST)` ⇒ 走检查器的 **bound-key** 通道（像 `curr_time` 那样要额外登记）；
+> ② 常量与字面量各留一份 ⇒ 两份副本。本轮选**第三条**：**删掉常量**，把英文字面量直接写进分支处的 `tr(current(), "…")`，
+> 既无 bound-key 也无重复（若以后还有别处要用这两个常量，就得回到①并接受 bound-key）。
+
+**登记 6**：`session_prefix.rs` 四条（`ERROR_NEXT_ACTION` 与 `AgentStatus::{Errored,Shutdown,NotFound}` 的消息 —— 经
+`format_inter_agent_completion_message`（`session/mod.rs:48` 消费）**发给父 agent** ⇒ 模型上下文）、
+`context/user_verification_notice.rs`（`ContextualUserFragment`）、`compact.rs:756`（`CompactionSummary` 的兜底文本）。
+
+**工具教训（本批被 `--audit-rows` 抓到第 3 次）**：我用 `--dump` 的输出、配合 `.strip("'\"")` 去引号来取键 ——
+**这不会反转义**：`--dump` 打的是 `repr(value)`，值里真实的反斜杠会显示成 `\\`，strip 后得到的键多一个反斜杠 ⇒ 空操作。
+正确做法是**从 `--dump-rows` 取键**（它打的是真实值）；若只能用 `--dump`，必须 `ast.literal_eval` 解码而不是 strip。
+判据：**取键只用 `--dump-rows`；`--dump` 只用于看 repr/调试**。
+
+**未坐实而留在候选的 1 处**：`codex-rs/core/src/current_time.rs:51`（`resolve_time_provider` 的 `anyhow!`，
+config 误配的提示）—— 调用链未读到渲染点，**不猜着判**。

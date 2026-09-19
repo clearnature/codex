@@ -367,7 +367,7 @@ clap 从 **doc comment** 推导 `about` 时会**去掉句尾句点**；显式 `a
 **结果**：
 * 多文件渲染的键 **60** 个；其中 ≤8 字符 **18** 个，≤12 字符 **32** 个。
 * ≤8 字符的 18 个逐一复核（`read {0}`、`  Press `、` to save`、`Agents`、`Approval`、`Composer`、
-  `Editor`、`Cancel`、`Plugin`、`Reason: `、`Running`、`Server: `、`Source`、`Status: `、`Working`、
+  `Editor`、`Cancel`、`Plugin`、`Reason:`（该标签后带一个尾随空格）、`Running`、`Server: `、`Source`、`Status: `、`Working`、
   `disabled`、`item`、`items`）：**都是通用词，各处语义一致，无需拆分**。
 * 两处值得记录的判定：
   * `read {0}` / `write {0}` → 「读取{0}」/「写入{0}」：在 `bottom_pane/approval_overlay.rs` 是
@@ -1497,14 +1497,14 @@ python3 scripts/i18n_todo.py --root codex-rs/core --root codex-rs/tui --root cod
 
 | 文件 | 候选 | 判定 |
 | --- | ---: | --- |
-| `tools/orchestrator.rs` | 6 | **全部译**：去向有两条 —— ① `ToolError::Rejected` → `tools/events.rs` 的 `ToolEventStage::Failure(Rejected)` → `ExecCommandEnd` 的 stderr/aggregated_output → TUI `CommandOutput`（`tui/src/chatwidget/command_lifecycle.rs:341,395`）；② `ExecApprovalRequestEvent.reason` → `tui/src/bottom_pane/approval_overlay.rs:735` 的 `Reason: ` 行 |
+| `tools/orchestrator.rs` | 6 | **全部译**：去向有两条 —— ① `ToolError::Rejected` → `tools/events.rs` 的 `ToolEventStage::Failure(Rejected)` → `ExecCommandEnd` 的 stderr/aggregated_output → TUI `CommandOutput`（`tui/src/chatwidget/command_lifecycle.rs:341,395`）；② `ExecApprovalRequestEvent.reason` → `tui/src/bottom_pane/approval_overlay.rs:735` 的 `Reason:`（该标签后带一个尾随空格） 行 |
 | `unified_exec/process_manager.rs` | 6 | 1 译（`:1315` 同串在字典里已有译文，且属 windows 分支 ⇒ 另需平台复核）、**4 不确定**、1 平台不可验 |
 | `session/mcp.rs` | 11 | **全部不译**：5 条只进 `tracing`/`anyhow` 内部链；6 条 Guardian Decline 串只经 `mcp.rs:986` 的 `tracing::warn`，返回值是**无消息**的 decline，不进任何用户面或协议载荷 |
 
 #### 判据修正：**协议字段 ≠ 不可译**，判据是「有没有 UI 渲染它」
 
 档案里最硬的一条发现：`ExecApprovalRequestEvent.reason` 是 `codex_protocol` 的**协议字段**，
-但 TUI 的审批浮层会**逐字渲染**它（`approval_overlay.rs:735` 的 `Reason: ` 行）⇒ 它该**译**。
+但 TUI 的审批浮层会**逐字渲染**它（`approval_overlay.rs:735` 的 `Reason:`（该标签后带一个尾随空格） 行）⇒ 它该**译**。
 这修正了我此前一条过粗的推理（「进协议类型 ⇒ 不译」，见 §12.34 与 step_activation 那批）。
 
 处置：判据改为 **「该串有没有渲染方」**——协议类型只说明它跨进程传递，不说明没人渲染它。
@@ -1527,3 +1527,66 @@ python3 scripts/i18n_todo.py --root codex-rs/core --root codex-rs/tui --root cod
 `unified_exec/process_manager.rs` 的 4 条「不确定」（`:613`/`:851`/`:1265`/`:1467`）**未判**：
 它们同时存在 `FunctionCallError::RespondToModel`（回模型）与 `ToolError::Rejected → 用户面` 两条真实路径，
 要定案必须先确认「哪条 spawn 路径产生的这个 err」。留到该文件自己的批次，届时按调用路径逐条定。
+
+### 12.36 第 54 轮：**形状盲区**的普查（第五类隐形）与 4 条已甄别站点
+
+**症状**：`network_policy_decision.rs` 报 8 个候选，但同一个 `match` 里的第 9 条
+（`local/private network addresses are blocked by the sandbox policy`，`:63`）**不在清单里**——
+兄弟臂全是 `candidates`，只有它掉队。
+
+**机制**：`scripts/i18n_scan.py` 的 `classify()` 有形状启发式：串里含 `/`、形如路径时判 `internal:path`，
+而该桶不进候选。这条消息恰好含 `local/private` ⇒ 被当成路径。这是 §12.32（`internal:assert`/`log` 盲区）
+的**同族新成因**：不是「上方有日志宏」，而是「字面量本身的形状」。
+
+**普查（可复现）**：对 core 的全部字面量按桶计数，并筛出「像文案」者
+（含空格 + 长度 ≥ 25 + 非路径形态——**故意保守**，是下界不是上界）：
+
+| 桶 | 条数 | 其中像文案 |
+| --- | ---: | ---: |
+| `internal:test` | 57 690 | 10 719（测试断言，正确排除） |
+| `internal:short` / `identifier` / `name` | 961 / 767 / 421 | 0（形状即判据） |
+| `internal:log` | 387 | 245（§12.3 正确排除） |
+| `internal:assert` | 121 | 75（同上） |
+| **`internal:path`** | **198** | **4** ← 本次踩到的类 |
+| `internal:data` | 309 | 工具/JSON-schema **字段说明**（模型面，§4 决策 3，正确排除） |
+| `internal:placeholder` | 96 | 模板占位符（`{{ x }}`/`{tool_description}`，非文案） |
+| `internal:match` | 106 | 9（按 §12.34 交给 `--traps`） |
+
+**`internal:path` 的 4 条逐条甄别（接收端为判据，不看形状）**：
+
+| 站点 | 消费端 | 判定 |
+| --- | --- | --- |
+| `tools/handlers/mcp_resource/list_mcp_resources.rs:81` `resources/list failed: {err:#}` | `FunctionCallError::RespondToModel`（:81） | 不译（模型面） |
+| `.../list_mcp_resource_templates.rs:82` `resources/templates/list failed: {err:#}` | 同上（:81-83） | 不译 |
+| `.../read_mcp_resource.rs:86` `resources/read failed: {err:#}` | 同上（:86） | 不译 |
+| `unified_exec/mod.rs:224` `... {omitted_bytes} bytes omitted ...` | 工具输出的**截断标记**（`head_tail_buffer` 拼进输出文本） | 不译（§12.31 载荷；`head_tail_buffer_tests.rs:21` 按值断言，译了库单测会红） |
+
+⚠ **这 4 条不进 `not-translated-unwrapped.tsv`**：那张表按值/站点豁免**候选桶**里的字面量，
+而这 4 条本就不是候选（形状已排除）⇒ 写进去既无机制作用、又**无法用标准负向控制验证**
+（删行它们也不会回到候选）。故以**本节**为它们的记录载体。
+`network_policy_decision.rs:63` 那条不同：它已按消费端判为用户面并**译出**（提交 `d650ec5bf`），
+因为 `denied_network_policy_message` 的 `detail` 经
+`record_blocked_request`（`tools/network_approval.rs:604`）→ `network_approval_outcome_to_result`（:184）
+变成 `ToolError::Rejected`。
+
+**查法（怀疑盲区时直接用扫描器 API，别只看汇总）**：
+
+```python
+import importlib.util
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("scan", "scripts/i18n_scan.py")
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+for f in m.scan(Path("codex-rs/core")):
+    if f["path"].endswith("<文件>"):
+        print(f["line"], f["bucket"], f["value"][:60])
+```
+
+**可反驳条件**：若某条字面量**真的是**路径/URI/glob/模板占位符，那么形状排除是**正确**的
+（本表 `internal:data` 与 `internal:placeholder` 两桶就是这种情况，无需动作）。
+
+#### 补正：§12.35 末尾的「未完成项」已经关闭
+
+该段写「`unified_exec/process_manager.rs` 的 `:613`/`:851`/`:1265`/`:1467` 未判」——该批**已判完**
+（提交 `8ad107c71`）：`:613`/`:851` 只到 `FunctionCallError::RespondToModel`（模型面 ⇒ 登记）、
+`:1265`/`:1315` 译出（经 `ToolError::Rejected` 到用户面）、`:1467` 的 `message` 被两个消费点用 `..` 丢弃
+（无渲染方 ⇒ 登记）。本表 `:1467` 那行仍写着「两个消费点丢弃」，可对照。

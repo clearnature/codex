@@ -3125,6 +3125,7 @@ dependencies = [
  "codex-git-utils",
  "codex-hooks",
  "codex-http-client",
+ "codex-i18n",
  "codex-login",
  "codex-mcp",
  "codex-model-provider",

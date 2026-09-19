@@ -3,6 +3,9 @@ use crate::manifest::PluginManifest;
 use crate::manifest::PluginManifestFormat;
 use crate::manifest::load_plugin_manifest;
 use crate::manifest::parse_plugin_manifest;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::PluginId;
 use codex_plugin::validate_plugin_segment;
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -64,28 +67,34 @@ impl ActivePluginInstallation {
             Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(None),
             Err(err) => {
                 return Err(PluginStoreError::io(
-                    "failed to read remote plugin install metadata",
+                    tr(current(), "failed to read remote plugin install metadata"),
                     err,
                 ));
             }
         };
         let metadata: RemotePluginInstallMetadata =
             serde_json::from_str(&contents).map_err(|err| {
-                PluginStoreError::Invalid(format!(
-                    "failed to parse remote plugin install metadata: {err}"
+                PluginStoreError::Invalid(tr_with(
+                    current(),
+                    "failed to parse remote plugin install metadata: {0}",
+                    &[&err.to_string()],
                 ))
             })?;
         if metadata.schema_version != REMOTE_PLUGIN_INSTALL_METADATA_SCHEMA_VERSION {
-            return Err(PluginStoreError::Invalid(format!(
-                "unsupported remote plugin install metadata schema version: {}",
-                metadata.schema_version
+            return Err(PluginStoreError::Invalid(tr_with(
+                current(),
+                "unsupported remote plugin install metadata schema version: {0}",
+                &[&metadata.schema_version.to_string()],
             )));
         }
         let remote_plugin_id = metadata.remote_plugin_id.trim();
         if remote_plugin_id.is_empty() {
             return Err(PluginStoreError::Invalid(
-                "invalid remote plugin install metadata: remote plugin id must not be blank"
-                    .to_string(),
+                tr(
+                    current(),
+                    "invalid remote plugin install metadata: remote plugin id must not be blank",
+                )
+                .to_string(),
             ));
         }
         Ok(Some(remote_plugin_id.to_string()))
@@ -106,12 +115,18 @@ impl PluginStore {
 
     pub fn try_new(codex_home: PathBuf) -> Result<Self, PluginStoreError> {
         let root = AbsolutePathBuf::from_absolute_path_checked(codex_home.join(PLUGINS_CACHE_DIR))
-            .map_err(|err| PluginStoreError::io("failed to resolve plugin cache root", err))?;
+            .map_err(|err| {
+                PluginStoreError::io(tr(current(), "failed to resolve plugin cache root"), err)
+            })?;
         let data_root =
             AbsolutePathBuf::from_absolute_path_checked(codex_home.join(PLUGINS_DATA_DIR))
-                .map_err(|err| PluginStoreError::io("failed to resolve plugin data root", err))?;
-        let codex_home = AbsolutePathBuf::from_absolute_path_checked(codex_home)
-            .map_err(|err| PluginStoreError::io("failed to resolve Codex home", err))?;
+                .map_err(|err| {
+                    PluginStoreError::io(tr(current(), "failed to resolve plugin data root"), err)
+                })?;
+        let codex_home =
+            AbsolutePathBuf::from_absolute_path_checked(codex_home).map_err(|err| {
+                PluginStoreError::io(tr(current(), "failed to resolve Codex home"), err)
+            })?;
 
         Ok(Self {
             codex_home,
@@ -226,23 +241,28 @@ impl PluginStore {
         remote_plugin_id: &str,
     ) -> Result<(), PluginStoreError> {
         if !self.is_installed(plugin_id) {
-            return Err(PluginStoreError::Invalid(format!(
-                "cannot write remote identity for uninstalled plugin `{}`",
-                plugin_id.as_key()
+            return Err(PluginStoreError::Invalid(tr_with(
+                current(),
+                "cannot write remote identity for uninstalled plugin `{0}`",
+                &[plugin_id.as_key().as_str()],
             )));
         }
         let remote_plugin_id = remote_plugin_id.trim();
         if remote_plugin_id.is_empty() {
             return Err(PluginStoreError::Invalid(
-                "invalid remote plugin install metadata: remote plugin id must not be blank"
-                    .to_string(),
+                tr(
+                    current(),
+                    "invalid remote plugin install metadata: remote plugin id must not be blank",
+                )
+                .to_string(),
             ));
         }
         let path = self.remote_plugin_install_metadata_path(plugin_id);
         let parent = path.as_path().parent().ok_or_else(|| {
-            PluginStoreError::Invalid(format!(
-                "remote plugin install metadata path has no parent: {}",
-                path.display()
+            PluginStoreError::Invalid(tr_with(
+                current(),
+                "remote plugin install metadata path has no parent: {0}",
+                &[&path.display().to_string()],
             ))
         })?;
         let mut contents = serde_json::to_vec_pretty(&RemotePluginInstallMetadata {
@@ -250,26 +270,40 @@ impl PluginStore {
             remote_plugin_id: remote_plugin_id.to_string(),
         })
         .map_err(|err| {
-            PluginStoreError::Invalid(format!(
-                "failed to serialize remote plugin install metadata: {err}"
+            PluginStoreError::Invalid(tr_with(
+                current(),
+                "failed to serialize remote plugin install metadata: {0}",
+                &[&err.to_string()],
             ))
         })?;
         contents.push(b'\n');
         let mut temporary = tempfile::NamedTempFile::new_in(parent).map_err(|err| {
             PluginStoreError::io(
-                "failed to create temporary remote plugin install metadata",
+                tr(
+                    current(),
+                    "failed to create temporary remote plugin install metadata",
+                ),
                 err,
             )
         })?;
         temporary.write_all(&contents).map_err(|err| {
-            PluginStoreError::io("failed to write remote plugin install metadata", err)
+            PluginStoreError::io(
+                tr(current(), "failed to write remote plugin install metadata"),
+                err,
+            )
         })?;
         temporary.as_file_mut().flush().map_err(|err| {
-            PluginStoreError::io("failed to flush remote plugin install metadata", err)
+            PluginStoreError::io(
+                tr(current(), "failed to flush remote plugin install metadata"),
+                err,
+            )
         })?;
         temporary.persist(path.as_path()).map_err(|err| {
             PluginStoreError::io(
-                "failed to persist remote plugin install metadata",
+                tr(
+                    current(),
+                    "failed to persist remote plugin install metadata",
+                ),
                 err.error,
             )
         })?;
@@ -345,18 +379,20 @@ impl PluginStore {
         manifest: InstallManifest<'_>,
     ) -> Result<PluginInstallResult, PluginStoreError> {
         if !source_path.as_path().is_dir() {
-            return Err(PluginStoreError::Invalid(format!(
-                "plugin source path is not a directory: {}",
-                source_path.display()
+            return Err(PluginStoreError::Invalid(tr_with(
+                current(),
+                "plugin source path is not a directory: {0}",
+                &[&source_path.display().to_string()],
             )));
         }
 
         let manifest = resolve_install_manifest(source_path.as_path(), manifest);
         let plugin_name = plugin_name_for_source(source_path.as_path(), manifest)?;
         if plugin_name != plugin_id.plugin_name {
-            return Err(PluginStoreError::Invalid(format!(
-                "plugin.json name `{plugin_name}` does not match marketplace plugin name `{}`",
-                plugin_id.plugin_name
+            return Err(PluginStoreError::Invalid(tr_with(
+                current(),
+                "plugin.json name `{0}` does not match marketplace plugin name `{1}`",
+                &[plugin_name.as_str(), plugin_id.plugin_name.as_str()],
             )));
         }
         validate_plugin_version_segment(&plugin_version).map_err(PluginStoreError::Invalid)?;
@@ -394,7 +430,7 @@ impl PluginStore {
             Ok(()) => Ok(()),
             Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
             Err(err) => Err(PluginStoreError::io(
-                "failed to remove remote plugin install metadata",
+                tr(current(), "failed to remove remote plugin install metadata"),
                 err,
             )),
         }
@@ -496,17 +532,21 @@ fn hex_prefix(bytes: &[u8], count: usize) -> String {
 
 pub fn validate_plugin_version_segment(plugin_version: &str) -> Result<(), String> {
     if plugin_version.is_empty() {
-        return Err("invalid plugin version: must not be empty".to_string());
+        return Err(tr(current(), "invalid plugin version: must not be empty").to_string());
     }
     if matches!(plugin_version, "." | "..") {
-        return Err("invalid plugin version: path traversal is not allowed".to_string());
+        return Err(tr(
+            current(),
+            "invalid plugin version: path traversal is not allowed",
+        )
+        .to_string());
     }
     if !plugin_version
         .chars()
         .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | '+'))
     {
         return Err(
-            "invalid plugin version: only ASCII letters, digits, `.`, `+`, `_`, and `-` are allowed"
+            tr(current(), "invalid plugin version: only ASCII letters, digits, `.`, `+`, `_`, and `-` are allowed")
                 .to_string(),
         );
     }
@@ -518,14 +558,21 @@ fn plugin_manifest_for_source(
     manifest: InstallManifest<'_>,
 ) -> Result<PluginManifest, PluginStoreError> {
     match manifest {
-        InstallManifest::OnDisk => load_plugin_manifest(source_path)
-            .ok_or_else(|| PluginStoreError::Invalid("missing or invalid plugin.json".to_string())),
+        InstallManifest::OnDisk => load_plugin_manifest(source_path).ok_or_else(|| {
+            PluginStoreError::Invalid(tr(current(), "missing or invalid plugin.json").to_string())
+        }),
         InstallManifest::Fallback(contents) => parse_plugin_manifest(
             source_path,
             &source_path.join(".codex-plugin/plugin.json"),
             contents,
         )
-        .map_err(|err| PluginStoreError::Invalid(format!("failed to parse plugin.json: {err}"))),
+        .map_err(|err| {
+            PluginStoreError::Invalid(tr_with(
+                current(),
+                "failed to parse plugin.json: {0}",
+                &[&err.to_string()],
+            ))
+        }),
     }
 }
 
@@ -542,23 +589,34 @@ fn plugin_manifest_version_for_source(
 ) -> Result<(Option<String>, bool), PluginStoreError> {
     let contents = match manifest {
         InstallManifest::OnDisk => {
-            let manifest_path = find_plugin_manifest_path(source_path)
-                .ok_or_else(|| PluginStoreError::Invalid("missing plugin.json".to_string()))?;
-            fs::read_to_string(&manifest_path)
-                .map_err(|err| PluginStoreError::io("failed to read plugin.json", err))?
+            let manifest_path = find_plugin_manifest_path(source_path).ok_or_else(|| {
+                PluginStoreError::Invalid(tr(current(), "missing plugin.json").to_string())
+            })?;
+            fs::read_to_string(&manifest_path).map_err(|err| {
+                PluginStoreError::io(tr(current(), "failed to read plugin.json"), err)
+            })?
         }
         InstallManifest::Fallback(contents) => contents.to_string(),
     };
     let is_agent_plugin =
         agent_plugin_schema_status(&contents) == AgentPluginSchemaStatus::Supported;
-    let manifest: RawPluginManifestVersion = serde_json::from_str(&contents)
-        .map_err(|err| PluginStoreError::Invalid(format!("failed to parse plugin.json: {err}")))?;
+    let manifest: RawPluginManifestVersion = serde_json::from_str(&contents).map_err(|err| {
+        PluginStoreError::Invalid(tr_with(
+            current(),
+            "failed to parse plugin.json: {0}",
+            &[&err.to_string()],
+        ))
+    })?;
     let Some(version) = manifest.version else {
         return Ok((None, is_agent_plugin));
     };
     let Some(version) = version.as_str() else {
         return Err(PluginStoreError::Invalid(
-            "invalid plugin version in plugin.json: expected string".to_string(),
+            tr(
+                current(),
+                "invalid plugin version in plugin.json: expected string",
+            )
+            .to_string(),
         ));
     };
     if is_agent_plugin {
@@ -568,7 +626,11 @@ fn plugin_manifest_version_for_source(
     let version = version.trim();
     if version.is_empty() {
         return Err(PluginStoreError::Invalid(
-            "invalid plugin version in plugin.json: must not be blank".to_string(),
+            tr(
+                current(),
+                "invalid plugin version in plugin.json: must not be blank",
+            )
+            .to_string(),
         ));
     }
     Ok((Some(version.to_string()), false))
@@ -593,11 +655,17 @@ fn remove_existing_target(path: &Path) -> Result<(), PluginStoreError> {
 
     if path.is_dir() {
         fs::remove_dir_all(path).map_err(|err| {
-            PluginStoreError::io("failed to remove existing plugin cache entry", err)
+            PluginStoreError::io(
+                tr(current(), "failed to remove existing plugin cache entry"),
+                err,
+            )
         })
     } else {
         fs::remove_file(path).map_err(|err| {
-            PluginStoreError::io("failed to remove existing plugin cache entry", err)
+            PluginStoreError::io(
+                tr(current(), "failed to remove existing plugin cache entry"),
+                err,
+            )
         })
     }
 }
@@ -609,43 +677,57 @@ fn replace_plugin_root_atomically(
     manifest: InstallManifest<'_>,
 ) -> Result<(), PluginStoreError> {
     let Some(parent) = target_root.parent() else {
-        return Err(PluginStoreError::Invalid(format!(
-            "plugin cache path has no parent: {}",
-            target_root.display()
+        return Err(PluginStoreError::Invalid(tr_with(
+            current(),
+            "plugin cache path has no parent: {0}",
+            &[&target_root.display().to_string()],
         )));
     };
 
-    fs::create_dir_all(parent)
-        .map_err(|err| PluginStoreError::io("failed to create plugin cache directory", err))?;
+    fs::create_dir_all(parent).map_err(|err| {
+        PluginStoreError::io(
+            tr(current(), "failed to create plugin cache directory"),
+            err,
+        )
+    })?;
 
     let Some(plugin_dir_name) = target_root.file_name() else {
-        return Err(PluginStoreError::Invalid(format!(
-            "plugin cache path has no directory name: {}",
-            target_root.display()
+        return Err(PluginStoreError::Invalid(tr_with(
+            current(),
+            "plugin cache path has no directory name: {0}",
+            &[&target_root.display().to_string()],
         )));
     };
     let staged_dir = tempfile::Builder::new()
         .prefix("plugin-install-")
         .tempdir_in(parent)
         .map_err(|err| {
-            PluginStoreError::io("failed to create temporary plugin cache directory", err)
+            PluginStoreError::io(
+                tr(
+                    current(),
+                    "failed to create temporary plugin cache directory",
+                ),
+                err,
+            )
         })?;
     let staged_root = staged_dir.path().join(plugin_dir_name);
     let staged_version_root = staged_root.join(plugin_version);
     let (source_manifest_relative_path, source_manifest_contents) = match manifest {
         InstallManifest::OnDisk => {
-            let manifest_path = find_plugin_manifest_path(source)
-                .ok_or_else(|| PluginStoreError::Invalid("missing plugin.json".to_string()))?;
+            let manifest_path = find_plugin_manifest_path(source).ok_or_else(|| {
+                PluginStoreError::Invalid(tr(current(), "missing plugin.json").to_string())
+            })?;
             let relative_path = manifest_path
                 .strip_prefix(source)
                 .map_err(|_| {
                     PluginStoreError::Invalid(
-                        "plugin manifest is outside the plugin source".to_string(),
+                        tr(current(), "plugin manifest is outside the plugin source").to_string(),
                     )
                 })?
                 .to_path_buf();
-            let contents = fs::read(&manifest_path)
-                .map_err(|err| PluginStoreError::io("failed to read plugin.json", err))?;
+            let contents = fs::read(&manifest_path).map_err(|err| {
+                PluginStoreError::io(tr(current(), "failed to read plugin.json"), err)
+            })?;
             (relative_path, contents)
         }
         InstallManifest::Fallback(contents) => (
@@ -660,31 +742,51 @@ fn replace_plugin_root_atomically(
         let manifest_path = staged_version_root.join(".codex-plugin/plugin.json");
         let Some(manifest_parent) = manifest_path.parent() else {
             return Err(PluginStoreError::Invalid(
-                "plugin manifest path has no parent".to_string(),
+                tr(current(), "plugin manifest path has no parent").to_string(),
             ));
         };
         fs::create_dir_all(manifest_parent).map_err(|err| {
-            PluginStoreError::io("failed to create plugin manifest directory", err)
+            PluginStoreError::io(
+                tr(current(), "failed to create plugin manifest directory"),
+                err,
+            )
         })?;
-        fs::write(&manifest_path, contents)
-            .map_err(|err| PluginStoreError::io("failed to write fallback plugin manifest", err))?;
+        fs::write(&manifest_path, contents).map_err(|err| {
+            PluginStoreError::io(
+                tr(current(), "failed to write fallback plugin manifest"),
+                err,
+            )
+        })?;
     }
     let staged_manifest_path =
         find_plugin_manifest_path(&staged_version_root).ok_or_else(|| {
             PluginStoreError::Invalid(
-                "plugin manifest is missing after installation staging".to_string(),
+                tr(
+                    current(),
+                    "plugin manifest is missing after installation staging",
+                )
+                .to_string(),
             )
         })?;
     if staged_manifest_path != staged_version_root.join(&source_manifest_relative_path) {
         return Err(PluginStoreError::Invalid(
-            "plugin manifest changed during installation staging".to_string(),
+            tr(
+                current(),
+                "plugin manifest changed during installation staging",
+            )
+            .to_string(),
         ));
     }
-    let staged_manifest_contents = fs::read(&staged_manifest_path)
-        .map_err(|err| PluginStoreError::io("failed to read staged plugin.json", err))?;
+    let staged_manifest_contents = fs::read(&staged_manifest_path).map_err(|err| {
+        PluginStoreError::io(tr(current(), "failed to read staged plugin.json"), err)
+    })?;
     if staged_manifest_contents != source_manifest_contents {
         return Err(PluginStoreError::Invalid(
-            "plugin manifest contents changed during installation staging".to_string(),
+            tr(
+                current(),
+                "plugin manifest contents changed during installation staging",
+            )
+            .to_string(),
         ));
     }
     let is_agent_plugin = fs::read_to_string(staged_version_root.join("plugin.json"))
@@ -699,7 +801,10 @@ fn replace_plugin_root_atomically(
     let target_version_root = target_root.join(plugin_version);
     if target_root.exists() && !target_version_root.exists() {
         fs::rename(&staged_version_root, &target_version_root).map_err(|err| {
-            PluginStoreError::io("failed to activate updated plugin cache version", err)
+            PluginStoreError::io(
+                tr(current(), "failed to activate updated plugin cache version"),
+                err,
+            )
         })?;
         remove_old_plugin_versions(target_root, plugin_version)?;
         return Ok(());
@@ -710,32 +815,42 @@ fn replace_plugin_root_atomically(
             .prefix("plugin-backup-")
             .tempdir_in(parent)
             .map_err(|err| {
-                PluginStoreError::io("failed to create plugin cache backup directory", err)
+                PluginStoreError::io(
+                    tr(current(), "failed to create plugin cache backup directory"),
+                    err,
+                )
             })?;
         let backup_root = backup_dir.path().join(plugin_dir_name);
-        fs::rename(target_root, &backup_root)
-            .map_err(|err| PluginStoreError::io("failed to back up plugin cache entry", err))?;
+        fs::rename(target_root, &backup_root).map_err(|err| {
+            PluginStoreError::io(tr(current(), "failed to back up plugin cache entry"), err)
+        })?;
 
         if let Err(err) = fs::rename(&staged_root, target_root) {
             let rollback_result = fs::rename(&backup_root, target_root);
             return match rollback_result {
                 Ok(()) => Err(PluginStoreError::io(
-                    "failed to activate updated plugin cache entry",
+                    tr(current(), "failed to activate updated plugin cache entry"),
                     err,
                 )),
                 Err(rollback_err) => {
                     let backup_path = backup_dir.keep().join(plugin_dir_name);
-                    Err(PluginStoreError::Invalid(format!(
-                        "failed to activate updated plugin cache entry at {}: {err}; failed to restore previous cache entry (left at {}): {rollback_err}",
-                        target_root.display(),
-                        backup_path.display()
+                    Err(PluginStoreError::Invalid(tr_with(
+                        current(),
+                        "failed to activate updated plugin cache entry at {2}: {0}; failed to restore previous cache entry (left at {3}): {1}",
+                        &[
+                            &err.to_string(),
+                            &rollback_err.to_string(),
+                            &target_root.display().to_string(),
+                            &backup_path.display().to_string(),
+                        ],
                     )))
                 }
             };
         }
     } else {
-        fs::rename(&staged_root, target_root)
-            .map_err(|err| PluginStoreError::io("failed to activate plugin cache entry", err))?;
+        fs::rename(&staged_root, target_root).map_err(|err| {
+            PluginStoreError::io(tr(current(), "failed to activate plugin cache entry"), err)
+        })?;
     }
 
     Ok(())
@@ -766,8 +881,10 @@ fn remove_old_plugin_versions(
         if fs::remove_dir_all(entry.path()).is_err()
             && old_plugin_version_would_stay_active(&version, plugin_version)
         {
-            return Err(PluginStoreError::Invalid(format!(
-                "failed to activate updated plugin cache version `{plugin_version}` while `{version}` remains active"
+            return Err(PluginStoreError::Invalid(tr_with(
+                current(),
+                "failed to activate updated plugin cache version `{0}` while `{1}` remains active",
+                &[plugin_version, version.as_str()],
             )));
         }
     }
@@ -788,25 +905,31 @@ fn compare_plugin_versions(left: &str, right: &str) -> Ordering {
 }
 
 fn copy_dir_recursive(source: &Path, target: &Path) -> Result<(), PluginStoreError> {
-    fs::create_dir_all(target)
-        .map_err(|err| PluginStoreError::io("failed to create plugin target directory", err))?;
+    fs::create_dir_all(target).map_err(|err| {
+        PluginStoreError::io(
+            tr(current(), "failed to create plugin target directory"),
+            err,
+        )
+    })?;
 
-    for entry in fs::read_dir(source)
-        .map_err(|err| PluginStoreError::io("failed to read plugin source directory", err))?
-    {
-        let entry =
-            entry.map_err(|err| PluginStoreError::io("failed to enumerate plugin source", err))?;
+    for entry in fs::read_dir(source).map_err(|err| {
+        PluginStoreError::io(tr(current(), "failed to read plugin source directory"), err)
+    })? {
+        let entry = entry.map_err(|err| {
+            PluginStoreError::io(tr(current(), "failed to enumerate plugin source"), err)
+        })?;
         let source_path = entry.path();
         let target_path = target.join(entry.file_name());
-        let file_type = entry
-            .file_type()
-            .map_err(|err| PluginStoreError::io("failed to inspect plugin source entry", err))?;
+        let file_type = entry.file_type().map_err(|err| {
+            PluginStoreError::io(tr(current(), "failed to inspect plugin source entry"), err)
+        })?;
 
         if file_type.is_dir() {
             copy_dir_recursive(&source_path, &target_path)?;
         } else if file_type.is_file() {
-            fs::copy(&source_path, &target_path)
-                .map_err(|err| PluginStoreError::io("failed to copy plugin file", err))?;
+            fs::copy(&source_path, &target_path).map_err(|err| {
+                PluginStoreError::io(tr(current(), "failed to copy plugin file"), err)
+            })?;
         }
     }
 

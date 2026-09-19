@@ -60,3 +60,52 @@
   ⇒ 518 条 ≈ **12–16 个子批 ≈ 3–5 个工作回合**。
 - **建议**：先做 **B1 的探针子批（`store.rs` 56 条）**，产出**实测译/登记比与单批耗时**，再按实测值决定全量推进节奏
   （现在给的「登记多于译」是先验，不是结论）。
+
+## 七、探针批次实测（store.rs 56 条，已完成）
+
+探针批次选 `codex-rs/core-plugins/src/store.rs`（56 条，全 crate 最多的一处热点），
+目的是**证伪或证实方案里的先验**，而不是先埋头改 518 条。
+
+### 7.1 先验被证伪：这 56 条**全是「译」**，不是「登记多于译」
+
+判据是接收方（谁渲染它），不是类型名。`PluginStoreError` 的两条链路都到底：
+`PluginInstallError::Store(#[from])`（`manager.rs:3644`、`remote_bundle.rs:135`）→
+① CLI `plugin_cmd` 的 install/uninstall 路径打成 stderr；
+② app-server `request_processors/plugins.rs:1972` 的 `plugin_install_error` → `JSONRPCErrorError.message`
+（JSON-RPC 的 **message** 字段是给人看的文本，不是机器键——机器键是同文件
+`manager.rs:3735` 的 `store_io`/`store_invalid` 遥测 token，那些不在候选里）。
+⇒ 56 条全部走 `tr`/`tr_with`，登记行 0 条。
+
+### 7.2 三个实测陷阱（都已在工具或词典里落防）
+
+1. **命名占位符的重编号顺序**（会静默错位）。工具的 `key` 重编号是
+   **先命名占位符、后空占位符**（`{err}`→`{0}`、`{rollback_err}`→`{1}`、两个 `{}`→`{2}`/`{3}`），
+   不是源码出现顺序。`store.rs:728-732` 那条同时含两类占位符：按源码顺序给 `args`
+   占位符个数断言照样通过，渲染却会串位。**给 `args` 与写 `zh` 都必须按重编号后的 `{N}` 顺序。**
+2. **`kind:"to_string"` 要求 `.to_string()` 紧邻字面量**（`text.find(".to_string()") == aj+1`）。
+   跨行写法
+   （字面量一行、`.to_string()` 下一行）会断言失败——这类站点用 `kind:"arg"`：
+   替换只动字面量，原有的 `.to_string()` 自然保留，语义等价且无邻接约束（本次 15 条全走这条）。
+3. **CJK/Latin 边界空格**是 `i18n-check` 的硬门禁（`has_mixed_boundary_space`：CJK 与 ASCII
+   字母/数字之间不许有空格）。第一版 12 条译文写成「远程插件安装元数据 schema 版本」这种
+   带空格形式，`i18n-check` 直接红（`[spacing] … : 12`）；改成「…元数据schema版本」后归零。
+   仓库既有惯例同向（如「仅V1；V2忽略」）。
+
+### 7.3 探针批次的成本实测
+
+| 项 | 实测 |
+| --- | --- |
+| 站点数 | 56（13 `format` + 43 字面量） |
+| 新增词条 | 51（5 组重复值共用词条） |
+| 登记行 | 0 |
+| 工具调用 | 规格生成/plan/apply 各 1 次 + 1 次类型修正 |
+| 编译安全网 | `cargo check -p codex-core-plugins --all-targets` EXIT=0（args 类型当场暴露） |
+
+⇒ 按此速率，其余约 462 条 ≈ 9 个同规模批次；`core-plugins` 属**本机可编译**的 crate，
+所以类型错误有编译器兜底（与平台门控批次不同）。
+
+### 7.4 依赖变更的连带义务
+
+`core-plugins/Cargo.toml` 新增 `codex-i18n = { workspace = true }` ⇒ 按 AGENTS.md 必须
+`just bazel-lock-update` 并检查 `MODULE.bazel.lock` 漂移（`bazel-lock-check`）。
+`BUILD.bazel` 经 `codex_rust_crate` 宏自动处理，无需手改。

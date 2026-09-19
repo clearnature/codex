@@ -8491,6 +8491,192 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("invalid {0}: only {1} are allowed", "{0}无效：只允许{1}"),
     ("plugin name", "插件名称"),
     ("marketplace name", "市场源名称"),
+    (
+        "failed to read remote plugin install metadata",
+        "读取远程插件安装元数据失败",
+    ),
+    (
+        "failed to parse remote plugin install metadata: {0}",
+        "解析远程插件安装元数据失败：{0}",
+    ),
+    (
+        "unsupported remote plugin install metadata schema version: {0}",
+        "不支持的远程插件安装元数据schema版本：{0}",
+    ),
+    (
+        "invalid remote plugin install metadata: remote plugin id must not be blank",
+        "无效的远程插件安装元数据：远程插件id不能为空",
+    ),
+    (
+        "failed to resolve plugin cache root",
+        "解析插件缓存根目录失败",
+    ),
+    (
+        "failed to resolve plugin data root",
+        "解析插件数据根目录失败",
+    ),
+    ("failed to resolve Codex home", "解析Codex主目录失败"),
+    (
+        "cannot write remote identity for uninstalled plugin `{0}`",
+        "不能为未安装的插件 `{0}` 写入远程标识",
+    ),
+    (
+        "remote plugin install metadata path has no parent: {0}",
+        "远程插件安装元数据路径没有父目录：{0}",
+    ),
+    (
+        "failed to serialize remote plugin install metadata: {0}",
+        "序列化远程插件安装元数据失败：{0}",
+    ),
+    (
+        "failed to create temporary remote plugin install metadata",
+        "创建临时远程插件安装元数据失败",
+    ),
+    (
+        "failed to write remote plugin install metadata",
+        "写入远程插件安装元数据失败",
+    ),
+    (
+        "failed to flush remote plugin install metadata",
+        "刷新远程插件安装元数据失败",
+    ),
+    (
+        "failed to persist remote plugin install metadata",
+        "持久化远程插件安装元数据失败",
+    ),
+    (
+        "plugin source path is not a directory: {0}",
+        "插件源路径不是目录：{0}",
+    ),
+    (
+        "plugin.json name `{0}` does not match marketplace plugin name `{1}`",
+        "plugin.json中的名称 `{0}` 与市场插件名称 `{1}` 不匹配",
+    ),
+    (
+        "failed to remove remote plugin install metadata",
+        "删除远程插件安装元数据失败",
+    ),
+    (
+        "invalid plugin version: must not be empty",
+        "无效的插件版本：不能为空",
+    ),
+    (
+        "invalid plugin version: path traversal is not allowed",
+        "无效的插件版本：不允许路径穿越",
+    ),
+    (
+        "invalid plugin version: only ASCII letters, digits, `.`, `+`, `_`, and `-` are allowed",
+        "无效的插件版本：只允许ASCII字母、数字以及 `.`、`+`、`_`、`-`",
+    ),
+    ("missing or invalid plugin.json", "缺少或无效的plugin.json"),
+    (
+        "failed to parse plugin.json: {0}",
+        "解析plugin.json失败：{0}",
+    ),
+    ("missing plugin.json", "缺少plugin.json"),
+    ("failed to read plugin.json", "读取plugin.json失败"),
+    (
+        "invalid plugin version in plugin.json: expected string",
+        "plugin.json中的插件版本无效：需要字符串",
+    ),
+    (
+        "invalid plugin version in plugin.json: must not be blank",
+        "plugin.json中的插件版本无效：不能为空",
+    ),
+    (
+        "failed to remove existing plugin cache entry",
+        "删除已有的插件缓存条目失败",
+    ),
+    (
+        "plugin cache path has no parent: {0}",
+        "插件缓存路径没有父目录：{0}",
+    ),
+    (
+        "failed to create plugin cache directory",
+        "创建插件缓存目录失败",
+    ),
+    (
+        "plugin cache path has no directory name: {0}",
+        "插件缓存路径没有目录名：{0}",
+    ),
+    (
+        "failed to create temporary plugin cache directory",
+        "创建临时插件缓存目录失败",
+    ),
+    (
+        "plugin manifest is outside the plugin source",
+        "插件清单位于插件源之外",
+    ),
+    (
+        "plugin manifest path has no parent",
+        "插件清单路径没有父目录",
+    ),
+    (
+        "failed to create plugin manifest directory",
+        "创建插件清单目录失败",
+    ),
+    (
+        "failed to write fallback plugin manifest",
+        "写入回退插件清单失败",
+    ),
+    (
+        "plugin manifest is missing after installation staging",
+        "安装暂存后缺少插件清单",
+    ),
+    (
+        "plugin manifest changed during installation staging",
+        "插件清单在安装暂存期间发生变化",
+    ),
+    (
+        "failed to read staged plugin.json",
+        "读取暂存的plugin.json失败",
+    ),
+    (
+        "plugin manifest contents changed during installation staging",
+        "插件清单内容在安装暂存期间发生变化",
+    ),
+    (
+        "failed to activate updated plugin cache version",
+        "激活更新后的插件缓存版本失败",
+    ),
+    (
+        "failed to create plugin cache backup directory",
+        "创建插件缓存备份目录失败",
+    ),
+    (
+        "failed to back up plugin cache entry",
+        "备份插件缓存条目失败",
+    ),
+    (
+        "failed to activate updated plugin cache entry",
+        "激活更新后的插件缓存条目失败",
+    ),
+    (
+        "failed to activate updated plugin cache entry at {2}: {0}; failed to restore previous cache entry (left at {3}): {1}",
+        "激活位于 {2} 的更新后插件缓存条目失败：{0}；恢复先前的缓存条目失败（留在 {3}）：{1}",
+    ),
+    (
+        "failed to activate plugin cache entry",
+        "激活插件缓存条目失败",
+    ),
+    (
+        "failed to activate updated plugin cache version `{0}` while `{1}` remains active",
+        "激活更新后的插件缓存版本 `{0}` 失败，而 `{1}` 仍处于活动状态",
+    ),
+    (
+        "failed to create plugin target directory",
+        "创建插件目标目录失败",
+    ),
+    (
+        "failed to read plugin source directory",
+        "读取插件源目录失败",
+    ),
+    ("failed to enumerate plugin source", "枚举插件源失败"),
+    (
+        "failed to inspect plugin source entry",
+        "检查插件源条目失败",
+    ),
+    ("failed to copy plugin file", "复制插件文件失败"),
 ];
 
 /// English source text -> Simplified Chinese.

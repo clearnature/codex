@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
+| `codex-rs/cli/src` | **323** | 第 528 轮清 19 站点（译 13 + 登记 6：`migrate_rollouts.rs`）；已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`plugin_cmd.rs` 47、`login.rs` 41 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2151,3 +2151,21 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
 
 ⇒ **core 剩 10 条全部是 thiserror 族**（`unified_exec/errors.rs` 9 + `mcp_tool_call/account.rs:11`），
 **除人类裁决外没有别的可开工项**；`exec/src` 已归零，下一批转 `cli`（342，其中 doctor 851 已按裁定排除）。
+
+### 12.56 第 528 轮：`cli` 的第一批（`migrate_rollouts.rs` 19 站点）
+
+CLI 命令的输出是**用户面**，所以以译为主（13 译 + 6 登记）：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| **译 13** | `:92` 上下文错误、`:134` `bail!`、`:185` 进度提示、`:246`/`:250` 计数行、`:255` TTY 进度行、`:304`/`:305` 完成语、`:307` 完成+耗时、`:310`/`:320` 扫描汇总、`:332` 磁盘占用、`:338` 后续命令提示 | 都打印到 stdout/stderr |
+| **登记 6** | `:374`/`:375`/`:376`（`already paginated` / `skipped empty` / `skipped busy`）、`:442`/`:444`/`:446`（`{:.1} GB/MB/KB`）| 前者是 `print_outcome` 的**制表符分隔机器可读清单**里的状态 token；后者是**单位格式串** |
+
+**一处自我纠错（记下来）**：我给那 3 条状态标签写的理由里原先声称「同族 `eligible`/`migrated`/`failed` 已登记」——
+实测 `grep -c -P '^(eligible|migrated|failed)\t'` = **0**：它们**不是**被登记，而是**短词形状**被扫描器排除在候选之外。
+理由已改成实测口径（「短词被形状规则排除；本行按同一『机器可读清单 token』口径登记」）。
+⇒ **理由里每一句都要能被命令复验**，包括「同族已登记」这种顺手的断言。
+
+**cli 的形态提示（供后续批次）**：`*_cmd.rs` 与 `main.rs` 多为 CLI 帮助/输出（该译），
+但要注意三类只能登记：①`clap` 的 `override_usage`/`help` 属性（编译期常量）；②`--json` 输出（机器契约，doctor 那一族已按裁定排除）；
+③制表符/JSON 清单里的 token 与单位格式串。

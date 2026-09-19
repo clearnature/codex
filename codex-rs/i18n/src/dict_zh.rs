@@ -7746,6 +7746,46 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "permissions approval is not supported in exec mode for thread `{0}`",
         "exec模式下不支持权限审批（线程`{0}`）",
     ),
+    (
+        "failed to initialize local thread metadata",
+        "初始化本地线程元数据失败",
+    ),
+    (
+        "one or more rollout migrations failed",
+        "一个或多个rollout迁移失败",
+    ),
+    ("Scanning local rollouts...", "正在扫描本地rollout…"),
+    (
+        "{0} eligible  •  {1} already paginated",
+        "{0}个符合条件  •  {1}个已分页",
+    ),
+    (
+        "{0} migrated  •  {1} already paginated",
+        "{0}个已迁移  •  {1}个已分页",
+    ),
+    (
+        "{0} rollouts  {1}/{2} ({3}%)  •  {4}  •  {5} skipped  •  {6} failed  •  {7}",
+        "{0}个rollout  {1}/{2} ({3}%)  •  {4}  •  已跳过{5}  •  失败{6}  •  用时{7}",
+    ),
+    ("Scan complete", "扫描完成"),
+    ("Migration complete", "迁移完成"),
+    ("{0} in {1}.", "{0}，用时{1}。"),
+    (
+        "Scanned {0} rollout(s): {1} eligible, {2} already paginated, {3} skipped ({4} empty, {5} busy), {6} failed.",
+        "已扫描{0}个rollout：{1}个符合条件，{2}个已分页，{3}个已跳过（{4}个为空，{5}个使用中），{6}个失败。",
+    ),
+    (
+        "Scanned {0} rollout(s): {1} migrated, {2} already paginated, {3} skipped ({4} empty, {5} busy), {6} failed.",
+        "已扫描{0}个rollout：{1}个已迁移，{2}个已分页，{3}个已跳过（{4}个为空，{5}个使用中），{6}个失败。",
+    ),
+    (
+        "Disk used for thread storage: {0} -> {1}",
+        "线程存储占用磁盘：{0} -> {1}",
+    ),
+    (
+        "Run `codex migrate-rollouts --apply` to migrate eligible sessions.",
+        "运行`codex migrate-rollouts --apply`以迁移符合条件的会话。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

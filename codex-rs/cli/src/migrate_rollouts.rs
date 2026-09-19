@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io;
 use std::io::IsTerminal;
 use std::io::Write;
@@ -89,7 +92,7 @@ pub(crate) async fn run(
         Some(
             codex_rollout::state_db::try_init(&config)
                 .await
-                .context("failed to initialize local thread metadata")?,
+                .context(tr(current(), "failed to initialize local thread metadata"))?,
         )
     } else {
         None
@@ -131,7 +134,7 @@ pub(crate) async fn run(
         .iter()
         .any(|outcome| outcome.status == RolloutMigrationStatus::Failed)
     {
-        anyhow::bail!("one or more rollout migrations failed");
+        anyhow::bail!(tr(current(), "one or more rollout migrations failed"));
     }
     Ok(())
 }
@@ -182,7 +185,7 @@ impl MigrationProgress {
 
     fn begin(&self) {
         if self.output != ProgressOutput::Quiet {
-            eprintln!("Scanning local rollouts...");
+            eprintln!("{}", tr(current(), "Scanning local rollouts..."));
         }
     }
 
@@ -242,22 +245,36 @@ impl MigrationProgress {
             RolloutMigrationMode::Apply => "Migrating",
         };
         let status_counts = match self.mode {
-            RolloutMigrationMode::DryRun => format!(
-                "{} eligible  •  {} already paginated",
-                self.counts.eligible, self.counts.already_paginated
+            RolloutMigrationMode::DryRun => tr_with(
+                current(),
+                "{0} eligible  •  {1} already paginated",
+                &[
+                    &self.counts.eligible.to_string(),
+                    &self.counts.already_paginated.to_string(),
+                ],
             ),
-            RolloutMigrationMode::Apply => format!(
-                "{} migrated  •  {} already paginated",
-                self.counts.migrated, self.counts.already_paginated
+            RolloutMigrationMode::Apply => tr_with(
+                current(),
+                "{0} migrated  •  {1} already paginated",
+                &[
+                    &self.counts.migrated.to_string(),
+                    &self.counts.already_paginated.to_string(),
+                ],
             ),
         };
-        format!(
-            "{action} rollouts  {}/{} ({percent}%)  •  {status_counts}  •  {} skipped  •  {} failed  •  {}",
-            update.processed_paths,
-            update.total_paths,
-            self.counts.skipped(),
-            self.counts.failed,
-            format_elapsed(self.elapsed()),
+        tr_with(
+            current(),
+            "{0} rollouts  {1}/{2} ({3}%)  •  {4}  •  {5} skipped  •  {6} failed  •  {7}",
+            &[
+                action,
+                &update.processed_paths.to_string(),
+                &update.total_paths.to_string(),
+                &percent.to_string(),
+                status_counts.as_str(),
+                &self.counts.skipped().to_string(),
+                &self.counts.failed.to_string(),
+                &format_elapsed(self.elapsed()),
+            ],
         )
     }
 }
@@ -301,41 +318,69 @@ fn print_human_report(
         counts.observe(outcome.status);
     }
     let completion = match mode {
-        RolloutMigrationMode::DryRun => "Scan complete",
-        RolloutMigrationMode::Apply => "Migration complete",
+        RolloutMigrationMode::DryRun => tr(current(), "Scan complete"),
+        RolloutMigrationMode::Apply => tr(current(), "Migration complete"),
     };
-    println!("{completion} in {}.", format_elapsed(elapsed));
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "{0} in {1}.",
+            &[completion, &format_elapsed(elapsed)],
+        )
+    );
     match mode {
         RolloutMigrationMode::DryRun => println!(
-            "Scanned {} rollout(s): {} eligible, {} already paginated, {} skipped ({} empty, {} busy), {} failed.",
-            report.outcomes.len(),
-            counts.eligible,
-            counts.already_paginated,
-            counts.skipped(),
-            counts.skipped_empty,
-            counts.skipped_busy,
-            counts.failed,
+            "{}",
+            tr_with(
+                current(),
+                "Scanned {0} rollout(s): {1} eligible, {2} already paginated, {3} skipped ({4} empty, {5} busy), {6} failed.",
+                &[
+                    &report.outcomes.len().to_string(),
+                    &counts.eligible.to_string(),
+                    &counts.already_paginated.to_string(),
+                    &counts.skipped().to_string(),
+                    &counts.skipped_empty.to_string(),
+                    &counts.skipped_busy.to_string(),
+                    &counts.failed.to_string(),
+                ],
+            )
         ),
         RolloutMigrationMode::Apply => println!(
-            "Scanned {} rollout(s): {} migrated, {} already paginated, {} skipped ({} empty, {} busy), {} failed.",
-            report.outcomes.len(),
-            counts.migrated,
-            counts.already_paginated,
-            counts.skipped(),
-            counts.skipped_empty,
-            counts.skipped_busy,
-            counts.failed,
+            "{}",
+            tr_with(
+                current(),
+                "Scanned {0} rollout(s): {1} migrated, {2} already paginated, {3} skipped ({4} empty, {5} busy), {6} failed.",
+                &[
+                    &report.outcomes.len().to_string(),
+                    &counts.migrated.to_string(),
+                    &counts.already_paginated.to_string(),
+                    &counts.skipped().to_string(),
+                    &counts.skipped_empty.to_string(),
+                    &counts.skipped_busy.to_string(),
+                    &counts.failed.to_string(),
+                ],
+            )
         ),
     }
     if let Some((before, after)) = thread_storage {
         println!(
-            "Disk used for thread storage: {} -> {}",
-            format_bytes(before),
-            format_bytes(after)
+            "{}",
+            tr_with(
+                current(),
+                "Disk used for thread storage: {0} -> {1}",
+                &[&format_bytes(before), &format_bytes(after)],
+            )
         );
     }
     if mode == RolloutMigrationMode::DryRun && counts.eligible > 0 {
-        println!("Run `codex migrate-rollouts --apply` to migrate eligible sessions.");
+        println!(
+            "{}",
+            tr(
+                current(),
+                "Run `codex migrate-rollouts --apply` to migrate eligible sessions.",
+            )
+        );
     }
 
     if verbose {

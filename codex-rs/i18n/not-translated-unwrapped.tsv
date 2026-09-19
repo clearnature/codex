@@ -1144,3 +1144,9 @@ model rerouted: {} -> {} ({:?})	codex-rs/exec/src/event_processor_with_jsonl_out
  in {duration_ms}ms	codex-rs/exec/src/event_processor_with_human_output.rs:135	人类输出的**结构后缀**（` in {duration_ms}ms`）⇒ §12.7
 OpenAI Codex v{VERSION}\n--------	codex-rs/exec/src/event_processor_with_human_output.rs:233	产品名 + 版本横幅（`OpenAI Codex v{VERSION}`）⇒ 专名/版本不译 ⇒ §12.7
 	codex-rs/core/src/environment_selection.rs:625	[空键形态·值: environment configuration was canceled] **两处消费者都丢弃原文**：`tools/handlers/wait_for_environment.rs:148` 用 `.map_err(|_| …)` 换成模型面消息；`mcp_openai_file.rs:387` 直接 `.expect("environment should become ready")`（panic 丢原文）⇒ 无渲染方 ⇒ §12.3
+already paginated	codex-rs/cli/src/migrate_rollouts.rs:374	**机器可读输出里的状态标签**：`print_outcome` 用 `println!("{status}\t{thread_id}…")` 输出制表符分隔的清单（同族的 `eligible`/`migrated`/`failed` 是**短词**，被扫描器形状规则排除在候选之外；本行按同一「机器可读清单 token」口径登记）⇒ 作为机器契约 token 不译 ⇒ §3.6
+skipped empty	codex-rs/cli/src/migrate_rollouts.rs:420	**机器可读输出里的状态标签**：`print_outcome` 用 `println!("{status}\t{thread_id}…")` 输出制表符分隔的清单（同族的 `eligible`/`migrated`/`failed` 是**短词**，被扫描器形状规则排除在候选之外；本行按同一「机器可读清单 token」口径登记）⇒ 作为机器契约 token 不译 ⇒ §3.6
+skipped busy	codex-rs/cli/src/migrate_rollouts.rs:421	**机器可读输出里的状态标签**：`print_outcome` 用 `println!("{status}\t{thread_id}…")` 输出制表符分隔的清单（同族的 `eligible`/`migrated`/`failed` 是**短词**，被扫描器形状规则排除在候选之外；本行按同一「机器可读清单 token」口径登记）⇒ 作为机器契约 token 不译 ⇒ §3.6
+{:.1} GB	codex-rs/cli/src/migrate_rollouts.rs:487	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7
+{:.1} MB	codex-rs/cli/src/migrate_rollouts.rs:489	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7
+{:.1} KB	codex-rs/cli/src/migrate_rollouts.rs:491	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7

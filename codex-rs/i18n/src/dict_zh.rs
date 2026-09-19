@@ -7786,6 +7786,49 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Run `codex migrate-rollouts --apply` to migrate eligible sessions.",
         "运行`codex migrate-rollouts --apply`以迁移符合条件的会话。",
     ),
+    (
+        "Codex couldn't start because its local database appears to be damaged.",
+        "Codex无法启动，因为其本地数据库似乎已损坏。",
+    ),
+    (
+        "Moving the damaged local database aside so Codex can rebuild it from saved data.",
+        "正在把损坏的本地数据库移开，以便Codex从已保存的数据重建。",
+    ),
+    (
+        "Codex rebuilt its local database.",
+        "Codex已重建其本地数据库。",
+    ),
+    (
+        "Codex detected a damaged local database, moved it into a backup folder, and will continue startup with a fresh database.",
+        "Codex检测到本地数据库损坏，已将其移入备份文件夹，并将以全新的数据库继续启动。",
+    ),
+    ("Database path: {0}", "数据库路径：{0}"),
+    ("Backup folder: {0}", "备份文件夹：{0}"),
+    ("Backup folder: unavailable", "备份文件夹：不可用"),
+    ("Press Enter to continue.", "按回车继续。"),
+    (
+        "Continuing startup with a fresh local database...",
+        "正在以全新的本地数据库继续启动…",
+    ),
+    (
+        "Run `codex doctor` to check your setup and get next-step guidance.",
+        "运行`codex doctor`检查你的配置并获取下一步指引。",
+    ),
+    (
+        "If this keeps happening, share the technical details below when asking for help.",
+        "如果反复出现，请在求助时提供以下技术细节。",
+    ),
+    (
+        "Codex couldn't start because another Codex process is using its local data.",
+        "Codex无法启动，因为另一个Codex进程正在使用其本地数据。",
+    ),
+    (
+        "Quit any other copies of Codex that may still be running, then try again.",
+        "请退出其它可能仍在运行的Codex副本，然后重试。",
+    ),
+    ("Technical details:", "技术细节："),
+    ("  Location: {0}", "  位置：{0}"),
+    ("  Cause: {0}", "  原因：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

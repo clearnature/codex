@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **323** | 第 528 轮清 19 站点（译 13 + 登记 6：`migrate_rollouts.rs`）；已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`plugin_cmd.rs` 47、`login.rs` 41 |
+| `codex-rs/cli/src` | **306** | 第 530 轮清 17 站点（`state_db_recovery.rs` 全译）；已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`plugin_cmd.rs` 47、`login.rs` 41 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2169,3 +2169,16 @@ CLI 命令的输出是**用户面**，所以以译为主（13 译 + 6 登记）�
 **cli 的形态提示（供后续批次）**：`*_cmd.rs` 与 `main.rs` 多为 CLI 帮助/输出（该译），
 但要注意三类只能登记：①`clap` 的 `override_usage`/`help` 属性（编译期常量）；②`--json` 输出（机器契约，doctor 那一族已按裁定排除）；
 ③制表符/JSON 清单里的 token 与单位格式串。
+
+### 12.57 第 530 轮：`state_db_recovery.rs` 整文件全译（17 站点 → 16 条词条）
+
+该文件是**数据库损坏/被占用时的启动恢复提示**，17 处全是 `eprintln!` 面向用户的文案 ⇒ **全译**
+（`:37` 与 `:74` 是同一句话的两个站点 ⇒ 按值合并成 1 条词条，17 站点 / 16 词条）。
+
+翻译时保留了两点**排版语义**：
+- `"  Location: {}"` / `"  Cause: {}"` 的**前导两空格**是缩进（不是混排空格）⇒ 中文同样保留 `"  位置：{0}"` ✓
+  （`i18n-check` 的 `[spacing]` 只查「CJK↔拉丁字母数字之间的空格」，行首空格不算 ⇒ 实测 0 violations）
+- `"Backup folder: unavailable"` 这类**没有占位符**的整句，与 `"Backup folder: {0}"` 是两条独立词条 ✓
+  （前者是「没有备份文件夹」的替代文案，不是同一条的截断）
+
+⇒ `cli/src` 306；下一步继续按文件推进（`mcp_cmd.rs` 51 / `plugin_cmd.rs` 47 / `login.rs` 41 是最大三块）。

@@ -30,6 +30,8 @@ use codex_analytics::ControlToolCallStatus;
 use codex_extension_api::ToolCallOutcome;
 use codex_history::CodexHarnessMetadata;
 use codex_history::ResponseItemEnvelope;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::models::FunctionCallOutputPayload;
 use codex_protocol::models::ResponseInputItem;
 use codex_protocol::parse_command::ParsedCommand;
@@ -547,7 +549,11 @@ impl ToolRegistry {
             }
         }
         if !tool.matches_kind(&invocation.payload) {
-            let message = format!("tool {tool_name} invoked with incompatible payload");
+            let message = tr_with(
+                current(),
+                "tool {0} invoked with incompatible payload",
+                &[&tool_name.to_string()],
+            );
             let log_payload = tool_log_payload(&invocation.payload, &invocation.source);
             otel.tool_result_with_tags(
                 &tool_name,

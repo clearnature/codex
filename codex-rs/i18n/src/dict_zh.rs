@@ -7467,6 +7467,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "会话存储路径{0}的类型不符合预期。请确保它是Codex可用于会话文件的目录。",
     ),
     ("{0} (underlying error: {1})", "{0}（底层错误：{1}）"),
+    (
+        "tool {0} invoked with incompatible payload",
+        "工具{0}的调用负载类型不匹配",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -2,6 +2,8 @@
 //! The temporary app-server never starts a thread or executes a turn.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 pub(super) async fn fork_source(
     args: &mut crate::cli::ForkArgs,
@@ -57,7 +59,13 @@ pub(super) async fn fork_source(
         };
         let thread_id = resolve_resume_thread_id(&client, config, state_db.as_ref(), &lookup)
             .await?
-            .ok_or_else(|| anyhow::anyhow!("Session not found: {}", args.session_id))?;
+            .ok_or_else(|| {
+                anyhow::anyhow!(tr_with(
+                    current(),
+                    "Session not found: {0}",
+                    &[&args.session_id.to_string()],
+                ))
+            })?;
         let source: ThreadReadResponse = send_request_with_response(
             &client,
             ClientRequest::ThreadRead {

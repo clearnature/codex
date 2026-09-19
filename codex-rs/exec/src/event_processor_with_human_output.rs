@@ -215,7 +215,7 @@ impl EventProcessorWithHumanOutput {
                 );
             }
             ThreadItem::ContextCompaction { .. } => {
-                eprintln!("{}", "context compacted".style(self.dimmed));
+                eprintln!("{}", tr(current(), "context compacted").style(self.dimmed));
             }
             _ => {}
         }
@@ -492,7 +492,7 @@ fn config_summary_entries(
         ));
     }
     entries.push((
-        "session id",
+        tr(current(), "session id"),
         session_configured_event.session_id.to_string(),
     ));
     entries

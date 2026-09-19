@@ -1138,3 +1138,9 @@ responses_api_metadata may contain at most 16 entries	codex-rs/core/src/response
 responses_api_metadata keys must be short ASCII identifiers	codex-rs/core/src/responses_metadata.rs:474	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
 responses_api_metadata contains a reserved key	codex-rs/core/src/responses_metadata.rs:479	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
 responses_api_metadata values may contain at most 128 bytes	codex-rs/core/src/responses_metadata.rs:482	**生产路径不可达**：`filter_extra_metadata`（responses_metadata.rs:488-495）只按保留键过滤，**不调用** `validate_extra_metadata`；后者的错误仅测试可见（turn_metadata.rs:346/:358 的 setter 直接赋值过滤结果）⇒ 无渲染方 ⇒ §12.3
+codex exec [OPTIONS] [PROMPT]\n       codex exec [OPTIONS] <COMMAND> [ARGS]	codex-rs/exec/src/cli.rs:13	**clap `override_usage` 属性**（用法语法，编译期常量）⇒ 结构不译 ⇒ §12.7
+model rerouted: {} -> {} ({:?})	codex-rs/exec/src/event_processor_with_jsonl_output.rs:493	**JSONL 输出的 ErrorItem 消息**（exec 机器可读流契约，与 doctor `--json` 同族）⇒ §3.6 不译
+{}\n{} in {cwd}	codex-rs/exec/src/event_processor_with_human_output.rs:74	人类输出的**结构拼接**（`{}\n{} in {cwd}`）⇒ §12.7
+ in {duration_ms}ms	codex-rs/exec/src/event_processor_with_human_output.rs:135	人类输出的**结构后缀**（` in {duration_ms}ms`）⇒ §12.7
+OpenAI Codex v{VERSION}\n--------	codex-rs/exec/src/event_processor_with_human_output.rs:233	产品名 + 版本横幅（`OpenAI Codex v{VERSION}`）⇒ 专名/版本不译 ⇒ §12.7
+	codex-rs/core/src/environment_selection.rs:625	[空键形态·值: environment configuration was canceled] **两处消费者都丢弃原文**：`tools/handlers/wait_for_environment.rs:148` 用 `.map_err(|_| …)` 换成模型面消息；`mcp_openai_file.rs:387` 直接 `.expect("environment should become ready")`（panic 丢原文）⇒ 无渲染方 ⇒ §12.3

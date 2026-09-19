@@ -7675,6 +7675,77 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "output_token_limit exceeds the TOML integer range",
         "output_token_limit超出TOML整数范围",
     ),
+    (
+        "Warning: no last agent message; wrote empty content to {0}",
+        "警告：没有最后的agent消息；已向{0}写入空内容",
+    ),
+    (
+        "Failed to write last message file {0}: {1}",
+        "写入最后消息文件{0}失败：{1}",
+    ),
+    ("session id", "会话id"),
+    ("session id `{0}` is invalid: {1}", "会话id`{0}`无效：{1}"),
+    (
+        "forked-from thread id is invalid: {0}",
+        "派生来源线程id无效：{0}",
+    ),
+    ("parent thread id is invalid: {0}", "父线程id无效：{0}"),
+    (
+        "in-process app-server event stream lagged; dropped {0} events",
+        "进程内app-server事件流滞后；丢弃了{0}个事件",
+    ),
+    (
+        "failed to encode mcp elicitation response: {0}",
+        "编码mcp elicitation响应失败：{0}",
+    ),
+    (
+        "failed to resolve `{0}` server request: {1}",
+        "处理服务端请求`{0}`失败：{1}",
+    ),
+    (
+        "failed to reject `{0}` server request: {1}",
+        "拒绝服务端请求`{0}`失败：{1}",
+    ),
+    (
+        "command execution approval is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持命令执行审批（线程`{0}`）",
+    ),
+    (
+        "file change approval is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持文件变更审批（线程`{0}`）",
+    ),
+    (
+        "request_user_input is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持request_user_input（线程`{0}`）",
+    ),
+    (
+        "dynamic tool calls are not supported in exec mode for thread `{0}`",
+        "exec模式下不支持动态工具调用（线程`{0}`）",
+    ),
+    (
+        "chatgpt auth token refresh is not supported in exec mode",
+        "exec模式下不支持chatgpt认证令牌刷新",
+    ),
+    (
+        "attestation generation is not supported in exec mode",
+        "exec模式下不支持生成证明",
+    ),
+    (
+        "external current time is not supported in exec mode",
+        "exec模式下不支持外部当前时间",
+    ),
+    (
+        "apply_patch approval is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持apply_patch审批（线程`{0}`）",
+    ),
+    (
+        "exec command approval is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持exec命令审批（线程`{0}`）",
+    ),
+    (
+        "permissions approval is not supported in exec mode for thread `{0}`",
+        "exec模式下不支持权限审批（线程`{0}`）",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

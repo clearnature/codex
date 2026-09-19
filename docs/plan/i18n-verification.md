@@ -1707,8 +1707,8 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **11** | 第 522 轮清 14 站点（译 10 + 登记 4）；**剩余 11 = thiserror 族 10 条（卡裁决 j-mu7lh6vq-fp6o）+ `environment_selection.rs:625` 1 条（渲染未坐实）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
-| `codex-rs/exec/src` | **28** | §3.1 范围内 |
+| `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
 
@@ -2127,3 +2127,27 @@ config 误配的提示）—— 调用链未读到渲染点，**不猜着判**�
   `wait_until_ready()` 的调用方渲染点未读完 ⇒ **留着，不猜**。
 
 ⇒ 也就是说：**core 的候选清理已经收敛到「一个等人类裁决的族 + 一处待读」**，不再有零散工作。
+
+### 12.55 第 525 轮：`exec/src` 一次清空（28 → 0），core 收敛到只剩一个裁决族
+
+**exec 是 CLI（用户面为主）**，与 core 那批以登记为主正好相反：**译 23 + 登记 5**。
+
+- **译**：`event_processor.rs:36`/`:46`（最后消息写盘警告/失败）、`event_processor_with_human_output.rs:218`（`context compacted`）、
+  `:495`（`session id` 表头标签）、`lib.rs:1642`/`:1644`/`:1648`/`:1652`（四个 id 校验错误，函数返回 `Result<_, String>`）、
+  `:1677`（事件流滞后告警）、`:2017`/`:2045`/`:2064`（encode/resolve/reject 失败）、
+  **`:2109`-`:2208` 的「… is not supported in exec mode」族 10 条**、`worktree.rs:60`（`Session not found`）。
+- **登记**：`cli.rs:13` 的 **clap `override_usage` 属性**（用法语法，编译期常量，无法 `tr`）、
+  `event_processor_with_jsonl_output.rs:493`（**JSONL 机器可读流契约**，与 doctor `--json` 同族）、
+  `event_processor_with_human_output.rs:74`/`:135`（结构拼接/后缀）、`:233`（产品名+版本横幅）。
+
+**一族一形状的教训（本批第 3 次）**：`… not supported in exec mode for thread \`{}\`` 这 7 条**长得一模一样**，
+但**字段不同**：`params.thread_id` ×5（command execution / file change / request_user_input / dynamic tool calls / permissions）
+与 `params.conversation_id` ×2（apply_patch / exec command）。我按「看起来一样」写脚本，第 5 条断言就拦下了 ⇒
+**族内要逐条读字段，不能按首条类推**（与「同族不同接收者」同一类错误，只是这次错在实参而非接收者）。
+
+**`environment_selection.rs:625` 的收尾依据（强证据）**：该串在**两处消费者都被丢弃** ——
+`tools/handlers/wait_for_environment.rs:148` 用 `.map_err(|_| FunctionCallError::RespondToModel(…))` 换成另一句话；
+`mcp_openai_file.rs:387` 直接 `.expect("environment should become ready")`（panic，丢原文）⇒ 无渲染方 ⇒ 登记。
+
+⇒ **core 剩 10 条全部是 thiserror 族**（`unified_exec/errors.rs` 9 + `mcp_tool_call/account.rs:11`），
+**除人类裁决外没有别的可开工项**；`exec/src` 已归零，下一批转 `cli`（342，其中 doctor 851 已按裁定排除）。

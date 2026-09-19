@@ -1638,18 +1638,40 @@ fn session_configured_from_thread_response(
     cwd: AbsolutePathBuf,
     reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
 ) -> Result<SessionConfiguredEvent, String> {
-    let session_id = SessionId::from_string(session_id)
-        .map_err(|err| format!("session id `{session_id}` is invalid: {err}"))?;
-    let thread_id = ThreadId::from_string(thread_id)
-        .map_err(|err| format!("thread id `{thread_id}` is invalid: {err}"))?;
+    let session_id = SessionId::from_string(session_id).map_err(|err| {
+        tr_with(
+            current(),
+            "session id `{0}` is invalid: {1}",
+            &[&session_id.to_string(), &err.to_string()],
+        )
+    })?;
+    let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+        tr_with(
+            current(),
+            "thread id `{0}` is invalid: {1}",
+            &[&thread_id.to_string(), &err.to_string()],
+        )
+    })?;
     let forked_from_id = forked_from_id
         .map(ThreadId::from_string)
         .transpose()
-        .map_err(|err| format!("forked-from thread id is invalid: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "forked-from thread id is invalid: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     let parent_thread_id = parent_thread_id
         .map(ThreadId::from_string)
         .transpose()
-        .map_err(|err| format!("parent thread id is invalid: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "parent thread id is invalid: {0}",
+                &[&err.to_string()],
+            )
+        })?;
 
     Ok(SessionConfiguredEvent {
         session_id,
@@ -1674,7 +1696,11 @@ fn session_configured_from_thread_response(
 }
 
 fn lagged_event_warning_message(skipped: usize) -> String {
-    format!("in-process app-server event stream lagged; dropped {skipped} events")
+    tr_with(
+        current(),
+        "in-process app-server event stream lagged; dropped {0} events",
+        &[&skipped.to_string()],
+    )
 }
 
 fn should_process_notification(
@@ -2014,7 +2040,13 @@ fn canceled_mcp_server_elicitation_response() -> Result<Value, String> {
         content: None,
         meta: None,
     })
-    .map_err(|err| format!("failed to encode mcp elicitation response: {err}"))
+    .map_err(|err| {
+        tr_with(
+            current(),
+            "failed to encode mcp elicitation response: {0}",
+            &[&err.to_string()],
+        )
+    })
 }
 
 async fn request_shutdown(
@@ -2042,7 +2074,13 @@ async fn resolve_server_request(
     client
         .resolve_server_request(request_id, value)
         .await
-        .map_err(|err| format!("failed to resolve `{method}` server request: {err}"))
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to resolve `{0}` server request: {1}",
+                &[&method.to_string(), &err.to_string()],
+            )
+        })
 }
 
 async fn reject_server_request(
@@ -2061,7 +2099,13 @@ async fn reject_server_request(
             },
         )
         .await
-        .map_err(|err| format!("failed to reject `{method}` server request: {err}"))
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to reject `{0}` server request: {1}",
+                &[&method.to_string(), &err.to_string()],
+            )
+        })
 }
 
 fn server_request_method_name(request: &ServerRequest) -> String {
@@ -2105,9 +2149,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "command execution approval is not supported in exec mode for thread `{}`",
-                    params.thread_id
+                tr_with(
+                    current(),
+                    "command execution approval is not supported in exec mode for thread `{0}`",
+                    &[&params.thread_id.to_string()],
                 ),
             )
             .await
@@ -2117,9 +2162,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "file change approval is not supported in exec mode for thread `{}`",
-                    params.thread_id
+                tr_with(
+                    current(),
+                    "file change approval is not supported in exec mode for thread `{0}`",
+                    &[&params.thread_id.to_string()],
                 ),
             )
             .await
@@ -2129,9 +2175,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "request_user_input is not supported in exec mode for thread `{}`",
-                    params.thread_id
+                tr_with(
+                    current(),
+                    "request_user_input is not supported in exec mode for thread `{0}`",
+                    &[&params.thread_id.to_string()],
                 ),
             )
             .await
@@ -2141,9 +2188,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "dynamic tool calls are not supported in exec mode for thread `{}`",
-                    params.thread_id
+                tr_with(
+                    current(),
+                    "dynamic tool calls are not supported in exec mode for thread `{0}`",
+                    &[&params.thread_id.to_string()],
                 ),
             )
             .await
@@ -2153,7 +2201,11 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                "chatgpt auth token refresh is not supported in exec mode".to_string(),
+                tr(
+                    current(),
+                    "chatgpt auth token refresh is not supported in exec mode",
+                )
+                .to_string(),
             )
             .await
         }
@@ -2162,7 +2214,11 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                "attestation generation is not supported in exec mode".to_string(),
+                tr(
+                    current(),
+                    "attestation generation is not supported in exec mode",
+                )
+                .to_string(),
             )
             .await
         }
@@ -2171,7 +2227,11 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                "external current time is not supported in exec mode".to_string(),
+                tr(
+                    current(),
+                    "external current time is not supported in exec mode",
+                )
+                .to_string(),
             )
             .await
         }
@@ -2180,9 +2240,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "apply_patch approval is not supported in exec mode for thread `{}`",
-                    params.conversation_id
+                tr_with(
+                    current(),
+                    "apply_patch approval is not supported in exec mode for thread `{0}`",
+                    &[&params.conversation_id.to_string()],
                 ),
             )
             .await
@@ -2192,9 +2253,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "exec command approval is not supported in exec mode for thread `{}`",
-                    params.conversation_id
+                tr_with(
+                    current(),
+                    "exec command approval is not supported in exec mode for thread `{0}`",
+                    &[&params.conversation_id.to_string()],
                 ),
             )
             .await
@@ -2204,9 +2266,10 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                format!(
-                    "permissions approval is not supported in exec mode for thread `{}`",
-                    params.thread_id
+                tr_with(
+                    current(),
+                    "permissions approval is not supported in exec mode for thread `{0}`",
+                    &[&params.thread_id.to_string()],
                 ),
             )
             .await

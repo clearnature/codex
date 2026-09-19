@@ -7829,6 +7829,85 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Technical details:", "技术细节："),
     ("  Location: {0}", "  位置：{0}"),
     ("  Cause: {0}", "  原因：{0}"),
+    (
+        "OAuth provider rejected discovered scopes. Retrying without scopes…",
+        "OAuth提供方拒绝了探测到的scope，正在不带scope重试…",
+    ),
+    ("command is required", "必须提供命令"),
+    (
+        "OAuth client IDs require a streamable HTTP MCP server",
+        "OAuth客户端ID需要streamable HTTP MCP服务器",
+    ),
+    (
+        "failed to load MCP servers from {0}",
+        "无法从{0}加载MCP服务器",
+    ),
+    (
+        "failed to write MCP servers to {0}",
+        "无法将MCP服务器写入{0}",
+    ),
+    (
+        "Added global MCP server '{0}'.",
+        "已添加全局MCP服务器'{0}'。",
+    ),
+    ("OAuth callback URL: {0}", "OAuth回调URL：{0}"),
+    (
+        "Detected OAuth support. Starting OAuth flow…",
+        "检测到OAuth支持，正在启动OAuth流程…",
+    ),
+    ("Successfully logged in.", "登录成功。"),
+    (
+        "MCP server may or may not require login. Run `codex mcp login {0}` to login.",
+        "该MCP服务器可能需要登录。运行`codex mcp login {0}`登录。",
+    ),
+    (
+        "Removed global MCP server '{0}'.",
+        "已移除全局MCP服务器'{0}'。",
+    ),
+    (
+        "No MCP server named '{0}' found.",
+        "未找到名为'{0}'的MCP服务器。",
+    ),
+    (
+        "OAuth login is only supported for streamable HTTP servers.",
+        "OAuth登录仅支持streamable HTTP服务器。",
+    ),
+    (
+        "Successfully logged in to MCP server '{0}'.",
+        "已成功登录MCP服务器'{0}'。",
+    ),
+    (
+        "No MCP server named '{0}' found in configuration.",
+        "配置中未找到名为'{0}'的MCP服务器。",
+    ),
+    (
+        "OAuth logout is only supported for streamable_http transports.",
+        "OAuth注销仅支持streamable_http传输方式。",
+    ),
+    (
+        "Removed OAuth credentials for '{0}'.",
+        "已移除'{0}'的OAuth凭据。",
+    ),
+    (
+        "No OAuth credentials stored for '{0}'.",
+        "未存储'{0}'的OAuth凭据。",
+    ),
+    (
+        "failed to delete OAuth credentials: {0}",
+        "删除OAuth凭据失败：{0}",
+    ),
+    (
+        "No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`.",
+        "尚未配置任何MCP服务器。试试`codex mcp add my-tool -- my-command`。",
+    ),
+    (
+        "environment entries must be in KEY=VALUE form",
+        "环境变量条目必须为KEY=VALUE形式",
+    ),
+    (
+        "invalid server name '{0}' (use letters, numbers, '-', '_', ':', '@', '/', '.')",
+        "无效的服务器名'{0}'（请使用字母、数字、'-'、'_'、':'、'@'、'/'、'.'）",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

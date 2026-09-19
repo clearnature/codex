@@ -21,6 +21,9 @@ use codex_core::plugins_manager_for_config;
 use codex_exec_server::EnvironmentManager;
 use codex_exec_server::HttpClient;
 use codex_exec_server::RouteAwareHttpClient;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::AuthManager;
 use codex_mcp::McpOAuthLoginSupport;
 use codex_mcp::McpRuntimeContext;
@@ -296,7 +299,13 @@ async fn perform_oauth_login_retry_without_scopes(
     {
         Ok(()) => Ok(()),
         Err(err) if should_retry_without_scopes(resolved_scopes, &err) => {
-            println!("OAuth provider rejected discovered scopes. Retrying without scopes…");
+            println!(
+                "{}",
+                tr(
+                    current(),
+                    "OAuth provider rejected discovered scopes. Retrying without scopes…"
+                )
+            );
             perform_oauth_login(
                 name,
                 url,
@@ -331,7 +340,7 @@ async fn validate_profile_v2_migration(
         .loader_overrides(loader_overrides)
         .build()
         .await
-        .context("failed to load configuration")?;
+        .context(tr(current(), "failed to load configuration"))?;
     Ok(())
 }
 
@@ -342,7 +351,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
         .map_err(anyhow::Error::msg)?;
     let config = Config::load_with_cli_overrides(overrides)
         .await
-        .context("failed to load configuration")?;
+        .context(tr(current(), "failed to load configuration"))?;
 
     let AddArgs {
         name,
@@ -351,7 +360,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_codex_home().context(tr(current(), "failed to resolve CODEX_HOME"))?;
 
     let (transport, oauth_client_id, client_registration, oauth_resource) = match transport_args {
         AddMcpTransportArgs {
@@ -360,7 +369,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
             let mut command_parts = stdio.command.into_iter();
             let command_bin = command_parts
                 .next()
-                .ok_or_else(|| anyhow!("command is required"))?;
+                .ok_or_else(|| anyhow!(tr(current(), "command is required")))?;
             let command_args: Vec<String> = command_parts.collect();
 
             let env_map = if stdio.env.is_empty() {
@@ -435,7 +444,10 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
         .as_ref()
         .map(|_| {
             let McpServerTransportConfig::StreamableHttp { url, .. } = &transport else {
-                bail!("OAuth client IDs require a streamable HTTP MCP server");
+                bail!(tr(
+                    current(),
+                    "OAuth client IDs require a streamable HTTP MCP server"
+                ));
             };
             resolve_mcp_oauth_callback_url(
                 url,
@@ -473,7 +485,13 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     let mut servers = load_global_mcp_servers(&codex_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| {
+            tr_with(
+                current(),
+                "failed to load MCP servers from {0}",
+                &[&codex_home.display().to_string()],
+            )
+        })?;
     let credential_name = new_entry.oauth_credential_name(&name);
     servers.insert(name.clone(), new_entry);
 
@@ -481,15 +499,38 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
         .replace_mcp_servers(&servers)
         .apply()
         .await
-        .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+        .with_context(|| {
+            tr_with(
+                current(),
+                "failed to write MCP servers to {0}",
+                &[&codex_home.display().to_string()],
+            )
+        })?;
 
-    println!("Added global MCP server '{name}'.");
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "Added global MCP server '{0}'.",
+            &[name.as_str()]
+        )
+    );
     if let Some(callback_url) = &callback_url {
-        println!("OAuth callback URL: {callback_url}");
+        println!(
+            "{}",
+            tr_with(
+                current(),
+                "OAuth callback URL: {0}",
+                &[callback_url.as_str()]
+            )
+        );
     }
     match login_support {
         McpOAuthLoginSupport::Supported(oauth_config) => {
-            println!("Detected OAuth support. Starting OAuth flow…");
+            println!(
+                "{}",
+                tr(current(), "Detected OAuth support. Starting OAuth flow…")
+            );
             let resolved_scopes = resolve_oauth_scopes(
                 /*explicit_scopes*/ None,
                 /*configured_scopes*/ None,
@@ -514,11 +555,16 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
                 http_client,
             )
             .await?;
-            println!("Successfully logged in.");
+            println!("{}", tr(current(), "Successfully logged in."));
         }
         McpOAuthLoginSupport::Unsupported => {}
         McpOAuthLoginSupport::Unknown(_) => println!(
-            "MCP server may or may not require login. Run `codex mcp login {name}` to login."
+            "{}",
+            tr_with(
+                current(),
+                "MCP server may or may not require login. Run `codex mcp login {0}` to login.",
+                &[name.as_str()]
+            )
         ),
     }
 
@@ -534,10 +580,16 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_codex_home().context(tr(current(), "failed to resolve CODEX_HOME"))?;
     let mut servers = load_global_mcp_servers(&codex_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| {
+            tr_with(
+                current(),
+                "failed to load MCP servers from {0}",
+                &[&codex_home.display().to_string()],
+            )
+        })?;
 
     let removed = servers.remove(&name).is_some();
 
@@ -546,13 +598,33 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
             .replace_mcp_servers(&servers)
             .apply()
             .await
-            .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+            .with_context(|| {
+                tr_with(
+                    current(),
+                    "failed to write MCP servers to {0}",
+                    &[&codex_home.display().to_string()],
+                )
+            })?;
     }
 
     if removed {
-        println!("Removed global MCP server '{name}'.");
+        println!(
+            "{}",
+            tr_with(
+                current(),
+                "Removed global MCP server '{0}'.",
+                &[name.as_str()]
+            )
+        );
     } else {
-        println!("No MCP server named '{name}' found.");
+        println!(
+            "{}",
+            tr_with(
+                current(),
+                "No MCP server named '{0}' found.",
+                &[name.as_str()]
+            )
+        );
     }
 
     Ok(())
@@ -590,7 +662,10 @@ async fn run_login(config: &Config, login_args: LoginArgs) -> Result<()> {
             env_http_headers,
             ..
         } => (url.clone(), http_headers.clone(), env_http_headers.clone()),
-        _ => bail!("OAuth login is only supported for streamable HTTP servers."),
+        _ => bail!(tr(
+            current(),
+            "OAuth login is only supported for streamable HTTP servers."
+        )),
     };
 
     // Standalone `mcp login` runs OAuth from the local CLI process; execution
@@ -635,7 +710,14 @@ async fn run_login(config: &Config, login_args: LoginArgs) -> Result<()> {
         http_client,
     )
     .await?;
-    println!("Successfully logged in to MCP server '{name}'.");
+    println!(
+        "{}",
+        tr_with(
+            current(),
+            "Successfully logged in to MCP server '{0}'.",
+            &[name.as_str()]
+        )
+    );
     Ok(())
 }
 
@@ -645,13 +727,20 @@ async fn run_logout(config: &Config, logout_args: LogoutArgs) -> Result<()> {
 
     let LogoutArgs { name } = logout_args;
 
-    let server = mcp_servers
-        .get(&name)
-        .ok_or_else(|| anyhow!("No MCP server named '{name}' found in configuration."))?;
+    let server = mcp_servers.get(&name).ok_or_else(|| {
+        anyhow!(tr_with(
+            current(),
+            "No MCP server named '{0}' found in configuration.",
+            &[name.as_str()]
+        ))
+    })?;
 
     let url = match &server.transport {
         McpServerTransportConfig::StreamableHttp { url, .. } => url.clone(),
-        _ => bail!("OAuth logout is only supported for streamable_http transports."),
+        _ => bail!(tr(
+            current(),
+            "OAuth logout is only supported for streamable_http transports."
+        )),
     };
     let credential_name = server.oauth_credential_name(&name);
 
@@ -663,9 +752,29 @@ async fn run_logout(config: &Config, logout_args: LogoutArgs) -> Result<()> {
     )
     .await
     {
-        Ok(true) => println!("Removed OAuth credentials for '{name}'."),
-        Ok(false) => println!("No OAuth credentials stored for '{name}'."),
-        Err(err) => return Err(anyhow!("failed to delete OAuth credentials: {err}")),
+        Ok(true) => println!(
+            "{}",
+            tr_with(
+                current(),
+                "Removed OAuth credentials for '{0}'.",
+                &[name.as_str()]
+            )
+        ),
+        Ok(false) => println!(
+            "{}",
+            tr_with(
+                current(),
+                "No OAuth credentials stored for '{0}'.",
+                &[name.as_str()]
+            )
+        ),
+        Err(err) => {
+            return Err(anyhow!(tr_with(
+                current(),
+                "failed to delete OAuth credentials: {0}",
+                &[&err.to_string()]
+            )));
+        }
     }
 
     Ok(())
@@ -762,7 +871,13 @@ async fn run_list(config: &Config, list_args: ListArgs) -> Result<()> {
     }
 
     if entries.is_empty() {
-        println!("No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`.");
+        println!(
+            "{}",
+            tr(
+                current(),
+                "No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`."
+            )
+        );
         return Ok(());
     }
 
@@ -941,7 +1056,11 @@ async fn run_get(config: &Config, get_args: GetArgs) -> Result<()> {
     let mcp_servers = mcp_manager.configured_servers(config).await;
 
     let Some(server) = mcp_servers.get(&get_args.name) else {
-        bail!("No MCP server named '{name}' found.", name = get_args.name);
+        bail!(tr_with(
+            current(),
+            "No MCP server named '{0}' found.",
+            &[get_args.name.as_str()]
+        ));
     };
 
     if get_args.json {
@@ -1113,11 +1232,12 @@ fn parse_env_pair(raw: &str) -> Result<(String, String), String> {
         .next()
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| "environment entries must be in KEY=VALUE form".to_string())?;
-    let value = parts
-        .next()
-        .map(str::to_string)
-        .ok_or_else(|| "environment entries must be in KEY=VALUE form".to_string())?;
+        .ok_or_else(|| {
+            tr(current(), "environment entries must be in KEY=VALUE form").to_string()
+        })?;
+    let value = parts.next().map(str::to_string).ok_or_else(|| {
+        tr(current(), "environment entries must be in KEY=VALUE form").to_string()
+    })?;
 
     Ok((key.to_string(), value))
 }
@@ -1131,7 +1251,11 @@ fn validate_server_name(name: &str) -> Result<()> {
     if is_valid {
         Ok(())
     } else {
-        bail!("invalid server name '{name}' (use letters, numbers, '-', '_', ':', '@', '/', '.')");
+        bail!(tr_with(
+            current(),
+            "invalid server name '{0}' (use letters, numbers, '-', '_', ':', '@', '/', '.')",
+            &[name]
+        ));
     }
 }
 

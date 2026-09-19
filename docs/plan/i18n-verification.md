@@ -1611,7 +1611,7 @@ for f in m.scan(Path("codex-rs/core")):
 - 第 454 轮实测：core 32 行/79 站点（已核 6 行、待核 26 行/59 站点）、tui 10 行/21 站点（待核 10 行/21 站点）；
 - **第 460 轮实测：core 31 行/77 站点，已核 30 行、待核 1 行/2 站点**（`MCP runtime refresh semaphore closed`）；
 - 历史数字保留在此仅供对照；**唯一权威的是下面这行带标记的实测**：
-- <!-- queue-latest --> by-value 队列最新实测（第 469 轮）：core 待核 0 行/0 站点、tui 待核 0 行/0 站点。
+- <!-- queue-latest --> by-value 队列最新实测（第 541 轮）：core 0 行/0 站点、tui 0 行/0 站点、cli 0 行/0 站点（6 个站点全部 `[fanout-reviewed]`，`--fanout` 实测 NEED REVIEW=0）；exec 0 行/0 站点。
 
 **本轮已核 6 行的裁决**（每个站点都读过接收者，不是抽样）：
 
@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **306** | 第 530 轮清 17 站点（`state_db_recovery.rs` 全译）；已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`plugin_cmd.rs` 47、`login.rs` 41 |
+| `codex-rs/cli/src` | **255** | 第 541 轮清 `mcp_cmd.rs` 51 站点（30 译 + 21 登记，§12.58）；已扣 doctor 851（裁定排除）；最密文件 `plugin_cmd.rs` 47、`login.rs` 41 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2182,3 +2182,36 @@ CLI 命令的输出是**用户面**，所以以译为主（13 译 + 6 登记）�
   （前者是「没有备份文件夹」的替代文案，不是同一条的截断）
 
 ⇒ `cli/src` 306；下一步继续按文件推进（`mcp_cmd.rs` 51 / `plugin_cmd.rs` 47 / `login.rs` 41 是最大三块）。
+
+### 12.58 第 541 轮（开工于第 534 轮）：`mcp_cmd.rs` 整文件裁定（51 站点 → 译 30 / 登记 21）
+
+`cli/src` 最密文件清空：`python3 scripts/i18n_todo.py --root codex-rs/cli/src --file cli/src/mcp_cmd.rs`
+现报 **0 unwrapped / 21 exempted**，`cli/src` 由 306 降到 **255**。
+
+**译 30 站点 / 22 条新词条**（同一句多站点按值合并；`failed to load configuration` 与
+`failed to resolve CODEX_HOME` 字典已有，只包站点）：`:299`/`:334`/`:345`/`:354`/`:363`/`:438`/`:476`/`:484`/`:486`/`:488`/
+`:492`/`:517`/`:521`/`:538`/`:540`/`:549`/`:553`/`:555`/`:593`/`:638`/`:650`/`:654`/`:666`/`:667`/`:668`/`:765`/`:944`/
+`:1116`/`:1120`/`:1134`。判据：`println!`/`bail!`/`anyhow!`/`.context()` 的接收者都是**命令行用户**
+（成功语、OAuth 流程提示、加载/写盘失败、服务器名校验），属 §9.1「文本流向」的用户面。
+
+**登记 21 站点，四类**：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| clap `override_usage` 属性 | `:96` | 编译期常量，无法 `tr`（同 §12.55 `cli.rs:13`） |
+| 列对齐表键（两张表） | `:1022`（`"Bearer Token Env Var".len()`）与 `:1036`（表头取值） | 列宽由这些字面量算出；译名会破坏对齐（docs:666 的 `config_summary_entries` 表键同形）。**两端点已逐站点核对并标 `[fanout-reviewed]`**；stdio 表的同名短表头不在候选表里（`MIN_CANDIDATE_LEN=8` 形状规则），本行按同一口径登记 |
+| `mcp get` 配置键值转储 | `:1139`–`:1236` 共 15 行（`  enabled: {}` 起，至 `  remove: codex mcp remove {}`） | §12.5.6：键名就是 `config.toml` 字段名，且与 `--json` schema 字段名**逐一对应**（同文件 `:972-1005` 的 `"enabled"`/`"transport"`/`"startup_timeout_sec"`…）⇒ 用户的动作是把键名贴回配置，译名反而不可用 |
+| 状态 token | `:1131`/`:1133`/`:1142` | `{name} (disabled: {reason})` / `{name} (disabled)` / `disabled: {reason}` 里的 reason 是 `McpServerDisabledReason::Display`（`codex-rs/config/src/mcp_types.rs:64-73` 产出 `unknown` / `requirements (…)` 机器值）⇒ 与同表 `enabled`/`disabled` 短 token 同族 |
+
+**记在案但未采用的替代方案**：把两张表的表头译成中文，并把 `widths` 的两处计算改成**显示宽度**（CJK 双宽）。
+本轮按「最小入侵」（人类裁决 `j-mu7hdmw5-5gxz`）不做 —— 只译表头会让列错位，且必须同时改两处宽度计算。
+将来若要做，这就是入口。
+
+**证据**：`fmt-check` `r-mu7ytqo2-1pozw5`、`i18n-check` `r-mu7ytxvd-9jz9po`（3189 词条 / missing 0 / unused 0 /
+spacing 0 / duplicate 0 / placeholder 0）、`clippy` `r-mu7yt21u-rqfher`、合并自检
+`r-mu7yr8os-hmsnlc`（dossier drift=0、四 scope audit silent no-ops=0、fanout NEED REVIEW=0、census 一致）。
+
+**工具陷阱（本轮实测撞到，已落 `known_issues`）**：`i18n_todo.py` 的默认扫描根是 `tui/src`（`--root` 必填），
+而 `--dump`/`--dump-rows`/`--audit-rows` 对**不匹配的 `--file` 静默返回 0 行**（只有清单模式有 `exit 2` 守卫）。
+于是「文件已清空」与「路径根本没匹配上」输出相同 —— 本轮第一次 `--dump-rows` 就拿到了 0 行，差点据此宣布清空。
+

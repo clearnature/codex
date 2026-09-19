@@ -676,7 +676,7 @@ plugin sharing is not enabled	codex-rs/app-server/src/request_processors/plugins
 paginated threads require thread/turns/list and thread/items/list support	codex-rs/app-server/src/request_processors/thread_processor.rs	**匹配键**：被 exec/src/lib.rs:1439 比对（据它决定提示文案）⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
 ephemeral threads do not support includeTurns	codex-rs/app-server/src/request_processors/thread_processor.rs	**匹配键**：被 tui/src/app/session_lifecycle.rs:247 比对 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
 no active turn to steer	codex-rs/app-server/src/request_processors/turn_processor.rs	**匹配键**：被 tui/src/app.rs:764 比对（本值在该文件出现 2 处）⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
-request timed out	codex-rs/protocol/src/error.rs	**匹配键**：`#[error("request timed out")] RequestTimeout` 的 Display 文本被 codex-mcp/src/connection_manager/startup.rs:128 用 `contains(..)` 识别为「启动超时」—— 该处是 thiserror 字面量（§12.4：不能包 tr），但 §12.4 记录过「改为手写 Display」的先例 ⇒ 仍需上锁 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34）
+request timed out	codex-rs/protocol/src/error.rs	**匹配键**：`#[error("request timed out")] RequestTimeout` 的 Display 文本被 codex-mcp/src/connection_manager/startup.rs:128 用 `contains(..)` 识别为「启动超时」—— 该处是 thiserror 字面量（§12.4：不能包 tr），但 §12.4 记录过「改为手写 Display」的先例 ⇒ 仍需上锁 ⇒ §12.1 匹配键（docs/plan/i18n-verification.md §12.34） [fanout-reviewed] 4 个站点全部位于 codex-rs/cli/src/doctor/（按裁定 i18n.r37.doctor-excluded 整体排除），逐站点无需再裁
 code mode session is shutting down	codex-rs/core/src/tools/code_mode/mod.rs	code-mode 的**工具负载/错误**：经 handlers 的 `FunctionCallError::RespondToModel(..)` 回给模型（execute_handler.rs / wait_handler.rs 逐处 `.map_err(FunctionCallError::RespondToModel)`）⇒ §12.11（会话获取的 Result<_, String>，5 处）（docs/plan/i18n-verification.md） 〔fanout 补核〕5 处（code_mode/mod.rs:173/:226/:231/:236/:244）同为该 `Err(String)`，接收者一致[fanout-reviewed]
 Script error:\n{error_text}	codex-rs/core/src/tools/code_mode/mod.rs	脚本输出的 `FunctionCallOutputContentItem::InputText` —— **模型可见的工具输出** ⇒ §12.11（docs/plan/i18n-verification.md）
 Script running with cell ID {cell_id}	codex-rs/core/src/tools/code_mode/mod.rs	脚本状态行（同上，进工具输出）⇒ §12.11（docs/plan/i18n-verification.md）
@@ -1150,3 +1150,24 @@ skipped busy	codex-rs/cli/src/migrate_rollouts.rs:421	**机器可读输出里的
 {:.1} GB	codex-rs/cli/src/migrate_rollouts.rs:487	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7
 {:.1} MB	codex-rs/cli/src/migrate_rollouts.rs:489	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7
 {:.1} KB	codex-rs/cli/src/migrate_rollouts.rs:491	**单位格式串**（`{:.1} GB` 等）⇒ 结构/单位符号，不译 ⇒ §12.7
+codex mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)	codex-rs/cli/src/mcp_cmd.rs:96	clap `override_usage` 属性：编译期常量，无法 tr（同 §12.55 cli.rs:13）
+Bearer Token Env Var	codex-rs/cli/src/mcp_cmd.rs:1010	[fanout-reviewed] http 表 widths 的度量字面量（列对齐基准）；同值另一站点 codex-rs/cli/src/mcp_cmd.rs:1024 是 println! 表头取值 —— 两站点均已逐条核对，同属「列对齐表键」⇒ 登记（docs:666 同形）
+Bearer Token Env Var	codex-rs/cli/src/mcp_cmd.rs:1024	[fanout-reviewed] 表头=列对齐表键：列宽由同值站点 codex-rs/cli/src/mcp_cmd.rs:1010 的 `.len()` 算出，译名会破坏对齐；两站点（:1010 度量 / :1024 渲染）均已核对 ⇒ 登记
+{name} (disabled: {reason})	codex-rs/cli/src/mcp_cmd.rs:1119	状态 token 族：reason 是 McpServerDisabledReason::Display 的机器值（codex-rs/config/src/mcp_types.rs:64-73 `unknown`/`requirements (…)`）
+{name} (disabled)	codex-rs/cli/src/mcp_cmd.rs:1121	同上：与 `enabled`/`disabled` 短 token 同族
+disabled: {reason}	codex-rs/cli/src/mcp_cmd.rs:1266	同上：format_mcp_status 的状态 token（同表 status 列）
+  enabled: {}	codex-rs/cli/src/mcp_cmd.rs:1127	配置键值转储（§12.5.6）：键名=config.toml 字段名，用户要贴回配置
+  enabled_tools: {enabled_tools_display}	codex-rs/cli/src/mcp_cmd.rs:1137	同上（键名与 --json schema 字段名一致：:972-1005）
+  disabled_tools: {disabled_tools_display}	codex-rs/cli/src/mcp_cmd.rs:1141	同上
+  transport: stdio	codex-rs/cli/src/mcp_cmd.rs:1151	同上：transport 是配置字段名，stdio 是配置取值 token
+  command: {command}	codex-rs/cli/src/mcp_cmd.rs:1152	同上
+  args: {args_display}	codex-rs/cli/src/mcp_cmd.rs:1158	同上
+  transport: streamable_http	codex-rs/cli/src/mcp_cmd.rs:1175	同上
+  url: {url}	codex-rs/cli/src/mcp_cmd.rs:1176	同上
+  http_headers: {headers_display}	codex-rs/cli/src/mcp_cmd.rs:1191	同上
+  env_http_headers: {env_headers_display}	codex-rs/cli/src/mcp_cmd.rs:1204	同上
+  http_headers_helper: {helper_display}	codex-rs/cli/src/mcp_cmd.rs:1206	同上
+  startup_timeout_sec: {}	codex-rs/cli/src/mcp_cmd.rs:1210	同上
+  tool_timeout_sec: {}	codex-rs/cli/src/mcp_cmd.rs:1213	同上
+  default_tools_approval_mode: {approval_mode}	codex-rs/cli/src/mcp_cmd.rs:1222	同上
+  remove: codex mcp remove {}	codex-rs/cli/src/mcp_cmd.rs:1224	同上（本行是同一 `  key: value` 转储块的一员，取值是字面命令）

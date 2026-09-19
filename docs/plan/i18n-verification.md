@@ -1706,7 +1706,7 @@ for f in m.scan(Path("codex-rs/core")):
 
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
-| `codex-rs/cli/src` | **255** | 第 541 轮清 `mcp_cmd.rs` 51 站点（30 译 + 21 登记，§12.58）；已扣 doctor 851（裁定排除）；最密文件 `plugin_cmd.rs` 47、`login.rs` 41 |
+| `codex-rs/cli/src` | **208** | 第 556 轮清 `plugin_cmd.rs` 47 站点（27 译 + 20 登记，§12.60）；已扣 doctor 851（裁定排除）；最密文件 `login.rs` 41、`main.rs` 37 |
 | `codex-rs/core` | **10** | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **0** | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
@@ -2243,3 +2243,45 @@ spacing 0 / duplicate 0 / placeholder 0）、`clippy` `r-mu7yt21u-rqfher`、合�
 **建议（本轮**未**做，留待宿主重启窗口）**：把上表登记为具名门禁 `i18n-locale-zh`，与 `i18n-locale-en` 成对。
 领域包改动会改 `gatesHash` 并使既有回执 stale，且 `impl/ruleset.mjs:25` 的 `loadPack()` 是模块级
 ⇒ 需宿主重启才生效；故本轮以 `gate:"custom"` 签回执，不擅自改领域包定义。
+
+### 12.60 第 556 轮：`plugin_cmd.rs` 整文件裁定（51→47 站点：译 27 / 登记 20）
+
+`python3 scripts/i18n_todo.py --root codex-rs/cli/src --file cli/src/plugin_cmd.rs` 报 **0 unwrapped / 18 exempted**，
+`cli/src` 由 255 降到 **208**，字典 3189 → **3212**。
+
+**译 27 站点 / 23 条词条**：`:212`/`:215`/`:267`/`:318`/`:320`/`:381`/`:385`/`:660`/`:699`/`:734`/`:737`/`:782`/`:795`/`:817`/
+`:824`/`:860`/`:863`/`:879`/`:884`/`:899`/`:919`/`:922`/`:953`/`:961`/`:994`/`:1015`/`:1035` ——
+全是 `println!`/`eprintln!`/`bail!`/`ensure!`/`.context()`/`format!` 面向命令行用户的文案
+（添加/移除插件结果、插件列表汇总、远程目录告警、选择解析失败、已配置 market 快照的问题清单）。
+术语按字典既有译法：`marketplace` → **市场源**、`plugin` → **插件**。
+
+**登记 20 站点，六类**：
+
+| 类别 | 站点 | 依据 |
+| --- | --- | --- |
+| clap `bin_name` 属性 | `:53`/`:85`/`:104`/`:123` | 编译期常量（§12.56 ①） |
+| clap `after_help` 属性 | `:54`/`:105`/`:124` | 同上（`Examples:\n …` 多行） |
+| STATUS 列状态 token | `:341`/`:343`/`:345` | 列宽由这些字面量 `.len()` 得出（`:383`/`:384`）；同 §12.58 状态 token 口径 |
+| SOURCE 列坐标标签 | `:357`/`:360`/`:363`/`:374`/`:377` | ``path `…` `` / ``ref `…` `` / ``sha `…` `` / ``version `…` `` / ``registry `…` `` —— 坐标标识符（§12.6） |
+| 表头 + 宽度格式模板 | `:399` | `{:<plugin_width$} …SOURCE`：列对齐 + 格式说明，译了会破坏对齐 |
+| 哨兵值 | `:1060`/`:1068`/`:1081` | `<invalid config>` / `<invalid source>` 是**路径占位符**（非文案）；`<invalid config>` 两个站点已逐站点核对并标 `[fanout-reviewed]` |
+| 字段标签 | `:1065` | `"marketplace name"` 只是 `validate_plugin_segment(_, kind)` 的 `kind`，模板在 `codex-rs/plugin/src/plugin_id.rs:51-64`（**本轮普查范围外**）⇒ 只译标签会造成中英混排，整体留待 plugin crate 进范围 |
+
+**新增待办（本轮发现，未接入）**：`codex-rs/plugin/src/plugin_id.rs:51-64` 的 4 条 `invalid {kind}: …` 模板
+（`must not be empty` / `path traversal is not allowed` / `dots must separate non-empty name segments` / 字符集校验）——
+它们经 `configured_marketplace_snapshot_issues` 进入 CLI 面向用户的问题清单，但归属 crate 不在当前普查范围。
+
+**一处口径观察（不是错误）**：清单模式报的 `(18 exempted)` 比本批登记的 20 行少 2 ——
+该计数器是「本文件里被豁免**且**宽松规则判为未包装」的 finding 数，与登记行数不是同一个量。
+权威判据是 `--audit-rows` 的 `silent no-ops = 0` 与 `--file` 的 `0 unwrapped`，两条本批均通过；
+已落 `known_issues i18n-todo-skipped-counter-mismatch`，避免后续再花时间追这个差额。
+
+**本轮被门禁抓回一次（值得记）**：`:976`/`:982` 我按「不确定类型就用 `&x`」写成 `&[&plugin_name, &marketplace_name]`，
+而这两个参数本就是 `&str` ⇒ `clippy::needless-borrow`，**且本仓的 clippy 门禁对该 lint 是 `-D`（错误级）**，
+直接 exit 101。教训：`&[&str]` 实参的形状取决于类型（`String` → `.as_str()`、`&str` → 裸标识符），
+拿不准就先 grep 被调函数的签名，别用「加个 `&` 更保险」蒙。
+
+**证据**：`fmt-check r-mu803xn4-nlkwga`、`i18n-check r-mu80455c-qajwz7`（3212 词条 / missing 0 / unused 0 / spacing 0 /
+duplicate 0 / placeholder 0）、`clippy r-mu8015xq-mdd5t9`、合并自检 `r-mu803c2i-ri1cs1`
+（drift=0 / 四 scope audit silent no-ops=0 / fanout NEED REVIEW=0 / census cli=208）。失败回执保留：
+`r-mu7zzviy-atowt0`（needless-borrow 红，修正后转绿）。

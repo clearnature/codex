@@ -7908,6 +7908,78 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "invalid server name '{0}' (use letters, numbers, '-', '_', ':', '@', '/', '.')",
         "无效的服务器名'{0}'（请使用字母、数字、'-'、'_'、':'、'@'、'/'、'.'）",
     ),
+    (
+        "Added plugin `{0}` from marketplace `{1}`.",
+        "已从市场源`{1}`添加插件`{0}`。",
+    ),
+    ("Installed plugin root: {0}", "已安装插件根目录：{0}"),
+    ("failed to list marketplace plugins", "无法列出市场源插件"),
+    (
+        "No plugins found in marketplace `{0}`.",
+        "市场源`{0}`中没有找到插件。",
+    ),
+    ("No marketplace plugins found.", "没有找到市场源插件。"),
+    ("Marketplace `{0}`", "市场源`{0}`"),
+    ("Remote catalog", "远程目录"),
+    ("remote plugins are not enabled", "未启用远程插件"),
+    (
+        "Removed plugin `{0}` from marketplace `{1}`.",
+        "已从市场源`{1}`移除插件`{0}`。",
+    ),
+    (
+        "plugin id `{0}` belongs to marketplace `{1}`, but --marketplace specified `{2}`",
+        "插件ID`{0}`属于市场源`{1}`，但--marketplace指定了`{2}`",
+    ),
+    (
+        "plugin requires --marketplace unless passed as <plugin>@<marketplace>",
+        "插件需要--marketplace，除非以<plugin>@<marketplace>形式传入",
+    ),
+    (
+        "chatgpt authentication required for remote plugin catalog",
+        "远程插件目录需要chatgpt认证",
+    ),
+    (
+        "Warning: failed to list remote marketplace plugins: {0}",
+        "警告：无法列出远程市场源插件：{0}",
+    ),
+    (
+        "failed to list remote marketplace plugins",
+        "无法列出远程市场源插件",
+    ),
+    (
+        "plugin `{0}` was not found in remote marketplace `{1}`",
+        "远程市场源`{1}`中没有找到插件`{0}`",
+    ),
+    (
+        "plugin `{0}` matched multiple remote plugins",
+        "插件`{0}`匹配到多个远程插件",
+    ),
+    (
+        "plugin `{0}` was not found in marketplace `{1}`",
+        "市场源`{1}`中没有找到插件`{0}`",
+    ),
+    (
+        "plugin `{0}` in marketplace `{1}` matched multiple marketplace roots",
+        "市场源`{1}`中的插件`{0}`匹配到多个市场源根目录",
+    ),
+    ("- `{0}` at {1}: {2}", "- `{0}` 位于 {1}：{2}"),
+    (
+        "failed to load configured marketplace snapshot(s):
+{0}",
+        "无法加载已配置的市场源快照：\n{0}",
+    ),
+    (
+        "configured marketplace entry must be a table",
+        "配置的市场源条目必须是表",
+    ),
+    (
+        "configured local marketplace source is missing or empty",
+        "配置的本地市场源来源缺失或为空",
+    ),
+    (
+        "marketplace root does not contain a supported manifest",
+        "市场源根目录不包含受支持的清单文件",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

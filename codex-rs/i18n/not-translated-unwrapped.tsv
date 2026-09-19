@@ -1171,3 +1171,23 @@ disabled: {reason}	codex-rs/cli/src/mcp_cmd.rs:1266	同上：format_mcp_status �
   tool_timeout_sec: {}	codex-rs/cli/src/mcp_cmd.rs:1213	同上
   default_tools_approval_mode: {approval_mode}	codex-rs/cli/src/mcp_cmd.rs:1222	同上
   remove: codex mcp remove {}	codex-rs/cli/src/mcp_cmd.rs:1224	同上（本行是同一 `  key: value` 转储块的一员，取值是字面命令）
+codex plugin	codex-rs/cli/src/plugin_cmd.rs:53	clap `bin_name` 属性（编译期常量，无法 tr）
+codex plugin add	codex-rs/cli/src/plugin_cmd.rs:85	同上
+Examples:\n  codex plugin add sample@debug\n  codex plugin add sample --marketplace debug	codex-rs/cli/src/plugin_cmd.rs:86	clap `after_help` 属性（编译期常量）
+codex plugin list	codex-rs/cli/src/plugin_cmd.rs:104	同上
+Examples:\n  codex plugin list\n  codex plugin list --marketplace debug\n  codex plugin list --json\n  codex plugin list --available --json	codex-rs/cli/src/plugin_cmd.rs:105	同上
+codex plugin remove	codex-rs/cli/src/plugin_cmd.rs:123	同上
+Examples:\n  codex plugin remove sample@debug\n  codex plugin remove sample --marketplace debug	codex-rs/cli/src/plugin_cmd.rs:124	同上
+installed, enabled	codex-rs/cli/src/plugin_cmd.rs:352	列表 STATUS 列的状态 token 族（列宽由这些字面量 .len() 得出：:373/:374）
+installed, disabled	codex-rs/cli/src/plugin_cmd.rs:354	同上（同族 token）
+not installed	codex-rs/cli/src/plugin_cmd.rs:356	同上（同族 token）
+path `{path}`	codex-rs/cli/src/plugin_cmd.rs:368	SOURCE 列的坐标标签（反引号包住的 path/ref/sha/version/registry 标识符）
+ref `{ref_name}`	codex-rs/cli/src/plugin_cmd.rs:371	同上（坐标标签）
+sha `{sha}`	codex-rs/cli/src/plugin_cmd.rs:374	同上（坐标标签）
+version `{version}`	codex-rs/cli/src/plugin_cmd.rs:385	同上（坐标标签）
+registry `{registry}`	codex-rs/cli/src/plugin_cmd.rs:388	同上（坐标标签）
+{:<plugin_width$}  {:<status_width$}  {:<installed_version_width$}  SOURCE	codex-rs/cli/src/plugin_cmd.rs:413	plugin list 表头 + 宽度格式模板（列对齐；含 {:<plugin_width$} 等格式说明）
+<invalid config>	codex-rs/cli/src/plugin_cmd.rs:1060	[fanout-reviewed] 哨兵值 `<invalid config>`（路径占位符，非文案）；同值另一站点 :1001 同为哨兵 ⇒ 两站点均已核对
+marketplace name	codex-rs/cli/src/plugin_cmd.rs:1065	字段标签（`kind` 参数）：它的模板在 codex-rs/plugin/src/plugin_id.rs:51-64（本轮普查范围外）⇒ 只译标签会造成中英混排，整体留待 plugin crate 进范围
+<invalid config>	codex-rs/cli/src/plugin_cmd.rs:1068	[fanout-reviewed] 哨兵值 `<invalid config>`；同值另一站点 :993（见该行理由）
+<invalid source>	codex-rs/cli/src/plugin_cmd.rs:1081	哨兵值 `<invalid source>`（路径占位符，非文案）

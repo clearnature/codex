@@ -1590,3 +1590,41 @@ for f in m.scan(Path("codex-rs/core")):
 （提交 `8ad107c71`）：`:613`/`:851` 只到 `FunctionCallError::RespondToModel`（模型面 ⇒ 登记）、
 `:1265`/`:1315` 译出（经 `ToolError::Rejected` 到用户面）、`:1467` 的 `message` 被两个消费点用 `..` 丢弃
 （无渲染方 ⇒ 登记）。本表 `:1467` 那行仍写着「两个消费点丢弃」，可对照。
+
+### 12.37 第 454 轮：by-value 登记的**掩盖效应**（第六类隐形）与「已核队列」
+
+**症状**：登记行（`codex-rs/i18n/not-translated-unwrapped.tsv` 第 1 列）是**按值**匹配的，
+所以**一行**会把同一文案在**所有文件**里的站点一次性移出候选集 —— 包括登记时没看过的那些。
+两侧都不会报：`i18n-check` 只看字典覆盖率（`[missing]`/`[unused]`），`i18n_todo` 计数器只看候选总数。
+
+**实例（本轮抓到并修复）**：为 `client.rs:2315`（`record_failed`，真遥测）登记
+`stream closed before response.completed` 时，同值的 `compact.rs:793`
+（`CodexErr::Stream(..)`，**用户可见**）被一并豁免。发现方式是手工对账：
+`311(HEAD~1) − 11(译 3 + telemetry 行 1 + telemetry 行覆 2 站点 + guardian 5) = 300`，
+差值 1 落到 `compact.rs:793` 头上。修复见提交 `f613fec91`（`compact.rs:793` 与同族的
+`compact_remote_v2.rs:470` 均转为 `tr(current(), …)`，字典 3069 条）。
+
+**机制（本轮新增）**：
+
+- `python3 scripts/i18n_todo.py --fanout [--all]` 列出「一行豁免 >1 个未译站点」的登记；
+- 逐站点裁决后，在该行**理由列**追加 `[fanout-reviewed]`；`--fanout` 默认只列**未核**行（队列口径）；
+- 第 454 轮实测：core 32 行/79 站点（已核 6 行、**待核 26 行/59 站点**）、tui 10 行/21 站点（**待核 10 行/21 站点**）。
+
+**本轮已核 6 行的裁决**（每个站点都读过接收者，不是抽样）：
+
+| 值 | 类别 | 站点证据 |
+| --- | --- | --- |
+| `failed to parse function arguments: {err}` | 模型面 | `FunctionCallError::RespondToModel` ×5：`code_mode/wait_handler.rs:44`、`handlers/mcp_resource.rs:370`/`:386`、`handlers/mod.rs:90`、`handlers/request_permissions.rs:94` |
+| `{TOOL_NAME} handler received unsupported payload` | 模型面 | `RespondToModel` ×4：`current_time.rs:90`、`request_user_input_async.rs:94`、`send_message_to_user_async.rs:73`、`sleep.rs:92` |
+| `Empty message can't be sent to an agent` | 模型面 | `RespondToModel` ×2：`multi_agents_common.rs:151`、`multi_agents_v2/message_tool.rs:46` |
+| `timeout_ms is too large` | 模型面 | `UnifiedExecError::process_failed` ×2：`oneshot.rs:44`、`process_manager.rs:615`（经 `exec_command` 回模型） |
+| `Process exited with code {exit_code}` | **无渲染方** | `process.rs:334` → `sandbox_denied(message, ..)`；`process_manager.rs:1476` 同；`tools/context.rs:501` 是 `response_header()` 负载块的一行（与 `Chunk ID:`/`Wall time:`/`Output:` 同块，只译一行会造成半中半英）。三处消费点 `exec_command.rs:450`/`runtimes/unified_exec.rs:502`/`process_manager.rs:1240` 均以 `{ output, .. }` **丢弃 `message`** |
+| `rejected by user` | 匹配键（哨兵） | `tools/events.rs:441` 用 `msg == "rejected by user"` 归一化；生产点 `approvals.rs:454`、`network_approval.rs:844`/`:874`/`:1012` |
+
+**这条标记的边界（别把它当门禁）**：`[fanout-reviewed]` 是**声明**，机器只能查「有没有标记」，
+查不了「标记时是否真读过每个站点」。所以标记时必须在正文留下 `file:line`（上表即该记录），
+否则它和没核一样。
+
+**顺带堵住的工具坑**：`scripts/i18n_todo.py` 的扫描根默认是 `codex-rs/tui/src`，
+此前 `--file codex-rs/core/…` 不带 `--root` 会**静默打印 `0 unwrapped candidates`**（假 0，本轮踩到）。
+现在空匹配一律 `exit 2` 并打印真实扫描范围（负向控制回执 `r-mu7pds41-9lqoup`）。

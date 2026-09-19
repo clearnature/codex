@@ -27,6 +27,7 @@ from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+FANOUT_MARK = "[fanout-reviewed]"
 SCANNER = REPO / "scripts/i18n_scan.py"
 
 
@@ -236,6 +237,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--top", type=int, default=10, help="how many files to list")
     parser.add_argument("--file", help="list every remaining literal in one file")
     parser.add_argument(
+        "--all",
+        action="store_true",
+        help="with --fanout: also list rows already marked [fanout-reviewed]",
+    )
+    parser.add_argument(
         "--fanout",
         action="store_true",
         help=(
@@ -443,10 +449,29 @@ def main(argv: list[str]) -> int:
             by_row.setdefault(row, []).append(site)
         multi = {r: s for r, s in by_row.items() if len(s) > 1}
         sites = sum(len(s) for s in multi.values())
+        # A row that exempts several sites is only safe once every site was
+        # adjudicated against its own receiver. `[fanout-reviewed]` in the reason
+        # column is the evidence that someone did that; unmarked rows are the queue.
+        reasons = {}
+        for line in (
+            (REPO / "codex-rs/i18n/not-translated-unwrapped.tsv")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ):
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) >= 3:
+                reasons[parts[0] if parts[0] else parts[1]] = parts[2]
+        reviewed = {r for r in multi if FANOUT_MARK in reasons.get(r, "")}
+        pending = {r: s for r, s in multi.items() if r not in reviewed}
         print(
-            f"{len(multi)} rows exempt >1 unwrapped site "
-            f"({sites} sites across {len(multi)} rows)"
+            f"{len(multi)} rows exempt >1 unwrapped site ({sites} sites); "
+            f"reviewed={len(reviewed)}, NEED REVIEW={len(pending)} "
+            f"({sum(len(s) for s in pending.values())} sites)"
         )
+        if not args.all:
+            multi = pending
         for row, where in sorted(multi.items(), key=lambda kv: -len(kv[1])):
             files = sorted({w.split(":")[0] for w in where})
             print(f"  {len(where)}x {row[:70]!r}  files={len(files)}")

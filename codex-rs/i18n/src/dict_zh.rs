@@ -8462,6 +8462,35 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "This app tool requires a non-empty string link_id argument",
         "此应用工具要求link_id参数为非空字符串",
     ),
+    (
+        "plugin resource path `{0}` is outside package root `{1}`",
+        "插件资源路径`{0}`位于包根目录`{1}`之外",
+    ),
+    (
+        "invalid plugin key `{0}`; expected <plugin>@<marketplace>",
+        "无效的插件键`{0}`；应为<plugin>@<marketplace>",
+    ),
+    ("{0} in `{1}`", "{0}（位于`{1}`）"),
+    ("invalid {0}: must not be empty", "{0}无效：不能为空"),
+    (
+        "invalid {0}: path traversal is not allowed",
+        "{0}无效：不允许路径穿越",
+    ),
+    (
+        "invalid {0}: dots must separate non-empty name segments",
+        "{0}无效：点号必须分隔非空的名称段",
+    ),
+    (
+        "ASCII letters, digits, `.`, `_`, and `-`",
+        "ASCII字母、数字、`.`、`_`和`-`",
+    ),
+    (
+        "ASCII letters, digits, `_`, and `-`",
+        "ASCII字母、数字、`_`和`-`",
+    ),
+    ("invalid {0}: only {1} are allowed", "{0}无效：只允许{1}"),
+    ("plugin name", "插件名称"),
+    ("marketplace name", "市场源名称"),
 ];
 
 /// English source text -> Simplified Chinese.

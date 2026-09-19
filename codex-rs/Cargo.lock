@@ -4168,6 +4168,7 @@ name = "codex-plugin"
 version = "0.0.0"
 dependencies = [
  "codex-config",
+ "codex-i18n",
  "codex-protocol",
  "codex-utils-absolute-path",
  "codex-utils-path-uri",

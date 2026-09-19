@@ -1,4 +1,6 @@
 use crate::manifest::PluginManifest;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::capabilities::SelectedCapabilityRoot;
 use codex_utils_path_uri::PathUri;
 use std::error::Error as StdError;
@@ -39,7 +41,7 @@ pub struct ResolvedPlugin {
 /// Failure to construct a resolved plugin with internally consistent resources.
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 pub enum ResolvedPluginError {
-    #[error("plugin resource path `{path}` is outside package root `{root}`")]
+    #[error("{}", tr_with(current(), "plugin resource path `{0}` is outside package root `{1}`", &[&path.to_string(), &root.to_string()]))]
     ResourceOutsideRoot { root: PathUri, path: PathUri },
 }
 

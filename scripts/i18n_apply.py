@@ -81,7 +81,7 @@ def _used_imports(spec: dict) -> set[str]:
         body = e.get("replace", "")
         if "tr_with(" in body:
             used.add("tr_with")
-        if "tr(" in body or "tr_with(" in body:
+        if "tr(" in body:  # `tr_with(` 不含子串 `tr(`
             used.add("tr")
     return used
 
@@ -430,11 +430,14 @@ def main() -> int:
     new_text = text
     for a, b, new, _ in sorted(edits, reverse=True):
         new_text = new_text[:a] + new + new_text[b:]
+    wanted = _used_imports(spec)
     imp = [
         line
         for line in read_lines(IMPORT_TEMPLATE)
         if line.startswith("use codex_i18n")
-        and import_name(line) in _used_imports(spec)
+        and import_name(line) in wanted
+        # 自检：只有改写后的文本里真的出现该调用才插入（防 tr / tr_with 误判）
+        and (import_name(line) == "current" or f"{import_name(line)}(" in new_text)
     ]
     if imp and "use codex_i18n" not in new_text:
         lines = new_text.splitlines()
@@ -447,7 +450,14 @@ def main() -> int:
             None,
         )
         if idx is None:
-            raise AssertionError("找不到 import 插入点")
+            # 没有 `use` 块的文件（例如纯枚举/函数模块）：插到前导文档注释之后。
+            idx = 0
+            while idx < len(lines) and (
+                lines[idx].startswith("//!")
+                or lines[idx].startswith("#!")
+                or not lines[idx].strip()
+            ):
+                idx += 1
         lines[idx:idx] = imp
         new_text = "\n".join(lines) + "\n"
         print("已插入 import：", imp)

@@ -2581,3 +2581,38 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
 **环境限制（如实记，不归因于本批）**：同批定向测试里 `suite::unified_exec_zsh_fork_approvals::…preserves_denied_reads`
 失败于 **bubblewrap 在临时目录的 glob 限制**（`unreadable glob …/secret.env`，发生在**会话初始化**阶段），
 与本批消息改动无关；另有 2 条 FLAKY 重试后通过（与 `known_issues cli-suite-flaky-under-load` 同族）。
+
+### 12.71 第 618 轮：`plugin` crate 纳入普查（11 站点）⇒ **五个 scope 候选数全为 0**
+
+**范围决定（含成本，按人类批准执行）**：`codex-rs/plugin` **原先不在普查范围**（设计文档只列 core/tui/cli/exec），
+其 11 条候选正是 §12.60 记为「待办」的那一族。纳入的真实成本 = **1 行依赖** + 依赖锁：
+`codex-rs/plugin/Cargo.toml` 加 `codex-i18n = { workspace = true }`（`codex-i18n` 是无 workspace 依赖的叶子 crate ⇒ 无环、干净）；
+`BUILD.bazel` **无需手改**（本仓用 `codex_rust_crate` 宏自动带依赖，见 `codex-rs/plugin/BUILD.bazel`）；
+按 AGENTS.md 跑了 `just bazel-lock-update`（rc=0，**只有 `Cargo.lock` 变、`MODULE.bazel.lock` 未变** —— workspace 路径依赖不进模块图）。
+
+**11 站点 = 译 10 + 登记 1**（`plugin_id.rs` 10 + `provider.rs:42` 1）：
+
+| 站点 | 处理 | 依据 |
+| --- | --- | --- |
+| `plugin_id.rs:17` `"plugin name"` | **登记** | 它是**控制流键**（同文件 `:55` 的 `kind == "plugin name"` 决定 `allow_dots`）⇒ 译了会改行为；其**渲染侧**改为本批新增的 `kind_label` 映射（`match kind { … }`）本地化 |
+| `:29`/`:34`/`:40` | 译 | `format!` 包装的插件键错误（`:29`/`:34` 同句两站点按值合并） |
+| `:53`/`:57`/`:62`/`:75` | 译 | 4 条 `invalid {kind}: …` 模板 ⇒ 键改 `{0}`、实参传 `kind_label`（`:75` 另有 `{1}` = `allowed_characters`） |
+| `:70`/`:72` | 译 | `allowed_characters` 两段字符集描述（插进 `:75` 的散文片段） |
+| `provider.rs:42` | 译 | thiserror 属性，走 §12.70 的**属性级**改法（`#[error("{}", tr_with(…))]`） |
+
+**英文逐字节不变有整句断言**：`plugin_id_tests.rs:19` 断言
+``"invalid marketplace name: only ASCII letters, digits, `_`, and `-` are allowed"``；
+`provider::tests::environment_descriptor_rejects_resources_outside_package_root` 覆盖资源路径消息 ⇒ `just test -p codex-plugin` **7 passed**（`r-mu8blwmi-vas4ms`）。
+
+**工具第 3、4 次被输入逼出新能力**（每次都先「拒绝/报错」，再补能力）：
+① `plugin_id.rs` **没有 `use` 块** ⇒ import 插入点找不到 ⇒ 已支持「插到前导文档注释之后」；
+② 我的「按需插入 import」判据有 bug（`or "tr_with(" in body` 会把 `tr` 也算上）⇒ clippy 报 `provider.rs:3 unused import`（`r-mu8brvte-grioqg`），
+已修成「只在文本里真的出现 `tr(` 才算」，并加**改写后自检**（`f"{name}(" in new_text`）；复跑 clippy 干净（`r-mu8bwov5-912a4x`）。
+附带教训：这次 **batch 1 曾静默失败** —— 我用窄 grep 过滤了 `--apply` 的输出，错误文本被滤掉；
+**不要用窄 grep 过滤生成器输出**，看退出码或 `tail`。
+
+**证据**：`clippy r-mu8bwov5-912a4x`、`i18n-check r-mu8bx48z-xv3ec9`（3381 词条 / 各项 0 / `scanned … 330`）、
+`fmt-check r-mu8bxpg3-89y282`、`just test -p codex-plugin` `r-mu8blwmi-vas4ms`（7 passed）、
+合并自检 `r-mu8bzuht-dkwez0`（**五个 scope 全 0**：cli/core/tui/exec/plugin；drift/audit/fanout 全 0）。
+
+**平台受限改动的 CI 复查清单**已生成：`docs/plan/i18n-platform-ci-checklist.md`（43 行，逐站点给出种类与实参表达式）。

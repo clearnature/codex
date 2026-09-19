@@ -934,3 +934,31 @@ Tools provided by the current Codex thread.	codex-rs/core/src/tools/handlers/dyn
 dynamic tool handler received unsupported payload	codex-rs/core/src/tools/handlers/dynamic.rs:133	`FunctionCallError::RespondToModel(..)` ⇒ 模型面（§12.31）
 dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:149	同上：RespondToModel ⇒ 模型面（§12.31） 〔fanout 补核〕**两站点接收者不同**：`dynamic.rs:149` 是 `FunctionCallError::RespondToModel(..)`（模型面）；`dynamic.rs:242` 是 `DynamicToolCallItem.error` → `emit_turn_item_completed(TurnItem::DynamicToolCall)`（协议回合项）。本 TUI 不渲染该字段（`chatwidget/replay.rs:287` 忽略该 item；`realtime_history/presentation.rs:66` 只比较 status），**但其它客户端是否渲染未判定** ⇒ 暂按协议负载登记，见 §12.40「待裁决」[fanout-reviewed]
 dynamic tool call was cancelled before receiving a response	codex-rs/core/src/tools/handlers/dynamic.rs:242	同上：RespondToModel ⇒ 模型面（§12.31） 〔fanout 补核〕**两站点接收者不同**：`dynamic.rs:149` 是 `FunctionCallError::RespondToModel(..)`（模型面）；`dynamic.rs:242` 是 `DynamicToolCallItem.error` → `emit_turn_item_completed(TurnItem::DynamicToolCall)`（协议回合项）。本 TUI 不渲染该字段（`chatwidget/replay.rs:287` 忽略该 item；`realtime_history/presentation.rs:66` 只比较 status），**但其它客户端是否渲染未判定** ⇒ 暂按协议负载登记，见 §12.40「待裁决」[fanout-reviewed]
+Deferred tool namespaces	codex-rs/core/src/context/world_state/tools.rs:74	`WorldStateSection::render_diff` 返回 `Box<dyn ContextualUserFragment>`（模型上下文的 world state 片段）⇒ §12.2
+Added deferred tool namespaces	codex-rs/core/src/context/world_state/tools.rs:94	同上（world state 片段标签）⇒ §12.2
+Removed deferred tool namespaces	codex-rs/core/src/context/world_state/tools.rs:95	同上 ⇒ §12.2
+No deferred tool namespaces remain.\n	codex-rs/core/src/context/world_state/tools.rs:118	同上 ⇒ §12.2
+ additional namespaces omitted.\n	codex-rs/core/src/context/world_state/tools.rs:148	同上 ⇒ §12.2
+Identifier of the running exec cell.	codex-rs/core/src/tools/code_mode/wait_spec.rs:10	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Wait before yielding more output. Defaults to 10000 ms.	codex-rs/core/src/tools/code_mode/wait_spec.rs:15	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Output token budget for this wait call. Defaults to 10000 tokens.	codex-rs/core/src/tools/code_mode/wait_spec.rs:21	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+True stops the running exec cell; false or omitted waits for output.	codex-rs/core/src/tools/code_mode/wait_spec.rs:27	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Waits on a yielded `{}` cell and returns new output or completion.\n{}	codex-rs/core/src/tools/code_mode/wait_spec.rs:35	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Task step text.	codex-rs/core/src/tools/handlers/plan_spec.rs:11	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Step status.	codex-rs/core/src/tools/handlers/plan_spec.rs:17	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Optional explanation for this plan update.	codex-rs/core/src/tools/handlers/plan_spec.rs:26	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+The list of steps	codex-rs/core/src/tools/handlers/plan_spec.rs:37	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Updates the task plan.\nProvide an optional explanation and a list of plan items, each with	codex-rs/core/src/tools/handlers/plan_spec.rs:44	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Search query for deferred tools.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:24	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+Maximum number of tools to return. Defaults to {default_limit}.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:29	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+None currently enabled.	codex-rs/core/src/tools/handlers/tool_search_spec.rs:49	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+\n\nYou have access to tools from the following sources:\n{source_descriptions}\n	codex-rs/core/src/tools/handlers/tool_search_spec.rs:87	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+# Tool discovery\n\nSearches over deferred tool metadata with BM25 and exposes matching to	codex-rs/core/src/tools/handlers/tool_search_spec.rs:94	工具定义（`JsonSchema` 描述 / `ToolSpec` description，进模型）⇒ §12.2
+## Plugins	codex-rs/core/src/context/available_plugins_instructions.rs:32	注入模型的插件说明片段（Codex 自有 prompt 文本）⇒ §12.2
+A plugin is a local bundle of skills, MCP servers, and apps.	codex-rs/core/src/context/available_plugins_instructions.rs:33	同上（注入模型的 prompt 片段）⇒ §12.2
+### How to use plugins	codex-rs/core/src/context/available_plugins_instructions.rs:36	同上 ⇒ §12.2
+- Skill naming: If a plugin contributes skills, those skill entries are prefixed with `plu	codex-rs/core/src/context/available_plugins_instructions.rs:38	同上 ⇒ §12.2
+## Planning	codex-rs/core/src/context/update_plan_instructions.rs:12	**匹配键**：`without_update_plan_instructions` 用 `matches!(line, "## Planning" | …)` 从 prompt 文本里剥掉 checklist 段 ⇒ 译了就不匹配（§12.34）
+## `update_plan`	codex-rs/core/src/context/update_plan_instructions.rs:13	同上（匹配键，非展示文案）⇒ §12.34
+## Plan tool	codex-rs/core/src/context/update_plan_instructions.rs:14	同上（匹配键）⇒ §12.34
+## Plan Mode vs update_plan tool	codex-rs/core/src/context/update_plan_instructions.rs:15	同上（匹配键）⇒ §12.34

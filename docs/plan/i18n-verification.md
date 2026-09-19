@@ -1707,7 +1707,7 @@ for f in m.scan(Path("codex-rs/core")):
 | crate | 剩余候选 | 说明 |
 | --- | --- | --- |
 | `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
-| `codex-rs/core` | **269** | 第 475 轮再清 15 条（译 3 + 登记 12）；最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/core` | **241** | 第 478 轮再清 28 条（全为登记：spec 描述 / 模型注入片段 / 匹配键）；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
 | `codex-rs/exec/src` | **28** | §3.1 范围内 |
 | `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
 | `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
@@ -1771,3 +1771,18 @@ let result = Err(FunctionCallError::RespondToModel(normalized));
 `realtime_history/presentation.rs:66` 只比较 `status`），所以本仓**无法自证**该字段对用户可见与否；
 若 app-server 之外的客户端（IDE 插件等）会渲染，则 `:242` 应改为 `tr`。
 判据：找到任一消费 `DynamicToolCallItem.error` 的渲染点即可定案。
+
+### 12.41 第 478 轮：spec 描述 / 模型注入片段 / **匹配键**的 28 条
+
+六个文件共 28 条，全部**登记不译**，但理由分三类（不是一句「工具文案」了事）：
+
+| 文件 | 条数 | 接收者与判据 |
+| --- | --- | --- |
+| `tools/code_mode/wait_spec.rs`、`tools/handlers/plan_spec.rs`、`tools/handlers/tool_search_spec.rs` | 15 | `JsonSchema` 描述 / `ToolSpec` description ⇒ 工具定义**进模型** ⇒ §12.2 |
+| `context/world_state/tools.rs` | 5 | `impl WorldStateSection for ToolsState` 的 `render_diff` 返回 `Box<dyn ContextualUserFragment>` ⇒ 模型上下文的 world state 片段 ⇒ §12.2 |
+| `context/available_plugins_instructions.rs` | 4 | 注入模型的插件说明（Codex 自有 prompt 文本）⇒ §12.2 |
+| `context/update_plan_instructions.rs` | 4 | **匹配键**：`without_update_plan_instructions` 用 `matches!(line, "## Planning" \| "## \`update_plan\`" \| …)` 从 prompt 里剥掉 checklist 段 —— 这四条**看着最像展示标题**，实际是**比较用**的 ⇒ 译了剥段直接失效（§12.34）|
+
+**判据教训（第 4 次同型，值得单独记）**：`update_plan_instructions.rs` 的四个 `## …` 标题若只按字形判，
+会被当成「Markdown 标题 → 该译」；真正的判据是**谁在使用它**（这里是 `matches!` 比较）。
+`--traps` 报告正是为这类造的：它列「被比较的值的生产者」，本批这四条应当在其中可见。

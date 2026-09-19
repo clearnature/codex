@@ -367,14 +367,18 @@ def main() -> int:
     new_text = text
     for a, b, new, _ in sorted(edits, reverse=True):
         new_text = new_text[:a] + new + new_text[b:]
-    imp = [l for l in read_lines(IMPORT_TEMPLATE) if l.startswith("use codex_i18n")]
+    imp = [
+        line
+        for line in read_lines(IMPORT_TEMPLATE)
+        if line.startswith("use codex_i18n")
+    ]
     if imp and "use codex_i18n" not in new_text:
         lines = new_text.splitlines()
         idx = next(
             (
                 n
-                for n, l in enumerate(lines)
-                if l.startswith("use ") and l > "use codex_i18n::"
+                for n, line in enumerate(lines)
+                if line.startswith("use ") and line > "use codex_i18n::"
             ),
             None,
         )

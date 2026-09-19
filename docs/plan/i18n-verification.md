@@ -2318,6 +2318,15 @@ duplicate 0 / placeholder 0）、`clippy r-mu8015xq-mdd5t9`、合并自检 `r-mu
    ⇒ 「实参形状」这一族现在有**两个 `-D` lint** 在管：`needless-borrow`（`&str` 上多余的 `&`）
    与 `redundant-clone`（`String` 上多余的 `.to_string()`）；拿不准就先 grep 被调函数签名。
 
+**Python 侧门禁的实况（本轮实测）**：新工具落盘时顺手查了具名门禁 `lint-python-scripts` —— 它存在，
+定义是 `uv run --frozen --project scripts ruff check .`，也就是**作用域是仓库根**，实测 **9 条既存错误**
+（`tools/argument-comment-lint/*.py` 的 F821×4、`third_party/voice/macos_runtime.py:13` F401、
+`codex-rs/skills/src/assets/samples/skill-creator/scripts/generate_openai_yaml.py:191` F541、
+`scripts/readme_toc.py:79/80/89` E741×3），**没有一条在本轮新增的 `scripts/i18n_apply.py` 里**；
+该文件单跑 `ruff check` + `ruff format --check` 全过（回执 `r-mu81ol17-2sl23g`）。
+⇒ 门禁定义需要收窄（与既有的 `codespell`/`lint-python-scripts` 待裁决同批处理），
+且「这条红不是你的改动」的判据要能指到回执与路径：`known_issues lint-python-scripts-gate-pre-existing-red`。
+
 **证据**：`fmt-check r-mu80udwr-x0gga3`、`i18n-check r-mu80zhns-qp8pfi`（3243 词条 / missing 0 /
 unused 0 / spacing 0 / duplicate 0 / placeholder 0）、`clippy r-mu813jbq-win5up`、
 合并自检 `r-mu815o3i-5iy9zv`（drift=0 / 四 scope audit=0 / fanout=0 / census cli=167）。

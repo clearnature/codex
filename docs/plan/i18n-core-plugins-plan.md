@@ -225,3 +225,44 @@ startup_sync 同值但**不同接收者**。
 只有 `marketplace_upgrade.rs:241/274` 两处（另有 `marketplace_add/install.rs` 里**同名但不同模块**的函数，不在本文件链上）；
 ③ 有没有测试断言这些英文串（若有，默认 En 下仍会绿，等于没测到）？——crate 438 测试全绿，未新增语言相关断言，
 **这一条只做到「没红」，不等于「zh 下确实出现中文」**（与 §12.72 的 `receiver-these-strings` 同一缺口）。
+
+## 十、第四批：remote_bundle.rs 35 条全译（属性级路线首次规模化）
+
+### 10.1 接收方
+
+`RemotePluginBundleInstallError` 被 `RemotePluginOperationErrorKind::Bundle(#[error("install remote plugin bundle: {0}")])`
+包住（`remote_mutations.rs:67`），而 `RemotePluginOperationErrorKind` 在
+**app-server `request_processors/plugins.rs:1585`** 被逐变体消费（映射成 JSON-RPC 错误）⇒
+与 store / marketplace 同族：**用户面 ⇒ 35 条全译、登记 0**。
+
+### 10.2 两种形态：12 条属性 + 23 条调用点
+
+- **12 条 `#[error("…")]`**：走 §12.70 的**属性级最小改法**
+  —— `#[error("{}", tr_with(current(), "<重编号后的键>", &[<字段表达式>]))]`，保留 `#[derive(Debug, Error)]`。
+  这是该路线**第一次规模化使用**（core 那次只有 10 条、且未涉及 u64/StatusCode 这类字段），因此在本批摸清了两个要点：
+  1. `args` 的**字段类型**要按字段写：`String` 用 `.as_str()`；`PluginIdError`/`RouteAwareRequestError`/`HttpError`
+     用 `&source.to_string()`；`StatusCode` 用 `&status.to_string()`；`u64` 用 `&max_bytes.to_string()`；
+  2. 键与译文要**手写**（工具不重编号 `extra_edits`），所以键必须写成位置式 `{0}`/`{1}`，
+     并与 `extra_dict` 里的 `zh` 索引一致 —— 否则渲染会串位。
+- **23 条调用点**：`format!`（13）/ 裸字面量（9）/ `.to_string()`（4，其中 2 条同时出现在两处 ⇒ 值去重）。
+- **2 条片段**（`:356` `\n[响应体在{0}字节后被截断]`、`:360` `\n[读取响应体失败：{0}]`）：
+  它们被 `body.push_str(...)` 追加到响应体上，最终进入 `DownloadStatus { body }` 的**同一条用户可见消息**，
+  所以是**可独立翻译的括号注记**（§3.6 的「碎片拼句」在这里不适用：它们不与正文构成一个被拆开的句子）。
+
+### 10.3 收尾对账与门禁
+
+- `remote_bundle.rs`：35 candidates → **0**；crate：357 → **322**（差额**正好 35**）。
+- `cargo check -p codex-core-plugins --all-targets` EXIT=0（属性路线的类型当场验）；
+  `i18n-check` `r-mu8yjdf1-p1b40v`（3482 词条 / missing 0 / **spacing 0** / dup 0）；
+  `clippy` `r-mu8yn9fe-kfyc6k`（46 crate / 2m54s，`uninlined-format-args` 未对 `"{}", expr` 形态报错，与 core 批次一致）；
+  `just test -p codex-core-plugins` **438 passed** `r-mu8yp9mj-bnt04b`；`fmt-check` `r-mu8yq0r8-x6hm8r`。
+
+### 10.4 对抗自检
+
+最可能错的仍是「35 条全到用户面」这个全称判断。本批的反例候选与排除：
+① 有没有 `warn!` 分支？——本文件 grep 无 `warn!`；
+② 有没有第二条消费路径（比如只进内部诊断）？——`RemotePluginOperationErrorKind` 的全仓消费点集中在
+app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
+③ 有没有把**机器键**当文案译了？——`:274/:296` 的 `JoinError`、`:436/:540/:588` 的 `serde` 错误都只作为 `{N}` 插值，
+没有拿翻译后的文本做匹配或控制流。
+**未验证**：这 35 条在 zh 下**确实渲染出中文**——与 §12.72 的 `receiver-these-strings` 同一缺口（本机无 CLI/app-server 级断言）。

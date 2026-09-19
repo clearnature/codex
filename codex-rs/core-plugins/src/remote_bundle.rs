@@ -10,6 +10,9 @@ use crate::store::error_context_sub_error_type;
 use crate::store::validate_plugin_version_segment;
 use codex_http_client::HttpResponse;
 use codex_http_client::RouteAwareRequestError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::PluginId;
 use codex_plugin::PluginIdError;
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -48,22 +51,22 @@ pub struct ValidatedRemotePluginBundle {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RemotePluginBundleInstallError {
-    #[error("backend did not return a release version for remote plugin `{remote_plugin_id}`")]
+    #[error("{}", tr_with(current(), "backend did not return a release version for remote plugin `{0}`", &[remote_plugin_id.as_str()]))]
     MissingReleaseVersion { remote_plugin_id: String },
 
     #[error(
-        "backend returned an invalid release version for remote plugin `{remote_plugin_id}`: {message}"
+        "{}", tr_with(current(), "backend returned an invalid release version for remote plugin `{0}`: {1}", &[remote_plugin_id.as_str(), message.as_str()])
     )]
     InvalidReleaseVersion {
         remote_plugin_id: String,
         message: String,
     },
 
-    #[error("backend did not return a download URL for remote plugin `{remote_plugin_id}`")]
+    #[error("{}", tr_with(current(), "backend did not return a download URL for remote plugin `{0}`", &[remote_plugin_id.as_str()]))]
     MissingBundleDownloadUrl { remote_plugin_id: String },
 
     #[error(
-        "backend returned an invalid download URL for remote plugin `{remote_plugin_id}`: {url}"
+        "{}", tr_with(current(), "backend returned an invalid download URL for remote plugin `{0}`: {1}", &[remote_plugin_id.as_str(), url.as_str()])
     )]
     InvalidBundleDownloadUrl {
         remote_plugin_id: String,
@@ -73,7 +76,7 @@ pub enum RemotePluginBundleInstallError {
     },
 
     #[error(
-        "backend returned an unsupported download URL scheme for remote plugin `{remote_plugin_id}`: {scheme}"
+        "{}", tr_with(current(), "backend returned an unsupported download URL scheme for remote plugin `{0}`: {1}", &[remote_plugin_id.as_str(), scheme.as_str()])
     )]
     UnsupportedBundleDownloadUrlScheme {
         remote_plugin_id: String,
@@ -81,7 +84,7 @@ pub enum RemotePluginBundleInstallError {
     },
 
     #[error(
-        "backend returned an invalid local plugin id for remote plugin `{remote_plugin_id}`: {source}"
+        "{}", tr_with(current(), "backend returned an invalid local plugin id for remote plugin `{0}`: {1}", &[remote_plugin_id.as_str(), &source.to_string()])
     )]
     InvalidPluginId {
         remote_plugin_id: String,
@@ -89,35 +92,35 @@ pub enum RemotePluginBundleInstallError {
         source: PluginIdError,
     },
 
-    #[error("failed to send remote plugin bundle download request to {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to send remote plugin bundle download request to {0}: {1}", &[url.as_str(), &source.to_string()]))]
     DownloadRequest {
         url: String,
         #[source]
         source: RouteAwareRequestError,
     },
 
-    #[error("remote plugin bundle download from {url} failed with status {status}: {body}")]
+    #[error("{}", tr_with(current(), "remote plugin bundle download from {0} failed with status {1}: {2}", &[url.as_str(), &status.to_string(), body.as_str()]))]
     DownloadStatus {
         url: String,
         status: StatusCode,
         body: String,
     },
 
-    #[error("failed to read remote plugin bundle download response from {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to read remote plugin bundle download response from {0}: {1}", &[url.as_str(), &source.to_string()]))]
     DownloadBody {
         url: String,
         #[source]
         source: codex_http_client::HttpError,
     },
 
-    #[error("remote plugin bundle download from {url} exceeded maximum size of {max_bytes} bytes")]
+    #[error("{}", tr_with(current(), "remote plugin bundle download from {0} exceeded maximum size of {1} bytes", &[url.as_str(), &max_bytes.to_string()]))]
     DownloadTooLarge { url: String, max_bytes: u64 },
 
-    #[error("remote plugin bundle download from {url} redirected to unsupported URL {final_url}")]
+    #[error("{}", tr_with(current(), "remote plugin bundle download from {0} redirected to unsupported URL {1}", &[url.as_str(), final_url.as_str()]))]
     UnsupportedBundleDownloadFinalUrl { url: String, final_url: String },
 
     #[error(
-        "remote plugin bundle extracted size would be {bytes} bytes, exceeding the maximum total size of {max_bytes} bytes"
+        "{}", tr_with(current(), "remote plugin bundle extracted size would be {0} bytes, exceeding the maximum total size of {1} bytes", &[&bytes.to_string(), &max_bytes.to_string()])
     )]
     ExtractedBundleTooLarge { bytes: u64, max_bytes: u64 },
 
@@ -270,8 +273,10 @@ pub async fn download_and_install_remote_plugin_bundle(
     })
     .await
     .map_err(|err| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "failed to join remote plugin bundle install task: {err}"
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "failed to join remote plugin bundle install task: {0}",
+            &[&err.to_string()],
         ))
     })?
 }
@@ -292,8 +297,10 @@ pub(crate) async fn download_and_extract_remote_plugin_bundle_to_path(
     })
     .await
     .map_err(|err| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "failed to join remote plugin bundle extraction task: {err}"
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "failed to join remote plugin bundle extraction task: {0}",
+            &[&err.to_string()],
         ))
     })?
 }
@@ -352,12 +359,18 @@ async fn download_remote_plugin_bundle_with_limit(
 
         let mut body = String::from_utf8_lossy(&body).into_owned();
         if body_truncated {
-            body.push_str(&format!(
-                "\n[response body truncated after {REMOTE_PLUGIN_BUNDLE_ERROR_BODY_MAX_BYTES} bytes]"
+            body.push_str(&tr_with(
+                current(),
+                "\n[response body truncated after {0} bytes]",
+                &[&REMOTE_PLUGIN_BUNDLE_ERROR_BODY_MAX_BYTES.to_string()],
             ));
         }
         if let Some(source) = body_read_error {
-            body.push_str(&format!("\n[failed to read response body: {source}]"));
+            body.push_str(&tr_with(
+                current(),
+                "\n[failed to read response body: {0}]",
+                &[&source.to_string()],
+            ));
         }
         return Err(RemotePluginBundleInstallError::DownloadStatus { url, status, body });
     }
@@ -414,7 +427,10 @@ fn install_remote_plugin_bundle(
     let staging_root = codex_home.join(REMOTE_PLUGIN_INSTALL_STAGING_DIR);
     fs::create_dir_all(&staging_root).map_err(|source| {
         RemotePluginBundleInstallError::io(
-            "failed to create remote plugin bundle staging directory",
+            tr(
+                current(),
+                "failed to create remote plugin bundle staging directory",
+            ),
             source,
         )
     })?;
@@ -423,7 +439,10 @@ fn install_remote_plugin_bundle(
         .tempdir_in(&staging_root)
         .map_err(|source| {
             RemotePluginBundleInstallError::io(
-                "failed to create remote plugin bundle extraction directory",
+                tr(
+                    current(),
+                    "failed to create remote plugin bundle extraction directory",
+                ),
                 source,
             )
         })?;
@@ -432,8 +451,10 @@ fn install_remote_plugin_bundle(
     let plugin_root = find_extracted_plugin_root(extract_dir.path())?;
     prepare_extracted_remote_plugin_root(&plugin_root, &bundle)?;
     let plugin_root = AbsolutePathBuf::try_from(plugin_root).map_err(|err| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "failed to resolve extracted remote plugin bundle root: {err}"
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "failed to resolve extracted remote plugin bundle root: {0}",
+            &[&err.to_string()],
         ))
     })?;
 
@@ -452,20 +473,25 @@ fn extract_remote_plugin_bundle_to_path(
     destination: AbsolutePathBuf,
 ) -> Result<AbsolutePathBuf, RemotePluginBundleInstallError> {
     if destination.as_path().exists() {
-        return Err(RemotePluginBundleInstallError::InvalidBundle(format!(
-            "plugin checkout destination already exists: {}",
-            destination.display()
+        return Err(RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "plugin checkout destination already exists: {0}",
+            &[&destination.display().to_string()],
         )));
     }
 
     let parent = destination.as_path().parent().ok_or_else(|| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "plugin checkout destination has no parent: {}",
-            destination.display()
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "plugin checkout destination has no parent: {0}",
+            &[&destination.display().to_string()],
         ))
     })?;
     fs::create_dir_all(parent).map_err(|source| {
-        RemotePluginBundleInstallError::io("failed to create plugin checkout directory", source)
+        RemotePluginBundleInstallError::io(
+            tr(current(), "failed to create plugin checkout directory"),
+            source,
+        )
     })?;
 
     let extract_dir = tempfile::Builder::new()
@@ -473,7 +499,10 @@ fn extract_remote_plugin_bundle_to_path(
         .tempdir_in(parent)
         .map_err(|source| {
             RemotePluginBundleInstallError::io(
-                "failed to create remote plugin bundle extraction directory",
+                tr(
+                    current(),
+                    "failed to create remote plugin bundle extraction directory",
+                ),
                 source,
             )
         })?;
@@ -482,20 +511,28 @@ fn extract_remote_plugin_bundle_to_path(
     let plugin_root = find_extracted_plugin_root(extract_dir.path())?;
     let manifest = crate::manifest::load_plugin_manifest(&plugin_root).ok_or_else(|| {
         RemotePluginBundleInstallError::InvalidBundle(
-            "remote plugin bundle did not contain a valid plugin.json".to_string(),
+            tr(
+                current(),
+                "remote plugin bundle did not contain a valid plugin.json",
+            )
+            .to_string(),
         )
     })?;
     if manifest.name != bundle.plugin_id.plugin_name {
-        return Err(RemotePluginBundleInstallError::InvalidBundle(format!(
-            "plugin.json name `{}` does not match remote plugin name `{}`",
-            manifest.name, bundle.plugin_id.plugin_name
+        return Err(RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "plugin.json name `{0}` does not match remote plugin name `{1}`",
+            &[
+                manifest.name.as_str(),
+                bundle.plugin_id.plugin_name.as_str(),
+            ],
         )));
     }
 
     let staged_path = extract_dir.keep();
     fs::rename(&staged_path, destination.as_path()).map_err(|source| {
         RemotePluginBundleInstallError::io(
-            "failed to activate checked out plugin directory",
+            tr(current(), "failed to activate checked out plugin directory"),
             source,
         )
     })?;
@@ -524,11 +561,18 @@ fn overwrite_plugin_manifest_version(
 ) -> Result<(), RemotePluginBundleInstallError> {
     let manifest_path = find_plugin_manifest_path(plugin_root).ok_or_else(|| {
         RemotePluginBundleInstallError::InvalidBundle(
-            "remote plugin bundle did not contain a valid plugin.json".to_string(),
+            tr(
+                current(),
+                "remote plugin bundle did not contain a valid plugin.json",
+            )
+            .to_string(),
         )
     })?;
     let contents = fs::read_to_string(&manifest_path).map_err(|source| {
-        RemotePluginBundleInstallError::io("failed to read remote plugin manifest", source)
+        RemotePluginBundleInstallError::io(
+            tr(current(), "failed to read remote plugin manifest"),
+            source,
+        )
     })?;
     if manifest_path == plugin_root.join(AGENT_PLUGIN_MANIFEST_RELATIVE_PATH)
         && agent_plugin_schema_status(&contents) == AgentPluginSchemaStatus::Supported
@@ -536,13 +580,15 @@ fn overwrite_plugin_manifest_version(
         return Ok(());
     }
     let mut manifest: JsonValue = serde_json::from_str(&contents).map_err(|err| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "failed to parse remote plugin manifest: {err}"
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "failed to parse remote plugin manifest: {0}",
+            &[&err.to_string()],
         ))
     })?;
     let Some(manifest_object) = manifest.as_object_mut() else {
         return Err(RemotePluginBundleInstallError::InvalidBundle(
-            "remote plugin manifest must be a JSON object".to_string(),
+            tr(current(), "remote plugin manifest must be a JSON object").to_string(),
         ));
     };
     manifest_object.insert(
@@ -552,7 +598,7 @@ fn overwrite_plugin_manifest_version(
     write_json_file(
         &manifest_path,
         &manifest,
-        "failed to write remote plugin manifest",
+        tr(current(), "failed to write remote plugin manifest"),
     )
 }
 
@@ -566,7 +612,7 @@ fn overwrite_plugin_app_manifest(
     write_json_file(
         &app_manifest_path,
         app_manifest,
-        "failed to write remote plugin app manifest",
+        tr(current(), "failed to write remote plugin app manifest"),
     )
 }
 
@@ -576,16 +622,19 @@ fn write_json_file(
     context: &'static str,
 ) -> Result<(), RemotePluginBundleInstallError> {
     let parent = path.parent().ok_or_else(|| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "remote plugin output path has no parent: {}",
-            path.display()
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "remote plugin output path has no parent: {0}",
+            &[&path.display().to_string()],
         ))
     })?;
     fs::create_dir_all(parent)
         .map_err(|source| RemotePluginBundleInstallError::io(context, source))?;
     let mut contents = serde_json::to_vec_pretty(value).map_err(|err| {
-        RemotePluginBundleInstallError::InvalidBundle(format!(
-            "failed to serialize remote plugin JSON override: {err}"
+        RemotePluginBundleInstallError::InvalidBundle(tr_with(
+            current(),
+            "failed to serialize remote plugin JSON override: {0}",
+            &[&err.to_string()],
         ))
     })?;
     contents.push(b'\n');
@@ -629,7 +678,11 @@ fn find_extracted_plugin_root(
     }
 
     Err(RemotePluginBundleInstallError::InvalidBundle(
-        "remote plugin bundle did not contain a standard plugin root with plugin.json".to_string(),
+        tr(
+            current(),
+            "remote plugin bundle did not contain a standard plugin root with plugin.json",
+        )
+        .to_string(),
     ))
 }
 

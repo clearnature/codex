@@ -8715,6 +8715,138 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("{0} timed out after {2}s: {1}", "{0}在{2}秒后超时：{1}"),
     ("{0} failed with status {1}", "{0}失败，状态码{1}"),
     ("{0} failed with status {2}: {1}", "{0}失败，状态码{2}：{1}"),
+    (
+        "failed to join remote plugin bundle install task: {0}",
+        "加入远程插件bundle安装任务失败：{0}",
+    ),
+    (
+        "failed to join remote plugin bundle extraction task: {0}",
+        "加入远程插件bundle抽取任务失败：{0}",
+    ),
+    (
+        "\n[response body truncated after {0} bytes]",
+        "\\n[响应体在{0}字节后被截断]",
+    ),
+    (
+        "\n[failed to read response body: {0}]",
+        "\\n[读取响应体失败：{0}]",
+    ),
+    (
+        "failed to create remote plugin bundle staging directory",
+        "创建远程插件bundle暂存目录失败",
+    ),
+    (
+        "failed to create remote plugin bundle extraction directory",
+        "创建远程插件bundle抽取目录失败",
+    ),
+    (
+        "failed to resolve extracted remote plugin bundle root: {0}",
+        "解析抽出的远程插件bundle根目录失败：{0}",
+    ),
+    (
+        "plugin checkout destination already exists: {0}",
+        "插件检出目标已存在：{0}",
+    ),
+    (
+        "plugin checkout destination has no parent: {0}",
+        "插件检出目标没有父目录：{0}",
+    ),
+    (
+        "failed to create plugin checkout directory",
+        "创建插件检出目录失败",
+    ),
+    (
+        "remote plugin bundle did not contain a valid plugin.json",
+        "远程插件bundle中没有有效的plugin.json",
+    ),
+    (
+        "plugin.json name `{0}` does not match remote plugin name `{1}`",
+        "plugin.json名称 `{0}` 与远程插件名称 `{1}` 不匹配",
+    ),
+    (
+        "failed to activate checked out plugin directory",
+        "激活已检出的插件目录失败",
+    ),
+    (
+        "failed to read remote plugin manifest",
+        "读取远程插件清单失败",
+    ),
+    (
+        "failed to parse remote plugin manifest: {0}",
+        "解析远程插件清单失败：{0}",
+    ),
+    (
+        "remote plugin manifest must be a JSON object",
+        "远程插件清单必须是JSON对象",
+    ),
+    (
+        "failed to write remote plugin manifest",
+        "写入远程插件清单失败",
+    ),
+    (
+        "failed to write remote plugin app manifest",
+        "写入远程插件应用清单失败",
+    ),
+    (
+        "remote plugin output path has no parent: {0}",
+        "远程插件输出路径没有父目录：{0}",
+    ),
+    (
+        "failed to serialize remote plugin JSON override: {0}",
+        "序列化远程插件JSON覆盖失败：{0}",
+    ),
+    (
+        "remote plugin bundle did not contain a standard plugin root with plugin.json",
+        "远程插件bundle不包含带plugin.json的标准插件根目录",
+    ),
+    (
+        "backend did not return a release version for remote plugin `{0}`",
+        "后端未为远程插件 `{0}` 返回发布版本",
+    ),
+    (
+        "backend returned an invalid release version for remote plugin `{0}`: {1}",
+        "后端为远程插件 `{0}` 返回了无效的发布版本：{1}",
+    ),
+    (
+        "backend did not return a download URL for remote plugin `{0}`",
+        "后端未为远程插件 `{0}` 返回下载URL",
+    ),
+    (
+        "backend returned an invalid download URL for remote plugin `{0}`: {1}",
+        "后端为远程插件 `{0}` 返回了无效的下载URL：{1}",
+    ),
+    (
+        "backend returned an unsupported download URL scheme for remote plugin `{0}`: {1}",
+        "后端为远程插件 `{0}` 返回了不支持的下载URL方案：{1}",
+    ),
+    (
+        "backend returned an invalid local plugin id for remote plugin `{0}`: {1}",
+        "后端为远程插件 `{0}` 返回了无效的本地插件id：{1}",
+    ),
+    (
+        "failed to send remote plugin bundle download request to {0}: {1}",
+        "向{0}发送远程插件bundle下载请求失败：{1}",
+    ),
+    (
+        "remote plugin bundle download from {0} failed with status {1}: {2}",
+        "从{0}下载远程插件bundle失败，状态码{1}：{2}",
+    ),
+    (
+        "failed to read remote plugin bundle download response from {0}: {1}",
+        "读取从{0}下载的远程插件bundle响应失败：{1}",
+    ),
+    (
+        "remote plugin bundle download from {0} exceeded maximum size of {1} bytes",
+        "从{0}下载的远程插件bundle超过最大大小{1}字节",
+    ),
+    (
+        "remote plugin bundle download from {0} redirected to unsupported URL {1}",
+        "从{0}下载的远程插件bundle被重定向到不支持的URL {1}",
+    ),
+    (
+        "remote plugin bundle extracted size would be {0} bytes, exceeding the maximum total size of {1} bytes",
+        "远程插件bundle解压后为{0}字节，超过最大总大小{1}字节",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1610,8 +1610,8 @@ for f in m.scan(Path("codex-rs/core")):
 - 逐站点裁决后，在该行**理由列**追加 `[fanout-reviewed]`；`--fanout` 默认只列**未核**行（队列口径）；
 - 第 454 轮实测：core 32 行/79 站点（已核 6 行、待核 26 行/59 站点）、tui 10 行/21 站点（待核 10 行/21 站点）；
 - **第 460 轮实测：core 31 行/77 站点，已核 30 行、待核 1 行/2 站点**（`MCP runtime refresh semaphore closed`）；
-- **第 464 轮实测：core 待核 1 行/2 站点、tui 待核 0 行/0 站点**（tui 10 行/21 站点已全部核完）。
-  历史数字保留在此仅供对照，**以最后一次实测为准**。
+- 历史数字保留在此仅供对照；**唯一权威的是下面这行带标记的实测**：
+- <!-- queue-latest --> by-value 队列最新实测（第 469 轮）：core 待核 0 行/0 站点、tui 待核 0 行/0 站点。
 
 **本轮已核 6 行的裁决**（每个站点都读过接收者，不是抽样）：
 
@@ -1683,3 +1683,37 @@ for f in m.scan(Path("codex-rs/core")):
 必须顺着 `?`/`Err` 往上找到第一个渲染点：本轮 `git … failed` 的接受者就是
 `slash_dispatch.rs:511` 的**已译包装**，故它是 `{0}` 明细；若那里直接 `add_error_message(err.to_string())`，
 则它就该译。判据：**先找渲染点，再判明细还是正文**。
+
+### 12.38 第 469 轮：范围级裁定**必须机制化**，否则「剩余工作量」是假的 + 在范围内普查
+
+**发现**：`doctor` 的「整体不译」裁定（台账 `i18n.r37.doctor-excluded`，第 38 轮，附代码依据：
+`--json` 是稳定机器契约 + `detail_value(check, label)` 查表键）**只存在于台账与文档**，
+候选计数器读不到 ⇒ `cli/src` 的「剩余候选」把已裁定排除的 **851** 条算在内，数字虚增 3.5 倍。
+裁定本身没错，错的是**它没有机器可读的落点**。
+
+**机制（本轮新增）**：`scripts/i18n_scope.json`
+
+- `excluded[]`：`path_prefix` + `reason` + `ledger`（台账 id）+ `doc`；
+- `out_of_scope_crates`：整块范围外的 crate 及其依据（如 `app-server`：§3.1 依赖图只列出
+  `tui`/`cli`/`exec`/`core`/`mcp` 五条边，其错误串属 JSON-RPC 协议契约）；
+- 计数器据此扣减并**打印**扣减量（`excluded by scope ruling: N candidates`），不再静默虚增；
+- **纪律**：任何范围级裁定落台账的同时**必须**落这个文件 —— 否则下一批读到的「剩余」就是假的。
+
+**双向控制**（回执 `r-mu7qejy0-u6if6p6`）：带裁定 ⇒ `excluded by scope ruling: 851`；
+把 `SCOPE_EXCLUDED` 置空（负向控制）⇒ 回到 `unwrapped candidates : 1193` 且无扣减行。两个方向都断言。
+
+**在范围内剩余候选（第 469 轮实测，取自计数器输出）**：
+
+| crate | 剩余候选 | 说明 |
+| --- | --- | --- |
+| `codex-rs/cli/src` | **342** | 已扣 doctor 851（裁定排除）；最密文件 `mcp_cmd.rs` 51、`main.rs` 37 |
+| `codex-rs/core` | **299** | 最大单文件 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）|
+| `codex-rs/exec/src` | **28** | §3.1 范围内 |
+| `codex-rs/tui/src` | **3** | §3.4 步 5–6 已铺开，接近清零 |
+| `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）|
+
+**同轮收尾**：by-value 队列（`--fanout`）在 **core 与 tui 均清零**。
+`MCP runtime refresh semaphore closed` 判为 `{err:#}` **明细**：接收者链
+`session/mcp.rs:269` → `codex_thread.rs:850` → `app-server/…/installed.rs:75` → `:159`
+`internal_error(format!("failed to refresh installed connector runtime state: {err:#}"))` → JSON-RPC 响应；
+包装层属 app-server 范围（见上表）。

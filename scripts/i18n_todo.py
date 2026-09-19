@@ -28,6 +28,35 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 FANOUT_MARK = "[fanout-reviewed]"
+
+SCOPE_FILE = REPO / "scripts" / "i18n_scope.json"
+
+
+def load_scope_exclusions():
+    """Scope-level rulings: whole subsystems that are deliberately untranslated.
+
+    A ruling that lives only in the ledger/docs is invisible to this counter, so
+    the crate keeps looking like it still has that work left. Recording it here
+    (with the ledger id) keeps the measurement honest.
+    """
+    import json
+
+    if not SCOPE_FILE.is_file():
+        return []
+    data = json.loads(SCOPE_FILE.read_text(encoding="utf-8"))
+    return [(e["path_prefix"], e.get("ledger", "")) for e in data.get("excluded", [])]
+
+
+SCOPE_EXCLUDED = load_scope_exclusions()
+
+
+def scope_exclusion(path):
+    for prefix, _ledger in SCOPE_EXCLUDED:
+        if path.startswith(prefix):
+            return prefix
+    return None
+
+
 SCANNER = REPO / "scripts/i18n_scan.py"
 
 
@@ -312,6 +341,7 @@ def main(argv: list[str]) -> int:
     # Literals the lenient rule calls wrapped although no `tr` call encloses
     # them. Filled only under `--precise`; this is the triage list.
     hidden = []
+    scoped_out = []
     for finding in findings:
         path = finding["path"]
         if path not in cache:
@@ -329,9 +359,18 @@ def main(argv: list[str]) -> int:
         site = f"{finding['path']}:{finding['line']}"
         if finding["value"] in not_translated[0] or site in not_translated[1]:
             continue
+        if scope_exclusion(path):
+            scoped_out.append(finding)
+            continue
         remaining.append(finding)
         if args.precise and lenient:
             hidden.append(finding)
+
+    if scoped_out:
+        counts = Counter(scope_exclusion(f["path"]) for f in scoped_out)
+        print(f"excluded by scope ruling: {len(scoped_out)} candidates")
+        for prefix, n in counts.most_common():
+            print(f"   {n:5d}  {prefix}")
 
     if args.traps:
         # Match-key traps: a value that some code *compares* against

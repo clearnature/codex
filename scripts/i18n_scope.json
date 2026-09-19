@@ -1,0 +1,14 @@
+{
+  "_note": "范围级裁定：整块子系统有意不译。计数器必须扣掉它们，否则「剩余工作量」被已裁定排除的部分虚增（doctor 的裁定此前只存在于台账/文档，机器看不见）。",
+  "excluded": [
+    {
+      "path_prefix": "codex-rs/cli/src/doctor",
+      "reason": "doctor 整体不译：--json 是稳定机器契约；summary/details/remediation 由 detail_value(check, label) 查表渲染",
+      "ledger": "i18n.r37.doctor-excluded",
+      "doc": "docs/plan/i18n-verification.md 范围表（cli = 部分：帮助已译，doctor 有意整体不译）"
+    }
+  ],
+  "out_of_scope_crates": {
+    "codex-rs/app-server": "docs/plan/i18n-design.md §3.1 依赖图只列 tui/cli/exec/core/mcp 五条边；app-server 不在 i18n 范围内（其错误串属 JSON-RPC 协议契约）"
+  }
+}

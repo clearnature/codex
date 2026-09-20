@@ -17,6 +17,9 @@ use crate::remote_bundle::RemotePluginBundleInstallError;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginAvailability;
 use codex_app_server_protocol::PluginInstallPolicy;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_plugin::PluginId;
 use codex_plugin::PluginTelemetryMetadata;
@@ -63,16 +66,16 @@ pub enum RemotePluginOperationErrorKind {
         context: &'static str,
         source: RemotePluginCatalogError,
     },
-    #[error("install remote plugin bundle: {0}")]
+    #[error("{}", tr_with(current(), "install remote plugin bundle: {0}", &[&_0.to_string()]))]
     Bundle(#[source] RemotePluginBundleInstallError),
     #[error("{context}: {source}")]
     Sync {
         context: &'static str,
         source: RemoteInstalledPluginBundleSyncError,
     },
-    #[error("remote plugin {0} is disabled by admin")]
+    #[error("{}", tr_with(current(), "remote plugin {0} is disabled by admin", &[_0.as_str()]))]
     DisabledByAdmin(String),
-    #[error("remote plugin {0} is not available for install")]
+    #[error("{}", tr_with(current(), "remote plugin {0} is not available for install", &[_0.as_str()]))]
     NotAvailable(String),
     #[error("{0}")]
     InvalidRequest(String),
@@ -100,8 +103,10 @@ impl PluginsManager {
             install_attempt_id,
         } = request;
         if !config.plugins_enabled {
-            return Err(unresolved(Error::InvalidRequest(format!(
-                "remote plugin install is not enabled for marketplace {marketplace_name}"
+            return Err(unresolved(Error::InvalidRequest(tr_with(
+                current(),
+                "remote plugin install is not enabled for marketplace {0}",
+                &[marketplace_name.as_str()],
             ))));
         }
         remote::validate_remote_plugin_id(&remote_plugin_id)
@@ -116,14 +121,15 @@ impl PluginsManager {
         .await
         .map_err(|source| {
             unresolved(Error::Catalog {
-                context: "read remote plugin details before install",
+                context: tr(current(), "read remote plugin details before install"),
                 source,
             })
         })?;
         let plugin_id = PluginId::parse(&detail.summary.id).map_err(|err| {
-            unresolved(Error::Internal(format!(
-                "invalid resolved plugin id `{}`: {err}",
-                detail.summary.id
+            unresolved(Error::Internal(tr_with(
+                current(),
+                "invalid resolved plugin id `{1}`: {0}",
+                &[&err.to_string(), detail.summary.id.as_str()],
             )))
         })?;
         let resolved = |kind| RemotePluginOperationError {
@@ -150,7 +156,7 @@ impl PluginsManager {
             .await
             .map_err(|source| {
                 resolved(Error::Sync {
-                    context: "failed to coordinate remote plugin install",
+                    context: tr(current(), "failed to coordinate remote plugin install"),
                     source,
                 })
             })?;
@@ -187,7 +193,7 @@ impl PluginsManager {
         }
         .map_err(|source| {
             resolved(Error::Catalog {
-                context: "install remote plugin",
+                context: tr(current(), "install remote plugin"),
                 source,
             })
         })?;
@@ -227,7 +233,7 @@ impl PluginsManager {
         };
         if !config.plugins_enabled {
             return Err(unresolved(Error::InvalidRequest(
-                "remote plugin uninstall is not enabled".to_string(),
+                tr(current(), "remote plugin uninstall is not enabled").to_string(),
             )));
         }
         remote::validate_remote_plugin_id(remote_plugin_id)
@@ -238,7 +244,7 @@ impl PluginsManager {
                 .await
                 .map_err(|source| {
                     unresolved(Error::Catalog {
-                        context: "resolve remote plugin before uninstall",
+                        context: tr(current(), "resolve remote plugin before uninstall"),
                         source,
                     })
                 })?;
@@ -261,7 +267,7 @@ impl PluginsManager {
             .await
             .map_err(|source| {
                 resolved(Error::Sync {
-                    context: "failed to coordinate remote plugin uninstall",
+                    context: tr(current(), "failed to coordinate remote plugin uninstall"),
                     source,
                 })
             })?;
@@ -278,7 +284,7 @@ impl PluginsManager {
                 Err(err @ RemotePluginCatalogError::CacheRemove(_)) => Some(err),
                 Err(source) => {
                     return Err(resolved(Error::Catalog {
-                        context: "uninstall remote plugin",
+                        context: tr(current(), "uninstall remote plugin"),
                         source,
                     }));
                 }

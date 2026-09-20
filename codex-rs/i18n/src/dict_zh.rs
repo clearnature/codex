@@ -9462,6 +9462,45 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "installed marketplace `{0}` changed while auto-upgrade was in flight",
         "已安装的市场源 `{0}` 在自动升级过程中发生变化",
     ),
+    (
+        "remote plugin install is not enabled for marketplace {0}",
+        "市场源{0}未启用远程插件安装",
+    ),
+    (
+        "read remote plugin details before install",
+        "安装前读取远程插件详情",
+    ),
+    (
+        "invalid resolved plugin id `{1}`: {0}",
+        "解析出的插件id `{1}` 无效：{0}",
+    ),
+    (
+        "failed to coordinate remote plugin install",
+        "协调远程插件安装失败",
+    ),
+    ("install remote plugin", "安装远程插件"),
+    (
+        "remote plugin uninstall is not enabled",
+        "未启用远程插件卸载",
+    ),
+    (
+        "resolve remote plugin before uninstall",
+        "卸载前解析远程插件",
+    ),
+    (
+        "failed to coordinate remote plugin uninstall",
+        "协调远程插件卸载失败",
+    ),
+    ("uninstall remote plugin", "卸载远程插件"),
+    ("install remote plugin bundle: {0}", "安装远程插件包：{0}"),
+    (
+        "remote plugin {0} is disabled by admin",
+        "远程插件 {0} 已被管理员禁用",
+    ),
+    (
+        "remote plugin {0} is not available for install",
+        "远程插件 {0} 不可安装",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

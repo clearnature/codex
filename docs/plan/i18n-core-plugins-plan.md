@@ -705,3 +705,29 @@ error: redundant clone
 - `cargo check --all-targets` EXIT=0（14.70s）；`i18n-check` `r-mu9gu0b1-1x5pmz`（3650 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
   `clippy` 修前红 `r-mu9guoc0-2ahtpn` → 修后绿 `r-mu9gz4zq-l9osvf`；
   `just test -p codex-core-plugins` **438 passed** `r-mu9h10ch-wvz9xy`。
+
+## 二十二、第十六批：remote_mutations.rs 12 条全译（9 调用点 + 3 属性）
+
+### 22.1 三种形态，同一归宿
+
+接收方：本文件的错误类型是 `RemotePluginOperationError`（其 `kind: Box<RemotePluginOperationErrorKind>`），
+而该枚举在 **app-server `request_processors/plugins.rs:1581-1598`** 被逐变体消费（§10.1 已证）⇒ 三类站点**全译**：
+
+| 形态                               | 站点                                                                                                                                                             | 做法                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `#[error]` 属性                    | `:66` `Bundle`（元组 + `#[source]` 错误类型）⇒ `&_0.to_string()`；`:73` `DisabledByAdmin(String)`、`:75` `NotAvailable(String)` ⇒ **`_0.as_str()`**              | 属性级路线（`extra_edits` + `extra_dict`） |
+| `context: "…"` 字面量              | `:119` `:153` `:190` `:241` `:264` `:281` —— 它们是 `Catalog{context, …}` / `Sync{context, …}` 的字段值，经 `#[error("{context}: {source}")]` 渲染进用户可见消息 | `arg`（字面量→`tr(current(), …)`）         |
+| `InvalidRequest`/`Internal` 的消息 | `:104`（`marketplace_name: String` ⇒ `.as_str()`）、`:125`（`{err}` + `detail.summary.id` ⇒ `&err.to_string()` + `.as_str()`）、`:230`                           | `format`                                   |
+
+### 22.2 预检⑤ 第一次「先想清楚再写」并奏效
+
+§21 我把「取值方式看绑定类型」立为预检第⑤条。本批**开工前就用上了**：
+`:73`/`:75` 的元组字段是 **`String`** ⇒ 直接写 `_0.as_str()`（而不是 `&_0.to_string()`）⇒ **clippy 首次即绿**
+（对比 §21：那次先红后修两处 `redundant_clone`）。
+⇒ 这说明**把事故写成预检条目是有回报的**；但仍要保留「门禁是判据」的姿态——预检只降低概率，`cargo check` + `clippy` 才是判定。
+
+### 22.3 收尾对账与门禁
+
+- `remote_mutations.rs`：12 candidates → **0**；crate：104 → **92**（差额**正好 12**）；12 条全部新增（无跨文件复用、无文件内重复）。
+- `cargo check --all-targets` EXIT=0（16.97s）；`i18n-check` `r-mu9h5o4q-0hr1m7`（3662 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
+  `clippy` `r-mu9h9dq0-cygiau`（46 crate / 2m44s，**首次即绿**）；`just test -p codex-core-plugins` **438 passed** `r-mu9hbd9w-fzmo1t`。

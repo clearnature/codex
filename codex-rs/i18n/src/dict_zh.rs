@@ -9688,6 +9688,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "tool-suggest metadata cache loader closed",
         "tool-suggest元数据缓存加载器已关闭",
     ),
+    (
+        "recommended plugin `{0}` is missing remote plugin identity",
+        "推荐插件`{0}`缺少远程插件标识",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1,5 +1,7 @@
 use crate::PluginsConfigInput;
 use crate::remote::RemotePluginCatalogError;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_tools::DiscoverableTool;
 
@@ -12,9 +14,10 @@ pub async fn hydrate_selected_recommended_plugin_install_metadata(
         return Ok(Some(tool));
     };
     let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "recommended plugin `{}` is missing remote plugin identity",
-            plugin.id
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "recommended plugin `{0}` is missing remote plugin identity",
+            &[plugin.id.as_str()],
         ))
     })?;
     let Some(app_connector_ids) = crate::remote::fetch_recommended_plugin_install_metadata(

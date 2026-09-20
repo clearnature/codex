@@ -987,3 +987,38 @@ let plugin = match self.plugin_provider.resolve_bound(selected_root).await {
 改法（`metadata.rs:236`）：拆成 `starts_with("failed to read user config ")` + `contains(": <config_path>")` 两条，
 **仍然断言到具体路径**（未放宽为「只要不 panic」）。已落 `worklog journal kind:"decision"` `j-mu9j4xmz-ay6p`。
 改后 `just test -p codex-core-plugins` **438 passed / 0 failed**（EXIT=0）。
+
+## 二十九、第二十三批：crate 候选**清零**
+
+### 29.1 最后一条：`recommended_plugin_install.rs:16`
+
+```
+let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
+    RemotePluginCatalogError::UnexpectedResponse(format!(
+        "recommended plugin `{}` is missing remote plugin identity", plugin.id))
+})?;
+```
+
+`RemotePluginCatalogError::UnexpectedResponse` ⇒ 与 §24.1/§28.4 同链（app-server 与 CLI 都渲染）⇒ **译**，
+键 `recommended plugin \`{0}\` is missing remote plugin identity`，args `&[plugin.id.as_str()]`（`DiscoverableTool::Plugin(plugin)`里`id: String`）。
+
+⚠ **定位这一条花了两次**：`i18n_todo --file tool_suggest_metadata.rs` 报的「剩 1 条」是**行号漂移**——
+那个文件的 `:226 :229` 早已被包好（`tr(current(), ..)`），候选清单里的行是可执行文件在**上次生成时的行号**。
+⇒ **操作细节**：候选用 `--dump-rows`（带当前值）核对真身，别只按 `--file` 的计数下行。
+
+### 29.2 core-plugins 全 crate 收官账
+
+| 阶段                 |      候选 | 本批译 | 本批登记 |
+| -------------------- | --------: | -----: | -------: |
+| 起点（§7 开工）      |       518 |      — |        — |
+| 本会话逐批（§7–§22） |   518 → 1 |      — |        — |
+| 第二十三批           | 1 → **0** |      1 |        0 |
+
+- 全 crate：`unwrapped candidates 0`；`wrapped so far 512 / all candidates 531`（差值 19 = 已声明的 `test-fixture-keys.tsv` 与 `not-translated.tsv` 例外）。
+- 词典 **3712** 条；`coverage 99.8%`（未译的 9 条是**已声明**的 `not-translated.tsv` 例外）。
+- 本次会话累计：**译 ~340 / 登记 ~130**（逐批差额见各节 `对账` 行）。
+
+### 29.3 门禁
+
+`i18n-check` `r-mu9j8258-g2161y`（3712 词条 / missing 0 / unused 0 / duplicate 0 / spacing 0 / nested 0 / placeholder 0 / asset 0）；
+`clippy` `r-mu9je9vo-m7jub6`（284.9s，首次即绿）；`just test -p codex-core-plugins` **438 passed / 0 failed**（EXIT=0）。

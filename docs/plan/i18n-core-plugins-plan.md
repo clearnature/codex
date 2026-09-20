@@ -553,3 +553,35 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
 - `manager.rs`：15 candidates → **0**（该文件另有 5 条早先批次的登记行）；crate：172 → **157**（差额**正好 15**）。
 - `i18n-check` `r-mu9fj6gd-l5uqe0`（3606 词条 / spacing 0 / duplicate 0）；`clippy` `r-mu9fnyzx-wqdcyw`（46 crate / 3m37s）；
   `just test -p codex-core-plugins` **438 passed** `r-mu9fpofn-6mk3rr`。
+
+## 十八、第十二批：npm_source.rs 15 条全译（0 登记）
+
+### 18.1 接收方（一条链）
+
+`materialize_npm_plugin_source` 被 **`loader.rs:1816`** 调用 → 它在 `materialize_marketplace_plugin_source*` 里 →
+错误在 `manager.rs:2620` 变成 `MarketplaceError::InvalidPlugin`（§17.2 已证用户面）
+⇒ 本文件 15 条**全译**；文件内**没有 `tracing::warn!`** ⇒ 登记 0。
+
+### 18.2 开工前预检生效（本批 `cargo check` 也一次过，15.74s）
+
+- **预检① 遮蔽**：`grep -nE "\bcurrent\b"` → 本文件没有名为 `current` 的绑定 ⇒ 无需限定路径；
+- **预检② 值是否已在词典**：按工具的**重编号规则**算出键再 grep，命中 **3 条**与本批重复的键（都来自 §11 的 loader.rs 批次）：
+  `failed to create marketplace plugin source staging directory {1}: {0}`、
+  `… in {1}: {0}`、`failed to resolve materialized plugin source path: {0}`
+  ⇒ 只包站点、不新增词条；工具事后也如实报出「字典已有（只包站点、不新增）3 条」——
+  **跨文件复用词条**在这里第一次成规模（同一段文案在两个文件里各有一个渲染点，词典只有一份）；
+- **预检③ 签名**：`package`（参数 `&str`）直接用；`metadata.name`（`String`）用 `.as_str()`；
+  `archives.len()` / `archive_size` / `output.status` / 两个 const 各自 `.to_string()`。
+
+### 18.3 一处需要留意的形态：`\n` 与常量占位符
+
+- `:110` 的 `"npm pack failed with status {}\nstdout:\n{}\nstderr:\n{}"`：三个空占位符 ⇒ 键 `{0}/{1}/{2}`，
+  译文同样带 `\n`（词条里存的是**字面 `\n` 两字符**，与源码字面量的运行时含义一致）；
+- `:142` 的 `"{archive_size}"` 与 `"{NPM_PLUGIN_SOURCE_MAX_ARCHIVE_BYTES}"` 都是**具名占位符**（后者是常量名），
+  重编号后为 `{0}`/`{1}`，两处都按 `&x.to_string()` 预格式化。
+
+### 18.4 收尾对账与门禁
+
+- `npm_source.rs`：15 candidates → **0**；crate：157 → **142**（差额**正好 15**）。
+- `i18n-check` `r-mu9fuzqn-e853l6`（3618 词条 / missing 0 / spacing 0 / duplicate 0 / **coverage 99.8%**）；
+  `clippy` `r-mu9fxak2-v08i2t`（46 crate / 1m42s）；`just test -p codex-core-plugins` **438 passed** `r-mu9fxvs0-2nscy7`。

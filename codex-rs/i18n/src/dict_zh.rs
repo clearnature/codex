@@ -9292,6 +9292,51 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to join plugin uninstall task: {0}",
         "加入插件卸载任务失败：{0}",
     ),
+    (
+        "failed to extract npm plugin package: {0}",
+        "解压npm插件包失败：{0}",
+    ),
+    (
+        "npm pack completed without creating plugin package directory {0}",
+        "npm pack完成但未创建插件包目录{0}",
+    ),
+    ("failed to run npm pack: {0}", "运行npm pack失败：{0}"),
+    (
+        "npm pack failed with status {0}\nstdout:\n{1}\nstderr:\n{2}",
+        "npm pack失败，状态码{0}\\nstdout:\\n{1}\\nstderr:\\n{2}",
+    ),
+    (
+        "failed to read npm pack destination: {0}",
+        "读取npm pack目标目录失败：{0}",
+    ),
+    (
+        "npm pack completed with {0} package archives; expected exactly one",
+        "npm pack产生了{0}个包归档；期望恰好一个",
+    ),
+    (
+        "failed to inspect npm package archive: {0}",
+        "检查npm包归档失败：{0}",
+    ),
+    (
+        "npm package archive is {0} bytes, exceeding maximum size of {1} bytes",
+        "npm包归档为{0}字节，超过最大大小{1}字节",
+    ),
+    (
+        "failed to read npm package archive: {0}",
+        "读取npm包归档失败：{0}",
+    ),
+    (
+        "failed to read npm plugin package metadata {1}: {0}",
+        "读取npm插件包元数据{1}失败：{0}",
+    ),
+    (
+        "failed to parse npm plugin package metadata {1}: {0}",
+        "解析npm插件包元数据{1}失败：{0}",
+    ),
+    (
+        "npm plugin package name '{1}' does not match requested package '{0}'",
+        "npm插件包名 '{1}' 与请求的包 '{0}' 不匹配",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

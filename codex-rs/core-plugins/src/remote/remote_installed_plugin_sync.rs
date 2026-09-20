@@ -16,6 +16,9 @@ use super::fetch_installed_plugins;
 use crate::store::PLUGINS_CACHE_DIR;
 use crate::store::PluginStore;
 use crate::store::PluginStoreError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_plugin::PluginId;
 use std::collections::BTreeMap;
@@ -79,10 +82,22 @@ pub enum RemoteInstalledPluginBundleSyncError {
     #[error("{0}")]
     Store(#[from] PluginStoreError),
 
-    #[error("timed out waiting for another remote plugin cache mutation; retry")]
+    #[error(
+        "{}",
+        tr(
+            current(),
+            "timed out waiting for another remote plugin cache mutation; retry"
+        )
+    )]
     LockTimeout,
 
-    #[error("remote plugin state changed during reconciliation; retry reconciliation")]
+    #[error(
+        "{}",
+        tr(
+            current(),
+            "remote plugin state changed during reconciliation; retry reconciliation"
+        )
+    )]
     Superseded,
 }
 
@@ -155,9 +170,10 @@ pub(crate) async fn sync_remote_installed_plugin_bundles_once_with_snapshot(
             cached_plugin.marketplace_name.clone(),
         )
         .map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "remote installed plugin `{}` has an invalid local cache id: {err}",
-                installed_plugin.plugin.id
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "remote installed plugin `{1}` has an invalid local cache id: {0}",
+                &[&err.to_string(), installed_plugin.plugin.id.as_str()],
             ))
         })?;
         validated_installed_plugins.push((installed_plugin, cached_plugin, plugin_id));

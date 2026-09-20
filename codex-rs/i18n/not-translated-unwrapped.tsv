@@ -1343,3 +1343,10 @@ completed remote installed plugin bundle sync	codex-rs/core-plugins/src/manager.
 plugin install failed while resolving marketplace plugin	codex-rs/core-plugins/src/manager.rs:2141	§12.3 日志：本行即 tracing::warn! 的消息（:2134）
 plugin install failed	codex-rs/core-plugins/src/manager.rs:2164	§12.3 日志：本行即 tracing::warn! 的消息（:2159 起为字段）
 failed to refresh remote installed plugins cache	codex-rs/core-plugins/src/manager.rs:3367	§12.3 日志：本行即 warn! 的消息（:3349 起为字段）
+failed to persist identity for cached remote installed plugin	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:258	§12.3 日志：本行即 tracing::warn! 的消息（:237 起为字段 remote_plugin_id/plugin/marketplace/error）
+skipping remote installed plugin bundle download	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:281	§12.3 日志：本行即 tracing::warn! 的消息（:260 起为字段）
+failed to download remote installed plugin bundle	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:327	§12.3 日志：本行即 tracing::warn! 的消息（:306 起为字段）
+failed to enumerate remote plugin cache directory {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:438	§12.3 日志：Result<(),String> 的唯一消费者是 :332 的 warn!(error = %err)，字符串只进 tracing
+remote plugin cache entry under {} is not valid UTF-8: {:?}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:444	§12.3 日志：同上，唯一消费者是 :332 的 warn!
+failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:450	§12.3 日志：同上，唯一消费者是 :332 的 warn!
+failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:457	§12.3 日志：同上，唯一消费者是 :332 的 warn!

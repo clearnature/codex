@@ -9545,6 +9545,18 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "configured marketplace `{0}` was removed or is no longer a Git marketplace",
         "已配置的市场源 `{0}` 已被移除或不再是Git市场源",
     ),
+    (
+        "remote installed plugin `{1}` has an invalid local cache id: {0}",
+        "远程已安装插件`{1}`的本地缓存id无效：{0}",
+    ),
+    (
+        "timed out waiting for another remote plugin cache mutation; retry",
+        "等待另一个远程插件缓存变更超时；请重试",
+    ),
+    (
+        "remote plugin state changed during reconciliation; retry reconciliation",
+        "协调过程中远程插件状态发生变化；请重试协调",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

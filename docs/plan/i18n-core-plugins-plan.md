@@ -767,3 +767,31 @@ error: redundant clone
 - `marketplace_upgrade.rs`：11 candidates → **0**（该文件另有 1 条早先批次的登记行）；crate：92 → **81**（差额**正好 11**）。
 - `i18n-check` `r-mu9hfoz3-0a9ee5`（3673 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
   `clippy` `r-mu9hixcc-scrzm0`（46 crate / 2m24s，首次即绿）；`just test -p codex-core-plugins` **438 passed** `r-mu9hjpwv-jpnad7`。
+
+## 二十四、第十八批：remote_installed_plugin_sync.rs 10 条（3 译 / 7 登记）
+
+### 24.1 接收者判定（本批的核心是逐条追到终点，而不是看字面）
+
+| 站点                                     | 形态                                                             | 终点                                                                                      | 判定     |
+| ---------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------- |
+| `:82` `LockTimeout` / `:85` `Superseded` | 属性级 `#[error("…")]` on `RemoteInstalledPluginBundleSyncError` | 该枚举经 `manager.rs:1663` `.await?` 传播（`RemotePlugin*Error` 属用户可见面）            | **译**   |
+| `:159`                                   | `RemotePluginCatalogError::UnexpectedResponse(format!(…))`       | 同上                                                                                      | **译**   |
+| `:242` `:265` `:311`                     | 字符串**就在** `tracing::warn!` 的消息位                         | `warn!`                                                                                   | **登记** |
+| `:422` `:428` `:450` `:457`              | `remove_stale_remote_plugin_caches -> Result<(), String>`        | 唯一消费者是 `:326` `if let Err(err) = … { warn!(error = %err, …) }` ⇒ 字符串只进 tracing | **登记** |
+
+⇒ 同一文件内「同一个 `format!` 家族」被分成两类，依据**不是**字符串长相，而是**调用点是不是日志消息位 / 错误的唯一出口是不是 warn!**。
+
+### 24.2 取值与重编号
+
+- `:159` 原文 ``format!("remote installed plugin `{}` has an invalid local cache id: {err}", installed_plugin.plugin.id)``
+  ⇒ 命名占位符先编号：`{err}`→`{0}`、空 `{}`→`{1}`，即键 ``remote installed plugin `{1}` has an invalid local cache id: {0}``；
+  `args = ["&err.to_string()", "installed_plugin.plugin.id.as_str()"]`（`remote.rs:233` 里 `id: String` ⇒ `.as_str()`）。
+- 属性级两条用零参 `tr(current(), "…")`（无 `{N}` 时不必 `tr_with`），键写在 `extra_dict`。
+- 中文空格规则按既有先例（`dict_zh.rs:2151` 的 `"线程ID\`{0}\`无效：{1}"`）：CJK 与 ASCII/反引号之间**不加空格**。
+
+### 24.3 对账与门禁
+
+- `remote_installed_plugin_sync.rs`：10 candidates → **0**；crate：81 → **71**（差额**正好 10**）。
+- 7 条登记行经 `i18n_dossier_lines.py --fix` 重链后逐条命中源码（`:258 :281 :327 :438 :444 :450 :457`）。
+- `i18n-check` `r-mu9hpr7x-xbusvr`（3676 词条 / spacing 0 / duplicate 0 / unused 0 / missing 0 / coverage 99.8%）；
+  `clippy` `r-mu9htahh-fs15gi`（162.6s，首次即绿）；`just test -p codex-core-plugins` **438 passed 0 skipped**（`EXIT=0`）。

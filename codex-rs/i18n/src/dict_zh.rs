@@ -9614,6 +9614,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to remove installed marketplace root {1}: {0}",
         "移除已安装市场源根目录{1}失败：{0}",
     ),
+    (
+        "marketplace name '{0}' cannot be used as an install directory",
+        "市场源名称'{0}'不能用作安装目录",
+    ),
+    (
+        "failed to resolve marketplace install root {1}: {0}",
+        "解析市场源安装根目录{0}失败：{1}",
+    ),
+    (
+        "marketplace destination has no parent",
+        "市场源目标路径没有父目录",
+    ),
+    (
+        "failed to resolve marketplace destination parent {1}: {0}",
+        "解析市场源目标父目录{0}失败：{1}",
+    ),
+    (
+        "marketplace destination {0} is outside install root {1}",
+        "市场源目标路径{0}在安装根目录{1}之外",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1351,3 +1351,11 @@ remote plugin cache entry under {} is not valid UTF-8: {:?}	codex-rs/core-plugin
 failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:450	§12.3 日志：同上，唯一消费者是 :332 的 warn!
 failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:457	§12.3 日志：同上，唯一消费者是 :332 的 warn!
 ref: refs/heads/main\n	codex-rs/core-plugins/src/git_policy.rs:110	§12.6 文件载荷：本行是写入 <repo>/HEAD 的内容（git 内部引用格式），不是任何 UI 文本
+selected capability root `{root_id}` references unavailable environment `{environment_id}`	codex-rs/core-plugins/src/provider.rs:22	§12.3 日志：ExecutorPluginProviderError 的唯一出口是 ext/mcp/src/executor_plugin.rs:81-89 —— resolve_bound 出错后 tracing::warn!(error = %err, "failed to resolve selected executor plugin") 并 return None
+failed to inspect selected capability root `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:28	§12.3 日志：同上，个体错误只作为 error = %err 字段进入该 warn!
+selected capability root `{root_id}` path {path} is not a directory	codex-rs/core-plugins/src/provider.rs:35	§12.3 日志：同上
+failed to resolve plugin manifest path `{relative_path}` below selected capability root `{root_id}` at {root}: {source}	codex-rs/core-plugins/src/provider.rs:38	§12.3 日志：同上
+failed to inspect plugin manifest for `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:47	§12.3 日志：同上
+failed to read plugin manifest for `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:54	§12.3 日志：同上
+failed to parse plugin manifest for `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:61	§12.3 日志：同上
+failed to construct plugin descriptor for `{root_id}`: {source}	codex-rs/core-plugins/src/provider.rs:68	§12.3 日志：同上

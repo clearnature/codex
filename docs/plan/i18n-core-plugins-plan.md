@@ -836,3 +836,51 @@ io 错误 ⇒ `&err.to_string()`；`root: &Path` ⇒ `&root.display().to_string(
   crate：71 → **55**（差额**正好 16**）。
 - `i18n-check` `r-mu9hzlvs-i9xfoe`（3691 词条 / spacing 0 / duplicate 0 / unused 0 / nested 0 / coverage 99.8%）；
   `clippy` `r-mu9i39np-d4ujid`（168.4s，首次即绿）。
+
+## 二十六、第二十批：provider.rs 8 条全登记 + marketplace_add/install.rs 7 条全译
+
+### 26.1 provider.rs：**公开导出**不等于用户可见
+
+`ExecutorPluginProviderError` 在 `lib.rs:103` 是 `pub use`，8 条变体又都是「像 UI 文案」的整句——
+但它的**唯一出口**是 `ext/mcp/src/executor_plugin.rs:81-89`：
+
+```rust
+let plugin = match self.plugin_provider.resolve_bound(selected_root).await {
+    Ok(plugin) => plugin,
+    Err(err) => {
+        tracing::warn!(selected_root = selected_root.id, error = %err,
+                       "failed to resolve selected executor plugin");
+        return None;
+    }
+};
+```
+
+⇒ 个体的 8 条错误**只作为 `error = %err` 字段**进入那条 `warn!`，随后 `return None`（调用方拿不到错误）。
+**8 条全登记**。判据是「错误的**下游**有没有渲染它的地方」，不是「它是不是 `pub`」。
+
+### 26.2 install.rs：`MarketplaceAddError` 两个消费者都渲染
+
+`app-server/src/request_processors/marketplace_processor.rs:138-139`（`InvalidRequest(message) => invalid_request(message)` /
+`Internal(message) => internal_error(message)`）与 `cli/src/marketplace_cmd.rs:162` ⇒ **全译**。
+取值：`marketplace_name: &str` 裸传；io 错误 `&err.to_string()`；`Path` 用 `&x.display().to_string()`；
+`:124` 的 `args.join(" ")` ⇒ `&args.join(" ")`。
+
+### 26.3 值复用（第 6 次）与 `[duplicate]` 事故
+
+- `:124` 的 `"failed to run git {}: {err}"` 经工具重编号后键为 **`failed to run git {1}: {0}`**——
+  **字典里已有**（早先批次写入）⇒ 工具自动「只包站点、不新增词条」，**索引一致**（既有键也是 `{1}`=git 参数、`{0}`=错误）。
+- `:133` 是 4 个空 `{}` 的多行 `\n` 拼接（`git {} failed with status {}\nstdout:\n{}\nstderr:\n{}`），
+  用 `extra_edits` 手写键 `{0}..{3}` + `extra_dict`。
+
+⚠ **本批踩到一次 `[duplicate]`（`r-mu9i92v1-l9poil` EXIT=1）**：
+`extra_dict` 写入的键在 **Rust 源码里是真实换行**，而字典里**早有一条**同位的键把换行写成**字面 `\\n`**
+（`dict_zh.rs:8872`）。两条键语义相同、转义不同 ⇒ `HashMap` 后写者覆盖前者，既有条目变 `dead`。
+**处置**：删掉 `extra_dict` 那条，**保留既有条目**（既有条目同时决定了渲染出来的转义形态，改它会改变用户可见输出）
+⇒ `r-mu9ia0ds-tbke43` EXIT=0、duplicate 0。已登记 `known_issues: i18n-extra-dict-blind-to-escaped-equivalent`。
+⇒ **流程修正**：`apply` 之后**先跑 `i18n-check`**（它 7 秒就能报 `[duplicate]`），再去跑分钟级的 `cargo check`/`clippy`。
+
+### 26.4 对账与门禁
+
+- `provider.rs` 8 → 0（8 条登记）；`marketplace_add/install.rs` 7 → 0；crate：55 → **40**。
+- `i18n-check` `r-mu9ia0ds-tbke43`（3696 词条 / duplicate 0 / spacing 0 / unused 0 / coverage 99.8%）；
+  `clippy` `r-mu9idbyv-csqihs`（145.2s，首次即绿）。

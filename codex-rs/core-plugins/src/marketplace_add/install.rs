@@ -1,4 +1,7 @@
 use super::MarketplaceAddError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -57,8 +60,10 @@ pub(super) fn safe_marketplace_dir_name(
         .collect::<String>();
     let safe = safe.trim_matches('.').to_string();
     if safe.is_empty() || safe == ".." {
-        return Err(MarketplaceAddError::InvalidRequest(format!(
-            "marketplace name '{marketplace_name}' cannot be used as an install directory"
+        return Err(MarketplaceAddError::InvalidRequest(tr_with(
+            current(),
+            "marketplace name '{0}' cannot be used as an install directory",
+            &[marketplace_name],
         )));
     }
     Ok(safe)
@@ -69,28 +74,35 @@ pub(super) fn ensure_marketplace_destination_is_inside_install_root(
     destination: &Path,
 ) -> Result<(), MarketplaceAddError> {
     let install_root = install_root.canonicalize().map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to resolve marketplace install root {}: {err}",
-            install_root.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to resolve marketplace install root {1}: {0}",
+            &[&install_root.display().to_string(), &err.to_string()],
         ))
     })?;
     let destination_parent = destination
         .parent()
         .ok_or_else(|| {
-            MarketplaceAddError::Internal("marketplace destination has no parent".to_string())
+            MarketplaceAddError::Internal(
+                tr(current(), "marketplace destination has no parent").to_string(),
+            )
         })?
         .canonicalize()
         .map_err(|err| {
-            MarketplaceAddError::Internal(format!(
-                "failed to resolve marketplace destination parent {}: {err}",
-                destination.display()
+            MarketplaceAddError::Internal(tr_with(
+                current(),
+                "failed to resolve marketplace destination parent {1}: {0}",
+                &[&destination.display().to_string(), &err.to_string()],
             ))
         })?;
     if !destination_parent.starts_with(&install_root) {
-        return Err(MarketplaceAddError::InvalidRequest(format!(
-            "marketplace destination {} is outside install root {}",
-            destination.display(),
-            install_root.display()
+        return Err(MarketplaceAddError::InvalidRequest(tr_with(
+            current(),
+            "marketplace destination {0} is outside install root {1}",
+            &[
+                &destination.display().to_string(),
+                &install_root.display().to_string(),
+            ],
         )));
     }
     Ok(())
@@ -121,7 +133,11 @@ fn run_git(args: &[&str], cwd: Option<&Path>) -> Result<(), MarketplaceAddError>
     }
 
     let output = command.output().map_err(|err| {
-        MarketplaceAddError::Internal(format!("failed to run git {}: {err}", args.join(" ")))
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to run git {1}: {0}",
+            &[&args.join(" "), &err.to_string()],
+        ))
     })?;
     if output.status.success() {
         return Ok(());
@@ -129,11 +145,14 @@ fn run_git(args: &[&str], cwd: Option<&Path>) -> Result<(), MarketplaceAddError>
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    Err(MarketplaceAddError::Internal(format!(
-        "git {} failed with status {}\nstdout:\n{}\nstderr:\n{}",
-        args.join(" "),
-        output.status,
-        stdout.trim(),
-        stderr.trim()
+    Err(MarketplaceAddError::Internal(tr_with(
+        current(),
+        "git {0} failed with status {1}\nstdout:\n{2}\nstderr:\n{3}",
+        &[
+            &args.join(" "),
+            &output.status.to_string(),
+            stdout.trim(),
+            stderr.trim(),
+        ],
     )))
 }

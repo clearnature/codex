@@ -7935,10 +7935,6 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "插件需要--marketplace，除非以<plugin>@<marketplace>形式传入",
     ),
     (
-        "chatgpt authentication required for remote plugin catalog",
-        "远程插件目录需要chatgpt认证",
-    ),
-    (
         "Warning: failed to list remote marketplace plugins: {0}",
         "警告：无法列出远程市场源插件：{0}",
     ),
@@ -8875,6 +8871,110 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "git {0} failed with status {1}\nstdout:\n{2}\nstderr:\n{3}",
         "git {0}失败，状态码{1}\\nstdout:\\n{2}\\nstderr:\\n{3}",
+    ),
+    (
+        "invalid remote plugin id: only ASCII letters, digits, `_`, `-`, and `~` are allowed",
+        "无效的远程插件id：只允许ASCII字母、数字以及 `_`、`-`、`~`",
+    ),
+    (
+        "workspace plugin `{0}` did not include discoverability",
+        "工作区插件 `{0}` 未包含可发现性信息",
+    ),
+    (
+        "invalid local plugin id for remote plugin `{1}`: {0}",
+        "远程插件 `{1}` 的本地插件id无效：{0}",
+    ),
+    (
+        "failed to join remote plugin cache removal task: {0}",
+        "加入远程插件缓存删除任务失败：{0}",
+    ),
+    (
+        "failed to resolve remote plugin cache root: {0}",
+        "解析远程插件缓存根目录失败：{0}",
+    ),
+    (
+        "invalid remote plugin cache id for `{0}` in `{1}`: {2}",
+        "无效的远程插件缓存id（`{0}` / `{1}`）：{2}",
+    ),
+    (
+        "failed to remove remote plugin cache entry {1}: {0}",
+        "删除远程插件缓存条目{1}失败：{0}",
+    ),
+    (
+        "invalid remote plugin config id for `{2}` in `{0}`: {1}",
+        "`{2}` 在 `{0}` 中的远程插件配置id无效：{1}",
+    ),
+    (
+        "chatgpt authentication required for remote plugin catalog",
+        "远程插件目录需要ChatGPT身份验证",
+    ),
+    (
+        "chatgpt authentication required for remote plugin catalog; api key auth is not supported",
+        "远程插件目录需要ChatGPT身份验证；不支持API key方式",
+    ),
+    (
+        "failed to read auth token for remote plugin catalog: {0}",
+        "读取远程插件目录的身份验证令牌失败：{0}",
+    ),
+    (
+        "failed to send remote plugin catalog request to {0}: {1}",
+        "向{0}发送远程插件目录请求失败：{1}",
+    ),
+    (
+        "remote plugin catalog request to {0} failed with status {1}: {2}",
+        "向{0}发送的远程插件目录请求失败，状态码{1}：{2}",
+    ),
+    (
+        "failed to parse remote plugin catalog response from {0}: {1}",
+        "解析来自{0}的远程插件目录响应失败：{1}",
+    ),
+    (
+        "invalid remote plugin catalog base URL: {0}",
+        "无效的远程插件目录基础URL：{0}",
+    ),
+    (
+        "invalid remote plugin catalog base URL path",
+        "无效的远程插件目录基础URL路径",
+    ),
+    (
+        "remote marketplace `{0}` is not supported",
+        "不支持远程市场 `{0}`",
+    ),
+    (
+        "remote plugin mutation returned unexpected plugin id: expected `{0}`, got `{1}`",
+        "远程插件变更返回了非预期的插件id：期望 `{0}`，实际 `{1}`",
+    ),
+    (
+        "remote plugin skill response returned unexpected skill name: expected `{0}`, got `{1}`",
+        "远程插件技能响应返回了非预期的技能名：期望 `{0}`，实际 `{1}`",
+    ),
+    (
+        "remote plugin mutation returned unexpected enabled state for `{0}`: expected {1}, got {2}",
+        "远程插件变更返回了 `{0}` 的非预期启用状态：期望{1}，实际{2}",
+    ),
+    (
+        "invalid plugin path `{0}`: {1}",
+        "无效的插件路径 `{0}`：{1}",
+    ),
+    (
+        "remote plugin `{0}` is not available for plugin/share/checkout",
+        "远程插件 `{0}` 不可用于plugin/share/checkout",
+    ),
+    (
+        "failed to archive plugin at `{0}`: {1}",
+        "归档位于 `{0}` 的插件失败：{1}",
+    ),
+    (
+        "failed to join plugin archive task: {0}",
+        "加入插件归档任务失败：{0}",
+    ),
+    (
+        "plugin archive would be {0} bytes, exceeding the maximum upload size of {1} bytes",
+        "插件归档将为{0}字节，超过最大上传大小{1}字节",
+    ),
+    (
+        "workspace plugin upload response did not include an etag",
+        "工作区插件上传响应未包含etag",
     ),
 ];
 

@@ -20,6 +20,9 @@ use codex_http_client::HttpClientFactory;
 use codex_http_client::RouteAwareClientPool;
 use codex_http_client::RouteAwareRequestBuilder;
 use codex_http_client::RouteAwareRequestError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_login::default_client::default_headers;
 use codex_plugin::AppConnectorId;
@@ -371,7 +374,7 @@ pub fn validate_remote_plugin_id(plugin_id: &str) -> Result<(), JSONRPCErrorErro
         return Err(JSONRPCErrorError {
             code: INVALID_REQUEST_ERROR_CODE,
             message:
-                "invalid remote plugin id: only ASCII letters, digits, `_`, `-`, and `~` are allowed"
+                tr(current(), "invalid remote plugin id: only ASCII letters, digits, `_`, `-`, and `~` are allowed")
                     .to_string(),
             data: None,
         });
@@ -382,59 +385,59 @@ pub fn validate_remote_plugin_id(plugin_id: &str) -> Result<(), JSONRPCErrorErro
 
 #[derive(Debug, thiserror::Error)]
 pub enum RemotePluginCatalogError {
-    #[error("chatgpt authentication required for remote plugin catalog")]
+    #[error("{}", tr_with(current(), "chatgpt authentication required for remote plugin catalog", &[]))]
     AuthRequired,
 
     #[error(
-        "chatgpt authentication required for remote plugin catalog; api key auth is not supported"
+        "{}", tr_with(current(), "chatgpt authentication required for remote plugin catalog; api key auth is not supported", &[])
     )]
     UnsupportedAuthMode,
 
-    #[error("failed to read auth token for remote plugin catalog: {0}")]
+    #[error("{}", tr_with(current(), "failed to read auth token for remote plugin catalog: {0}", &[&_0.to_string()]))]
     AuthToken(#[source] std::io::Error),
 
-    #[error("failed to send remote plugin catalog request to {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to send remote plugin catalog request to {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Request {
         url: String,
         #[source]
         source: RouteAwareRequestError,
     },
 
-    #[error("remote plugin catalog request to {url} failed with status {status}: {body}")]
+    #[error("{}", tr_with(current(), "remote plugin catalog request to {0} failed with status {1}: {2}", &[url.as_str(), &status.to_string(), body.as_str()]))]
     UnexpectedStatus {
         url: String,
         status: StatusCode,
         body: String,
     },
 
-    #[error("failed to parse remote plugin catalog response from {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to parse remote plugin catalog response from {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Decode {
         url: String,
         #[source]
         source: serde_json::Error,
     },
 
-    #[error("invalid remote plugin catalog base URL: {0}")]
+    #[error("{}", tr_with(current(), "invalid remote plugin catalog base URL: {0}", &[&_0.to_string()]))]
     InvalidBaseUrl(#[source] url::ParseError),
 
-    #[error("invalid remote plugin catalog base URL path")]
+    #[error("{}", tr_with(current(), "invalid remote plugin catalog base URL path", &[]))]
     InvalidBaseUrlPath,
 
-    #[error("remote marketplace `{marketplace_name}` is not supported")]
+    #[error("{}", tr_with(current(), "remote marketplace `{0}` is not supported", &[marketplace_name.as_str()]))]
     UnknownMarketplace { marketplace_name: String },
 
     #[error(
-        "remote plugin mutation returned unexpected plugin id: expected `{expected}`, got `{actual}`"
+        "{}", tr_with(current(), "remote plugin mutation returned unexpected plugin id: expected `{0}`, got `{1}`", &[expected.as_str(), actual.as_str()])
     )]
     UnexpectedPluginId { expected: String, actual: String },
 
     #[error(
-        "remote plugin skill response returned unexpected skill name: expected `{expected}`, got `{actual}`"
+        "{}", tr_with(current(), "remote plugin skill response returned unexpected skill name: expected `{0}`, got `{1}`", &[expected.as_str(), actual.as_str()])
     )]
     UnexpectedSkillName { expected: String, actual: String },
 
     #[error(
-        "remote plugin mutation returned unexpected enabled state for `{plugin_id}`: expected {expected_enabled}, got {actual_enabled}"
+        "{}", tr_with(current(), "remote plugin mutation returned unexpected enabled state for `{0}`: expected {1}, got {2}", &[plugin_id.as_str(), &expected_enabled.to_string(), &actual_enabled.to_string()])
     )]
     UnexpectedEnabledState {
         plugin_id: String,
@@ -442,28 +445,28 @@ pub enum RemotePluginCatalogError {
         actual_enabled: bool,
     },
 
-    #[error("invalid plugin path `{path}`: {reason}")]
+    #[error("{}", tr_with(current(), "invalid plugin path `{0}`: {1}", &[&path.display().to_string(), reason.as_str()]))]
     InvalidPluginPath { path: PathBuf, reason: String },
 
-    #[error("remote plugin `{remote_plugin_id}` is not available for plugin/share/checkout")]
+    #[error("{}", tr_with(current(), "remote plugin `{0}` is not available for plugin/share/checkout", &[remote_plugin_id.as_str()]))]
     PluginShareCheckoutNotAvailable { remote_plugin_id: String },
 
-    #[error("failed to archive plugin at `{path}`: {source}")]
+    #[error("{}", tr_with(current(), "failed to archive plugin at `{0}`: {1}", &[&path.display().to_string(), &source.to_string()]))]
     Archive {
         path: PathBuf,
         #[source]
         source: std::io::Error,
     },
 
-    #[error("failed to join plugin archive task: {0}")]
+    #[error("{}", tr_with(current(), "failed to join plugin archive task: {0}", &[&_0.to_string()]))]
     ArchiveJoin(#[source] tokio::task::JoinError),
 
     #[error(
-        "plugin archive would be {bytes} bytes, exceeding the maximum upload size of {max_bytes} bytes"
+        "{}", tr_with(current(), "plugin archive would be {0} bytes, exceeding the maximum upload size of {1} bytes", &[&bytes.to_string(), &max_bytes.to_string()])
     )]
     ArchiveTooLarge { bytes: usize, max_bytes: usize },
 
-    #[error("workspace plugin upload response did not include an etag")]
+    #[error("{}", tr_with(current(), "workspace plugin upload response did not include an etag", &[]))]
     MissingUploadEtag,
 
     #[error("{0}")]
@@ -729,9 +732,10 @@ fn workspace_plugin_discoverability(
     plugin: &RemotePluginDirectoryItem,
 ) -> Result<RemotePluginShareDiscoverability, RemotePluginCatalogError> {
     plugin.discoverability.ok_or_else(|| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "workspace plugin `{}` did not include discoverability",
-            plugin.id
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "workspace plugin `{0}` did not include discoverability",
+            &[plugin.id.as_str()],
         ))
     })
 }
@@ -1637,9 +1641,10 @@ pub async fn resolve_remote_plugin_uninstall_target(
     .await?;
     let marketplace_name = remote_plugin_canonical_marketplace_name(&plugin)?.to_string();
     let plugin_id = PluginId::new(plugin.name.clone(), marketplace_name).map_err(|err| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "invalid local plugin id for remote plugin `{}`: {err}",
-            plugin.id
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "invalid local plugin id for remote plugin `{1}`: {0}",
+            &[&err.to_string(), plugin.id.as_str()],
         ))
     })?;
     let app_declarations = plugin
@@ -1711,8 +1716,10 @@ pub async fn uninstall_remote_plugin(
     })
     .await
     .map_err(|err| {
-        RemotePluginCatalogError::CacheRemove(format!(
-            "failed to join remote plugin cache removal task: {err}"
+        RemotePluginCatalogError::CacheRemove(tr_with(
+            current(),
+            "failed to join remote plugin cache removal task: {0}",
+            &[&err.to_string()],
         ))
     })?
     .map_err(RemotePluginCatalogError::CacheRemove)?;
@@ -1726,19 +1733,31 @@ fn remove_remote_plugin_cache(
     plugin_name: String,
     legacy_plugin_id: String,
 ) -> Result<(), String> {
-    let store = PluginStore::try_new(codex_home.clone())
-        .map_err(|err| format!("failed to resolve remote plugin cache root: {err}"))?;
+    let store = PluginStore::try_new(codex_home.clone()).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to resolve remote plugin cache root: {0}",
+            &[&err.to_string()],
+        )
+    })?;
     let plugin_id =
         PluginId::new(plugin_name.clone(), marketplace_name.clone()).map_err(|err| {
-            format!(
-                "invalid remote plugin cache id for `{plugin_name}` in `{marketplace_name}`: {err}"
+            tr_with(
+                current(),
+                "invalid remote plugin cache id for `{0}` in `{1}`: {2}",
+                &[
+                    plugin_name.as_str(),
+                    marketplace_name.as_str(),
+                    &err.to_string(),
+                ],
             )
         })?;
     let plugin_cache_root = store.plugin_base_root(&plugin_id);
     store.uninstall(&plugin_id).map_err(|err| {
-        format!(
-            "failed to remove remote plugin cache entry {}: {err}",
-            plugin_cache_root.display()
+        tr_with(
+            current(),
+            "failed to remove remote plugin cache entry {1}: {0}",
+            &[&err.to_string(), &plugin_cache_root.display().to_string()],
         )
     })?;
 
@@ -1755,9 +1774,13 @@ fn remove_remote_plugin_cache(
             fs::remove_file(&legacy_remote_plugin_cache_root)
         };
         result.map_err(|err| {
-            format!(
-                "failed to remove remote plugin cache entry {}: {err}",
-                legacy_remote_plugin_cache_root.display()
+            tr_with(
+                current(),
+                "failed to remove remote plugin cache entry {1}: {0}",
+                &[
+                    &err.to_string(),
+                    &legacy_remote_plugin_cache_root.display().to_string(),
+                ],
             )
         })?;
     }
@@ -1771,9 +1794,10 @@ fn build_remote_plugin_summary(
     let marketplace_name = remote_plugin_canonical_marketplace_name(plugin)?;
     let plugin_id =
         PluginId::new(plugin.name.clone(), marketplace_name.to_string()).map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "invalid remote plugin config id for `{}` in `{marketplace_name}`: {err}",
-                plugin.name
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "invalid remote plugin config id for `{2}` in `{0}`: {1}",
+                &[marketplace_name, &err.to_string(), plugin.name.as_str()],
             ))
         })?;
     Ok(RemotePluginSummary {
@@ -1807,9 +1831,10 @@ fn remote_discoverable_plugin_from_directory_item(
     let marketplace_name = remote_plugin_canonical_marketplace_name(plugin)?;
     let plugin_id =
         PluginId::new(plugin.name.clone(), marketplace_name.to_string()).map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "invalid remote plugin config id for `{}` in `{marketplace_name}`: {err}",
-                plugin.name
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "invalid remote plugin config id for `{2}` in `{0}`: {1}",
+                &[marketplace_name, &err.to_string(), plugin.name.as_str()],
             ))
         })?;
     let display_name =
@@ -1866,9 +1891,14 @@ fn remote_installed_plugin_to_cache_entry(
     let plugin = &installed_plugin.plugin;
     let marketplace_name = remote_plugin_canonical_marketplace_name(plugin)?.to_string();
     PluginId::new(plugin.name.clone(), marketplace_name.clone()).map_err(|err| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "invalid remote plugin config id for `{}` in `{marketplace_name}`: {err}",
-            plugin.name
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "invalid remote plugin config id for `{2}` in `{0}`: {1}",
+            &[
+                marketplace_name.as_str(),
+                &err.to_string(),
+                plugin.name.as_str(),
+            ],
         ))
     })?;
     // Remote per-skill disabled state (`disabled_skill_names`) is intentionally

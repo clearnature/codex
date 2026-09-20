@@ -301,3 +301,45 @@ app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
 - `loader.rs`：32 candidates → **0**；crate：322 → **290**（差额**正好 32** = 9 译 + 23 登记）；23 条登记行**逐条命中源码**。
 - `cargo check -p codex-core-plugins --all-targets` EXIT=0；`i18n-check` `r-mu8z79aj-b343q5`（3490 词条 / missing 0 / spacing 0 / dup 0）；
   `clippy` `r-mu9dk1t8-11gbl6`；`just test -p codex-core-plugins` **438 passed** `r-mu9dlui6-29j9ma`。
+
+## 十二、第六批：remote.rs 29 条全译（18 属性 + 11 调用点）
+
+### 12.1 接收方（两类都在用户面）
+
+- `RemotePluginCatalogError` 经 `RemotePluginOperationErrorKind::Catalog { context, source }`
+  被 app-server `request_processors/plugins.rs:1581` 消费 ⇒ 用户面；
+- `validate_remote_plugin_id` 直接返回 `Result<(), JSONRPCErrorError>`（`:369`，`:374` 那条）⇒ 用户面。
+  ⇒ 29 条全译、登记 0。
+
+### 12.2 属性路线的三种形状（本批一次覆盖）
+
+| 形状                   | 例                                                                                                      | args 写法                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| unit 变体              | `AuthRequired`（`:385`）、`MissingUploadEtag`（`:466`）                                                 | `&[]`                                                              |
+| 元组变体 + `#[source]` | `AuthToken(#[source] io::Error)`（`:393`）、`InvalidBaseUrl`（`:417`）、`ArchiveJoin`（`:458`）         | **`&_0.to_string()`** —— thiserror 为元组字段生成的绑定名就是 `_0` |
+| 具名字段变体           | `Request{url, #[source] source}`（`:396`）、`ArchiveTooLarge{bytes: usize, max_bytes: usize}`（`:462`） | `url.as_str()` / `&source.to_string()` / `&bytes.to_string()`      |
+
+类型清单（都由 `cargo check` 当场验，18.72s EXIT=0）：`String`→`.as_str()`；`io::Error`/`serde_json::Error`/`url::ParseError`/`RouteAwareRequestError`/`JoinError`→`&x.to_string()`；
+`StatusCode`/`bool`/`usize`→`&x.to_string()`；`PathBuf`→`&x.display().to_string()`；`&'static str`（`remote_plugin_canonical_marketplace_name` 的返回值）→**直接用**、不要 `.as_str()`。
+
+### 12.3 门禁当场抓到的两处（都是我的错）
+
+1. **`[spacing]` 1**：`"远程插件 \`{0}\` 不可用于 plugin/share/checkout"`——`于`与`p`之间那个空格正好落在 CJK↔拉丁边界上。
+改成`不可用于plugin/share/checkout`后归零。⇒ 判据：**译文里凡是「中文 + 英文标识符」相接处，默认不留空格**（英文缩写内部如`API key` 的空格不受影响）。
+2. **`[duplicate]` 1**：`chatgpt authentication required for remote plugin catalog` **早先批次（cli 的 plugin_cmd 批次）已经在词典里**，
+   我这次又写了一条 ⇒ 两条同键，旧条目成为「dead」。这暴露了属性路线的盲区：走 `extra_dict` 时**工具不知道键是否已存在**
+   （调用点路线由工具自己 `setdefault` 就不会重复）。处置：删掉旧的那条（保留本批措辞）。
+   **但删的时候我只删了 `zh` 那一行，留下了 `("key",)` 这种单元素元组** ⇒ `cargo check -p codex-i18n` 报 `E0308`。
+   ⇒ 规矩：**手工改词典后必须 `cargo check -p codex-i18n`**（`i18n-check` 也会编译到它，但用 cargo 直接验更快、错误更直白）。
+
+### 12.4 一条查过并排除的疑虑（对抗自检的正向结果）
+
+翻译前我担心 `cli/src/plugin_cmd.rs:866` 那处同值是**匹配键**（若如此，把消息译成中文会让那个匹配失效 ⇒ 行为改变）。
+查证结果：那处**早已被 `tr(current(), …)` 包住**（所以 cli 的候选普查才是 0），不存在控制流依赖 ⇒ 疑虑排除、可以放心译。
+⇒ 判据复述：**同值出现在别处时，先去那处看它是不是匹配键**；是匹配键则不能译（§9.1），是渲染点则可译。
+
+### 12.5 收尾对账与门禁
+
+- `remote.rs`：29 candidates → **0**；crate：290 → **261**（差额**正好 29**）；core-plugins 的 **103** 条登记行逐条命中源码（0 漂移）。
+- `cargo check -p codex-core-plugins --all-targets` EXIT=0；`i18n-check` `r-mu9dvggk-6kazjo`（3515 词条 / missing 0 / **spacing 0** / **duplicate 0**）；
+  `clippy` `r-mu9e04c9-wgt5hx`（46 crate / 3m29s）；`just test -p codex-core-plugins` **438 passed** `r-mu9e2b12-iblw84`。

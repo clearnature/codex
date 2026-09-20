@@ -9667,6 +9667,27 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "workspace plugin share requires an account id",
         "工作区插件分享需要account id",
     ),
+    (
+        "failed to add marketplace '{0}' to user config.toml: {1}",
+        "向用户config.toml添加市场源'{0}'失败：{1}",
+    ),
+    (
+        "failed to read user config {1}: {0}",
+        "读取用户配置{0}失败：{1}",
+    ),
+    (
+        "failed to parse user config {1}: {0}",
+        "解析用户配置{0}失败：{1}",
+    ),
+    ("Migrated source command `{0}`", "迁移自源命令`{0}`"),
+    (
+        "No command template body was found.",
+        "未找到命令模板正文。",
+    ),
+    (
+        "tool-suggest metadata cache loader closed",
+        "tool-suggest元数据缓存加载器已关闭",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

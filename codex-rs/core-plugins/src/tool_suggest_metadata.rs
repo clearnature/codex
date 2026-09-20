@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -137,7 +139,7 @@ impl ToolSuggestMetadataCache {
 
             let _load_permit = self.load_semaphore.acquire().await.map_err(|_| {
                 MarketplaceError::InvalidPlugin(
-                    "tool-suggest metadata cache loader closed".to_string(),
+                    tr(current(), "tool-suggest metadata cache loader closed").to_string(),
                 )
             })?;
             if let Some(entry) = self.cached_entry(&artifact) {
@@ -221,10 +223,10 @@ async fn load_plugin_metadata(
         }));
     };
     if !plugin_root.as_path().is_dir() {
-        return Err("path does not exist or is not a directory".to_string());
+        return Err(tr(current(), "path does not exist or is not a directory").to_string());
     }
     let loaded_manifest = load_plugin_manifest_with_format(plugin_root.as_path())
-        .ok_or_else(|| "missing or invalid plugin.json".to_string())?;
+        .ok_or_else(|| tr(current(), "missing or invalid plugin.json").to_string())?;
     let plugin_identity = PluginIdentity {
         plugin_id: plugin_id.as_key(),
         remote_plugin_id: None,

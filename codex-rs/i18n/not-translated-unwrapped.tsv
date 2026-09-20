@@ -1362,3 +1362,18 @@ failed to construct plugin descriptor for `{root_id}`: {source}	codex-rs/core-pl
 invalid remote plugin id in share local path mapping: {remote_plugin_id}	codex-rs/core-plugins/src/remote/share.rs:280	§12.3 日志：io::Error 交 local_paths 解析，经 remote.rs:88 → app-server plugins.rs:149 的 internal_error(format!("failed to load plugin share local path mapping: {err}")) —— 外层模板是 app-server 自己的候选行（plugins.rs:154，待该批次处理），本行只是其 err 字段
 workspace plugin upload URL	codex-rs/core-plugins/src/remote/share.rs:432	§12.6 占位标识：RemotePluginCatalogError::Request/UnexpectedStatus 的 url 字段（:439 同值），非独立消息；属性级模板 remote.rs:413 与 Request 的 Display 决定渲染
 plugin path must end in a valid UTF-8 directory name	codex-rs/core-plugins/src/remote/share.rs:479	§12.6 占位标识：RemotePluginCatalogError::InvalidArchive 的 reason 字段，由该变体属性级模板渲染
+---\nname: {}\ndescription: {}\n---\n\n# {name}\n\nUse this skill when the user asks to run the migrated source command `{source_name}`.\n\n## Command Template\n\n{template_body}\n	codex-rs/core-plugins/src/command_migration.rs:417	§12.6 文件载荷：本行是生成的 SKILL.md 内容（:171 fs::write(target_dir.join("SKILL.md"), rendered)），不是 UI 文本；翻译会改变落盘产物
+plugin share local path lock poisoned: {err}	codex-rs/core-plugins/src/remote/share/local_paths.rs:51	§12.3 日志：io::Error，锁中毒后交调用方；同类先例已在 §12.3（io 错误只进 tracing）
+failed to parse plugin share local path mapping {}: {err}	codex-rs/core-plugins/src/remote/share/local_paths.rs:68	§12.3 日志：io::Error::new(InvalidData, ..)，真实消费者是 app-server plugins.rs:154 的 internal_error 模板（该模板属 app-server 候选）
+path {} has no parent directory	codex-rs/core-plugins/src/remote/share/local_paths.rs:112	§12.3 日志：io::Error::new(Input, ..)，同上；write_atomically 的失败由调用方 io::Result 冒泡后进 tracing
+Agent Plugins root `plugin.json` must contain a JSON object	codex-rs/core-plugins/src/agent_plugin_manifest.rs:72	§12.3 日志：serde_json::Error 的自定义消息；出口是 manifest.rs:193 tracing::warn!("failed to parse plugin manifest: {err}") 或 provider.rs:225 的 ExecutorPluginProviderError（其唯一出口 ext/mcp executor_plugin.rs:83 的 warn!）
+Agent Plugins `{field}` must use its declared type when present	codex-rs/core-plugins/src/agent_plugin_manifest.rs:115	§12.3 日志：同上（serde 自定义消息 ⇒ 无独立渲染方）
+Agent Plugins `author.{field}` must be a string when present	codex-rs/core-plugins/src/agent_plugin_manifest.rs:123	§12.3 日志：同上
+unsupported Agent Plugins schema `{}`; supported schemas: `{AGENT_PLUGIN_SCHEMA_URI}`	codex-rs/core-plugins/src/agent_plugin_manifest.rs:133	§12.3 日志：同上
+root `plugin.json` is not an Agent Plugins manifest; expected `$schema` `{AGENT_PLUGIN_SCHEMA_URI}`	codex-rs/core-plugins/src/agent_plugin_manifest.rs:138	§12.3 日志：同上
+invalid Agent Plugins name `{}`; use lowercase letters, numbers, dots, or hyphens	codex-rs/core-plugins/src/agent_plugin_manifest.rs:145	§12.3 日志：同上
+maximum of {MAX_DEFAULT_PROMPT_COUNT} prompts is supported	codex-rs/core-plugins/src/manifest.rs:498	§12.3 日志：warn_invalid_default_prompt（manifest.rs:556）即 tracing::warn!("ignoring {field}: {message}")，本行是 message 字段
+expected a string, found {}	codex-rs/core-plugins/src/manifest.rs:517	§12.3 日志：同上（serde 自定义消息经 warn_invalid_default_prompt 输出）
+expected a string or array of strings, found {}	codex-rs/core-plugins/src/manifest.rs:530	§12.3 日志：同上
+prompt must be at most {MAX_DEFAULT_PROMPT_LEN} characters	codex-rs/core-plugins/src/manifest.rs:549	§12.3 日志：同上
+failed to list plugin marketplaces for tool suggestions	codex-rs/core-plugins/src/discoverable.rs:87	§12.3 日志：anyhow context，唯一终点是 core/src/session/turn.rs:1643 warn!("failed to load discoverable tool suggestions: {err:#}") 后 None

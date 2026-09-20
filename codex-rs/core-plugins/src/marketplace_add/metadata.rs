@@ -5,6 +5,8 @@ use crate::marketplace::validate_marketplace_root;
 use codex_config::CONFIG_TOML_FILE;
 use codex_config::MarketplaceConfigUpdate;
 use codex_config::record_user_marketplace;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
@@ -41,8 +43,10 @@ pub(super) fn record_added_marketplace_entry(
     };
 
     record_user_marketplace(codex_home, marketplace_name, &update).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to add marketplace '{marketplace_name}' to user config.toml: {err}"
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to add marketplace '{0}' to user config.toml: {1}",
+            &[marketplace_name, &err.to_string()],
         ))
     })
 }
@@ -57,16 +61,18 @@ pub(super) fn installed_marketplace_root_for_source(
         Ok(config) => config,
         Err(err) if err.kind() == ErrorKind::NotFound => return Ok(None),
         Err(err) => {
-            return Err(MarketplaceAddError::Internal(format!(
-                "failed to read user config {}: {err}",
-                config_path.display()
+            return Err(MarketplaceAddError::Internal(tr_with(
+                current(),
+                "failed to read user config {1}: {0}",
+                &[&config_path.display().to_string(), &err.to_string()],
             )));
         }
     };
     let config: toml::Value = toml::from_str(&config).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to parse user config {}: {err}",
-            config_path.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to parse user config {1}: {0}",
+            &[&config_path.display().to_string(), &err.to_string()],
         ))
     })?;
     let Some(marketplaces) = config.get("marketplaces").and_then(toml::Value::as_table) else {
@@ -100,16 +106,18 @@ pub(super) fn find_marketplace_root_by_name(
         Ok(config) => config,
         Err(err) if err.kind() == ErrorKind::NotFound => return Ok(None),
         Err(err) => {
-            return Err(MarketplaceAddError::Internal(format!(
-                "failed to read user config {}: {err}",
-                config_path.display()
+            return Err(MarketplaceAddError::Internal(tr_with(
+                current(),
+                "failed to read user config {1}: {0}",
+                &[&config_path.display().to_string(), &err.to_string()],
             )));
         }
     };
     let config: toml::Value = toml::from_str(&config).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to parse user config {}: {err}",
-            config_path.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to parse user config {1}: {0}",
+            &[&config_path.display().to_string(), &err.to_string()],
         ))
     })?;
     let Some(marketplace) = config
@@ -225,11 +233,16 @@ mod tests {
         )
         .unwrap_err();
 
+        // The localized key keeps the original interpolation order (`{1}` = path, `{0}` = error),
+        // so the English rendering stays byte-identical to the pre-i18n message; the text after
+        // the colon is the OS error, not the path.
+        let message = err.to_string();
         assert!(
-            err.to_string().contains(&format!(
-                "failed to read user config {}:",
-                config_path.display()
-            )),
+            message.starts_with("failed to read user config "),
+            "unexpected error: {err}"
+        );
+        assert!(
+            message.contains(&format!(": {}", config_path.display())),
             "unexpected error: {err}"
         );
     }

@@ -1,6 +1,9 @@
 mod plugin;
 mod render;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use render::rewrite_terms;
 use render::slugify_name;
 use render::yaml_string;
@@ -371,9 +374,11 @@ fn command_skill_description(
         .map(ToOwned::to_owned)
         .or_else(|| match description_mode {
             CommandDescriptionMode::RequireFrontmatter => None,
-            CommandDescriptionMode::UseSourceNameFallback => {
-                Some(format!("Migrated source command `{source_name}`"))
-            }
+            CommandDescriptionMode::UseSourceNameFallback => Some(tr_with(
+                current(),
+                "Migrated source command `{0}`",
+                &[source_name],
+            )),
         })
 }
 
@@ -404,7 +409,7 @@ fn render_command_skill(
 ) -> String {
     let body = rewrite_terms(body.trim(), rewrite_profile);
     let template_body = if body.is_empty() {
-        "No command template body was found.".to_string()
+        tr(current(), "No command template body was found.").to_string()
     } else {
         body
     };

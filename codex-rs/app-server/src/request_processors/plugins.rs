@@ -29,6 +29,9 @@ use codex_core_plugins::remote::RemotePluginScope;
 use codex_core_plugins::remote::is_valid_remote_plugin_id;
 use codex_core_plugins::remote::validate_remote_plugin_id;
 use codex_core_plugins::remote_bundle::RemotePluginBundleInstallError;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_mcp::McpOAuthLoginSupport;
 use codex_mcp::McpRuntimeContext;
 use codex_mcp::oauth_login_support;
@@ -150,8 +153,10 @@ fn load_shared_plugin_ids_by_local_path(
         config.codex_home.as_path(),
     )
     .map_err(|err| {
-        internal_error(format!(
-            "failed to load plugin share local path mapping: {err}"
+        internal_error(tr_with(
+            current(),
+            "failed to load plugin share local path mapping: {0}",
+            &[&err.to_string()],
         ))
     })
 }
@@ -317,9 +322,10 @@ fn validate_client_plugin_share_targets(
         .iter()
         .any(|target| target.principal_type == PluginSharePrincipalType::Workspace)
     {
-        return Err(invalid_request(
+        return Err(invalid_request(tr(
+            current(),
             "shareTargets cannot include workspace principals; use discoverability UNLISTED for workspace link access",
-        ));
+        )));
     }
     Ok(())
 }
@@ -543,7 +549,13 @@ impl PluginRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 
     async fn plugin_list_response(
@@ -663,11 +675,16 @@ impl PluginRequestProcessor {
             {
                 Ok(Ok(outcome)) => outcome,
                 Ok(Err(err)) => {
-                    return Err(Self::marketplace_error(err, "list marketplace plugins"));
+                    return Err(Self::marketplace_error(
+                        err,
+                        tr(current(), "list marketplace plugins"),
+                    ));
                 }
                 Err(err) => {
-                    return Err(internal_error(format!(
-                        "failed to list marketplace plugins: {err}"
+                    return Err(internal_error(tr_with(
+                        current(),
+                        "failed to list marketplace plugins: {0}",
+                        &[&err.to_string()],
                     )));
                 }
             }
@@ -695,7 +712,7 @@ impl PluginRequestProcessor {
                 Err(err) if explicit_marketplace_kinds => {
                     return Err(remote_plugin_catalog_error_to_jsonrpc(
                         err,
-                        "list OpenAI Curated remote plugin catalog",
+                        tr(current(), "list OpenAI Curated remote plugin catalog"),
                     ));
                 }
                 Err(RemotePluginCatalogError::AuthRequired) => {}
@@ -749,7 +766,7 @@ impl PluginRequestProcessor {
                 ) if explicit_marketplace_kinds => {
                     return Err(remote_plugin_catalog_error_to_jsonrpc(
                         err,
-                        "list remote plugin catalog",
+                        tr(current(), "list remote plugin catalog"),
                     ));
                 }
                 Err(
@@ -759,7 +776,7 @@ impl PluginRequestProcessor {
                 Err(err) if explicit_marketplace_kinds => {
                     return Err(remote_plugin_catalog_error_to_jsonrpc(
                         err,
-                        "list remote plugin catalog",
+                        tr(current(), "list remote plugin catalog"),
                     ));
                 }
                 Err(err) => {
@@ -951,10 +968,15 @@ impl PluginRequestProcessor {
             Ok(Ok(outcome)) => Ok(outcome),
             Ok(Err(err)) => Err(Self::marketplace_error(
                 err,
-                "list installed and suggested marketplace plugins",
+                tr(
+                    current(),
+                    "list installed and suggested marketplace plugins",
+                ),
             )),
-            Err(err) => Err(internal_error(format!(
-                "failed to list installed and suggested plugins: {err}"
+            Err(err) => Err(internal_error(tr_with(
+                current(),
+                "failed to list installed and suggested plugins: {0}",
+                &[&err.to_string()],
             ))),
         }
     }
@@ -1036,7 +1058,9 @@ impl PluginRequestProcessor {
                 let outcome = plugins_manager
                     .read_plugin_for_config(&plugins_input, &request)
                     .await
-                    .map_err(|err| Self::marketplace_error(err, "read plugin details"))?;
+                    .map_err(|err| {
+                        Self::marketplace_error(err, tr(current(), "read plugin details"))
+                    })?;
                 let shared_plugin_ids_by_local_path =
                     load_shared_plugin_ids_by_local_path(&config)?;
                 let share_context = share_context_for_source(
@@ -1156,8 +1180,10 @@ impl PluginRequestProcessor {
             }
             Err(remote_marketplace_name) => {
                 if !config.features.enabled(Feature::Plugins) {
-                    return Err(invalid_request(format!(
-                        "remote plugin read is not enabled for marketplace {remote_marketplace_name}"
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "remote plugin read is not enabled for marketplace {0}",
+                        &[&remote_marketplace_name],
                     )));
                 }
                 let remote_plugin_service_config = remote_plugin_service_config(&config);
@@ -1170,7 +1196,10 @@ impl PluginRequestProcessor {
                 )
                 .await
                 .map_err(|err| {
-                    remote_plugin_catalog_error_to_jsonrpc(err, "read remote plugin details")
+                    remote_plugin_catalog_error_to_jsonrpc(
+                        err,
+                        tr(current(), "read remote plugin details"),
+                    )
                 })?;
                 let plugin_apps = remote_detail
                     .app_ids
@@ -1209,15 +1238,18 @@ impl PluginRequestProcessor {
 
         let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
         if !config.features.enabled(Feature::Plugins) {
-            return Err(invalid_request(format!(
-                "remote plugin skill read is not enabled for marketplace {remote_marketplace_name}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "remote plugin skill read is not enabled for marketplace {0}",
+                &[&remote_marketplace_name],
             )));
         }
         validate_remote_plugin_id(&remote_plugin_id)?;
         if skill_name.is_empty() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "invalid remote plugin skill name: cannot be empty",
-            ));
+            )));
         }
 
         let auth = self.auth_manager.auth().await;
@@ -1231,7 +1263,10 @@ impl PluginRequestProcessor {
         )
         .await
         .map_err(|err| {
-            remote_plugin_catalog_error_to_jsonrpc(err, "read remote plugin skill details")
+            remote_plugin_catalog_error_to_jsonrpc(
+                err,
+                tr(current(), "read remote plugin skill details"),
+            )
         })?;
 
         Ok(PluginSkillReadResponse {
@@ -1256,17 +1291,19 @@ impl PluginRequestProcessor {
         if let Some(remote_plugin_id) = remote_plugin_id.as_ref()
             && (remote_plugin_id.is_empty() || !is_valid_remote_plugin_id(remote_plugin_id))
         {
-            return Err(invalid_request("invalid remote plugin id"));
+            return Err(invalid_request(tr(current(), "invalid remote plugin id")));
         }
         if remote_plugin_id.is_some() && (discoverability.is_some() || share_targets.is_some()) {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "discoverability and shareTargets are only supported when creating a plugin share; use plugin/share/updateTargets to update share settings",
-            ));
+            )));
         }
         if discoverability == Some(PluginShareDiscoverability::Listed) {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "discoverability LISTED is not supported for plugin/share/save; use UNLISTED or PRIVATE",
-            ));
+            )));
         }
         if let Some(share_targets) = share_targets.as_ref() {
             validate_client_plugin_share_targets(share_targets)?;
@@ -1286,7 +1323,9 @@ impl PluginRequestProcessor {
             access_policy,
         )
         .await
-        .map_err(|err| remote_plugin_catalog_error_to_jsonrpc(err, "save remote plugin share"))?;
+        .map_err(|err| {
+            remote_plugin_catalog_error_to_jsonrpc(err, tr(current(), "save remote plugin share"))
+        })?;
         codex_core_plugins::remote::invalidate_cached_remote_plugin_catalog_scopes(
             config.codex_home.as_path(),
             &remote_plugin_service_config,
@@ -1316,7 +1355,7 @@ impl PluginRequestProcessor {
             share_targets,
         } = params;
         if remote_plugin_id.is_empty() || !is_valid_remote_plugin_id(&remote_plugin_id) {
-            return Err(invalid_request("invalid remote plugin id"));
+            return Err(invalid_request(tr(current(), "invalid remote plugin id")));
         }
         validate_client_plugin_share_targets(&share_targets)?;
 
@@ -1330,7 +1369,10 @@ impl PluginRequestProcessor {
         )
         .await
         .map_err(|err| {
-            remote_plugin_catalog_error_to_jsonrpc(err, "update remote plugin share targets")
+            remote_plugin_catalog_error_to_jsonrpc(
+                err,
+                tr(current(), "update remote plugin share targets"),
+            )
         })?;
         codex_core_plugins::remote::invalidate_cached_remote_plugin_catalog_scopes(
             config.codex_home.as_path(),
@@ -1361,7 +1403,9 @@ impl PluginRequestProcessor {
             config.codex_home.as_path(),
         )
         .await
-        .map_err(|err| remote_plugin_catalog_error_to_jsonrpc(err, "list remote plugin shares"))?
+        .map_err(|err| {
+            remote_plugin_catalog_error_to_jsonrpc(err, tr(current(), "list remote plugin shares"))
+        })?
         .into_iter()
         .map(|summary| {
             let RemoteCatalogPluginShareSummary {
@@ -1388,7 +1432,7 @@ impl PluginRequestProcessor {
         }
         let PluginShareCheckoutParams { remote_plugin_id } = params;
         if remote_plugin_id.is_empty() || !is_valid_remote_plugin_id(&remote_plugin_id) {
-            return Err(invalid_request("invalid remote plugin id"));
+            return Err(invalid_request(tr(current(), "invalid remote plugin id")));
         }
 
         let remote_plugin_service_config = remote_plugin_service_config(&config);
@@ -1399,7 +1443,9 @@ impl PluginRequestProcessor {
             &remote_plugin_id,
         )
         .await
-        .map_err(|err| remote_plugin_catalog_error_to_jsonrpc(err, "checkout plugin share"))?;
+        .map_err(|err| {
+            remote_plugin_catalog_error_to_jsonrpc(err, tr(current(), "checkout plugin share"))
+        })?;
         self.clear_plugin_related_caches();
         Ok(PluginShareCheckoutResponse {
             remote_plugin_id: result.remote_plugin_id,
@@ -1419,7 +1465,7 @@ impl PluginRequestProcessor {
         let (config, auth) = self.load_plugin_share_config_and_auth().await?;
         let PluginShareDeleteParams { remote_plugin_id } = params;
         if remote_plugin_id.is_empty() || !is_valid_remote_plugin_id(&remote_plugin_id) {
-            return Err(invalid_request("invalid remote plugin id"));
+            return Err(invalid_request(tr(current(), "invalid remote plugin id")));
         }
 
         let remote_plugin_service_config = remote_plugin_service_config(&config);
@@ -1430,7 +1476,9 @@ impl PluginRequestProcessor {
             &remote_plugin_id,
         )
         .await
-        .map_err(|err| remote_plugin_catalog_error_to_jsonrpc(err, "delete remote plugin share"))?;
+        .map_err(|err| {
+            remote_plugin_catalog_error_to_jsonrpc(err, tr(current(), "delete remote plugin share"))
+        })?;
         codex_core_plugins::remote::invalidate_cached_remote_plugin_catalog_scopes(
             config.codex_home.as_path(),
             &remote_plugin_service_config,
@@ -1946,7 +1994,7 @@ impl PluginRequestProcessor {
         if codex_plugin::PluginId::parse(&plugin_id).is_err()
             && !is_valid_remote_plugin_id(&plugin_id)
         {
-            return Err(invalid_request("invalid remote plugin id"));
+            return Err(invalid_request(tr(current(), "invalid remote plugin id")));
         }
         if is_valid_remote_plugin_id(&plugin_id) {
             return self.remote_plugin_uninstall_response(plugin_id).await;
@@ -1976,20 +2024,28 @@ impl PluginRequestProcessor {
 
         match err {
             CorePluginInstallError::Marketplace(err) => {
-                Self::marketplace_error(err, "install plugin")
+                Self::marketplace_error(err, tr(current(), "install plugin"))
             }
-            CorePluginInstallError::Config(err) => {
-                internal_error(format!("failed to persist installed plugin config: {err}"))
-            }
-            CorePluginInstallError::Remote(err) => {
-                internal_error(format!("failed to enable remote plugin: {err}"))
-            }
-            CorePluginInstallError::Join(err) => {
-                internal_error(format!("failed to install plugin: {err}"))
-            }
-            CorePluginInstallError::Store(err) => {
-                internal_error(format!("failed to install plugin: {err}"))
-            }
+            CorePluginInstallError::Config(err) => internal_error(tr_with(
+                current(),
+                "failed to persist installed plugin config: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginInstallError::Remote(err) => internal_error(tr_with(
+                current(),
+                "failed to enable remote plugin: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginInstallError::Join(err) => internal_error(tr_with(
+                current(),
+                "failed to install plugin: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginInstallError::Store(err) => internal_error(tr_with(
+                current(),
+                "failed to install plugin: {0}",
+                &[&err.to_string()],
+            )),
         }
     }
 
@@ -1999,18 +2055,26 @@ impl PluginRequestProcessor {
         }
 
         match err {
-            CorePluginUninstallError::Config(err) => {
-                internal_error(format!("failed to clear plugin config: {err}"))
-            }
-            CorePluginUninstallError::Remote(err) => {
-                internal_error(format!("failed to uninstall remote plugin: {err}"))
-            }
-            CorePluginUninstallError::Join(err) => {
-                internal_error(format!("failed to uninstall plugin: {err}"))
-            }
-            CorePluginUninstallError::Store(err) => {
-                internal_error(format!("failed to uninstall plugin: {err}"))
-            }
+            CorePluginUninstallError::Config(err) => internal_error(tr_with(
+                current(),
+                "failed to clear plugin config: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginUninstallError::Remote(err) => internal_error(tr_with(
+                current(),
+                "failed to uninstall remote plugin: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginUninstallError::Join(err) => internal_error(tr_with(
+                current(),
+                "failed to uninstall plugin: {0}",
+                &[&err.to_string()],
+            )),
+            CorePluginUninstallError::Store(err) => internal_error(tr_with(
+                current(),
+                "failed to uninstall plugin: {0}",
+                &[&err.to_string()],
+            )),
             CorePluginUninstallError::InvalidPluginId(_) => {
                 unreachable!("invalid plugin ids are handled above");
             }
@@ -2025,7 +2089,11 @@ impl PluginRequestProcessor {
             | MarketplaceError::PluginNotAvailable { .. }
             | MarketplaceError::PluginsDisabled
             | MarketplaceError::InvalidPlugin(_) => invalid_request(err.to_string()),
-            MarketplaceError::Io { .. } => internal_error(format!("failed to {action}: {err}")),
+            MarketplaceError::Io { .. } => internal_error(tr_with(
+                current(),
+                "failed to {0}: {1}",
+                &[action, &err.to_string()],
+            )),
         }
     }
 
@@ -2054,7 +2122,7 @@ impl PluginRequestProcessor {
         if let Some(err) = outcome.cache_removal_error {
             return Err(remote_plugin_catalog_error_to_jsonrpc(
                 err,
-                "uninstall remote plugin",
+                tr(current(), "uninstall remote plugin"),
             ));
         }
 
@@ -2344,7 +2412,7 @@ fn remote_plugin_catalog_error_to_jsonrpc(
     err: RemotePluginCatalogError,
     context: &str,
 ) -> JSONRPCErrorError {
-    let message = format!("{context}: {err}");
+    let message = tr_with(current(), "{0}: {1}", &[context, &err.to_string()]);
     match &err {
         RemotePluginCatalogError::AuthRequired | RemotePluginCatalogError::UnsupportedAuthMode => {
             invalid_request(message)
@@ -2376,7 +2444,11 @@ fn remote_plugin_catalog_error_to_jsonrpc(
 fn remote_plugin_bundle_install_error_to_jsonrpc(
     err: codex_core_plugins::remote_bundle::RemotePluginBundleInstallError,
 ) -> JSONRPCErrorError {
-    internal_error(format!("install remote plugin bundle: {err}"))
+    internal_error(tr_with(
+        current(),
+        "install remote plugin bundle: {0}",
+        &[&err.to_string()],
+    ))
 }
 
 fn remote_plugin_operation_error_to_jsonrpc(err: RemotePluginOperationError) -> JSONRPCErrorError {

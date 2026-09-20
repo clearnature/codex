@@ -1377,3 +1377,5 @@ expected a string, found {}	codex-rs/core-plugins/src/manifest.rs:517	§12.3 日
 expected a string or array of strings, found {}	codex-rs/core-plugins/src/manifest.rs:530	§12.3 日志：同上
 prompt must be at most {MAX_DEFAULT_PROMPT_LEN} characters	codex-rs/core-plugins/src/manifest.rs:549	§12.3 日志：同上
 failed to list plugin marketplaces for tool suggestions	codex-rs/core-plugins/src/discoverable.rs:87	§12.3 日志：anyhow context，唯一终点是 core/src/session/turn.rs:1643 warn!("failed to load discoverable tool suggestions: {err:#}") 后 None
+remote plugin install failed	codex-rs/app-server/src/request_processors/plugins.rs:1747	§12.3 日志：本行即 tracing::warn! 的消息（:1740 起为结构化字段 marketplace_name/error_type/error）
+skipping plugin MCP OAuth for an unowned environment	codex-rs/app-server/src/request_processors/plugins.rs:1859	§12.3 日志：本行即 tracing::warn! 的消息（:1855 起为字段 plugin/server/environment_id）

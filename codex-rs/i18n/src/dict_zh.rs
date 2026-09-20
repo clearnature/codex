@@ -9692,6 +9692,78 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "recommended plugin `{0}` is missing remote plugin identity",
         "推荐插件`{0}`缺少远程插件标识",
     ),
+    (
+        "shareTargets cannot include workspace principals; use discoverability UNLISTED for workspace link access",
+        "shareTargets不能包含工作区主体；工作区链接访问请改用discoverability UNLISTED",
+    ),
+    ("failed to reload config: {0}", "重新加载配置失败：{0}"),
+    ("list marketplace plugins", "列出市场源插件"),
+    (
+        "failed to list marketplace plugins: {0}",
+        "列出市场源插件失败：{0}",
+    ),
+    (
+        "list OpenAI Curated remote plugin catalog",
+        "列出OpenAI精选远程插件目录",
+    ),
+    ("list remote plugin catalog", "列出远程插件目录"),
+    (
+        "list installed and suggested marketplace plugins",
+        "列出已安装和建议的市场源插件",
+    ),
+    (
+        "failed to list installed and suggested plugins: {0}",
+        "列出已安装和建议的插件失败：{0}",
+    ),
+    ("read plugin details", "读取插件详情"),
+    (
+        "remote plugin read is not enabled for marketplace {0}",
+        "市场源{0}未启用远程插件读取",
+    ),
+    ("read remote plugin details", "读取远程插件详情"),
+    (
+        "remote plugin skill read is not enabled for marketplace {0}",
+        "市场源{0}未启用远程插件技能读取",
+    ),
+    (
+        "invalid remote plugin skill name: cannot be empty",
+        "远程插件技能名称无效：不能为空",
+    ),
+    ("read remote plugin skill details", "读取远程插件技能详情"),
+    ("invalid remote plugin id", "远程插件id无效"),
+    (
+        "discoverability and shareTargets are only supported when creating a plugin share; use plugin/share/updateTargets to update share settings",
+        "discoverability与shareTargets仅在创建插件分享时支持；更新分享设置请使用plugin/share/updateTargets",
+    ),
+    (
+        "discoverability LISTED is not supported for plugin/share/save; use UNLISTED or PRIVATE",
+        "plugin/share/save不支持discoverability LISTED；请使用UNLISTED或PRIVATE",
+    ),
+    ("save remote plugin share", "保存远程插件分享"),
+    ("update remote plugin share targets", "更新远程插件分享目标"),
+    ("list remote plugin shares", "列出远程插件分享"),
+    ("checkout plugin share", "检出插件分享"),
+    ("delete remote plugin share", "删除远程插件分享"),
+    ("install plugin", "安装插件"),
+    (
+        "failed to persist installed plugin config: {0}",
+        "持久化已安装插件配置失败：{0}",
+    ),
+    (
+        "failed to enable remote plugin: {0}",
+        "启用远程插件失败：{0}",
+    ),
+    ("failed to install plugin: {0}", "安装插件失败：{0}"),
+    (
+        "failed to clear plugin config: {0}",
+        "清除插件配置失败：{0}",
+    ),
+    (
+        "failed to uninstall remote plugin: {0}",
+        "卸载远程插件失败：{0}",
+    ),
+    ("failed to uninstall plugin: {0}", "卸载插件失败：{0}"),
+    ("failed to {0}: {1}", "{0}失败：{1}"),
 ];
 
 /// English source text -> Simplified Chinese.

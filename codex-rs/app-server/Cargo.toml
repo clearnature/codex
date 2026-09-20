@@ -45,6 +45,7 @@ codex-core = { workspace = true }
 codex-core-plugins = { workspace = true }
 codex-diagnostics = { workspace = true }
 codex-home = { workspace = true }
+codex-i18n = { workspace = true }
 codex-exec-server = { workspace = true }
 codex-extension-api = { workspace = true }
 codex-external-agent-migration = { workspace = true }

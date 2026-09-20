@@ -1022,3 +1022,35 @@ let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
 
 `i18n-check` `r-mu9j8258-g2161y`（3712 词条 / missing 0 / unused 0 / duplicate 0 / spacing 0 / nested 0 / placeholder 0 / asset 0）；
 `clippy` `r-mu9je9vo-m7jub6`（284.9s，首次即绿）；`just test -p codex-core-plugins` **438 passed / 0 failed**（EXIT=0）。
+
+## 三十、app-server 首批：plugins.rs 22 条全译（新 crate 接入）
+
+### 30.1 新 crate 接入 i18n 必须先加依赖（新限制，已登记）
+
+`cargo check -p codex-app-server` 首跑 **EXIT=101**：`unresolved import \`codex_i18n\``×3 —— 该 crate 的`Cargo.toml`里**没有**`codex-i18n`。处置：在 `[dependencies]`按字母序插入`codex-i18n = { workspace = true }`（放在 `codex-home` 之后）。**`BUILD.bazel`不用动**——`codex_rust_crate`宏从`Cargo.toml` 推导 deps（`core-plugins/BUILD.bazel`仅 15 行、无 deps 列表）。
+已登记`known_issues: i18n-new-crate-needs-cargo-dep`（含误判防护）。
+
+### 30.2 app-server 的字符串为什么**全译**
+
+这一层的字符串有四种形态，**四种都落在用户可见面**：
+
+| 形态                                                                                    | 例子                                                     | 渲染点                                                               |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- |
+| `invalid_request("…")`                                                                  | `:321 :1219 :1259 :1263 :1268 :1319`                     | `JSONRPCErrorError.message` → 客户端                                 |
+| `internal_error(format!("…: {err}"))`                                                   | `:154 :546 :670 :957`                                    | 同上                                                                 |
+| `invalid_request(format!("…{var}"))`                                                    | `:1160 :1213`                                            | 同上                                                                 |
+| `*_error_to_jsonrpc(err, "action")` / `marketplace_error(err, "action")` 的**动作标签** | `:666 :698 :752 :762 :954 :1039 :1173 :1234 :1289 :1333` | `plugins.rs:2347` `let message = format!("{context}: {err}")` → 同上 |
+
+⇒ 动作标签**不是**日志，它是**用户可见消息的前缀**（`read plugin details: <error>`）⇒ 也译。
+
+### 30.3 本批第三次同型返工：`String` 裸传（预检⑤）
+
+`:1160 :1213` 我写了 `&[remote_marketplace_name]`，但它是 **`String`** ⇒ `E0308 expected \`&str\`, found \`String\``×2。
+修法`&[&remote_marketplace_name]`。**这已是本会话第三次同型**（§17 `plugin_name`的`E0658`、§28.5 的 `E0658`、本节 `E0308`）
+—— 共同点都是**手写 spec 参数时没回读绑定类型**。⇒ 结论：预检⑤ 必须**逐站点读源码**，不能凭「它看起来像字符串」。
+
+### 30.4 对账与门禁
+
+- `plugins.rs`：42 → **20**（本批 22 条）；crate：705 candidates / wrapped 19 → **41**。
+- `i18n-check` `r-mu9jwr99-x14d2h`（3731 词条 / 全零 / coverage 99.8%）；
+  `clippy` `r-mu9k193c-bq8prq`（203.9s，首次即绿）；`cargo check -p codex-app-server --all-targets` EXIT=0。

@@ -455,3 +455,54 @@ error: redundant clone
 - `marketplace_policy.rs`：22 candidates → **0**；crate：215 → **193**（差额**正好 22**）。
 - `i18n-check` `r-mu9equtp-fiuxkg`（3577 词条 / missing 0 / spacing 0 / duplicate 0 / coverage 99.7%）；
   `clippy` `r-mu9ewpvs-9fp6mg`（2m37s）；`just test -p codex-core-plugins` **438 passed** `r-mu9eyegv-hqp1hj`。
+
+## 十六、第十批：plugin_bundle_archive.rs 21 条全译（0 登记）
+
+### 16.1 两个错误枚举 + 两个消费者
+
+文件里有两个枚举：`PluginBundlePackError`（`:14`，`InvalidPluginPath` / `ArchiveTooLarge` / `Io`）与
+`PluginBundleUnpackError`（`:29`，`ExtractedBundleTooLarge` / `Io{context,source}` / `InvalidBundle(String)`）。
+消费者都把错误映射进**用户面**：
+
+- `pack_plugin_bundle_tar_gz` → `remote/share.rs:482` `.map_err(|err| match err { … })`；
+- `unpack_plugin_bundle_tar_gz` → `remote_bundle.rs:660` `.map_err(|err| match err { … })`（§10 已证该族到 app-server/CLI）。
+  ⇒ 21 条全译、登记 0。
+
+### 16.2 本批的新形态：`write!` 里的 Display 文案
+
+`:312` 那条不在 `format!` 里，而是在
+
+```rust
+impl fmt::Display for ArchiveSizeLimitExceeded {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "archive would be {} bytes, exceeding maximum size of {} bytes", self.bytes, self.max_bytes)
+    }
+}
+```
+
+⇒ 用 `extra_edits` **整块改写**成 `write!(f, "{}", tr_with(current(), "archive would be {0} bytes, …", &[&self.bytes.to_string(), &self.max_bytes.to_string()]))`。
+⚠ 必须把原来的两个 `self.bytes, self.max_bytes` 一起删掉 —— 只换字面量会留下「format 参数未使用」的编译错。
+
+### 16.3 编译器抓到的两个真缺陷（都当场修）
+
+1. **`current` 被同名局部绑定遮蔽**：`fn append_plugin_tree<W: Write>(archive, plugin_root, current: &Path)` 里的形参就叫 `current`
+   ⇒ 工具插入的 `current()` 解析成了「调用一个 `&Path`」⇒ `E0618`（报了两处）。
+   修法：该文件里所有插入调用改成**限定路径** `codex_i18n::current()`，并删掉因此不再使用的 `use codex_i18n::current;`。
+   ⇒ 这是工具能力的**已知盲区**（它不知道作用域里有没有同名绑定）：已记 `known_issues i18n-apply-current-shadowed-by-local-binding`。
+2. **规格里凭猜写了变量名**：`plugin bundle output path has no parent` 那条我在 spec 里写了 `path.display()`，
+   而实际绑定是 **`output_path`** ⇒ `E0423 expected value, found built-in attribute 'path'`。
+   ⇒ 修成 `output_path.display()`。教训与第十批同源：**实参名要看源码，不能按语义猜**（同批 `:105` 也印证过：我以为那里是 `entry_type`，其实是 `path`）。
+
+### 16.4 工具的第二处局限：`{:?}` 不被计为占位符
+
+`:199` 的字面量含 `{:?}`，而 `i18n_apply.py` 的占位符正则只认 `{}` / `{ident}` ⇒ 断言「占位符 1 个 vs 表表达式 2 个」直接拦下。
+处置：该站点改用 `extra_edits` 整块改写（键手写为位置式 `… has unsupported type {1}`，值先用 `&format!("{entry_type:?}")` 预格式化）。
+⇒ 判据：**字面量里出现格式说明（`{:?}` / `{:>5}` 等）时，走 `extra_edits`，别走 `translate`。**
+
+### 16.5 门禁抓到的一处（我的）与收尾对账
+
+- `[spacing] 1`：`"缺少 .codex-plugin/plugin.json 或有效的 Agent Plugin 清单"` —— `n` 与 `或` 之间有空格 ⇒
+  改成 `缺少.codex-plugin/plugin.json或有效的Agent Plugin清单` 后归零（中文与英文标识符相接处不留空格）。
+- `plugin_bundle_archive.rs`：21 candidates → **0**；crate：193 → **172**（差额**正好 21**）。
+- `i18n-check` `r-mu9f742b-mg3177`（3596 词条 / spacing 0 / duplicate 0）；`clippy` `r-mu9fartj-yu8e2p`（46 crate / 2m44s）；
+  `just test -p codex-core-plugins` **438 passed** `r-mu9fcju8-v5jl86`；`cargo check --all-targets` EXIT=0（修后 4.79s）。

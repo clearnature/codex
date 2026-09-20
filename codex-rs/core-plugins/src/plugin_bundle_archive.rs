@@ -1,4 +1,6 @@
 use crate::manifest::load_plugin_manifest;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -13,13 +15,13 @@ use tar::Archive;
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum PluginBundlePackError {
-    #[error("invalid plugin path `{path}`: {reason}")]
+    #[error("{}", tr_with(codex_i18n::current(), "invalid plugin path `{0}`: {1}", &[&path.display().to_string(), reason.as_str()]))]
     InvalidPluginPath { path: PathBuf, reason: String },
 
-    #[error("plugin archive would be {bytes} bytes, exceeding maximum size of {max_bytes} bytes")]
+    #[error("{}", tr_with(codex_i18n::current(), "plugin archive would be {0} bytes, exceeding maximum size of {1} bytes", &[&bytes.to_string(), &max_bytes.to_string()]))]
     ArchiveTooLarge { bytes: usize, max_bytes: usize },
 
-    #[error("failed to archive plugin bundle: {source}")]
+    #[error("{}", tr_with(codex_i18n::current(), "failed to archive plugin bundle: {0}", &[&source.to_string()]))]
     Io {
         #[source]
         source: io::Error,
@@ -29,7 +31,7 @@ pub(crate) enum PluginBundlePackError {
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum PluginBundleUnpackError {
     #[error(
-        "plugin bundle extracted size would be {bytes} bytes, exceeding maximum total size of {max_bytes} bytes"
+        "{}", tr_with(codex_i18n::current(), "plugin bundle extracted size would be {0} bytes, exceeding maximum total size of {1} bytes", &[&bytes.to_string(), &max_bytes.to_string()])
     )]
     ExtractedBundleTooLarge { bytes: u64, max_bytes: u64 },
 
@@ -57,7 +59,7 @@ pub(crate) fn pack_plugin_bundle_tar_gz(
     if !plugin_path.is_dir() {
         return Err(PluginBundlePackError::InvalidPluginPath {
             path: plugin_path.to_path_buf(),
-            reason: "expected a plugin directory".to_string(),
+            reason: tr(codex_i18n::current(), "expected a plugin directory").to_string(),
         });
     }
     if !plugin_path.join(".codex-plugin/plugin.json").is_file()
@@ -65,7 +67,11 @@ pub(crate) fn pack_plugin_bundle_tar_gz(
     {
         return Err(PluginBundlePackError::InvalidPluginPath {
             path: plugin_path.to_path_buf(),
-            reason: "missing .codex-plugin/plugin.json or valid Agent Plugin manifest".to_string(),
+            reason: tr(
+                codex_i18n::current(),
+                "missing .codex-plugin/plugin.json or valid Agent Plugin manifest",
+            )
+            .to_string(),
         });
     }
 
@@ -90,9 +96,10 @@ fn append_plugin_tree<W: Write>(
         let path = entry.path();
         let file_type = entry.file_type()?;
         let relative_path = path.strip_prefix(plugin_root).map_err(|err| {
-            io::Error::other(format!(
-                "failed to compute plugin archive path for `{}`: {err}",
-                path.display()
+            io::Error::other(tr_with(
+                codex_i18n::current(),
+                "failed to compute plugin archive path for `{1}`: {0}",
+                &[&err.to_string(), &path.display().to_string()],
             ))
         })?;
         if file_type.is_dir() {
@@ -101,9 +108,10 @@ fn append_plugin_tree<W: Write>(
         } else if file_type.is_file() {
             archive.append_path_with_name(&path, relative_path)?;
         } else {
-            return Err(io::Error::other(format!(
-                "unsupported plugin archive entry type: {}",
-                path.display()
+            return Err(io::Error::other(tr_with(
+                codex_i18n::current(),
+                "unsupported plugin archive entry type: {0}",
+                &[&path.display().to_string()],
             )));
         }
     }
@@ -131,7 +139,10 @@ pub(crate) fn unpack_plugin_bundle_tar_gz(
 ) -> Result<(), PluginBundleUnpackError> {
     fs::create_dir_all(destination).map_err(|source| {
         PluginBundleUnpackError::io(
-            "failed to create plugin bundle extraction directory",
+            tr(
+                codex_i18n::current(),
+                "failed to create plugin bundle extraction directory",
+            ),
             source,
         )
     })?;
@@ -148,25 +159,46 @@ fn unpack_plugin_bundle_tar<R: Read>(
 ) -> Result<(), PluginBundleUnpackError> {
     let mut extracted_bytes = 0u64;
     let entries = archive.entries().map_err(|source| {
-        PluginBundleUnpackError::io("failed to read plugin bundle tar", source)
+        PluginBundleUnpackError::io(
+            tr(codex_i18n::current(), "failed to read plugin bundle tar"),
+            source,
+        )
     })?;
     for entry in entries {
         let mut entry = entry.map_err(|source| {
-            PluginBundleUnpackError::io("failed to read plugin bundle tar entry", source)
+            PluginBundleUnpackError::io(
+                tr(
+                    codex_i18n::current(),
+                    "failed to read plugin bundle tar entry",
+                ),
+                source,
+            )
         })?;
         let entry_type = entry.header().entry_type();
         let entry_size = entry.size();
         let entry_path = entry
             .path()
             .map_err(|source| {
-                PluginBundleUnpackError::io("failed to read plugin bundle tar entry path", source)
+                PluginBundleUnpackError::io(
+                    tr(
+                        codex_i18n::current(),
+                        "failed to read plugin bundle tar entry path",
+                    ),
+                    source,
+                )
             })?
             .into_owned();
         let output_path = checked_tar_output_path(destination, &entry_path)?;
 
         if entry_type.is_dir() {
             fs::create_dir_all(&output_path).map_err(|source| {
-                PluginBundleUnpackError::io("failed to create plugin bundle directory", source)
+                PluginBundleUnpackError::io(
+                    tr(
+                        codex_i18n::current(),
+                        "failed to create plugin bundle directory",
+                    ),
+                    source,
+                )
             })?;
             continue;
         }
@@ -174,31 +206,48 @@ fn unpack_plugin_bundle_tar<R: Read>(
         if entry_type.is_file() {
             enforce_total_extracted_size(entry_size, &mut extracted_bytes, max_total_bytes)?;
             let Some(parent) = output_path.parent() else {
-                return Err(PluginBundleUnpackError::InvalidBundle(format!(
-                    "plugin bundle output path has no parent: {}",
-                    output_path.display()
+                return Err(PluginBundleUnpackError::InvalidBundle(tr_with(
+                    codex_i18n::current(),
+                    "plugin bundle output path has no parent: {0}",
+                    &[&output_path.display().to_string()],
                 )));
             };
             fs::create_dir_all(parent).map_err(|source| {
-                PluginBundleUnpackError::io("failed to create plugin bundle directory", source)
+                PluginBundleUnpackError::io(
+                    tr(
+                        codex_i18n::current(),
+                        "failed to create plugin bundle directory",
+                    ),
+                    source,
+                )
             })?;
             entry.unpack(&output_path).map_err(|source| {
-                PluginBundleUnpackError::io("failed to unpack plugin bundle entry", source)
+                PluginBundleUnpackError::io(
+                    tr(
+                        codex_i18n::current(),
+                        "failed to unpack plugin bundle entry",
+                    ),
+                    source,
+                )
             })?;
             continue;
         }
 
         if entry_type.is_hard_link() || entry_type.is_symlink() {
-            return Err(PluginBundleUnpackError::InvalidBundle(format!(
-                "plugin bundle tar entry `{}` is a link",
-                entry_path.display()
+            return Err(PluginBundleUnpackError::InvalidBundle(tr_with(
+                codex_i18n::current(),
+                "plugin bundle tar entry `{0}` is a link",
+                &[&entry_path.display().to_string()],
             )));
         }
 
-        return Err(PluginBundleUnpackError::InvalidBundle(format!(
-            "plugin bundle tar entry `{}` has unsupported type {:?}",
-            entry_path.display(),
-            entry_type
+        return Err(PluginBundleUnpackError::InvalidBundle(tr_with(
+            codex_i18n::current(),
+            "plugin bundle tar entry `{0}` has unsupported type {1}",
+            &[
+                &entry_path.display().to_string(),
+                &format!("{entry_type:?}"),
+            ],
         )));
     }
 
@@ -221,16 +270,21 @@ fn checked_tar_output_path(
             std::path::Component::ParentDir
             | std::path::Component::RootDir
             | std::path::Component::Prefix(_) => {
-                return Err(PluginBundleUnpackError::InvalidBundle(format!(
-                    "plugin bundle tar entry `{}` escapes extraction root",
-                    entry_name.display()
+                return Err(PluginBundleUnpackError::InvalidBundle(tr_with(
+                    codex_i18n::current(),
+                    "plugin bundle tar entry `{0}` escapes extraction root",
+                    &[&entry_name.display().to_string()],
                 )));
             }
         }
     }
     if !has_component {
         return Err(PluginBundleUnpackError::InvalidBundle(
-            "plugin bundle tar entry has an empty path".to_string(),
+            tr(
+                codex_i18n::current(),
+                "plugin bundle tar entry has an empty path",
+            )
+            .to_string(),
         ));
     }
     Ok(output_path)
@@ -309,8 +363,12 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "archive would be {} bytes, exceeding maximum size of {} bytes",
-            self.bytes, self.max_bytes
+            "{}",
+            tr_with(
+                codex_i18n::current(),
+                "archive would be {0} bytes, exceeding maximum size of {1} bytes",
+                &[&self.bytes.to_string(), &self.max_bytes.to_string()]
+            )
         )
     }
 }

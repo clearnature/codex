@@ -9191,6 +9191,73 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "marketplace manifest name `{0}` does not match managed marketplace `{1}`",
         "市场清单名称 `{0}` 与受管市场源 `{1}` 不匹配",
     ),
+    ("expected a plugin directory", "需要一个插件目录"),
+    (
+        "missing .codex-plugin/plugin.json or valid Agent Plugin manifest",
+        "缺少.codex-plugin/plugin.json或有效的Agent Plugin清单",
+    ),
+    (
+        "failed to compute plugin archive path for `{1}`: {0}",
+        "计算插件归档路径失败（`{1}`）：{0}",
+    ),
+    (
+        "unsupported plugin archive entry type: {0}",
+        "不支持的插件归档条目类型：{0}",
+    ),
+    (
+        "failed to create plugin bundle extraction directory",
+        "创建插件包解压目录失败",
+    ),
+    ("failed to read plugin bundle tar", "读取插件包tar失败"),
+    (
+        "failed to read plugin bundle tar entry",
+        "读取插件包tar条目失败",
+    ),
+    (
+        "failed to read plugin bundle tar entry path",
+        "读取插件包tar条目路径失败",
+    ),
+    (
+        "failed to create plugin bundle directory",
+        "创建插件包目录失败",
+    ),
+    (
+        "plugin bundle output path has no parent: {0}",
+        "插件包输出路径没有父目录：{0}",
+    ),
+    ("failed to unpack plugin bundle entry", "解压插件包条目失败"),
+    (
+        "plugin bundle tar entry `{0}` is a link",
+        "插件包tar条目 `{0}` 是链接",
+    ),
+    (
+        "plugin bundle tar entry `{0}` escapes extraction root",
+        "插件包tar条目 `{0}` 逃逸出解压根目录",
+    ),
+    (
+        "plugin bundle tar entry has an empty path",
+        "插件包tar条目路径为空",
+    ),
+    (
+        "plugin archive would be {0} bytes, exceeding maximum size of {1} bytes",
+        "插件归档将为{0}字节，超过最大大小{1}字节",
+    ),
+    (
+        "failed to archive plugin bundle: {0}",
+        "归档插件包失败：{0}",
+    ),
+    (
+        "plugin bundle extracted size would be {0} bytes, exceeding maximum total size of {1} bytes",
+        "插件包解压后为{0}字节，超过最大总大小{1}字节",
+    ),
+    (
+        "archive would be {0} bytes, exceeding maximum size of {1} bytes",
+        "归档将为{0}字节，超过最大大小{1}字节",
+    ),
+    (
+        "plugin bundle tar entry `{0}` has unsupported type {1}",
+        "插件包tar条目 `{0}` 类型不受支持：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

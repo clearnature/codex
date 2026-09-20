@@ -6,6 +6,9 @@ use super::super::RemotePluginServiceConfig;
 use super::local_paths;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginInstallPolicy;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_plugin::PluginId;
 use codex_plugin::validate_plugin_segment;
@@ -50,8 +53,10 @@ pub async fn checkout_remote_plugin_share(
     let plugin_name = detail.summary.name.clone();
     let remote_version = detail.release_version.clone();
     validate_plugin_segment(&plugin_name, "plugin name").map_err(|reason| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "remote plugin `{remote_plugin_id}` returned invalid plugin name: {reason}"
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "remote plugin `{0}` returned invalid plugin name: {1}",
+            &[remote_plugin_id, reason.as_str()],
         ))
     })?;
     if !is_checkout_supported_share_marketplace(&detail.marketplace_name)
@@ -64,12 +69,18 @@ pub async fn checkout_remote_plugin_share(
 
     let home = crate::marketplace::home_dir().ok_or_else(|| {
         RemotePluginCatalogError::UnexpectedResponse(
-            "could not determine home directory for personal plugin marketplace".to_string(),
+            tr(
+                current(),
+                "could not determine home directory for personal plugin marketplace",
+            )
+            .to_string(),
         )
     })?;
     let home = AbsolutePathBuf::try_from(home).map_err(|err| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "failed to resolve home directory for personal plugin marketplace: {err}"
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "failed to resolve home directory for personal plugin marketplace: {0}",
+            &[&err.to_string()],
         ))
     })?;
 
@@ -88,8 +99,10 @@ pub async fn checkout_remote_plugin_share(
             /*app_manifest*/ None,
         )
         .map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "failed to prepare remote plugin bundle checkout: {err}"
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "failed to prepare remote plugin bundle checkout: {0}",
+                &[&err.to_string()],
             ))
         })?;
         crate::remote_bundle::download_and_extract_remote_plugin_bundle_to_path(
@@ -99,8 +112,10 @@ pub async fn checkout_remote_plugin_share(
         )
         .await
         .map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "failed to check out remote plugin bundle: {err}"
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "failed to check out remote plugin bundle: {0}",
+                &[&err.to_string()],
             ))
         })?;
         created_checkout_path = true;
@@ -133,8 +148,10 @@ pub async fn checkout_remote_plugin_share(
         remote_plugin_id,
         local_plugin_path.clone(),
     ) {
-        let err = RemotePluginCatalogError::UnexpectedResponse(format!(
-            "failed to record plugin share local path mapping: {err}"
+        let err = RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "failed to record plugin share local path mapping: {0}",
+            &[&err.to_string()],
         ));
         return Err(clean_up_created_checkout_path(
             created_checkout_path,
@@ -145,8 +162,10 @@ pub async fn checkout_remote_plugin_share(
 
     let plugin_id = PluginId::new(plugin_name.clone(), marketplace.name.clone())
         .map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "failed to build checked out plugin id: {err}"
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "failed to build checked out plugin id: {0}",
+                &[&err.to_string()],
             ))
         })?
         .as_key();
@@ -177,8 +196,10 @@ fn load_share_local_paths_for_checkout(
     match local_paths::load_plugin_share_local_paths(codex_home) {
         Ok(paths) => Ok(paths),
         Err(err) if err.kind() == io::ErrorKind::InvalidData => Ok(BTreeMap::new()),
-        Err(err) => Err(RemotePluginCatalogError::UnexpectedResponse(format!(
-            "failed to load plugin share local path mapping: {err}"
+        Err(err) => Err(RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "failed to load plugin share local path mapping: {0}",
+            &[&err.to_string()],
         ))),
     }
 }
@@ -205,8 +226,10 @@ fn editable_plugin_path_for_checkout(
     if local_plugin_path.as_path().exists() {
         return Err(RemotePluginCatalogError::InvalidPluginPath {
             path: local_plugin_path.to_path_buf(),
-            reason: format!(
-                "cannot check out remote plugin `{remote_plugin_id}` because the local plugin path already exists"
+            reason: tr_with(
+                current(),
+                "cannot check out remote plugin `{0}` because the local plugin path already exists",
+                &[remote_plugin_id],
             ),
         });
     }
@@ -225,9 +248,14 @@ fn clean_up_created_checkout_path(
 
     match remove_created_checkout_path(local_plugin_path) {
         Ok(()) => original_err,
-        Err(cleanup_err) => RemotePluginCatalogError::UnexpectedResponse(format!(
-            "{original_err}; additionally failed to clean up checked out plugin path `{}`: {cleanup_err}",
-            local_plugin_path.display()
+        Err(cleanup_err) => RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "{0}; additionally failed to clean up checked out plugin path `{2}`: {1}",
+            &[
+                &original_err.to_string(),
+                &cleanup_err.to_string(),
+                &local_plugin_path.display().to_string(),
+            ],
         )),
     }
 }
@@ -266,7 +294,10 @@ fn update_personal_marketplace(
     let Some(marketplace_object) = marketplace.as_object_mut() else {
         return Err(invalid_marketplace_file(
             marketplace_path.as_path(),
-            "personal marketplace file must contain a JSON object",
+            tr(
+                current(),
+                "personal marketplace file must contain a JSON object",
+            ),
         ));
     };
     let marketplace_name = marketplace_object
@@ -276,14 +307,18 @@ fn update_personal_marketplace(
         .ok_or_else(|| {
             invalid_marketplace_file(
                 marketplace_path.as_path(),
-                "marketplace name must be a string",
+                tr(current(), "marketplace name must be a string"),
             )
         })?
         .to_string();
     validate_plugin_segment(&marketplace_name, "marketplace name").map_err(|reason| {
         invalid_marketplace_file(
             marketplace_path.as_path(),
-            &format!("marketplace name is invalid: {reason}"),
+            &tr_with(
+                current(),
+                "marketplace name is invalid: {0}",
+                &[reason.as_str()],
+            ),
         )
     })?;
 
@@ -294,7 +329,7 @@ fn update_personal_marketplace(
         .ok_or_else(|| {
             invalid_marketplace_file(
                 marketplace_path.as_path(),
-                "marketplace plugins must be an array",
+                tr(current(), "marketplace plugins must be an array"),
             )
         })?;
 
@@ -317,8 +352,10 @@ fn update_personal_marketplace(
         if existing_path != Some(relative_plugin_path.as_str()) {
             return Err(invalid_marketplace_file(
                 marketplace_path.as_path(),
-                &format!(
-                    "marketplace already contains plugin `{plugin_name}` with a different source path"
+                &tr_with(
+                    current(),
+                    "marketplace already contains plugin `{0}` with a different source path",
+                    &[plugin_name],
                 ),
             ));
         }
@@ -330,8 +367,10 @@ fn update_personal_marketplace(
     let contents = serde_json::to_string_pretty(&marketplace)
         .map_err(|err| RemotePluginCatalogError::UnexpectedResponse(err.to_string()))?;
     write_json_atomically(marketplace_path.as_path(), &format!("{contents}\n")).map_err(|err| {
-        RemotePluginCatalogError::UnexpectedResponse(format!(
-            "failed to update personal plugin marketplace: {err}"
+        RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "failed to update personal plugin marketplace: {0}",
+            &[&err.to_string()],
         ))
     })?;
 
@@ -348,7 +387,11 @@ fn read_or_create_personal_marketplace(
         Ok(contents) => serde_json::from_str(&contents).map_err(|err| {
             invalid_marketplace_file(
                 marketplace_path,
-                &format!("failed to parse personal marketplace file: {err}"),
+                &tr_with(
+                    current(),
+                    "failed to parse personal marketplace file: {0}",
+                    &[&err.to_string()],
+                ),
             )
         }),
         Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(json!({
@@ -358,8 +401,10 @@ fn read_or_create_personal_marketplace(
             },
             "plugins": [],
         })),
-        Err(err) => Err(RemotePluginCatalogError::UnexpectedResponse(format!(
-            "failed to read personal plugin marketplace: {err}"
+        Err(err) => Err(RemotePluginCatalogError::UnexpectedResponse(tr_with(
+            current(),
+            "failed to read personal plugin marketplace: {0}",
+            &[&err.to_string()],
         ))),
     }
 }
@@ -415,7 +460,7 @@ fn personal_marketplace_relative_plugin_path(
         .strip_prefix(home.as_path())
         .map_err(|_| RemotePluginCatalogError::InvalidPluginPath {
             path: local_plugin_path.to_path_buf(),
-            reason: "local plugin path must be inside the home directory to be listed in the personal marketplace".to_string(),
+            reason: tr(current(), "local plugin path must be inside the home directory to be listed in the personal marketplace").to_string(),
         })?;
     let mut segments = Vec::new();
     for component in relative.components() {
@@ -424,7 +469,8 @@ fn personal_marketplace_relative_plugin_path(
                 let segment = segment.to_str().ok_or_else(|| {
                     RemotePluginCatalogError::InvalidPluginPath {
                         path: local_plugin_path.to_path_buf(),
-                        reason: "local plugin path contains non-UTF-8 segments".to_string(),
+                        reason: tr(current(), "local plugin path contains non-UTF-8 segments")
+                            .to_string(),
                     }
                 })?;
                 segments.push(segment.to_string());
@@ -433,9 +479,11 @@ fn personal_marketplace_relative_plugin_path(
             Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
                 return Err(RemotePluginCatalogError::InvalidPluginPath {
                     path: local_plugin_path.to_path_buf(),
-                    reason:
-                        "local plugin path cannot be represented as a personal marketplace path"
-                            .to_string(),
+                    reason: tr(
+                        current(),
+                        "local plugin path cannot be represented as a personal marketplace path",
+                    )
+                    .to_string(),
                 });
             }
         }
@@ -443,7 +491,11 @@ fn personal_marketplace_relative_plugin_path(
     if segments.is_empty() {
         return Err(RemotePluginCatalogError::InvalidPluginPath {
             path: local_plugin_path.to_path_buf(),
-            reason: "local plugin path must not be the home directory".to_string(),
+            reason: tr(
+                current(),
+                "local plugin path must not be the home directory",
+            )
+            .to_string(),
         });
     }
     Ok(format!("./{}", segments.join("/")))
@@ -460,7 +512,11 @@ fn write_json_atomically(write_path: &Path, contents: &str) -> io::Result<()> {
     let parent = write_path.parent().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("path {} has no parent directory", write_path.display()),
+            tr_with(
+                current(),
+                "path {0} has no parent directory",
+                &[&write_path.display().to_string()],
+            ),
         )
     })?;
     std::fs::create_dir_all(parent)?;

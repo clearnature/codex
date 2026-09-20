@@ -9042,6 +9042,92 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "插件 `{0}` 在市场源 `{1}` 中不可安装",
     ),
     ("plugins feature is disabled", "插件功能已禁用"),
+    (
+        "remote plugin `{0}` returned invalid plugin name: {1}",
+        "远程插件 `{0}` 返回了无效的插件名：{1}",
+    ),
+    (
+        "could not determine home directory for personal plugin marketplace",
+        "无法确定个人插件市场的主目录",
+    ),
+    (
+        "failed to resolve home directory for personal plugin marketplace: {0}",
+        "解析个人插件市场的主目录失败：{0}",
+    ),
+    (
+        "failed to prepare remote plugin bundle checkout: {0}",
+        "准备远程插件包检出失败：{0}",
+    ),
+    (
+        "failed to check out remote plugin bundle: {0}",
+        "检出远程插件包失败：{0}",
+    ),
+    (
+        "failed to record plugin share local path mapping: {0}",
+        "记录插件分享本地路径映射失败：{0}",
+    ),
+    (
+        "failed to build checked out plugin id: {0}",
+        "构建已检出插件id失败：{0}",
+    ),
+    (
+        "failed to load plugin share local path mapping: {0}",
+        "加载插件分享本地路径映射失败：{0}",
+    ),
+    (
+        "cannot check out remote plugin `{0}` because the local plugin path already exists",
+        "无法检出远程插件 `{0}`，因为本地插件路径已存在",
+    ),
+    (
+        "{0}; additionally failed to clean up checked out plugin path `{2}`: {1}",
+        "{0}；另外清理已检出的插件路径 `{2}` 失败：{1}",
+    ),
+    (
+        "personal marketplace file must contain a JSON object",
+        "个人市场源文件必须是JSON对象",
+    ),
+    (
+        "marketplace name must be a string",
+        "市场源名称必须是字符串",
+    ),
+    ("marketplace name is invalid: {0}", "市场源名称无效：{0}"),
+    (
+        "marketplace plugins must be an array",
+        "市场源plugins必须是数组",
+    ),
+    (
+        "marketplace already contains plugin `{0}` with a different source path",
+        "市场源已包含插件 `{0}`，但源路径不同",
+    ),
+    (
+        "failed to update personal plugin marketplace: {0}",
+        "更新个人插件市场失败：{0}",
+    ),
+    (
+        "failed to parse personal marketplace file: {0}",
+        "解析个人市场源文件失败：{0}",
+    ),
+    (
+        "failed to read personal plugin marketplace: {0}",
+        "读取个人插件市场失败：{0}",
+    ),
+    (
+        "local plugin path must be inside the home directory to be listed in the personal marketplace",
+        "本地插件路径必须位于主目录内，才能列出到个人市场源",
+    ),
+    (
+        "local plugin path contains non-UTF-8 segments",
+        "本地插件路径包含非UTF-8片段",
+    ),
+    (
+        "local plugin path cannot be represented as a personal marketplace path",
+        "本地插件路径无法表示为个人市场源路径",
+    ),
+    (
+        "local plugin path must not be the home directory",
+        "本地插件路径不能是主目录",
+    ),
+    ("path {0} has no parent directory", "路径{0}没有父目录"),
 ];
 
 /// English source text -> Simplified Chinese.

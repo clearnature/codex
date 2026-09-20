@@ -387,3 +387,30 @@ app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
 `i18n-check` 首跑红 `r-mu9e7kbc-t2057j`（duplicate 1）→ 修工具 + 删重复后 `r-mu9e9odt-nda7s2` 全零（3533 词条 / spacing 0 / **duplicate 0**）；
 `clippy` `r-mu9ecvg6-rsc7ff`（46 crate / 2m22s）；`just test -p codex-core-plugins` **438 passed** `r-mu9edprf-paul0z`。
 另注：同值还出现在 `cli/src/plugin_cmd.rs:1108`（早已 `tr(...)` 包住）与 **测试** `cli/tests/plugin_cli.rs:533`（断言英文原文，默认 En 下无影响）。
+
+## 十四、第八批：remote/share/checkout.rs 23 条全译（0 登记）
+
+### 14.1 接收方
+
+本文件**所有**相关函数都返回 `Result<_, RemotePluginCatalogError>`（`:42` `:174` `:191` `:246` `:262` `:346` `:412`），
+而该错误经 `RemotePluginOperationErrorKind::Catalog` 在 app-server 用户面被消费（§12.1 已证）⇒ **23 条全译**。
+
+三种「被嵌入」的形态也一并算用户面：
+
+- `invalid_marketplace_file(path, message)`（`:452`）的第 2 个实参被嵌进用户可见的 `invalid marketplace file …: {message}`；
+- `write_json_atomically`（`:459`）返回的 `io::Error` 消息被调用方包进 `failed to update personal plugin marketplace: {err}`；
+- 本文件**没有** `tracing::warn!` ⇒ 登记 0 条。
+
+### 14.2 类型检查抓到一处「同名不同型」
+
+`cargo check` 报 `E0658 str_as_str`（`:358`）：`:321` 那条我按 `:54`/`:209` 的经验给 `plugin_name` 加了 `.as_str()`，
+但在**那个**函数里 `plugin_name` 是 `&str` 形参（`entry.get("name")… == Some(plugin_name)`）⇒ 对 `&str` 调 `.as_str()` 只存在于 nightly。
+改成裸 `plugin_name` 后 `cargo check -p codex-core-plugins --all-targets` **EXIT=0**（4.60s）。
+⇒ 判据：**同一个标识符在不同函数里可能是不同类型**；读**所在函数的签名**，不要按名字套经验。
+（本批另一处对照：`:54` 的 `reason` 来自 `validate_plugin_segment(...) -> Result<(), String>` ⇒ `String` ⇒ `.as_str()` 正确。）
+
+### 14.3 收尾对账与门禁
+
+- `checkout.rs`：23 candidates → **0**（其余 1 条是早先批次已登记的站点）；crate：238 → **215**（差额**正好 23**）。
+- `i18n-check` `r-mu9einb6-akc5it`（3556 词条 / missing 0 / spacing 0 / duplicate 0 / coverage 99.7%）；
+  `clippy` `r-mu9ekxc8-sjgztl`（46 crate / 1m40s）；`just test -p codex-core-plugins` **438 passed** `r-mu9eljdw-1zh7gp`。

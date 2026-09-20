@@ -1350,3 +1350,4 @@ failed to enumerate remote plugin cache directory {}: {err}	codex-rs/core-plugin
 remote plugin cache entry under {} is not valid UTF-8: {:?}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:444	§12.3 日志：同上，唯一消费者是 :332 的 warn!
 failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:450	§12.3 日志：同上，唯一消费者是 :332 的 warn!
 failed to remove stale remote plugin cache entry {}: {err}	codex-rs/core-plugins/src/remote/remote_installed_plugin_sync.rs:457	§12.3 日志：同上，唯一消费者是 :332 的 warn!
+ref: refs/heads/main\n	codex-rs/core-plugins/src/git_policy.rs:110	§12.6 文件载荷：本行是写入 <repo>/HEAD 的内容（git 内部引用格式），不是任何 UI 文本

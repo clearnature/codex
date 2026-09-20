@@ -5,6 +5,8 @@ use codex_config::ConfigLayerStack;
 use codex_config::RemoveMarketplaceConfigOutcome;
 use codex_config::format_config_layer_source;
 use codex_config::remove_user_marketplace_config;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_plugin::validate_plugin_segment;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::fs;
@@ -42,7 +44,11 @@ pub async fn remove_marketplace(
     })
     .await
     .map_err(|err| {
-        MarketplaceRemoveError::Internal(format!("failed to remove marketplace: {err}"))
+        MarketplaceRemoveError::Internal(tr_with(
+            current(),
+            "failed to remove marketplace: {0}",
+            &[&err.to_string()],
+        ))
     })?
 }
 
@@ -73,21 +79,27 @@ fn remove_marketplace_sync(
             })
     }) {
         let source = format_config_layer_source(&layer.name, CONFIG_TOML_FILE);
-        return Err(MarketplaceRemoveError::InvalidRequest(format!(
-            "marketplace `{marketplace_name}` is configured in {source}; remove it from that configuration source instead"
+        return Err(MarketplaceRemoveError::InvalidRequest(tr_with(
+            current(),
+            "marketplace `{0}` is configured in {1}; remove it from that configuration source instead",
+            &[marketplace_name.as_str(), source.as_str()],
         )));
     }
 
     let destination = marketplace_install_root(codex_home).join(&marketplace_name);
     let config_outcome =
         remove_user_marketplace_config(codex_home, &marketplace_name).map_err(|err| {
-            MarketplaceRemoveError::Internal(format!(
-                "failed to remove marketplace '{marketplace_name}' from user config.toml: {err}"
+            MarketplaceRemoveError::Internal(tr_with(
+                current(),
+                "failed to remove marketplace '{0}' from user config.toml: {1}",
+                &[marketplace_name.as_str(), &err.to_string()],
             ))
         })?;
     if let RemoveMarketplaceConfigOutcome::NameCaseMismatch { configured_name } = &config_outcome {
-        return Err(MarketplaceRemoveError::InvalidRequest(format!(
-            "marketplace `{marketplace_name}` does not match configured marketplace `{configured_name}` exactly"
+        return Err(MarketplaceRemoveError::InvalidRequest(tr_with(
+            current(),
+            "marketplace `{0}` does not match configured marketplace `{1}` exactly",
+            &[marketplace_name.as_str(), configured_name.as_str()],
         )));
     }
 
@@ -95,8 +107,10 @@ fn remove_marketplace_sync(
     let removed_installed_root = remove_marketplace_root(&destination)?;
 
     if removed_installed_root.is_none() && !removed_config {
-        return Err(MarketplaceRemoveError::InvalidRequest(format!(
-            "marketplace `{marketplace_name}` is not configured or installed"
+        return Err(MarketplaceRemoveError::InvalidRequest(tr_with(
+            current(),
+            "marketplace `{0}` is not configured or installed",
+            &[marketplace_name.as_str()],
         )));
     }
 
@@ -112,15 +126,17 @@ fn remove_marketplace_root(root: &Path) -> Result<Option<AbsolutePathBuf>, Marke
     }
 
     let removed_root = AbsolutePathBuf::try_from(root.to_path_buf()).map_err(|err| {
-        MarketplaceRemoveError::Internal(format!(
-            "failed to resolve installed marketplace root {}: {err}",
-            root.display()
+        MarketplaceRemoveError::Internal(tr_with(
+            current(),
+            "failed to resolve installed marketplace root {1}: {0}",
+            &[&err.to_string(), &root.display().to_string()],
         ))
     })?;
     let metadata = fs::symlink_metadata(root).map_err(|err| {
-        MarketplaceRemoveError::Internal(format!(
-            "failed to inspect installed marketplace root {}: {err}",
-            root.display()
+        MarketplaceRemoveError::Internal(tr_with(
+            current(),
+            "failed to inspect installed marketplace root {1}: {0}",
+            &[&err.to_string(), &root.display().to_string()],
         ))
     })?;
     let remove_result = if metadata.is_dir() {
@@ -129,9 +145,10 @@ fn remove_marketplace_root(root: &Path) -> Result<Option<AbsolutePathBuf>, Marke
         fs::remove_file(root)
     };
     remove_result.map_err(|err| {
-        MarketplaceRemoveError::Internal(format!(
-            "failed to remove installed marketplace root {}: {err}",
-            root.display()
+        MarketplaceRemoveError::Internal(tr_with(
+            current(),
+            "failed to remove installed marketplace root {1}: {0}",
+            &[&err.to_string(), &root.display().to_string()],
         ))
     })?;
     Ok(Some(removed_root))

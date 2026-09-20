@@ -795,3 +795,44 @@ error: redundant clone
 - 7 条登记行经 `i18n_dossier_lines.py --fix` 重链后逐条命中源码（`:258 :281 :327 :438 :444 :450 :457`）。
 - `i18n-check` `r-mu9hpr7x-xbusvr`（3676 词条 / spacing 0 / duplicate 0 / unused 0 / missing 0 / coverage 99.8%）；
   `clippy` `r-mu9htahh-fs15gi`（162.6s，首次即绿）；`just test -p codex-core-plugins` **438 passed 0 skipped**（`EXIT=0`）。
+
+## 二十五、第十九批：git_policy.rs 8 条（7 译 / 1 登记）+ marketplace_remove.rs 8 条全译
+
+### 25.1 「同一函数的错误字符串有两条链」怎么判（预检④ 的实际遭遇）
+
+`git_policy.rs` 只有一个函数 `configure_trusted_git_repository(&mut Command, &Path) -> Result<(), String>`（`:56`），
+它的 8 条候选**同一个出口**，但这个出口有**三个消费者**，终点各不相同：
+
+| 消费者                                | 链                                                                                                           | 终点                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `startup_sync.rs:612`                 | `git_ls_remote_head_sha` → `sync_openai_plugins_repo_via_git`（`:185`）→ `:106` → `sync_openai_plugins_repo` | `manager.rs:3265` 线程里 `warn!("failed to sync curated plugins repo: {err}")` ⇒ **日志**（§8.2 已登记的先例） |
+| `loader.rs:1907`                      | `run_git_output -> Result<String, String>` → `run_git` → `clone_git_plugin_source`（`:1830`）                | 装插件路径（同类已按 §12.3 处理）                                                                              |
+| `marketplace_upgrade/git.rs:28` `:75` | `.then(                                                                                                      |                                                                                                                | configure_trusted_git_repository(...)).transpose()?`→`git_remote_revision`/`clone_git_source`→`marketplace_upgrade.rs:254` `:289` `?`→`upgrade_configured_git_marketplace`的`Err(err)` | `marketplace_upgrade.rs:150` **原样** `errors.push(ConfiguredMarketplaceUpgradeError { message: err })` ⇒ **`outcome.errors`，用户可见** |
+
+**口径**：一个错误字符串只要**存在一条可达用户可见的链**，就判**译**（用户确实会看到它）。
+这与「按最窄面登记」相反，理由是本模式的接收者判据是「**UI 是否会渲染它**」——
+存在渲染路径即为是；把所有可达面都列举出来（上表）是为了让裁决可复核，而不是靠印象挑一条。
+⚠ 注意 `git.rs` **已**是已译文件（第三批 25 条），即同一批 git 失败在升级路径上本来就是中文——
+若此处登记，会出现「同一次失败在两条链上一条中文一条英文」的自相矛盾。
+
+### 25.2 唯一登记的一条：写入 `HEAD` 文件的载荷
+
+`:81` `std::fs::write(repository.path().join("HEAD"), "ref: refs/heads/main\n")`
+—— 它是**写进 git 内部引用文件的内容**（git 的格式），不是任何 UI 文本，翻译它会**弄坏仓库**。
+判据落在「文件载荷 / 协议常量」这一类（§12.6），与它长得像不像句子无关。
+
+### 25.3 marketplace_remove.rs：两个消费者都是用户可见面
+
+`remove_marketplace`（`:36`）的 `Result<_, MarketplaceRemoveError>` 在两处被渲染：
+`app-server/src/request_processors/marketplace_processor.rs:56`（JSON-RPC 错误 → 客户端）与
+`cli/src/marketplace_cmd.rs:434`（CLI 输出）⇒ 8 条**全译**。
+取值：`marketplace_name` 是 `let marketplace_name = request.marketplace_name;`（`:54`，`String`）⇒ `.as_str()`；
+`source` 是 `format_config_layer_source(...)`（`String`）⇒ `.as_str()`；`configured_name` 是 `&String` ⇒ `.as_str()`；
+io 错误 ⇒ `&err.to_string()`；`root: &Path` ⇒ `&root.display().to_string()`。
+
+### 25.4 对账与门禁
+
+- `git_policy.rs` 8 candidates → 0（余 1 条即 `:81` 登记者）；`marketplace_remove.rs` 8 → 0；
+  crate：71 → **55**（差额**正好 16**）。
+- `i18n-check` `r-mu9hzlvs-i9xfoe`（3691 词条 / spacing 0 / duplicate 0 / unused 0 / nested 0 / coverage 99.8%）；
+  `clippy` `r-mu9i39np-d4ujid`（168.4s，首次即绿）。

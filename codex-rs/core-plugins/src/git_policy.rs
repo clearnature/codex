@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::path::Path;
 use std::process::Command;
@@ -59,27 +62,58 @@ pub(crate) fn configure_trusted_git_repository(
 ) -> Result<TempDir, String> {
     let canonical_home = AbsolutePathBuf::from_absolute_path(codex_home)
         .and_then(|path| path.canonicalize())
-        .map_err(|err| format!("failed to resolve trusted Codex home: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to resolve trusted Codex home: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     let staging_root = canonical_home.join(".tmp");
-    std::fs::create_dir_all(staging_root.as_path())
-        .map_err(|err| format!("failed to create trusted Git repository root: {err}"))?;
-    let staging_root = staging_root
-        .canonicalize()
-        .map_err(|err| format!("failed to resolve trusted Git repository root: {err}"))?;
+    std::fs::create_dir_all(staging_root.as_path()).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to create trusted Git repository root: {0}",
+            &[&err.to_string()],
+        )
+    })?;
+    let staging_root = staging_root.canonicalize().map_err(|err| {
+        tr_with(
+            current(),
+            "failed to resolve trusted Git repository root: {0}",
+            &[&err.to_string()],
+        )
+    })?;
     if !staging_root.as_path().starts_with(canonical_home.as_path()) {
-        return Err("trusted Git repository root escapes Codex home".to_string());
+        return Err(tr(current(), "trusted Git repository root escapes Codex home").to_string());
     }
 
     let repository = tempfile::Builder::new()
         .prefix("git-")
         .tempdir_in(staging_root.as_path())
-        .map_err(|err| format!("failed to create trusted Git repository: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "failed to create trusted Git repository: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     for directory in ["objects", "refs"] {
-        std::fs::create_dir(repository.path().join(directory))
-            .map_err(|err| format!("failed to initialize trusted Git repository: {err}"))?;
+        std::fs::create_dir(repository.path().join(directory)).map_err(|err| {
+            tr_with(
+                current(),
+                "failed to initialize trusted Git repository: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     }
-    std::fs::write(repository.path().join("HEAD"), "ref: refs/heads/main\n")
-        .map_err(|err| format!("failed to initialize trusted Git repository HEAD: {err}"))?;
+    std::fs::write(repository.path().join("HEAD"), "ref: refs/heads/main\n").map_err(|err| {
+        tr_with(
+            current(),
+            "failed to initialize trusted Git repository HEAD: {0}",
+            &[&err.to_string()],
+        )
+    })?;
     command.env("GIT_DIR", repository.path());
     Ok(repository)
 }

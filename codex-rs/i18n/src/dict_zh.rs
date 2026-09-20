@@ -9557,6 +9557,63 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "remote plugin state changed during reconciliation; retry reconciliation",
         "协调过程中远程插件状态发生变化；请重试协调",
     ),
+    (
+        "failed to resolve trusted Codex home: {0}",
+        "解析受信任的Codex主目录失败：{0}",
+    ),
+    (
+        "failed to create trusted Git repository root: {0}",
+        "创建受信任的Git仓库根目录失败：{0}",
+    ),
+    (
+        "failed to resolve trusted Git repository root: {0}",
+        "解析受信任的Git仓库根目录失败：{0}",
+    ),
+    (
+        "trusted Git repository root escapes Codex home",
+        "受信任的Git仓库根目录超出了Codex主目录范围",
+    ),
+    (
+        "failed to create trusted Git repository: {0}",
+        "创建受信任的Git仓库失败：{0}",
+    ),
+    (
+        "failed to initialize trusted Git repository: {0}",
+        "初始化受信任的Git仓库失败：{0}",
+    ),
+    (
+        "failed to initialize trusted Git repository HEAD: {0}",
+        "初始化受信任的Git仓库HEAD失败：{0}",
+    ),
+    ("failed to remove marketplace: {0}", "移除市场源失败：{0}"),
+    (
+        "marketplace `{0}` is configured in {1}; remove it from that configuration source instead",
+        "市场源`{0}`配置在{1}中；请改为从该配置来源移除",
+    ),
+    (
+        "failed to remove marketplace '{0}' from user config.toml: {1}",
+        "从用户config.toml中移除市场源'{0}'失败：{1}",
+    ),
+    (
+        "marketplace `{0}` does not match configured marketplace `{1}` exactly",
+        "市场源`{0}`与已配置的市场源`{1}`不完全匹配",
+    ),
+    (
+        "marketplace `{0}` is not configured or installed",
+        "市场源`{0}`未配置或未安装",
+    ),
+    (
+        "failed to resolve installed marketplace root {1}: {0}",
+        "解析已安装市场源根目录{1}失败：{0}",
+    ),
+    (
+        "failed to inspect installed marketplace root {1}: {0}",
+        "检查已安装市场源根目录{1}失败：{0}",
+    ),
+    (
+        "failed to remove installed marketplace root {1}: {0}",
+        "移除已安装市场源根目录{1}失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

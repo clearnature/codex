@@ -9258,6 +9258,40 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "plugin bundle tar entry `{0}` has unsupported type {1}",
         "插件包tar条目 `{0}` 类型不受支持：{1}",
     ),
+    (
+        "local curated marketplace sha is not available",
+        "本地精选市场源sha不可用",
+    ),
+    (
+        "installed plugin cache entry is missing for {0}",
+        "已安装插件的缓存条目缺失：{0}",
+    ),
+    (
+        "failed to materialize plugin source: {0}",
+        "物化插件源失败：{0}",
+    ),
+    (
+        "path does not exist or is not a directory",
+        "路径不存在或不是目录",
+    ),
+    (
+        "marketplace `{0}` is not configured as a Git marketplace",
+        "市场源 `{0}` 未配置为Git市场源",
+    ),
+    ("an npm plugin", "一个npm插件"),
+    ("a cross-repo plugin", "一个跨仓库插件"),
+    (
+        "This is {0}. Install it to view more detailed information. The source of the plugin is {1}.",
+        "这是{0}。安装后可查看更详细信息。插件来源为{1}。",
+    ),
+    (
+        "failed to join plugin install task: {0}",
+        "加入插件安装任务失败：{0}",
+    ),
+    (
+        "failed to join plugin uninstall task: {0}",
+        "加入插件卸载任务失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

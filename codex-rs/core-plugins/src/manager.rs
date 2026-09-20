@@ -101,6 +101,9 @@ use codex_config::types::ToolSuggestDisabledTool;
 use codex_config::types::ToolSuggestDiscoverableType;
 use codex_hooks::plugin_hook_declarations;
 use codex_http_client::HttpClientFactory;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
 use codex_plugin::AppConnectorId;
@@ -2200,7 +2203,8 @@ impl PluginsManager {
                 let curated_plugin_version = read_curated_plugins_sha(self.codex_home.as_path())
                     .ok_or_else(|| {
                         PluginStoreError::Invalid(
-                            "local curated marketplace sha is not available".to_string(),
+                            tr(current(), "local curated marketplace sha is not available")
+                                .to_string(),
                         )
                     })?;
                 Some(curated_plugin_cache_version(&curated_plugin_version))
@@ -2609,8 +2613,10 @@ impl PluginsManager {
 
         let source_path = if plugin.source.is_install_materialized() && plugin.installed {
             self.store.active_plugin_root(&plugin_id).ok_or_else(|| {
-                MarketplaceError::InvalidPlugin(format!(
-                    "installed plugin cache entry is missing for {plugin_key}"
+                MarketplaceError::InvalidPlugin(tr_with(
+                    current(),
+                    "installed plugin cache entry is missing for {0}",
+                    &[plugin_key.as_str()],
                 ))
             })?
         } else {
@@ -2621,8 +2627,10 @@ impl PluginsManager {
             })
             .await
             .map_err(|err| {
-                MarketplaceError::InvalidPlugin(format!(
-                    "failed to materialize plugin source: {err}"
+                MarketplaceError::InvalidPlugin(tr_with(
+                    current(),
+                    "failed to materialize plugin source: {0}",
+                    &[&err.to_string()],
                 ))
             })?
             .map_err(MarketplaceError::InvalidPlugin)?;
@@ -2630,7 +2638,7 @@ impl PluginsManager {
         };
         if !source_path.as_path().is_dir() {
             return Err(MarketplaceError::InvalidPlugin(
-                "path does not exist or is not a directory".to_string(),
+                tr(current(), "path does not exist or is not a directory").to_string(),
             ));
         }
         let loaded_manifest =
@@ -2647,7 +2655,9 @@ impl PluginsManager {
                     })
             }
             .ok_or_else(|| {
-                MarketplaceError::InvalidPlugin("missing or invalid plugin.json".to_string())
+                MarketplaceError::InvalidPlugin(
+                    tr(current(), "missing or invalid plugin.json").to_string(),
+                )
             })?;
         let manifest_format = loaded_manifest.format;
         let manifest = loaded_manifest.manifest;
@@ -2908,8 +2918,10 @@ impl PluginsManager {
         if let Some(marketplace_name) = marketplace_name
             && outcome.selected_marketplaces.is_empty()
         {
-            return Err(format!(
-                "marketplace `{marketplace_name}` is not configured as a Git marketplace"
+            return Err(tr_with(
+                current(),
+                "marketplace `{0}` is not configured as a Git marketplace",
+                &[marketplace_name],
             ));
         }
         if !outcome.upgraded_roots.is_empty() {
@@ -3623,12 +3635,14 @@ pub(crate) fn remote_plugin_install_required_description(
     };
 
     let source_kind = if matches!(source, MarketplacePluginSource::Npm { .. }) {
-        "an npm plugin"
+        tr(current(), "an npm plugin")
     } else {
-        "a cross-repo plugin"
+        tr(current(), "a cross-repo plugin")
     };
-    format!(
-        "This is {source_kind}. Install it to view more detailed information. The source of the plugin is {source_description}."
+    tr_with(
+        current(),
+        "This is {0}. Install it to view more detailed information. The source of the plugin is {1}.",
+        &[source_kind, source_description.as_str()],
     )
 }
 
@@ -3646,7 +3660,7 @@ pub enum PluginInstallError {
     #[error("{0}")]
     Config(#[from] anyhow::Error),
 
-    #[error("failed to join plugin install task: {0}")]
+    #[error("{}", tr_with(current(), "failed to join plugin install task: {0}", &[&_0.to_string()]))]
     Join(#[from] tokio::task::JoinError),
 }
 
@@ -3753,7 +3767,7 @@ pub enum PluginUninstallError {
     #[error("{0}")]
     Config(#[from] anyhow::Error),
 
-    #[error("failed to join plugin uninstall task: {0}")]
+    #[error("{}", tr_with(current(), "failed to join plugin uninstall task: {0}", &[&_0.to_string()]))]
     Join(#[from] tokio::task::JoinError),
 }
 

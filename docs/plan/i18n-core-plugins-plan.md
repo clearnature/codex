@@ -506,3 +506,50 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
 - `plugin_bundle_archive.rs`：21 candidates → **0**；crate：193 → **172**（差额**正好 21**）。
 - `i18n-check` `r-mu9f742b-mg3177`（3596 词条 / spacing 0 / duplicate 0）；`clippy` `r-mu9fartj-yu8e2p`（46 crate / 2m44s）；
   `just test -p codex-core-plugins` **438 passed** `r-mu9fcju8-v5jl86`；`cargo check --all-targets` EXIT=0（修后 4.79s）。
+
+## 十七、第十一批：manager.rs 15 条（译 9 + 登记 4 + 属性 2）
+
+### 17.1 登记 4 条：都是 tracing 的消息本体
+
+`:1562`（`tracing::info!`）、`:2138`（`tracing::warn!`）、`:2164`（`tracing::warn!`）、`:3355`（`warn!`）——
+判据是「本行就是宏的消息参数，同调用内其余参数是结构化字段」（`error_type = %…` / `materialized_remote_plugin_count = …` 这类）。
+
+### 17.2 译 9 条（含一条「值已在词典」的樱桃）
+
+| 站点                            | 去向                                                                                                  | 备注                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `:2203`                         | `PluginStoreError::Invalid`                                                                           | store 族 ⇒ 用户面（§7.1 已证） |
+| `:2613` `:2625` `:2633` `:2650` | `MarketplaceError::InvalidPlugin`                                                                     | 用户面                         |
+| `:2912`                         | `upgrade_configured_marketplaces_for_config_with_mode` → **app-server `marketplace_processor.rs:86`** | ✅ 见 17.3                     |
+| `:3626` `:3628` `:3631`         | `remote_plugin_install_required_description`（`tool_suggest_metadata.rs:216` + `manager.rs:2586`）    | ✅ 见 17.4                     |
+
+- **`:2650` 是计划好的樱桃**：该值（`missing or invalid plugin.json`）在 §7 的 store 批次已进词典 ⇒ 本批**只包站点、不新增词条**。
+  工具也如实报出「字典已有（只包站点、不新增）1 条」——这是 §13.2 修的查重缺陷在生产里的第一次正收益。
+- **`:2633` 与 loader.rs 那个登记行同值**（`path does not exist or is not a directory`）：这里到用户面 ⇒ **译**；loader 那边只进 `warn!` ⇒ **登记**（站点式行）。
+  ⇒ 又一次印证「同值不同接收者，按站点判」。
+
+### 17.3 两处「按签名写 args」的实证（上批教训的直接应用）
+
+- `:2912` 的 `marketplace_name` 来自 `if let Some(marketplace_name) = marketplace_name`（原参是 `Option<&str>`）⇒ **直接用**，不能 `.as_str()`；
+- `:2613` 的 `plugin_key` 来自 `plugin_id.as_key()`（`String`）⇒ `.as_str()`；`:3631` 的 `source_kind` 是 `tr(...)` 的返回值（`&'static str`）⇒ 直接用、只有 `source_description`（`parts.join(", ")` 的 `String`）要 `.as_str()`。
+  ⇒ 本批 `cargo check` **首次即 EXIT=0**（28.24s）。
+
+### 17.4 一处需要说明的判决：`:3631` 的描述串是「双重去向」
+
+`remote_plugin_install_required_description` 的返回值有两条消费：
+
+- `tool_suggest_metadata.rs:216` → 包进 `prompt_safe_plugin_description(...)` → `ToolSuggestMetadataFragment.description`（**偏向模型/提示**）；
+- `manager.rs:2586` → `PluginDetail.description`（**插件详情 UI**）。
+  按设计文档「判据是文本流向；同一段文案经 `.context` 走到 UI 就译」⇒ **判译**。
+  ⚠ 这条是**判断**不是机器事实：若将来确认该描述只会进模型上下文而永不进 UI，应改为登记。
+
+### 17.5 顺带做的一次风险预检：`current` 遮蔽
+
+§16 的教训（插入的 `current()` 被同名绑定遮蔽）在本批**先查后用**：`manager.rs` 里确有 `|current| …` 闭包（`:1374` `:1889` `:1914`），
+但都不覆盖本批的 15 个站点 ⇒ 无需限定路径，编译一次通过。
+
+### 17.6 收尾对账与门禁
+
+- `manager.rs`：15 candidates → **0**（该文件另有 5 条早先批次的登记行）；crate：172 → **157**（差额**正好 15**）。
+- `i18n-check` `r-mu9fj6gd-l5uqe0`（3606 词条 / spacing 0 / duplicate 0）；`clippy` `r-mu9fnyzx-wqdcyw`（46 crate / 3m37s）；
+  `just test -p codex-core-plugins` **438 passed** `r-mu9fpofn-6mk3rr`。

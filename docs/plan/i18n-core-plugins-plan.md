@@ -585,3 +585,47 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
 - `npm_source.rs`：15 candidates → **0**；crate：157 → **142**（差额**正好 15**）。
 - `i18n-check` `r-mu9fuzqn-e853l6`（3618 词条 / missing 0 / spacing 0 / duplicate 0 / **coverage 99.8%**）；
   `clippy` `r-mu9fxak2-v08i2t`（46 crate / 1m42s）；`just test -p codex-core-plugins` **438 passed** `r-mu9fxvs0-2nscy7`。
+
+## 十九、第十三批：remote_legacy.rs 14 条全译（纯属性批次，也是最暴露工具缺陷的一批）
+
+### 19.1 形态与接收方
+
+14 条**全部**是 `#[error(...)]` 属性，分属两个枚举：`RemotePluginMutationError`（10 条）与 `RemotePluginFetchError`（4 条）。
+三个形状都出现：unit（`AuthRequired` / `UnsupportedAuthMode` / `InvalidBaseUrlPath`）、
+元组 + `#[source]`（`AuthToken(io::Error)` / `InvalidBaseUrl(url::ParseError)`）、
+具名字段（`Request{url, source}` / `UnexpectedStatus{url, status, body}` / `Decode{url, source}` / `UnexpectedPluginId` / `UnexpectedEnabledState`）。
+⇒ 全译、登记 0。
+
+### 19.2 预检② 又抓到 2 条跨文件复用
+
+`remote plugin mutation returned unexpected plugin id: …` 与 `… unexpected enabled state for …`
+在 §12 的 remote.rs 批次已进词典 ⇒ 本批只新增 **12** 条（工具报「字典已有 2 条」）。
+
+### 19.3 命名占位符的**顺序**必须逐条看
+
+`:48` 的 `remote plugin mutation failed with status {status} from {url}: {body}` —— 出现顺序是 **status → url → body**，
+键为 `{0}=status / {1}=url / {2}=body`；而 §12 的 remote.rs `:99` 是 `… from {url} failed with status {status}`（**url 在前**）。
+两条文案很像，但 args 顺序相反 ⇒ 若照抄上批会串位。**这也是为什么 args 必须对着源码写、不能凭记忆套。**
+
+### 19.4 本批暴露并修掉的两个**工具缺陷**（`_used_imports`）
+
+这是本会话**第一个纯属性批次**（`translate: {}`，只有 `extra_edits`），于是把两处一直被掩盖的缺陷顶了出来：
+
+1. **`current` 的判定位置错了**：它在 `translate` 循环之后、`extra_edits` 循环之前 —— 纯属性规格下 `used` 还是空集
+   ⇒ 不插 `current` ⇒ 生成的 `current()` **无法解析**。
+   修法：把判定移到**两个循环之后**，条件是 `"tr" in used or "tr_with" in used`。三形态自检：
+   纯登记 ⇒ `[]`；纯属性 ⇒ `{current, tr_with}`；调用点 ⇒ `{current, tr}`。
+2. **`"tr(" in body` 子串判定假阳性**：`as_str()` 里就含 `tr(`（…`s`,`t`,`r`,`(`）⇒ 多插一个没用的 `use codex_i18n::tr;`
+   ⇒ `unused_imports` 警告（clippy 首跑就有这条警告，但 exit 0 —— **警告不会拦，只会污染**）。
+   修法：改成词边界正则 `(?<![A-Za-z0-9_])tr\(`；自检覆盖「含 `as_str()` ⇒ 不得多出 `tr`」；并从 `remote_legacy.rs` 删掉误插的那行。
+
+> 两个缺陷都属「工具自己生成的东西没人检」这一类 —— 本轮的做法是：**发现即修 + 三形态自检 + 清掉误插产物**，
+> 而不是手工绕过（绕过会让下一个纯属性批次再踩一次）。
+
+### 19.5 收尾对账与门禁
+
+- `remote_legacy.rs`：14 candidates → **0**；crate：142 → **128**（差额**正好 14**）；
+  `cargo check -p codex-core-plugins --all-targets` **EXIT=0**（7.51s，证明 import 修复有效）。
+- `i18n-check` `r-mu9g24xz-8uggz2`（3630 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
+  `clippy` **修前** `r-mu9g5bsu-pwwljj`（带 1 条 unused-import 警告）→ **修后** `r-mu9gaq8t-95z2os`（无该警告）；
+  `just test -p codex-core-plugins` **438 passed** `r-mu9gcotm-3jzr2d`。

@@ -1,6 +1,8 @@
 use crate::error_subtype::http_status_sub_error_type;
 use crate::remote::RemotePluginServiceConfig;
 use codex_http_client::RouteAwareRequestError;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_protocol::protocol::Product;
 use http::Method;
@@ -21,38 +23,38 @@ struct RemotePluginMutationResponse {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RemotePluginMutationError {
-    #[error("chatgpt authentication required for remote plugin mutation")]
+    #[error("{}", tr_with(current(), "chatgpt authentication required for remote plugin mutation", &[]))]
     AuthRequired,
 
     #[error(
-        "chatgpt authentication required for remote plugin mutation; api key auth is not supported"
+        "{}", tr_with(current(), "chatgpt authentication required for remote plugin mutation; api key auth is not supported", &[])
     )]
     UnsupportedAuthMode,
 
-    #[error("failed to read auth token for remote plugin mutation: {0}")]
+    #[error("{}", tr_with(current(), "failed to read auth token for remote plugin mutation: {0}", &[&_0.to_string()]))]
     AuthToken(#[source] std::io::Error),
 
-    #[error("invalid chatgpt base url for remote plugin mutation: {0}")]
+    #[error("{}", tr_with(current(), "invalid chatgpt base url for remote plugin mutation: {0}", &[&_0.to_string()]))]
     InvalidBaseUrl(#[source] url::ParseError),
 
-    #[error("chatgpt base url cannot be used for plugin mutation")]
+    #[error("{}", tr_with(current(), "chatgpt base url cannot be used for plugin mutation", &[]))]
     InvalidBaseUrlPath,
 
-    #[error("failed to send remote plugin mutation request to {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to send remote plugin mutation request to {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Request {
         url: String,
         #[source]
         source: RouteAwareRequestError,
     },
 
-    #[error("remote plugin mutation failed with status {status} from {url}: {body}")]
+    #[error("{}", tr_with(current(), "remote plugin mutation failed with status {0} from {1}: {2}", &[&status.to_string(), url.as_str(), body.as_str()]))]
     UnexpectedStatus {
         url: String,
         status: StatusCode,
         body: String,
     },
 
-    #[error("failed to parse remote plugin mutation response from {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to parse remote plugin mutation response from {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Decode {
         url: String,
         #[source]
@@ -60,12 +62,12 @@ pub enum RemotePluginMutationError {
     },
 
     #[error(
-        "remote plugin mutation returned unexpected plugin id: expected `{expected}`, got `{actual}`"
+        "{}", tr_with(current(), "remote plugin mutation returned unexpected plugin id: expected `{0}`, got `{1}`", &[expected.as_str(), actual.as_str()])
     )]
     UnexpectedPluginId { expected: String, actual: String },
 
     #[error(
-        "remote plugin mutation returned unexpected enabled state for `{plugin_id}`: expected {expected_enabled}, got {actual_enabled}"
+        "{}", tr_with(current(), "remote plugin mutation returned unexpected enabled state for `{0}`: expected {1}, got {2}", &[plugin_id.as_str(), &expected_enabled.to_string(), &actual_enabled.to_string()])
     )]
     UnexpectedEnabledState {
         plugin_id: String,
@@ -95,24 +97,24 @@ impl RemotePluginMutationError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RemotePluginFetchError {
-    #[error("invalid chatgpt base url for remote featured plugin request: {0}")]
+    #[error("{}", tr_with(current(), "invalid chatgpt base url for remote featured plugin request: {0}", &[&_0.to_string()]))]
     InvalidBaseUrl(#[source] url::ParseError),
 
-    #[error("failed to send remote featured plugin request to {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to send remote featured plugin request to {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Request {
         url: String,
         #[source]
         source: RouteAwareRequestError,
     },
 
-    #[error("remote featured plugin request to {url} failed with status {status}: {body}")]
+    #[error("{}", tr_with(current(), "remote featured plugin request to {0} failed with status {1}: {2}", &[url.as_str(), &status.to_string(), body.as_str()]))]
     UnexpectedStatus {
         url: String,
         status: StatusCode,
         body: String,
     },
 
-    #[error("failed to parse remote featured plugin response from {url}: {source}")]
+    #[error("{}", tr_with(current(), "failed to parse remote featured plugin response from {0}: {1}", &[url.as_str(), &source.to_string()]))]
     Decode {
         url: String,
         #[source]

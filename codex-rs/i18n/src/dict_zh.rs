@@ -9337,6 +9337,54 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "npm plugin package name '{1}' does not match requested package '{0}'",
         "npm插件包名 '{1}' 与请求的包 '{0}' 不匹配",
     ),
+    (
+        "chatgpt authentication required for remote plugin mutation",
+        "远程插件变更需要ChatGPT身份验证",
+    ),
+    (
+        "chatgpt authentication required for remote plugin mutation; api key auth is not supported",
+        "远程插件变更需要ChatGPT身份验证；不支持API key方式",
+    ),
+    (
+        "failed to read auth token for remote plugin mutation: {0}",
+        "读取远程插件变更的身份验证令牌失败：{0}",
+    ),
+    (
+        "invalid chatgpt base url for remote plugin mutation: {0}",
+        "远程插件变更的chatgpt基础URL无效：{0}",
+    ),
+    (
+        "chatgpt base url cannot be used for plugin mutation",
+        "chatgpt基础URL不能用于插件变更",
+    ),
+    (
+        "failed to send remote plugin mutation request to {0}: {1}",
+        "向{0}发送远程插件变更请求失败：{1}",
+    ),
+    (
+        "remote plugin mutation failed with status {0} from {1}: {2}",
+        "远程插件变更失败，状态码{0}（来自{1}）：{2}",
+    ),
+    (
+        "failed to parse remote plugin mutation response from {0}: {1}",
+        "解析来自{0}的远程插件变更响应失败：{1}",
+    ),
+    (
+        "invalid chatgpt base url for remote featured plugin request: {0}",
+        "远程特色插件的chatgpt基础URL无效：{0}",
+    ),
+    (
+        "failed to send remote featured plugin request to {0}: {1}",
+        "向{0}发送远程特色插件请求失败：{1}",
+    ),
+    (
+        "remote featured plugin request to {0} failed with status {1}: {2}",
+        "向{0}发送的远程特色插件请求失败，状态码{1}：{2}",
+    ),
+    (
+        "failed to parse remote featured plugin response from {0}: {1}",
+        "解析来自{0}的远程特色插件响应失败：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

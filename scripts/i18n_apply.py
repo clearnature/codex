@@ -77,17 +77,20 @@ def _used_imports(spec: dict) -> set[str]:
     used: set[str] = set()
     for entry in spec.get("translate", {}).values():
         used.add("tr_with" if entry.get("args") else "tr")
-    if used:
-        # 纯 `register` 的 spec（0 翻译站点）不该插入任何 import：实测一次
-        # `used = {"current"}` 的初值让「只登记」的批次往源文件里插了未用的
-        # `use codex_i18n::current;`（会触发 unused_imports）。
-        used.add("current")
     for e in spec.get("extra_edits", []):
         body = e.get("replace", "")
         if "tr_with(" in body:
             used.add("tr_with")
-        if "tr(" in body:  # `tr_with(` 不含子串 `tr(`
+        # 必须用**词边界**：`as_str()` 里就含子串 `tr(`（…s,t,r,( ⇒ 假阳性，实测过一次
+        # 多插了没用的 `use codex_i18n::tr;` ⇒ unused_imports 警告）。
+        if re.search(r"(?<![A-Za-z0-9_])tr\(", body):
             used.add("tr")
+    # `current` 只有在真的用到 tr/tr_with 时才需要；判断必须放在**两个循环之后**：
+    # 早期版本把这段放在 translate 循环之后 ⇒ **纯属性规格**（translate 为空、只有 extra_edits）
+    # 漏插 `current`，生成的 `current()` 无法解析（实测本批 remote_legacy.rs 全属性规格）。
+    # 同时，纯 `register` 的 spec 不该插任何 import（实测过 unused_imports）。
+    if "tr" in used or "tr_with" in used:
+        used.add("current")
     return used
 
 

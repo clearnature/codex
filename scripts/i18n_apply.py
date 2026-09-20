@@ -417,7 +417,12 @@ def main() -> int:
     text = meta["text"]
     keys: dict[str, str] = meta["keys"]
     dt = DICT.read_text(encoding="utf-8")
-    new_keys = {k: v for k, v in keys.items() if f'("{k}"' not in dt}
+    # 查重必须同时认**单行**与**折叠**两种形态：`("k", "v")` 与 `\n "k",\n "v",\n`。
+    # 旧实现只匹配 `("k"`，对折叠条目视而不见 ⇒ 已存在的键会被重复写入（实测两次：
+    # chatgpt authentication… 与 marketplace root does not contain…）。
+    new_keys = {
+        k: v for k, v in keys.items() if not re.search(r'"%s"\s*,' % re.escape(k), dt)
+    }
     existing = sorted(k for k in keys if k not in new_keys)
     rows_now = dump_rows(spec)
     reg_missing = [ln for ln in spec.get("register", {}) if int(ln) not in rows_now]

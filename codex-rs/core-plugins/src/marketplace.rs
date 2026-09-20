@@ -3,6 +3,9 @@ use crate::manifest::load_plugin_manifest;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginInstallPolicy;
 use codex_git_utils::get_git_repo_root;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::PluginId;
 use codex_plugin::PluginIdError;
 use codex_protocol::protocol::Product;
@@ -210,27 +213,27 @@ pub enum MarketplaceError {
         source: io::Error,
     },
 
-    #[error("marketplace file `{path}` does not exist")]
+    #[error("{}", tr_with(current(), "marketplace file `{0}` does not exist", &[&path.display().to_string()]))]
     MarketplaceNotFound { path: PathBuf },
 
-    #[error("invalid marketplace file `{path}`: {message}")]
+    #[error("{}", tr_with(current(), "invalid marketplace file `{0}`: {1}", &[&path.display().to_string(), message.as_str()]))]
     InvalidMarketplaceFile { path: PathBuf, message: String },
 
-    #[error("plugin `{plugin_name}` was not found in marketplace `{marketplace_name}`")]
+    #[error("{}", tr_with(current(), "plugin `{0}` was not found in marketplace `{1}`", &[plugin_name.as_str(), marketplace_name.as_str()]))]
     PluginNotFound {
         plugin_name: String,
         marketplace_name: String,
     },
 
     #[error(
-        "plugin `{plugin_name}` is not available for install in marketplace `{marketplace_name}`"
+        "{}", tr_with(current(), "plugin `{0}` is not available for install in marketplace `{1}`", &[plugin_name.as_str(), marketplace_name.as_str()])
     )]
     PluginNotAvailable {
         plugin_name: String,
         marketplace_name: String,
     },
 
-    #[error("plugins feature is disabled")]
+    #[error("{}", tr_with(current(), "plugins feature is disabled", &[]))]
     PluginsDisabled,
 
     #[error("{0}")]
@@ -313,7 +316,11 @@ pub fn validate_marketplace_root(root: &Path) -> Result<String, MarketplaceError
     let Some(path) = find_marketplace_manifest_path(root) else {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: root.to_path_buf(),
-            message: "marketplace root does not contain a supported manifest".to_string(),
+            message: tr(
+                current(),
+                "marketplace root does not contain a supported manifest",
+            )
+            .to_string(),
         });
     };
     let marketplace = load_marketplace(&path)?;
@@ -348,7 +355,7 @@ fn supported_marketplace_manifest_path(path: &Path) -> Option<AbsolutePathBuf> {
 fn invalid_marketplace_layout_error(path: &AbsolutePathBuf) -> MarketplaceError {
     MarketplaceError::InvalidMarketplaceFile {
         path: path.to_path_buf(),
-        message: "marketplace file is not in a supported location".to_string(),
+        message: tr(current(), "marketplace file is not in a supported location").to_string(),
     }
 }
 
@@ -494,7 +501,7 @@ fn load_raw_marketplace_manifest(
                 path: path.to_path_buf(),
             }
         } else {
-            MarketplaceError::io("failed to read marketplace file", err)
+            MarketplaceError::io(tr(current(), "failed to read marketplace file"), err)
         }
     })?;
     serde_json::from_str(&contents).map_err(|err| MarketplaceError::InvalidMarketplaceFile {
@@ -655,7 +662,7 @@ fn resolve_local_plugin_source_path(
         "" => {
             return Err(MarketplaceError::InvalidMarketplaceFile {
                 path: marketplace_path.to_path_buf(),
-                message: "local plugin source path must not be empty".to_string(),
+                message: tr(current(), "local plugin source path must not be empty").to_string(),
             });
         }
         "." | "./" => return marketplace_root_dir(marketplace_path),
@@ -672,7 +679,7 @@ fn resolve_local_plugin_source_path(
     let Some(relative_path) = relative_path else {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: "local plugin source path must start with `./`".to_string(),
+            message: tr(current(), "local plugin source path must start with `./`").to_string(),
         });
     };
 
@@ -683,7 +690,11 @@ fn resolve_local_plugin_source_path(
     {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: "local plugin source path must stay within the marketplace root".to_string(),
+            message: tr(
+                current(),
+                "local plugin source path must stay within the marketplace root",
+            )
+            .to_string(),
         });
     }
 
@@ -701,7 +712,7 @@ fn normalize_remote_plugin_subdir(
     if path.is_empty() {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: "git plugin source path must not be empty".to_string(),
+            message: tr(current(), "git plugin source path must not be empty").to_string(),
         });
     }
     let relative_path = Path::new(path);
@@ -711,7 +722,11 @@ fn normalize_remote_plugin_subdir(
     {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: "git plugin source path must stay within the repository root".to_string(),
+            message: tr(
+                current(),
+                "git plugin source path must stay within the repository root",
+            )
+            .to_string(),
         });
     }
     Ok(path.to_string())
@@ -725,7 +740,7 @@ fn normalize_git_plugin_source_url(
     if url.is_empty() {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: "git plugin source url must not be empty".to_string(),
+            message: tr(current(), "git plugin source url must not be empty").to_string(),
         });
     }
     if url.starts_with("http://") || url.starts_with("https://") {
@@ -750,7 +765,7 @@ fn normalize_git_plugin_source_url(
 
     Err(MarketplaceError::InvalidMarketplaceFile {
         path: marketplace_path.to_path_buf(),
-        message: format!("invalid git plugin source url: {url}"),
+        message: tr_with(current(), "invalid git plugin source url: {0}", &[url]),
     })
 }
 
@@ -767,8 +782,11 @@ fn normalize_relative_git_plugin_source_url(
             ".." => {
                 return Err(MarketplaceError::InvalidMarketplaceFile {
                     path: marketplace_path.to_path_buf(),
-                    message: "relative git plugin source url must stay within the marketplace root"
-                        .to_string(),
+                    message: tr(
+                        current(),
+                        "relative git plugin source url must stay within the marketplace root",
+                    )
+                    .to_string(),
                 });
             }
             segment => normalized.push(segment),
@@ -812,7 +830,11 @@ fn normalize_npm_package(
     {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: format!("invalid npm plugin source package: {package}"),
+            message: tr_with(
+                current(),
+                "invalid npm plugin source package: {0}",
+                &[package],
+            ),
         });
     }
     Ok(package.to_string())
@@ -840,7 +862,11 @@ fn normalize_optional_npm_version(
     if !is_registry_npm_version_selector(&version) {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: format!("npm plugin source version must use the registry: {version}"),
+            message: tr_with(
+                current(),
+                "npm plugin source version must use the registry: {0}",
+                &[version.as_str()],
+            ),
         });
     }
     Ok(Some(version))
@@ -862,7 +888,11 @@ fn normalize_optional_npm_registry(
     let parsed =
         url::Url::parse(&registry).map_err(|_| MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: format!("invalid npm plugin source registry: {registry}"),
+            message: tr_with(
+                current(),
+                "invalid npm plugin source registry: {0}",
+                &[registry.as_str()],
+            ),
         })?;
     if parsed.scheme() != "https"
         || parsed.host_str().is_none()
@@ -873,7 +903,11 @@ fn normalize_optional_npm_registry(
     {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: format!("invalid npm plugin source registry: {registry}"),
+            message: tr_with(
+                current(),
+                "invalid npm plugin source registry: {0}",
+                &[registry.as_str()],
+            ),
         });
     }
     Ok(Some(registry))
@@ -891,7 +925,11 @@ fn normalize_optional_npm_source_field(
     if value.is_empty() {
         return Err(MarketplaceError::InvalidMarketplaceFile {
             path: marketplace_path.to_path_buf(),
-            message: format!("npm plugin source {field} must not be empty"),
+            message: tr_with(
+                current(),
+                "npm plugin source {0} must not be empty",
+                &[field],
+            ),
         });
     }
     Ok(Some(value.to_string()))

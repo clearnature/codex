@@ -1337,3 +1337,5 @@ plugin is not installed	codex-rs/core-plugins/src/loader.rs:872	§12.3 日志：
 plugin MCP file overwrote an earlier server definition	codex-rs/core-plugins/src/loader.rs:1575	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
 failed to parse plugin MCP server	codex-rs/core-plugins/src/loader.rs:1692	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
 failed to parse plugin manifest MCP object server	codex-rs/core-plugins/src/loader.rs:1719	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+skipping invalid marketplace plugin	codex-rs/core-plugins/src/marketplace.rs:390	§12.3 日志：本行即紧邻 tracing::warn! 的参数（marketplace.rs:379），无渲染路径
+skipping marketplace plugin that failed to resolve	codex-rs/core-plugins/src/marketplace.rs:592	§12.3 日志：本行即紧邻 tracing::warn! 的参数（marketplace.rs:581 起），无渲染路径

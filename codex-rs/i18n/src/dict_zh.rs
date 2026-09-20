@@ -8976,6 +8976,72 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "workspace plugin upload response did not include an etag",
         "工作区插件上传响应未包含etag",
     ),
+    (
+        "marketplace file is not in a supported location",
+        "市场源文件不在受支持的位置",
+    ),
+    ("failed to read marketplace file", "读取市场源文件失败"),
+    (
+        "local plugin source path must not be empty",
+        "本地插件源路径不能为空",
+    ),
+    (
+        "local plugin source path must start with `./`",
+        "本地插件源路径必须以 `./` 开头",
+    ),
+    (
+        "local plugin source path must stay within the marketplace root",
+        "本地插件源路径必须位于市场源根目录内",
+    ),
+    (
+        "git plugin source path must not be empty",
+        "git插件源路径不能为空",
+    ),
+    (
+        "git plugin source path must stay within the repository root",
+        "git插件源路径必须位于仓库根目录内",
+    ),
+    (
+        "git plugin source url must not be empty",
+        "git插件源url不能为空",
+    ),
+    (
+        "invalid git plugin source url: {0}",
+        "无效的git插件源url：{0}",
+    ),
+    (
+        "relative git plugin source url must stay within the marketplace root",
+        "相对git插件源url必须位于市场源根目录内",
+    ),
+    (
+        "invalid npm plugin source package: {0}",
+        "无效的npm插件源包名：{0}",
+    ),
+    (
+        "npm plugin source version must use the registry: {0}",
+        "npm插件源版本必须使用registry：{0}",
+    ),
+    (
+        "invalid npm plugin source registry: {0}",
+        "无效的npm插件源registry：{0}",
+    ),
+    (
+        "npm plugin source {0} must not be empty",
+        "npm插件源{0}不能为空",
+    ),
+    (
+        "marketplace file `{0}` does not exist",
+        "市场源文件 `{0}` 不存在",
+    ),
+    (
+        "invalid marketplace file `{0}`: {1}",
+        "无效的市场源文件 `{0}`：{1}",
+    ),
+    (
+        "plugin `{0}` is not available for install in marketplace `{1}`",
+        "插件 `{0}` 在市场源 `{1}` 中不可安装",
+    ),
+    ("plugins feature is disabled", "插件功能已禁用"),
 ];
 
 /// English source text -> Simplified Chinese.

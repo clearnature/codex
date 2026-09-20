@@ -343,3 +343,47 @@ app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
 - `remote.rs`：29 candidates → **0**；crate：290 → **261**（差额**正好 29**）；core-plugins 的 **103** 条登记行逐条命中源码（0 漂移）。
 - `cargo check -p codex-core-plugins --all-targets` EXIT=0；`i18n-check` `r-mu9dvggk-6kazjo`（3515 词条 / missing 0 / **spacing 0** / **duplicate 0**）；
   `clippy` `r-mu9e04c9-wgt5hx`（46 crate / 3m29s）；`just test -p codex-core-plugins` **438 passed** `r-mu9e2b12-iblw84`。
+
+## 十三、第七批：marketplace.rs 23 条（译 21 + 登记 2）
+
+### 13.1 分簇与接收方
+
+| 簇                                                          | 站点                                                                                                     | 去向                                                                                        | 判决           |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------- |
+| `MarketplaceError` 的 `#[error]` 属性                       | `:213` `:216` `:219` `:226` `:233`                                                                       | 该错误在 `marketplace_cmd` / `manager.rs:2620`（`MarketplaceError::InvalidPlugin`）进用户面 | 译（属性路线） |
+| `InvalidMarketplaceFile { message: … }` 的 **message 实参** | `:316` `:351` `:658` `:675` `:686` `:704` `:714` `:728` `:753` `:770` `:815` `:843` `:865` `:876` `:894` | 被 `"invalid marketplace file \`{path}\`: {message}"` 嵌进**用户可见**那条 ⇒ 中间串也到人眼 | 译             |
+| `MarketplaceError::io(context, …)` 的 context               | `:497`                                                                                                   | 同 store 批次：context 是用户可见消息的一半                                                 | 译             |
+| `warn!` 参数本体                                            | `:383`（warn! 在 `:379`）、`:585`（`:581`）                                                              | 只进日志                                                                                    | 登记           |
+
+类型清单（`cargo check` 当场验）：`PathBuf`→`&x.display().to_string()`；`String`→`.as_str()`；`&str`（`url`/`package`/`field` 经 `.trim()` 后）→**直接用**。
+
+### 13.2 抓到一个**工具缺陷**（这是本批最大的收获）
+
+`i18n-check` 报 `[duplicate] 1`：`marketplace root does not contain a supported manifest` 在词典里有**两条**。
+根因不在我的键盘上，而在工具里：`i18n_apply.py` 判断「键是否已存在」用的是 `f'("{k}"' in dict` ——
+**只认单行形态 `("k", "v"),`**；而工具自己写入长条目时会**折行**成
+
+```
+    (
+        "k",
+        "v",
+    ),
+```
+
+⇒ 折行条目对它「不存在」⇒ 同一个键被反复写入（**这也解释了上一批 chatgpt 那条重复的成因**）。
+
+处置：把查重改成 `re.search(r'"<key>"\s*,', dict)`（单行/折行都认），并做三形态自检（单行命中 / 折行命中 / 不存在不命中）；
+随后**整元组**删掉本批重复写入的那一条（上一批的教训：只删 `zh` 行会留下单元素元组 `E0308`），
+`cargo check -p codex-i18n` EXIT=0 复核。⇒ 复跑 `i18n-check` 全零。
+
+### 13.3 两条流程规矩的落地效果
+
+1. **上批新增的「写 `extra_dict` 前先 grep 查重」当场生效**：`plugin \`{0}\` was not found in marketplace \`{1}\``
+   已在词典中 ⇒ 跳过，不重复添加（少一条重复）。
+2. **对账规矩**（census 差额 == 站点数）：261 → **238**（差 **23** = 16 译 + 5 属性 + 2 登记）✓。
+
+### 13.4 门禁
+
+`i18n-check` 首跑红 `r-mu9e7kbc-t2057j`（duplicate 1）→ 修工具 + 删重复后 `r-mu9e9odt-nda7s2` 全零（3533 词条 / spacing 0 / **duplicate 0**）；
+`clippy` `r-mu9ecvg6-rsc7ff`（46 crate / 2m22s）；`just test -p codex-core-plugins` **438 passed** `r-mu9edprf-paul0z`。
+另注：同值还出现在 `cli/src/plugin_cmd.rs:1108`（早已 `tr(...)` 包住）与 **测试** `cli/tests/plugin_cli.rs:533`（断言英文原文，默认 En 下无影响）。

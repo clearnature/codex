@@ -9128,6 +9128,69 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "本地插件路径不能是主目录",
     ),
     ("path {0} has no parent directory", "路径{0}没有父目录"),
+    (
+        "marketplace source `{1}` is not allowed by requirements from {0}",
+        "市场源 `{1}` 不被来自{0}的要求允许",
+    ),
+    (
+        "marketplace `{0}` is reserved and cannot be loaded from this source",
+        "市场源 `{0}` 是保留名，不能从该来源加载",
+    ),
+    (
+        "marketplace `{0}` must be added to config before plugins can be installed while marketplace source restrictions are enabled",
+        "在市场源限制启用时，必须先把市场源 `{0}` 加入配置才能安装插件",
+    ),
+    (
+        "configured marketplace `{0}` does not have a usable root",
+        "已配置的市场源 `{0}` 没有可用的根目录",
+    ),
+    (
+        "marketplace path `{1}` does not match configured marketplace `{0}`",
+        "市场源路径 `{1}` 与已配置的市场源 `{0}` 不匹配",
+    ),
+    (
+        "configured Git marketplace source is not a Git URL",
+        "已配置的Git市场源不是Git URL",
+    ),
+    (
+        "marketplace `{0}` is reserved and cannot be added from this source",
+        "市场源 `{0}` 是保留名，不能从该来源添加",
+    ),
+    (
+        "invalid marketplace allowed source `{0}` in {1}: {2}",
+        "无效的市场源允许项 `{0}`（来自{1}）：{2}",
+    ),
+    ("missing source", "缺少source"),
+    ("missing url", "缺少url"),
+    ("ref must not be empty", "ref不能为空"),
+    ("expected a Git URL", "需要Git URL"),
+    ("missing host_pattern", "缺少host_pattern"),
+    ("missing path", "缺少path"),
+    ("local path must be absolute", "本地路径必须是绝对路径"),
+    (
+        "invalid config for marketplace `{0}`: {1}",
+        "市场源 `{0}` 的配置无效：{1}",
+    ),
+    (
+        "configured marketplace `{0}` is missing source_type",
+        "已配置的市场源 `{0}` 缺少source_type",
+    ),
+    (
+        "configured marketplace `{0}` is missing source",
+        "已配置的市场源 `{0}` 缺少source",
+    ),
+    (
+        "invalid source for marketplace `{0}`: {1}",
+        "市场源 `{0}` 的来源无效：{1}",
+    ),
+    (
+        "configured marketplace `{0}` source does not match source_type `git`",
+        "已配置的市场源 `{0}` 的来源与source_type `git` 不匹配",
+    ),
+    (
+        "marketplace manifest name `{0}` does not match managed marketplace `{1}`",
+        "市场清单名称 `{0}` 与受管市场源 `{1}` 不匹配",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -21,6 +21,9 @@ use codex_config::RequirementSource;
 use codex_config::types::MarketplaceConfig;
 use codex_config::types::MarketplaceSourceType;
 use codex_config::types::PluginConfig;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::PluginId;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_path::paths_match_after_normalization;
@@ -96,9 +99,10 @@ impl MarketplacePolicy {
             return Ok(());
         }
 
-        Err(format!(
-            "marketplace source `{}` is not allowed by requirements from {requirement_source}",
-            source.display()
+        Err(tr_with(
+            current(),
+            "marketplace source `{1}` is not allowed by requirements from {0}",
+            &[&requirement_source.to_string(), source.display().as_str()],
         ))
     }
 
@@ -117,8 +121,10 @@ impl MarketplacePolicy {
             return validate_expected_marketplace_name(expected_name, marketplace_name);
         }
         if is_reserved_marketplace_name(marketplace_name) {
-            return Err(format!(
-                "marketplace `{marketplace_name}` is reserved and cannot be loaded from this source"
+            return Err(tr_with(
+                current(),
+                "marketplace `{0}` is reserved and cannot be loaded from this source",
+                &[marketplace_name],
             ));
         }
         if !self.is_restricted() {
@@ -131,9 +137,7 @@ impl MarketplacePolicy {
             .and_then(toml::Value::as_table)
             .and_then(|marketplaces| marketplaces.get(marketplace_name))
             .ok_or_else(|| {
-                format!(
-                    "marketplace `{marketplace_name}` must be added to config before plugins can be installed while marketplace source restrictions are enabled"
-                )
+                tr_with(current(), "marketplace `{0}` must be added to config before plugins can be installed while marketplace source restrictions are enabled", &[marketplace_name])
             })?;
         self.validate_configured_marketplace(marketplace_name, marketplace)?;
 
@@ -143,12 +147,17 @@ impl MarketplacePolicy {
             &marketplace_install_root(codex_home),
         )
         .ok_or_else(|| {
-            format!("configured marketplace `{marketplace_name}` does not have a usable root")
+            tr_with(
+                current(),
+                "configured marketplace `{0}` does not have a usable root",
+                &[marketplace_name],
+            )
         })?;
         if !paths_match_after_normalization(&configured_root, root.as_path()) {
-            return Err(format!(
-                "marketplace path `{}` does not match configured marketplace `{marketplace_name}`",
-                root.as_path().display()
+            return Err(tr_with(
+                current(),
+                "marketplace path `{1}` does not match configured marketplace `{0}`",
+                &[marketplace_name, &root.as_path().display().to_string()],
             ));
         }
         Ok(())
@@ -164,7 +173,11 @@ impl MarketplacePolicy {
         }
         let source = parse_marketplace_source(source, ref_name).map_err(|err| err.to_string())?;
         if !matches!(source, MarketplaceSource::Git { .. }) {
-            return Err("configured Git marketplace source is not a Git URL".to_string());
+            return Err(tr(
+                current(),
+                "configured Git marketplace source is not a Git URL",
+            )
+            .to_string());
         }
         self.validate_source(&source)?;
         Ok(Some(source))
@@ -336,8 +349,10 @@ pub(crate) fn validate_marketplace_name_for_add(
         return validate_expected_marketplace_name(expected_name, marketplace_name);
     }
     if is_reserved_marketplace_name(marketplace_name) {
-        return Err(format!(
-            "marketplace `{marketplace_name}` is reserved and cannot be added from this source"
+        return Err(tr_with(
+            current(),
+            "marketplace `{0}` is reserved and cannot be added from this source",
+            &[marketplace_name],
         ));
     }
     Ok(())
@@ -349,11 +364,15 @@ fn compile_allowed_source(
     requirement_source: &RequirementSource,
 ) -> Result<AllowedMarketplaceSource, String> {
     let invalid = |reason: &str| {
-        format!("invalid marketplace allowed source `{key}` in {requirement_source}: {reason}")
+        tr_with(
+            current(),
+            "invalid marketplace allowed source `{0}` in {1}: {2}",
+            &[key, &requirement_source.to_string(), reason],
+        )
     };
     let source = allowed_source
         .source
-        .ok_or_else(|| invalid("missing source"))?;
+        .ok_or_else(|| invalid(tr(current(), "missing source")))?;
     match source {
         MarketplaceAllowedSourceKind::Git => {
             let url = allowed_source
@@ -361,10 +380,10 @@ fn compile_allowed_source(
                 .as_deref()
                 .map(str::trim)
                 .filter(|url| !url.is_empty())
-                .ok_or_else(|| invalid("missing url"))?;
+                .ok_or_else(|| invalid(tr(current(), "missing url")))?;
             let ref_name = match allowed_source.ref_name.as_deref() {
                 Some(ref_name) if ref_name.trim().is_empty() => {
-                    return Err(invalid("ref must not be empty"));
+                    return Err(invalid(tr(current(), "ref must not be empty")));
                 }
                 Some(ref_name) => Some(ref_name.trim().to_string()),
                 None => None,
@@ -372,7 +391,7 @@ fn compile_allowed_source(
             let source =
                 parse_marketplace_source(url, ref_name).map_err(|err| invalid(&err.to_string()))?;
             let MarketplaceSource::Git { url, ref_name } = source else {
-                return Err(invalid("expected a Git URL"));
+                return Err(invalid(tr(current(), "expected a Git URL")));
             };
             Ok(AllowedMarketplaceSource::GitUrl { url, ref_name })
         }
@@ -382,7 +401,7 @@ fn compile_allowed_source(
                 .as_deref()
                 .map(str::trim)
                 .filter(|host_pattern| !host_pattern.is_empty())
-                .ok_or_else(|| invalid("missing host_pattern"))?;
+                .ok_or_else(|| invalid(tr(current(), "missing host_pattern")))?;
             Regex::new(host_pattern)
                 .map(AllowedMarketplaceSource::GitHostPattern)
                 .map_err(|err| invalid(&err.to_string()))
@@ -392,12 +411,12 @@ fn compile_allowed_source(
                 .path
                 .as_ref()
                 .filter(|path| !path.as_os_str().is_empty())
-                .ok_or_else(|| invalid("missing path"))?;
+                .ok_or_else(|| invalid(tr(current(), "missing path")))?;
             if !path.is_absolute() {
-                return Err(invalid("local path must be absolute"));
+                return Err(invalid(tr(current(), "local path must be absolute")));
             }
             let path = AbsolutePathBuf::from_absolute_path_checked(path)
-                .map_err(|_| invalid("local path must be absolute"))?;
+                .map_err(|_| invalid(tr(current(), "local path must be absolute")))?;
             Ok(AllowedMarketplaceSource::Local(path))
         }
     }
@@ -412,28 +431,46 @@ fn configured_marketplace_source(
         source,
         ref_name,
         ..
-    } = marketplace
-        .clone()
-        .try_into()
-        .map_err(|err| format!("invalid config for marketplace `{marketplace_name}`: {err}"))?;
-    let source_type = source_type.ok_or_else(|| {
-        format!("configured marketplace `{marketplace_name}` is missing source_type")
+    } = marketplace.clone().try_into().map_err(|err| {
+        tr_with(
+            current(),
+            "invalid config for marketplace `{0}`: {1}",
+            &[marketplace_name, &err.to_string()],
+        )
     })?;
-    let source = source
-        .ok_or_else(|| format!("configured marketplace `{marketplace_name}` is missing source"))?;
+    let source_type = source_type.ok_or_else(|| {
+        tr_with(
+            current(),
+            "configured marketplace `{0}` is missing source_type",
+            &[marketplace_name],
+        )
+    })?;
+    let source = source.ok_or_else(|| {
+        tr_with(
+            current(),
+            "configured marketplace `{0}` is missing source",
+            &[marketplace_name],
+        )
+    })?;
     match source_type {
         MarketplaceSourceType::Local => Ok(MarketplaceSource::Local {
             path: PathBuf::from(source),
         }),
         MarketplaceSourceType::Git => {
             let parsed = parse_marketplace_source(&source, ref_name).map_err(|err| {
-                format!("invalid source for marketplace `{marketplace_name}`: {err}")
+                tr_with(
+                    current(),
+                    "invalid source for marketplace `{0}`: {1}",
+                    &[marketplace_name, &err.to_string()],
+                )
             })?;
             if matches!(parsed, MarketplaceSource::Git { .. }) {
                 Ok(parsed)
             } else {
-                Err(format!(
-                    "configured marketplace `{marketplace_name}` source does not match source_type `git`"
+                Err(tr_with(
+                    current(),
+                    "configured marketplace `{0}` source does not match source_type `git`",
+                    &[marketplace_name],
                 ))
             }
         }
@@ -447,8 +484,10 @@ fn validate_expected_marketplace_name(
     (marketplace_name == expected_name)
         .then_some(())
         .ok_or_else(|| {
-            format!(
-                "marketplace manifest name `{marketplace_name}` does not match managed marketplace `{expected_name}`"
+            tr_with(
+                current(),
+                "marketplace manifest name `{0}` does not match managed marketplace `{1}`",
+                &[marketplace_name, expected_name],
             )
         })
 }

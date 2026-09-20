@@ -414,3 +414,44 @@ app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
 - `checkout.rs`：23 candidates → **0**（其余 1 条是早先批次已登记的站点）；crate：238 → **215**（差额**正好 23**）。
 - `i18n-check` `r-mu9einb6-akc5it`（3556 词条 / missing 0 / spacing 0 / duplicate 0 / coverage 99.7%）；
   `clippy` `r-mu9ekxc8-sjgztl`（46 crate / 1m40s）；`just test -p codex-core-plugins` **438 passed** `r-mu9eljdw-1zh7gp`。
+
+## 十五、第九批：marketplace_policy.rs 22 条全译（0 登记）
+
+### 15.1 按「私有 helper → 公有入口 → 消费者」建链
+
+本文件的候选分属 7 个函数，其中多数是**私有 helper**（外部没有调用点），所以判接收方要沿链往上走：
+
+| 站点（所在函数）                                 | 链路                                                                                                                                                                        | 判决                                                                                |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --- |
+| `:100`（`validate_source`）                      | `validate_source` ← `validate_git_source` / `validate_install` / `validate_marketplace_source_for_add`                                                                      | 译                                                                                  |
+| `:121 :135 :146 :150`（`validate_install`）      | `manager.rs:2500` `.map_err(                                                                                                                                                | message                                                                             | MarketplaceError::InvalidMarketplaceFile{ … message … })` ⇒ 用户面；`manager.rs:2050` 也构造同一错误 | 译  |
+| `:167`（`validate_git_source`）                  | `marketplace_upgrade.rs:125` ⇒ `errors[].message`（用户面）；`manager.rs:718` 只用 `.is_ok()`（丢弃）                                                                       | 译（同值两接收者，走到 UI 就译）                                                    |
+| `:340`（`validate_marketplace_name_for_add`）    | `marketplace_upgrade.rs:123` ⇒ `errors[].message`；`marketplace_add.rs`                                                                                                     | 译                                                                                  |
+| `:352 :356 … :400`（`compile_allowed_source`）   | **`RestrictedMarketplacePolicy.allowed_sources: Result<Vec<…>, String>`**，而 `validate_source` 里 `allowed_sources.as_ref().map_err(Clone::clone)?` ⇒ 错误**冒泡到用户面** | **译**（我最初按「只在 `from_requirements` 里 collect」判成登记 —— 数据把它翻正了） |
+| `:418 … :436`（`configured_marketplace_source`） | ← `validate_configured_marketplace` ← `validate_install`（用户面）/ 策略列举（日志）                                                                                        | 译                                                                                  |
+| `:451`（`validate_expected_marketplace_name`）   | ← `validate_install`（`:117`）/ `validate_marketplace_name_for_add`（`:336`）                                                                                               | 译                                                                                  |
+
+⚠ 对照：`plugin_cmd.rs:633/1045` 调 `allowed_configured_marketplace_names` 时**只把它当集合做 `contains` 过滤**（错误走 `:307` 的 `warn!`）——
+所以「同一个模块的函数」也可能一条链到人眼、另一条链只到日志；**按站点查链路，不按文件判性质**。
+
+### 15.2 clippy 抓到 `cargo check` 看不出的一类缺陷
+
+首跑 `clippy` **红**：`marketplace_policy.rs:107`
+
+```
+error: redundant clone
+   &source.display().to_string(),
+   ^^^^^^^^^^^^^^^^^^^^ help: remove this
+   = note: requested on the command line with `-D clippy::redundant-clone`
+```
+
+根因：`MarketplaceSource::display()` 返回的是 **`String`**（`marketplace_add/source.rs:206`），不是 `Path::display()` 那种适配器
+⇒ `.to_string()` 成了克隆。改成 `source.display().as_str()` 后 `clippy` 绿 `r-mu9ewpvs-9fp6mg`。
+⇒ 判据：**`cargo check` 管类型，`clippy` 管「能编译但有冗余」**（本仓 `redundant_clone` / `needless_borrow` 是 deny）——
+两步都不能省；`.to_string()` 之前先确认那个 `display()`/访问器返回的到底是 `String` 还是 `&str`/`Display`。
+
+### 15.3 收尾对账与门禁
+
+- `marketplace_policy.rs`：22 candidates → **0**；crate：215 → **193**（差额**正好 22**）。
+- `i18n-check` `r-mu9equtp-fiuxkg`（3577 词条 / missing 0 / spacing 0 / duplicate 0 / coverage 99.7%）；
+  `clippy` `r-mu9ewpvs-9fp6mg`（2m37s）；`just test -p codex-core-plugins` **438 passed** `r-mu9eyegv-hqp1hj`。

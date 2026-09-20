@@ -9385,6 +9385,39 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to parse remote featured plugin response from {0}: {1}",
         "解析来自{0}的远程特色插件响应失败：{1}",
     ),
+    ("failed to add marketplace: {0}", "添加市场源失败：{0}"),
+    (
+        "--sparse is only supported for git marketplace sources",
+        "只对git市场源支持--sparse",
+    ),
+    (
+        "failed to create marketplace install directory {1}: {0}",
+        "创建市场源安装目录{1}失败：{0}",
+    ),
+    (
+        "failed to resolve installed marketplace root: {0}",
+        "解析已安装的市场源根目录失败：{0}",
+    ),
+    (
+        "marketplace '{0}' is already added from a different source; remove it before adding this source",
+        "市场源 '{0}' 已从不同来源添加；请先移除它再添加此来源",
+    ),
+    (
+        "failed to create marketplace staging directory {1}: {0}",
+        "创建市场源暂存目录{1}失败：{0}",
+    ),
+    (
+        "failed to create temporary marketplace directory in {1}: {0}",
+        "在{1}中创建临时市场源目录失败：{0}",
+    ),
+    (
+        "failed to install marketplace at {1}: {0}",
+        "安装市场源到{1}失败：{0}",
+    ),
+    (
+        "{0}; additionally failed to roll back installed marketplace at {2}: {1}",
+        "{0}；另外回滚已安装的市场源（{2}）失败：{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -392,6 +392,73 @@ def dump_rows(spec: dict) -> dict[int, str]:
     return rows
 
 
+def self_test() -> int:
+    """把工具自身的判定变成可跑的断言：`python3 scripts/i18n_apply.py --self-test`。
+
+    覆盖三处曾经出错/易错的判定：
+    1. `_used_imports` 的形态（空 spec / 纯属性 / 调用点）—— 纯属性曾漏插 `current`（会编译不过）；
+       `as_str()` 曾被 `"tr("` 子串假阳性命中（多插 unused import）；
+    2. 占位符索引守护：译文的 `{N}` 集合必须等于键的 `{N}` 集合（缺项/越界要拦）；
+    3. 词典查重谓词：单行与折行两种形态都要认。
+    """
+    bad: list[str] = []
+    total = [0]
+
+    def check(note: str, got, want) -> None:
+        total[0] += 1
+        if got != want:
+            bad.append(f"{note}：got={got!r} want={want!r}")
+
+    check("空 spec ⇒ 无 import", _used_imports({}), set())
+    check(
+        "纯属性 ⇒ current+tr_with",
+        _used_imports(
+            {
+                "extra_edits": [
+                    {"replace": '"{}", tr_with(current(), "k", &[x.as_str()])'}
+                ]
+            }
+        ),
+        {"current", "tr_with"},
+    )
+    check(
+        "调用点 ⇒ current+tr",
+        _used_imports({"translate": {"1": {"kind": "arg", "args": []}}}),
+        {"current", "tr"},
+    )
+    check(
+        "裸 tr( ⇒ current+tr",
+        _used_imports({"extra_edits": [{"replace": 'tr(current(), "k")'}]}),
+        {"current", "tr"},
+    )
+
+    def idx(s: str) -> list[int]:
+        return sorted(int(m) for m in re.findall(r"\{(\d+)\}", s))
+
+    check("索引集合一致 ⇒ 通过", idx("{0} 与 {1}") == idx("{1} 与 {0}"), True)
+    check("译文缺项 ⇒ 拦", idx("{0}") == idx("{0} {1}"), False)
+    check("译文越界 ⇒ 拦", idx("{0} {2}") == idx("{0} {1}"), False)
+
+    def present(key: str, dt: str) -> bool:
+        return bool(re.search(r'"%s"\s*,' % re.escape(key), dt))
+
+    check("查重：单行形态命中", present("a b", '    ("a b", "x"),\n'), True)
+    check(
+        "查重：折行形态命中",
+        present("a b", '    (\n        "a b",\n        "x",\n    ),\n'),
+        True,
+    )
+    check("查重：不存在不命中", present("a b", '    ("other", "x"),\n'), False)
+
+    if bad:
+        print(f"self-test ❌ （{len(bad)}/{total[0]} 项失败）")
+        for b in bad:
+            print("  -", b)
+        return 1
+    print(f"self-test ✅ {total[0]} 项断言全过（import 形态 / 占位符索引 / 词典查重）")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--spec")
@@ -399,7 +466,12 @@ def main() -> int:
         "--specs", help='批量：JSON 文件里放 {"batches": [<spec>, ...]}，逐个跑 --spec'
     )
     ap.add_argument("--apply", action="store_true", help="写入（默认只做 plan）")
+    ap.add_argument(
+        "--self-test", action="store_true", help="只跑工具自身的判定断言，不读 spec"
+    )
     args = ap.parse_args()
+    if args.self_test:
+        return self_test()
     if args.specs:
         batches = json.loads(Path(args.specs).read_text(encoding="utf-8"))["batches"]
         rc = 0

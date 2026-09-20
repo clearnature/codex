@@ -629,3 +629,40 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
 - `i18n-check` `r-mu9g24xz-8uggz2`（3630 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
   `clippy` **修前** `r-mu9g5bsu-pwwljj`（带 1 条 unused-import 警告）→ **修后** `r-mu9gaq8t-95z2os`（无该警告）；
   `just test -p codex-core-plugins` **438 passed** `r-mu9gcotm-3jzr2d`。
+
+## 二十、第十四批：marketplace_add.rs 12 条全译 + 工具自带 `--self-test`
+
+### 20.1 批次本体
+
+12 条候选全在 `add_marketplace_sync_with_cloner`（返回 `Result<_, MarketplaceAddError>`），该错误进 CLI 的
+`plugin marketplace add` 用户面 ⇒ **全译、登记 0**；文件内无 `warn!`。
+预检② 无命中（全为新键）；12 站点含 3 组**文件内重复值**（`failed to resolve installed marketplace root: {err}` ×3、
+`… is already added from a different source …` ×2）⇒ 实际只新增 **9** 条词条。
+对账：`marketplace_add.rs` 12 → **0**；crate：128 → **116**（差额**正好 12**）。
+
+### 20.2 收尾：把「工具自身的判定」变成可跑的断言（补上一轮标记的未完成项）
+
+上一批（§19）修掉 `_used_imports` 的两个缺陷后，我如实记了一条**未完成**：那些自检只是临时脚本，**没有常驻判据**。
+本批把它补上：`scripts/i18n_apply.py --self-test` 现在跑 **10 项断言**，覆盖三处曾经出错/易错的判定——
+
+1. `_used_imports` 的四个形态（空 spec / 纯属性（含 `as_str()`）/ 调用点 / 裸 `tr(`）；
+2. 占位符索引守护（一致通过、缺项拦、越界拦）；
+3. 词典查重谓词（单行命中、折行命中、不存在不命中）。
+
+**两条回执（双向）**：
+
+- 正向：`python3 scripts/i18n_apply.py --self-test` → `self-test ✅ 10 项断言全过`，回执 `r-mu9ghdpi-2tb2mb`；
+- **负向控制**：把词边界判定**临时改回旧的子串写法**（`"tr(" in body`），自检立刻红，且**红在正确用例**上
+  （`纯属性 ⇒ current+tr_with：got={'tr','tr_with','current'} want={'tr_with','current'}`），
+  回执 `r-mu9gh9w4-2lrg3t`（`expectFail` 签发为**通过**——证据是「它确实红了、而且红在正确的地方」）；
+  命令内自带备份/还原，事后 `diff` 确认工具与备份一致。
+
+> 两次失败的负向控制尝试也值得记：第一次锚串在 shell 转义里变了形（注入失败），第二次把 `if` 叠成了 `if if`（语法错）。
+> 两次都被工具判为**未通过**（`expect` 片段没出现）——**这正是 `expectFail` 该有的行为**：它不接受「随便怎么红都算红」。
+> 第三次改成「落文件的补丁脚本 + 只替换谓词部分」才成立。
+
+### 20.3 门禁
+
+`i18n-check` `r-mu9gj9ow-tfhs9e`（3639 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
+`clippy` `r-mu9gmrch-1sywqw`（46 crate / 2m35s）；`just test -p codex-core-plugins` **438 passed** `r-mu9go5zw-o7s314`；
+`cargo check -p codex-core-plugins --all-targets` EXIT=0（14.42s）。

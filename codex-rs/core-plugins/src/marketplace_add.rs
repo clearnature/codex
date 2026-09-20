@@ -2,6 +2,9 @@ use crate::installed_marketplaces::marketplace_install_root;
 use crate::marketplace_policy::validate_marketplace_name_for_add;
 use crate::marketplace_policy::validate_marketplace_source_for_add;
 use codex_config::ConfigRequirements;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::fs;
 use std::path::Path;
@@ -58,7 +61,13 @@ pub async fn add_marketplace(
         add_marketplace_sync(codex_home.as_path(), &requirements, request)
     })
     .await
-    .map_err(|err| MarketplaceAddError::Internal(format!("failed to add marketplace: {err}")))?
+    .map_err(|err| {
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to add marketplace: {0}",
+            &[&err.to_string()],
+        ))
+    })?
 }
 
 pub fn is_local_marketplace_source(
@@ -99,15 +108,20 @@ where
             .map_err(MarketplaceAddError::InvalidRequest)?;
     if !sparse_paths.is_empty() && !matches!(source, MarketplaceSource::Git { .. }) {
         return Err(MarketplaceAddError::InvalidRequest(
-            "--sparse is only supported for git marketplace sources".to_string(),
+            tr(
+                current(),
+                "--sparse is only supported for git marketplace sources",
+            )
+            .to_string(),
         ));
     }
 
     let install_root = marketplace_install_root(codex_home);
     fs::create_dir_all(&install_root).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to create marketplace install directory {}: {err}",
-            install_root.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to create marketplace install directory {1}: {0}",
+            &[&err.to_string(), &install_root.display().to_string()],
         ))
     })?;
 
@@ -123,8 +137,10 @@ where
             marketplace_name,
             source_display: source.display(),
             installed_root: AbsolutePathBuf::try_from(existing_root).map_err(|err| {
-                MarketplaceAddError::Internal(format!(
-                    "failed to resolve installed marketplace root: {err}"
+                MarketplaceAddError::Internal(tr_with(
+                    current(),
+                    "failed to resolve installed marketplace root: {0}",
+                    &[&err.to_string()],
                 ))
             })?,
             already_added: true,
@@ -136,8 +152,10 @@ where
         validate_marketplace_name_for_add(managed_marketplace_name, &marketplace_name)
             .map_err(MarketplaceAddError::InvalidRequest)?;
         if find_marketplace_root_by_name(codex_home, &install_root, &marketplace_name)?.is_some() {
-            return Err(MarketplaceAddError::InvalidRequest(format!(
-                "marketplace '{marketplace_name}' is already added from a different source; remove it before adding this source"
+            return Err(MarketplaceAddError::InvalidRequest(tr_with(
+                current(),
+                "marketplace '{0}' is already added from a different source; remove it before adding this source",
+                &[marketplace_name.as_str()],
             )));
         }
         record_added_marketplace_entry(codex_home, &marketplace_name, &install_metadata)?;
@@ -145,8 +163,10 @@ where
             marketplace_name,
             source_display: source.display(),
             installed_root: AbsolutePathBuf::try_from(path.clone()).map_err(|err| {
-                MarketplaceAddError::Internal(format!(
-                    "failed to resolve installed marketplace root: {err}"
+                MarketplaceAddError::Internal(tr_with(
+                    current(),
+                    "failed to resolve installed marketplace root: {0}",
+                    &[&err.to_string()],
                 ))
             })?,
             already_added: false,
@@ -155,18 +175,20 @@ where
 
     let staging_root = marketplace_staging_root(&install_root);
     fs::create_dir_all(&staging_root).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to create marketplace staging directory {}: {err}",
-            staging_root.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to create marketplace staging directory {1}: {0}",
+            &[&err.to_string(), &staging_root.display().to_string()],
         ))
     })?;
     let staged_root = Builder::new()
         .prefix("marketplace-add-")
         .tempdir_in(&staging_root)
         .map_err(|err| {
-            MarketplaceAddError::Internal(format!(
-                "failed to create temporary marketplace directory in {}: {err}",
-                staging_root.display()
+            MarketplaceAddError::Internal(tr_with(
+                current(),
+                "failed to create temporary marketplace directory in {1}: {0}",
+                &[&err.to_string(), &staging_root.display().to_string()],
             ))
         })?;
     let staged_root = staged_root.keep();
@@ -180,23 +202,31 @@ where
     let destination = install_root.join(safe_marketplace_dir_name(&marketplace_name)?);
     ensure_marketplace_destination_is_inside_install_root(&install_root, &destination)?;
     if destination.exists() {
-        return Err(MarketplaceAddError::InvalidRequest(format!(
-            "marketplace '{marketplace_name}' is already added from a different source; remove it before adding this source"
+        return Err(MarketplaceAddError::InvalidRequest(tr_with(
+            current(),
+            "marketplace '{0}' is already added from a different source; remove it before adding this source",
+            &[marketplace_name.as_str()],
         )));
     }
     replace_marketplace_root(&staged_root, &destination).map_err(|err| {
-        MarketplaceAddError::Internal(format!(
-            "failed to install marketplace at {}: {err}",
-            destination.display()
+        MarketplaceAddError::Internal(tr_with(
+            current(),
+            "failed to install marketplace at {1}: {0}",
+            &[&err.to_string(), &destination.display().to_string()],
         ))
     })?;
     if let Err(err) =
         record_added_marketplace_entry(codex_home, &marketplace_name, &install_metadata)
     {
         if let Err(rollback_err) = fs::rename(&destination, &staged_root) {
-            return Err(MarketplaceAddError::Internal(format!(
-                "{err}; additionally failed to roll back installed marketplace at {}: {rollback_err}",
-                destination.display()
+            return Err(MarketplaceAddError::Internal(tr_with(
+                current(),
+                "{0}; additionally failed to roll back installed marketplace at {2}: {1}",
+                &[
+                    &err.to_string(),
+                    &rollback_err.to_string(),
+                    &destination.display().to_string(),
+                ],
             )));
         }
         return Err(err);
@@ -206,8 +236,10 @@ where
         marketplace_name,
         source_display: source.display(),
         installed_root: AbsolutePathBuf::try_from(destination).map_err(|err| {
-            MarketplaceAddError::Internal(format!(
-                "failed to resolve installed marketplace root: {err}"
+            MarketplaceAddError::Internal(tr_with(
+                current(),
+                "failed to resolve installed marketplace root: {0}",
+                &[&err.to_string()],
             ))
         })?,
         already_added: false,

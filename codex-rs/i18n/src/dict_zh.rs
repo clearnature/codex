@@ -9418,6 +9418,50 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "{0}; additionally failed to roll back installed marketplace at {2}: {1}",
         "{0}；另外回滚已安装的市场源（{2}）失败：{1}",
     ),
+    (
+        "failed to serialize activated marketplace metadata: {0}",
+        "序列化已激活的市场源元数据失败：{0}",
+    ),
+    (
+        "failed to write activated marketplace metadata: {0}",
+        "写入已激活的市场源元数据失败：{0}",
+    ),
+    (
+        "failed to determine marketplace install parent for {0}",
+        "无法确定市场源的安装父目录：{0}",
+    ),
+    (
+        "failed to create marketplace install parent {1}: {0}",
+        "创建市场源安装父目录{1}失败：{0}",
+    ),
+    (
+        "failed to create marketplace backup directory in {1}: {0}",
+        "在{1}中创建市场源备份目录失败：{0}",
+    ),
+    (
+        "failed to move previous marketplace root out of the way at {1}: {0}",
+        "移开先前的市场源根目录失败（{1}）：{0}",
+    ),
+    (
+        "failed to activate upgraded marketplace at {1}: {0}",
+        "激活升级后的市场源失败（{1}）：{0}",
+    ),
+    (
+        "failed to activate upgraded marketplace at {2}: {0}; failed to restore previous marketplace root (left at {3}): {1}",
+        "激活升级后的市场源（{2}）失败：{0}；恢复先前的市场源根目录失败（留在 {3}）：{1}",
+    ),
+    (
+        "{0}; failed to restore previous marketplace root at {2} (left at {3}): {1}",
+        "{0}；恢复先前的市场源根目录（{2}）失败（留在 {3}）：{1}",
+    ),
+    (
+        "{0}; failed to remove newly activated marketplace root at {2}: {1}",
+        "{0}；删除新激活的市场源根目录（{2}）失败：{1}",
+    ),
+    (
+        "installed marketplace `{0}` changed while auto-upgrade was in flight",
+        "已安装的市场源 `{0}` 在自动升级过程中发生变化",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

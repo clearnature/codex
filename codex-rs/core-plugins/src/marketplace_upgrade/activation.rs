@@ -1,5 +1,7 @@
 use super::ConfiguredGitMarketplace;
 use codex_config::types::MarketplaceSourceType;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
@@ -79,10 +81,20 @@ pub(super) fn write_installed_marketplace_metadata(
     revision: &str,
 ) -> Result<(), String> {
     let metadata = installed_marketplace_metadata(marketplace, revision);
-    let contents = serde_json::to_string_pretty(&metadata)
-        .map_err(|err| format!("failed to serialize activated marketplace metadata: {err}"))?;
-    std::fs::write(installed_marketplace_metadata_path(root), contents)
-        .map_err(|err| format!("failed to write activated marketplace metadata: {err}"))
+    let contents = serde_json::to_string_pretty(&metadata).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to serialize activated marketplace metadata: {0}",
+            &[&err.to_string()],
+        )
+    })?;
+    std::fs::write(installed_marketplace_metadata_path(root), contents).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to write activated marketplace metadata: {0}",
+            &[&err.to_string()],
+        )
+    })
 }
 
 pub(super) fn activate_marketplace_root(
@@ -93,15 +105,17 @@ pub(super) fn activate_marketplace_root(
 ) -> Result<(), String> {
     let staged_root = staged_dir.path();
     let Some(parent) = destination.parent() else {
-        return Err(format!(
-            "failed to determine marketplace install parent for {}",
-            destination.display()
+        return Err(tr_with(
+            current(),
+            "failed to determine marketplace install parent for {0}",
+            &[&destination.display().to_string()],
         ));
     };
     std::fs::create_dir_all(parent).map_err(|err| {
-        format!(
-            "failed to create marketplace install parent {}: {err}",
-            parent.display()
+        tr_with(
+            current(),
+            "failed to create marketplace install parent {1}: {0}",
+            &[&err.to_string(), &parent.display().to_string()],
         )
     })?;
 
@@ -110,32 +124,40 @@ pub(super) fn activate_marketplace_root(
             .prefix("marketplace-backup-")
             .tempdir_in(parent)
             .map_err(|err| {
-                format!(
-                    "failed to create marketplace backup directory in {}: {err}",
-                    parent.display()
+                tr_with(
+                    current(),
+                    "failed to create marketplace backup directory in {1}: {0}",
+                    &[&err.to_string(), &parent.display().to_string()],
                 )
             })?;
         let backup_root = backup_dir.path().join("root");
         std::fs::rename(destination, &backup_root).map_err(|err| {
-            format!(
-                "failed to move previous marketplace root out of the way at {}: {err}",
-                destination.display()
+            tr_with(
+                current(),
+                "failed to move previous marketplace root out of the way at {1}: {0}",
+                &[&err.to_string(), &destination.display().to_string()],
             )
         })?;
 
         if let Err(err) = std::fs::rename(staged_root, destination) {
             let rollback_result = std::fs::rename(&backup_root, destination);
             return match rollback_result {
-                Ok(()) => Err(format!(
-                    "failed to activate upgraded marketplace at {}: {err}",
-                    destination.display()
+                Ok(()) => Err(tr_with(
+                    current(),
+                    "failed to activate upgraded marketplace at {1}: {0}",
+                    &[&err.to_string(), &destination.display().to_string()],
                 )),
                 Err(rollback_err) => {
                     let backup_path = backup_dir.keep().join("root");
-                    Err(format!(
-                        "failed to activate upgraded marketplace at {}: {err}; failed to restore previous marketplace root (left at {}): {rollback_err}",
-                        destination.display(),
-                        backup_path.display()
+                    Err(tr_with(
+                        current(),
+                        "failed to activate upgraded marketplace at {2}: {0}; failed to restore previous marketplace root (left at {3}): {1}",
+                        &[
+                            &err.to_string(),
+                            &rollback_err.to_string(),
+                            &destination.display().to_string(),
+                            &backup_path.display().to_string(),
+                        ],
                     ))
                 }
             };
@@ -160,10 +182,15 @@ pub(super) fn activate_marketplace_root(
                 Ok(()) => Err(err),
                 Err(rollback_err) => {
                     let backup_path = backup_dir.keep().join("root");
-                    Err(format!(
-                        "{err}; failed to restore previous marketplace root at {} (left at {}): {rollback_err}",
-                        destination.display(),
-                        backup_path.display()
+                    Err(tr_with(
+                        current(),
+                        "{0}; failed to restore previous marketplace root at {2} (left at {3}): {1}",
+                        &[
+                            err.as_str(),
+                            &rollback_err.to_string(),
+                            &destination.display().to_string(),
+                            &backup_path.display().to_string(),
+                        ],
                     ))
                 }
             };
@@ -173,9 +200,10 @@ pub(super) fn activate_marketplace_root(
     }
 
     std::fs::rename(staged_root, destination).map_err(|err| {
-        format!(
-            "failed to activate upgraded marketplace at {}: {err}",
-            destination.display()
+        tr_with(
+            current(),
+            "failed to activate upgraded marketplace at {1}: {0}",
+            &[&err.to_string(), &destination.display().to_string()],
         )
     })?;
     let activation_result = if previous_snapshot.exists {
@@ -189,9 +217,14 @@ pub(super) fn activate_marketplace_root(
         let remove_result = std::fs::remove_dir_all(destination);
         return match remove_result {
             Ok(()) => Err(err),
-            Err(remove_err) => Err(format!(
-                "{err}; failed to remove newly activated marketplace root at {}: {remove_err}",
-                destination.display()
+            Err(remove_err) => Err(tr_with(
+                current(),
+                "{0}; failed to remove newly activated marketplace root at {2}: {1}",
+                &[
+                    err.as_str(),
+                    &remove_err.to_string(),
+                    &destination.display().to_string(),
+                ],
             )),
         };
     }
@@ -200,9 +233,10 @@ pub(super) fn activate_marketplace_root(
 }
 
 fn installed_marketplace_snapshot_changed_error(snapshot: &InstalledMarketplaceSnapshot) -> String {
-    format!(
-        "installed marketplace `{}` changed while auto-upgrade was in flight",
-        snapshot.marketplace_name
+    tr_with(
+        current(),
+        "installed marketplace `{0}` changed while auto-upgrade was in flight",
+        &[snapshot.marketplace_name.as_str()],
     )
 }
 

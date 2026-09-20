@@ -666,3 +666,42 @@ impl fmt::Display for ArchiveSizeLimitExceeded {
 `i18n-check` `r-mu9gj9ow-tfhs9e`（3639 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
 `clippy` `r-mu9gmrch-1sywqw`（46 crate / 2m35s）；`just test -p codex-core-plugins` **438 passed** `r-mu9go5zw-o7s314`；
 `cargo check -p codex-core-plugins --all-targets` EXIT=0（14.42s）。
+
+## 二十一、第十五批：marketplace_upgrade/activation.rs 12 条全译（0 登记）
+
+### 21.1 接收方
+
+12 条分属两个 `pub(super) fn`：`write_installed_marketplace_metadata`（`:83` `:85`）与
+`activate_marketplace_root`（`:97` … `:193`），外加 `installed_marketplace_snapshot_changed_error`（`:204`）。
+两者的调用点是 **`marketplace_upgrade.rs:291-292`** 的升级流程 ⇒ 错误经
+`upgrade_configured_git_marketplace` → `errors[].message`（§9.1 已证用户面）⇒ **全译、登记 0**。
+⚠ 注意与本文件**形态极像**的 `startup_sync.rs`（§8）是**登记**：差别只在**调用链的终点**，不在文案长相。
+
+### 21.2 clippy 第三次抓到 `redundant_clone`（本批 2 处）——并升级了预检
+
+首跑 `clippy` 红：`:189` 与 `:224` 的 `&err.to_string()`
+
+```
+error: redundant clone
+   &err.to_string(),
+   ^^^^^^^^^^^^ help: remove this
+   note: this value is dropped without further use
+```
+
+根因：这两处的 `err` 来自 `let Err(err) = …` / `if let Err(err) = activation_result`，而它的类型是 **`String`**
+（`after_activate() -> Result<(), String>`）⇒ `.to_string()` 成了克隆。改成 `err.as_str()` 后 clippy 绿 `r-mu9gz4zq-l9osvf`。
+
+**预检升级（第 ⑤ 条）**：写 args 前，对每个 `{err}`/`{x}` 占位符**看它绑定的类型**：
+
+- 绑定来自 `io::Error` / `serde_json::Error` / `url::ParseError` / `JoinError` / 自定义 Error ⇒ `&x.to_string()`；
+- 绑定来自 `Result<_, String>`（`let Err(err) = …`、`if let Err(err) = …`）或本就是 `String` ⇒ **`x.as_str()`**；
+- 绑定是 `&str` ⇒ **直接用**（不 `.as_str()`，那是 `E0658 str_as_str`）。
+  ⇒ 这是本会话**第三次**栽在「同名变量不同类型的取值方式」上（§14 `plugin_name: &str` vs `String`；§15 `MarketplaceSource::display() -> String`；本批 `err: String`）。
+  **结论**：这类判断**不该靠记忆**——`cargo check` + `clippy` 两道门禁就是判据，代价只是多一轮；本批如实走完了这一轮。
+
+### 21.3 收尾对账与门禁
+
+- `activation.rs`：12 candidates → **0**；crate：116 → **104**（差额**正好 12**）；12 站点含 1 组文件内重复值（`:130`/`:177`）⇒ 新增 **11** 条词条。
+- `cargo check --all-targets` EXIT=0（14.70s）；`i18n-check` `r-mu9gu0b1-1x5pmz`（3650 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
+  `clippy` 修前红 `r-mu9guoc0-2ahtpn` → 修后绿 `r-mu9gz4zq-l9osvf`；
+  `just test -p codex-core-plugins` **438 passed** `r-mu9h10ch-wvz9xy`。

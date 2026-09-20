@@ -731,3 +731,39 @@ error: redundant clone
 - `remote_mutations.rs`：12 candidates → **0**；crate：104 → **92**（差额**正好 12**）；12 条全部新增（无跨文件复用、无文件内重复）。
 - `cargo check --all-targets` EXIT=0（16.97s）；`i18n-check` `r-mu9h5o4q-0hr1m7`（3662 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
   `clippy` `r-mu9h9dq0-cygiau`（46 crate / 2m44s，**首次即绿**）；`just test -p codex-core-plugins` **438 passed** `r-mu9hbd9w-fzmo1t`。
+
+## 二十三、第十七批：marketplace_upgrade.rs 11 条全译
+
+### 23.1 预检①（`current` 遮蔽）**第一次在开工前就生效**
+
+本文件 `:304` 有一行
+
+```rust
+    let current = read_configured_git_marketplace(reload_config, &expected.name)?;
+    match current { … }
+```
+
+—— 局部绑定就叫 `current`，于是**它作用域内的两个站点（`:308` `:312`）如果按常规插入 `current()`，会被遮蔽**（§16 在 `plugin_bundle_archive.rs` 踩过的 `E0618`）。
+
+处置（开工前就分好，而不是事后修）：
+
+- 这 2 条走 **`extra_edits`**，代码里直接写**限定路径** `codex_i18n::current()`；
+- 其余 9 条走常规 `translate`（未限定）⇒ 因此工具插入的 `use codex_i18n::current;` **仍被使用**，不会产生 unused import（§19 的教训）。
+- 结果：`cargo check -p codex-core-plugins --all-targets` **首次即 EXIT=0**（14.59s），`clippy` **首次即绿**（`r-mu9hixcc-scrzm0`）。
+
+⚠ 作用域边界要**逐条看**：同文件 `:324` 在 `fn read_configured_git_marketplace` 里，`current` **不在**其作用域 ⇒ 那条用常规写法即可。
+⇒ 预检① 的价值在本批兑现：**同一类缺陷（§16 遮蔽 / §19 import 位置 / §21 冗余克隆）在写成预检后，连续两轮没再消耗返工轮次**。
+
+### 23.2 站点与取值
+
+| 站点                                             | 形态                        | 取值                                                                                                                                                                 |
+| ------------------------------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `:203` `:260` `:269` `:284` `:287` `:298` `:324` | `format!`                   | 错误类型字段 `&err.to_string()`；`PathBuf`/`Path` 用 `&x.display().to_string()`；**`String` 字段用 `.as_str()`**（`:287` 的 `marketplace_name`、`marketplace.name`） |
+| `:216` `:237`                                    | `.to_string()` 的裸字面量   | `arg`                                                                                                                                                                |
+| `:308` `:312`                                    | `format!`（在遮蔽作用域内） | `extra_edits` + **限定路径**，`expected.name: String` ⇒ `.as_str()`                                                                                                  |
+
+### 23.3 收尾对账与门禁
+
+- `marketplace_upgrade.rs`：11 candidates → **0**（该文件另有 1 条早先批次的登记行）；crate：92 → **81**（差额**正好 11**）。
+- `i18n-check` `r-mu9hfoz3-0a9ee5`（3673 词条 / spacing 0 / duplicate 0 / coverage 99.8%）；
+  `clippy` `r-mu9hixcc-scrzm0`（46 crate / 2m24s，首次即绿）；`just test -p codex-core-plugins` **438 passed** `r-mu9hjpwv-jpnad7`。

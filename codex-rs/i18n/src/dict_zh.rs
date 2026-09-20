@@ -9501,6 +9501,50 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "remote plugin {0} is not available for install",
         "远程插件 {0} 不可安装",
     ),
+    (
+        "invalid configured Git marketplace: {0}",
+        "已配置的Git市场源无效：{0}",
+    ),
+    (
+        "configured Git marketplace is missing source",
+        "已配置的Git市场源缺少source",
+    ),
+    (
+        "validated Git marketplace source resolved to a local path",
+        "已验证的Git市场源解析为本地路径",
+    ),
+    (
+        "failed to create marketplace upgrade staging directory {1}: {0}",
+        "创建市场源升级暂存目录{1}失败：{0}",
+    ),
+    (
+        "failed to create temporary marketplace upgrade directory in {1}: {0}",
+        "在{1}中创建临时市场源升级目录失败：{0}",
+    ),
+    (
+        "failed to validate upgraded marketplace root: {0}",
+        "校验升级后的市场源根目录失败：{0}",
+    ),
+    (
+        "upgraded marketplace name `{0}` does not match configured marketplace `{1}`",
+        "升级后的市场源名称 `{0}` 与已配置的市场源 `{1}` 不匹配",
+    ),
+    (
+        "upgraded marketplace path is not absolute: {0}",
+        "升级后的市场源路径不是绝对路径：{0}",
+    ),
+    (
+        "failed to reload config while checking marketplace upgrade: {0}",
+        "检查市场源升级时重新加载配置失败：{0}",
+    ),
+    (
+        "configured marketplace `{0}` changed while auto-upgrade was in flight",
+        "已配置的市场源 `{0}` 在自动升级过程中发生变化",
+    ),
+    (
+        "configured marketplace `{0}` was removed or is no longer a Git marketplace",
+        "已配置的市场源 `{0}` 已被移除或不再是Git市场源",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -16,6 +16,9 @@ use crate::marketplace_policy::validate_marketplace_name_for_add;
 use codex_config::ConfigLayerStack;
 use codex_config::types::MarketplaceConfig;
 use codex_config::types::MarketplaceSourceType;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::validate_plugin_segment;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::path::Path;
@@ -200,7 +203,13 @@ fn parse_configured_git_marketplace(
     let marketplace = marketplace
         .clone()
         .try_into::<MarketplaceConfig>()
-        .map_err(|err| format!("invalid configured Git marketplace: {err}"))?;
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "invalid configured Git marketplace: {0}",
+                &[&err.to_string()],
+            )
+        })?;
     let MarketplaceConfig {
         last_updated: _,
         last_revision: _,
@@ -212,8 +221,8 @@ fn parse_configured_git_marketplace(
     if source_type != Some(MarketplaceSourceType::Git) {
         return Ok(None);
     }
-    let source =
-        source.ok_or_else(|| "configured Git marketplace is missing source".to_string())?;
+    let source = source
+        .ok_or_else(|| tr(current(), "configured Git marketplace is missing source").to_string())?;
     Ok(Some(ConfiguredGitMarketplace {
         name: name.to_string(),
         source,
@@ -234,7 +243,11 @@ fn upgrade_configured_git_marketplace(
     let (source, ref_name) = match normalized_source {
         Some(MarketplaceSource::Git { url, ref_name }) => (url.as_str(), ref_name.as_deref()),
         Some(MarketplaceSource::Local { .. }) => {
-            return Err("validated Git marketplace source resolved to a local path".to_string());
+            return Err(tr(
+                current(),
+                "validated Git marketplace source resolved to a local path",
+            )
+            .to_string());
         }
         None => (marketplace.source.as_str(), marketplace.ref_name.as_deref()),
     };
@@ -256,18 +269,20 @@ fn upgrade_configured_git_marketplace(
 
     let staging_parent = install_root.join(".staging");
     std::fs::create_dir_all(&staging_parent).map_err(|err| {
-        format!(
-            "failed to create marketplace upgrade staging directory {}: {err}",
-            staging_parent.display()
+        tr_with(
+            current(),
+            "failed to create marketplace upgrade staging directory {1}: {0}",
+            &[&err.to_string(), &staging_parent.display().to_string()],
         )
     })?;
     let staged_dir = tempfile::Builder::new()
         .prefix("marketplace-upgrade-")
         .tempdir_in(&staging_parent)
         .map_err(|err| {
-            format!(
-                "failed to create temporary marketplace upgrade directory in {}: {err}",
-                staging_parent.display()
+            tr_with(
+                current(),
+                "failed to create temporary marketplace upgrade directory in {1}: {0}",
+                &[&err.to_string(), &staging_parent.display().to_string()],
             )
         })?;
 
@@ -280,12 +295,18 @@ fn upgrade_configured_git_marketplace(
         MARKETPLACE_UPGRADE_GIT_TIMEOUT,
         mode,
     )?;
-    let marketplace_name = validate_marketplace_root(staged_dir.path())
-        .map_err(|err| format!("failed to validate upgraded marketplace root: {err}"))?;
+    let marketplace_name = validate_marketplace_root(staged_dir.path()).map_err(|err| {
+        tr_with(
+            current(),
+            "failed to validate upgraded marketplace root: {0}",
+            &[&err.to_string()],
+        )
+    })?;
     if marketplace_name != marketplace.name {
-        return Err(format!(
-            "upgraded marketplace name `{marketplace_name}` does not match configured marketplace `{}`",
-            marketplace.name
+        return Err(tr_with(
+            current(),
+            "upgraded marketplace name `{0}` does not match configured marketplace `{1}`",
+            &[marketplace_name.as_str(), marketplace.name.as_str()],
         ));
     }
     write_installed_marketplace_metadata(staged_dir.path(), marketplace, &activated_revision)?;
@@ -295,7 +316,13 @@ fn upgrade_configured_git_marketplace(
 
     AbsolutePathBuf::try_from(destination)
         .map(Some)
-        .map_err(|err| format!("upgraded marketplace path is not absolute: {err}"))
+        .map_err(|err| {
+            tr_with(
+                current(),
+                "upgraded marketplace path is not absolute: {0}",
+                &[&err.to_string()],
+            )
+        })
 }
 fn ensure_configured_git_marketplace_unchanged(
     reload_config: &ConfigLayerReload,
@@ -304,13 +331,15 @@ fn ensure_configured_git_marketplace_unchanged(
     let current = read_configured_git_marketplace(reload_config, &expected.name)?;
     match current {
         Some(current) if current == *expected => Ok(()),
-        Some(_) => Err(format!(
-            "configured marketplace `{}` changed while auto-upgrade was in flight",
-            expected.name
+        Some(_) => Err(tr_with(
+            codex_i18n::current(),
+            "configured marketplace `{0}` changed while auto-upgrade was in flight",
+            &[expected.name.as_str()],
         )),
-        None => Err(format!(
-            "configured marketplace `{}` was removed or is no longer a Git marketplace",
-            expected.name
+        None => Err(tr_with(
+            codex_i18n::current(),
+            "configured marketplace `{0}` was removed or is no longer a Git marketplace",
+            &[expected.name.as_str()],
         )),
     }
 }
@@ -321,7 +350,11 @@ fn read_configured_git_marketplace(
 ) -> Result<Option<ConfiguredGitMarketplace>, String> {
     let effective_config = reload_config()
         .map_err(|err| {
-            format!("failed to reload config while checking marketplace upgrade: {err}")
+            tr_with(
+                current(),
+                "failed to reload config while checking marketplace upgrade: {0}",
+                &[&err.to_string()],
+            )
         })?
         .effective_config();
     let Some(marketplace) = effective_config

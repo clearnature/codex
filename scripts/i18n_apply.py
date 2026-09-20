@@ -260,6 +260,19 @@ def plan(spec: dict) -> tuple[list[tuple[int, int, str, str]], dict]:
             raise AssertionError(f":{line_no} 同键译文不一致：{keys[key]!r} vs {zh!r}")
         keys.setdefault(key, zh)
 
+        # 译文必须与键用**同一套索引**：工具的键是「先命名占位符、后空占位符」重编号的，
+        # 若 zh 按源码顺序写 {0}/{1} 就会静默串位（实测：`{}: {err}` 的键其实是 `{1}: {0}`）。
+        if zh is not None:
+
+            def _idx(s: str) -> list[int]:
+                return sorted(int(m) for m in re.findall(r"\{(\d+)\}", s))
+
+            if _idx(zh) != _idx(key):
+                raise AssertionError(
+                    f":{line_no} 译文占位符索引与键不一致：键 {_idx(key)} vs 译文 {_idx(zh)}"
+                    f"｜key={key!r} zh={zh!r}"
+                )
+
         tr_expr = (
             f'tr_with(current(), "{key}", &[{", ".join(exprs)}])'
             if exprs

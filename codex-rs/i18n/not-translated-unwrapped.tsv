@@ -1314,3 +1314,26 @@ failed to create curated plugins directory {}: {err}	codex-rs/core-plugins/src/s
 failed to create curated plugins file {}: {err}	codex-rs/core-plugins/src/startup_sync.rs:1089	§12.3 日志/诊断链（详情 docs/plan/i18n-core-plugins-plan.md §8.2；终点 manager.rs:3276 warn!）
 failed to write curated plugins file {}: {err}	codex-rs/core-plugins/src/startup_sync.rs:1095	§12.3 日志/诊断链（详情 docs/plan/i18n-core-plugins-plan.md §8.2；终点 manager.rs:3276 warn!）
 failed to set permissions on curated plugins file {}: {err}	codex-rs/core-plugins/src/startup_sync.rs:1114	§12.3 日志/诊断链（详情 docs/plan/i18n-core-plugins-plan.md §8.2；终点 manager.rs:3276 warn!）
+skipping duplicate plugin MCP server name	codex-rs/core-plugins/src/loader.rs:199	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+ignoring invalid remote installed plugin name	codex-rs/core-plugins/src/loader.rs:360	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+failed to load curated marketplace for cache refresh: {err}	codex-rs/core-plugins/src/loader.rs:394	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to prepare curated plugin cache refresh: {message}	codex-rs/core-plugins/src/loader.rs:404	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to remove stale curated plugin cache for {}: {err}	codex-rs/core-plugins/src/loader.rs:439	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to refresh curated plugin cache for {}: {err}	codex-rs/core-plugins/src/loader.rs:461	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+local curated marketplace is not available	codex-rs/core-plugins/src/loader.rs:479	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+local API curated marketplace is not available	codex-rs/core-plugins/src/loader.rs:488	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to discover marketplaces for cache refresh: {err}	codex-rs/core-plugins/src/loader.rs:599	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+ignoring invalid plugin entry during cache refresh	codex-rs/core-plugins/src/loader.rs:615	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+failed to resolve marketplace plugin manifest fallback during cache refresh	codex-rs/core-plugins/src/loader.rs:645	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+failed to materialize plugin source for {plugin_key}: {err}	codex-rs/core-plugins/src/loader.rs:670	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to read plugin version for {plugin_key}: {err}	codex-rs/core-plugins/src/loader.rs:680	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+failed to refresh plugin cache for {plugin_key}: {err}	codex-rs/core-plugins/src/loader.rs:698	§12.3 日志：Result<_,String> 只被 cache refresh 调用方 warn! 并丢弃返回值（manager.rs:2988；app-server plugins.rs:588 只取 bool）
+ignoring invalid configured plugin key during curated sync setup	codex-rs/core-plugins/src/loader.rs:811	§12.3 日志：该串作为参数传给 configured_plugin_ids / configured_plugins_from_codex_home，后者在 warn! 中使用（loader.rs:793 / :760）
+failed to read user config while refreshing curated plugin cache	codex-rs/core-plugins/src/loader.rs:823	§12.3 日志：该串作为参数传给 configured_plugin_ids / configured_plugins_from_codex_home，后者在 warn! 中使用（loader.rs:793 / :760）
+failed to parse user config while refreshing curated plugin cache	codex-rs/core-plugins/src/loader.rs:824	§12.3 日志：该串作为参数传给 configured_plugin_ids / configured_plugins_from_codex_home，后者在 warn! 中使用（loader.rs:793 / :760）
+plugin is not installed	codex-rs/core-plugins/src/loader.rs:872	§12.3 日志：写入 LoadedPlugin.error，仅被 loader.rs:120-122 的 warn! 消费
+	codex-rs/core-plugins/src/loader.rs:894	§12.3 日志：写入 LoadedPlugin.error，仅被 loader.rs:120-122 的 warn! 消费
+	codex-rs/core-plugins/src/loader.rs:899	§12.3 日志：写入 LoadedPlugin.error，仅被 loader.rs:120-122 的 warn! 消费
+plugin MCP file overwrote an earlier server definition	codex-rs/core-plugins/src/loader.rs:1575	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+failed to parse plugin MCP server	codex-rs/core-plugins/src/loader.rs:1692	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径
+failed to parse plugin manifest MCP object server	codex-rs/core-plugins/src/loader.rs:1719	§12.3 日志：本行即 tracing::warn! 的参数（同函数内紧邻），无渲染路径

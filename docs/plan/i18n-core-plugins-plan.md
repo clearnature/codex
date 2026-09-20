@@ -266,3 +266,38 @@ app-server `plugins.rs:1581-1598`；`Bundle(...)` 那一支被显式列出；
 ③ 有没有把**机器键**当文案译了？——`:274/:296` 的 `JoinError`、`:436/:540/:588` 的 `serde` 错误都只作为 `{N}` 插值，
 没有拿翻译后的文本做匹配或控制流。
 **未验证**：这 35 条在 zh 下**确实渲染出中文**——与 §12.72 的 `receiver-these-strings` 同一缺口（本机无 CLI/app-server 级断言）。
+
+## 十一、第五批：loader.rs 32 条 = 译 9 + 登记 23（首例「登记多于译」）
+
+这是 core-plugins 里第一个**日志占多数**的文件：32 条候选里 23 条只进 `tracing`，9 条到用户面。
+
+### 11.1 四处判决（都是查出来的，不是按文件名猜的）
+
+| 站点的去向                                                            | 查证结果                                                                                                                                                                                                                                                               | 判决                                                                                                       |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `:197` `:358` `:613` `:643` `:1571` `:1688` `:1715`                   | 紧邻的 `warn!(...)` 的**参数本体**（`:193` `:354` `:609` `:639` `:1567` `:1684` `:1711`）                                                                                                                                                                              | 登记                                                                                                       |
+| `:809` `:821` `:822`                                                  | 作为字符串参数传给 `configured_plugin_ids(…, invalid_plugin_key_message)`（`loader.rs:784`）与 `configured_plugins_from_codex_home(…, read_error_message, parse_error_message)`（`:750`），**两者内部就是 `warn!("{invalid_plugin_key_message}")`（`:793` / `:760`）** | 登记                                                                                                       |
+| `:392` `:402` `:437` `:459` `:477` `:486` `:597` `:668` `:678` `:696` | 都在 cache refresh 链上（`Result<_, String>`）；终点的调用方 **`manager.rs:2988` 是 `warn!("failed to prepare non-curated plugin cache refresh: {err}")`**，而 app-server `plugins.rs:588` 调 `refresh_non_curated_plugin_cache_for_context` **只取 bool**、丢弃 error | 登记                                                                                                       |
+| `:870` `:892` `:897`                                                  | 写入 `LoadedPlugin.error`；全仓消费点只有 `loader.rs:120-122` 的 `warn!`（app-server 的 `marketplace_load_errors` 另有来源，不吃这个字段）                                                                                                                             | 登记                                                                                                       |
+| **`:1260` `:1270`**                                                   | `hook_load_warnings` 会经 **app-server `catalog_processor.rs:615/625` 的 `hooks/list` 返回**，且有测试 `hooks_list_shows_plugin_hook_load_warnings`（`app-server/tests/suite/v2/hooks_list.rs:1090`）**证明它被展示**                                                  | **译**                                                                                                     |
+| **`:1761` `:1770` `:1785` `:1789`**                                   | `materialize_marketplace_plugin_source*` 的错误经 `manager.rs:2620` 的 `.map_err(MarketplaceError::InvalidPlugin)` 进 marketplace 用户面                                                                                                                               | **译**                                                                                                     |
+| **`:1865` `:1904` `:1910`**                                           | 同上的 git 助手（`run_git*`）只在 materialize 的 git 检出流程里被调用                                                                                                                                                                                                  | **译**（注意：同一助手也被 cache refresh 调到 ⇒ **同值两接收者 ⇒ 走到 UI 就译**，见 `i18n-design.md:387`） |
+
+### 11.2 两处实测到的坑（都当场纠正）
+
+1. **§7.2 的坑又踩了一次**：`:1260/:1270/:1761/:1770/:1904` 的字面量里**同时有空占位符和命名占位符**（`{}: {err}`），
+   工具的键是「先命名后空」⇒ 键变成 `… {1}: {0}`；我按**源码顺序**给 `args` ⇒ 渲染会串位。
+   修法：`args` 按重编号顺序给（`[&err.to_string(), &path.display().to_string()]`），`zh` 用同一套索引（`…{1}失败：{0}`）。
+   ⇒ 已给 `scripts/i18n_apply.py` **加了一道断言**：`zh` 的占位符索引集合必须等于键的索引集合。
+   **能力边界（诚实标注）**：它挡「缺项/越界」，**挡不住「位置互换」**（索引集合相同、位置对调时两者都通过）；
+   位置正确性目前只能靠人读 plan 输出。
+2. **站点式登记行不随行号漂移自动重链**：本批工具在文件顶部插了 2 行 import ⇒ 全文件行号 +2 ⇒
+   `i18n_dossier_lines.py --fix` **只重链了 21 条按值行，2 条站点式行仍是旧行号**（于是 census 少了 30 而不是 32）。
+   靠 §8.5 的**对账规矩**（登记/翻译站点数必须等于 census 差额）当场发现，手工把 `892→894`、`897→899` 后归零。
+   ⇒ 规矩升级：**每次 `just fmt` / 插 import 之后，用差额对账而不是只看「跑过了」**。
+
+### 11.3 收尾对账与门禁
+
+- `loader.rs`：32 candidates → **0**；crate：322 → **290**（差额**正好 32** = 9 译 + 23 登记）；23 条登记行**逐条命中源码**。
+- `cargo check -p codex-core-plugins --all-targets` EXIT=0；`i18n-check` `r-mu8z79aj-b343q5`（3490 词条 / missing 0 / spacing 0 / dup 0）；
+  `clippy` `r-mu9dk1t8-11gbl6`；`just test -p codex-core-plugins` **438 passed** `r-mu9dlui6-29j9ma`。

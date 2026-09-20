@@ -31,6 +31,8 @@ use codex_config::types::PluginConfig;
 use codex_config::types::PluginMcpServerConfig;
 use codex_connectors::parse_plugin_app_config;
 use codex_connectors::parse_plugin_app_config_value;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_mcp::parse_agent_plugin_mcp_config;
 use codex_mcp::parse_plugin_mcp_config;
 use codex_plugin::AppDeclaration;
@@ -1256,9 +1258,10 @@ fn append_plugin_hook_file(
     let contents = match fs::read_to_string(path.as_path()) {
         Ok(contents) => contents,
         Err(err) => {
-            warnings.push(format!(
-                "failed to read plugin hooks config {}: {err}",
-                path.display()
+            warnings.push(tr_with(
+                current(),
+                "failed to read plugin hooks config {1}: {0}",
+                &[&err.to_string(), &path.display().to_string()],
             ));
             return;
         }
@@ -1266,9 +1269,10 @@ fn append_plugin_hook_file(
     let parsed = match serde_json::from_str::<HooksFile>(&contents) {
         Ok(parsed) => parsed,
         Err(err) => {
-            warnings.push(format!(
-                "failed to parse plugin hooks config {}: {err}",
-                path.display()
+            warnings.push(tr_with(
+                current(),
+                "failed to parse plugin hooks config {1}: {0}",
+                &[&err.to_string(), &path.display().to_string()],
             ));
             return;
         }
@@ -1757,18 +1761,20 @@ pub(crate) fn materialize_marketplace_plugin_source_with_mode(
         } => {
             let staging_root = codex_home.join("plugins/.marketplace-plugin-source-staging");
             fs::create_dir_all(&staging_root).map_err(|err| {
-                format!(
-                    "failed to create marketplace plugin source staging directory {}: {err}",
-                    staging_root.display()
+                tr_with(
+                    current(),
+                    "failed to create marketplace plugin source staging directory {1}: {0}",
+                    &[&err.to_string(), &staging_root.display().to_string()],
                 )
             })?;
             let tempdir = tempfile::Builder::new()
                 .prefix("marketplace-plugin-source-")
                 .tempdir_in(&staging_root)
                 .map_err(|err| {
-                    format!(
-                        "failed to create marketplace plugin source staging directory in {}: {err}",
-                        staging_root.display()
+                    tr_with(
+                        current(),
+                        "failed to create marketplace plugin source staging directory in {1}: {0}",
+                        &[&err.to_string(), &staging_root.display().to_string()],
                     )
                 })?;
             clone_git_plugin_source(
@@ -1782,11 +1788,19 @@ pub(crate) fn materialize_marketplace_plugin_source_with_mode(
             )?;
             let path = if let Some(path) = path {
                 AbsolutePathBuf::try_from(tempdir.path().join(path)).map_err(|err| {
-                    format!("failed to resolve materialized plugin source path: {err}")
+                    tr_with(
+                        current(),
+                        "failed to resolve materialized plugin source path: {0}",
+                        &[&err.to_string()],
+                    )
                 })?
             } else {
                 AbsolutePathBuf::try_from(tempdir.path().to_path_buf()).map_err(|err| {
-                    format!("failed to resolve materialized plugin source path: {err}")
+                    tr_with(
+                        current(),
+                        "failed to resolve materialized plugin source path: {0}",
+                        &[&err.to_string()],
+                    )
                 })?
             };
             Ok(MaterializedMarketplacePluginSource {
@@ -1861,8 +1875,10 @@ fn clone_git_plugin_source(
         run_git(&["checkout", sha], Some(destination), mode)?;
         let checked_out_sha = run_git_output(&["rev-parse", "HEAD"], Some(destination), mode)?;
         if !checked_out_sha.eq_ignore_ascii_case(sha) {
-            return Err(format!(
-                "checked out Git SHA {checked_out_sha} does not match requested SHA {sha}"
+            return Err(tr_with(
+                current(),
+                "checked out Git SHA {0} does not match requested SHA {1}",
+                &[checked_out_sha.as_str(), sha],
             ));
         }
     } else if let Some(ref_name) = ref_name {
@@ -1899,19 +1915,26 @@ fn run_git_output(
         None
     };
 
-    let output = command
-        .output()
-        .map_err(|err| format!("failed to run git {}: {err}", args.join(" ")))?;
+    let output = command.output().map_err(|err| {
+        tr_with(
+            current(),
+            "failed to run git {1}: {0}",
+            &[&err.to_string(), &args.join(" ")],
+        )
+    })?;
     if output.status.success() {
         return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
     }
 
-    Err(format!(
-        "git {} failed with status {}\nstdout:\n{}\nstderr:\n{}",
-        args.join(" "),
-        output.status,
-        String::from_utf8_lossy(&output.stdout).trim(),
-        String::from_utf8_lossy(&output.stderr).trim()
+    Err(tr_with(
+        current(),
+        "git {0} failed with status {1}\nstdout:\n{2}\nstderr:\n{3}",
+        &[
+            &args.join(" "),
+            &output.status.to_string(),
+            String::from_utf8_lossy(&output.stdout).trim(),
+            String::from_utf8_lossy(&output.stderr).trim(),
+        ],
     ))
 }
 

@@ -8847,6 +8847,35 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "remote plugin bundle extracted size would be {0} bytes, exceeding the maximum total size of {1} bytes",
         "远程插件bundle解压后为{0}字节，超过最大总大小{1}字节",
     ),
+    (
+        "failed to read plugin hooks config {1}: {0}",
+        "读取插件hooks配置{1}失败：{0}",
+    ),
+    (
+        "failed to parse plugin hooks config {1}: {0}",
+        "解析插件hooks配置{1}失败：{0}",
+    ),
+    (
+        "failed to create marketplace plugin source staging directory {1}: {0}",
+        "创建市场插件源暂存目录{1}失败：{0}",
+    ),
+    (
+        "failed to create marketplace plugin source staging directory in {1}: {0}",
+        "在{1}中创建市场插件源暂存目录失败：{0}",
+    ),
+    (
+        "failed to resolve materialized plugin source path: {0}",
+        "解析已物化的插件源路径失败：{0}",
+    ),
+    (
+        "checked out Git SHA {0} does not match requested SHA {1}",
+        "检出的Git SHA{0}与请求的SHA{1}不匹配",
+    ),
+    ("failed to run git {1}: {0}", "运行git {1}失败：{0}"),
+    (
+        "git {0} failed with status {1}\nstdout:\n{2}\nstderr:\n{3}",
+        "git {0}失败，状态码{1}\\nstdout:\\n{2}\\nstderr:\\n{3}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1359,3 +1359,6 @@ failed to inspect plugin manifest for `{root_id}` at {path}: {source}	codex-rs/c
 failed to read plugin manifest for `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:54	§12.3 日志：同上
 failed to parse plugin manifest for `{root_id}` at {path}: {source}	codex-rs/core-plugins/src/provider.rs:61	§12.3 日志：同上
 failed to construct plugin descriptor for `{root_id}`: {source}	codex-rs/core-plugins/src/provider.rs:68	§12.3 日志：同上
+invalid remote plugin id in share local path mapping: {remote_plugin_id}	codex-rs/core-plugins/src/remote/share.rs:280	§12.3 日志：io::Error 交 local_paths 解析，经 remote.rs:88 → app-server plugins.rs:149 的 internal_error(format!("failed to load plugin share local path mapping: {err}")) —— 外层模板是 app-server 自己的候选行（plugins.rs:154，待该批次处理），本行只是其 err 字段
+workspace plugin upload URL	codex-rs/core-plugins/src/remote/share.rs:432	§12.6 占位标识：RemotePluginCatalogError::Request/UnexpectedStatus 的 url 字段（:439 同值），非独立消息；属性级模板 remote.rs:413 与 Request 的 Display 决定渲染
+plugin path must end in a valid UTF-8 directory name	codex-rs/core-plugins/src/remote/share.rs:479	§12.6 占位标识：RemotePluginCatalogError::InvalidArchive 的 reason 字段，由该变体属性级模板渲染

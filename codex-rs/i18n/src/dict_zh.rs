@@ -9634,6 +9634,39 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "marketplace destination {0} is outside install root {1}",
         "市场源目标路径{0}在安装根目录{1}之外",
     ),
+    ("marketplace source must not be empty", "市场源不能为空"),
+    (
+        "--ref is only supported for git marketplace sources",
+        "--ref仅支持git市场源",
+    ),
+    (
+        "local marketplace source must be a directory, not a file",
+        "本地市场源必须是目录，不能是文件",
+    ),
+    (
+        "invalid marketplace source format; expected owner/repo, a git URL, or a local marketplace path",
+        "市场源格式无效；应为owner/repo、git URL或本地市场源路径",
+    ),
+    (
+        "failed to read current working directory for local marketplace source: {0}",
+        "读取本地市场源的当前工作目录失败：{0}",
+    ),
+    (
+        "failed to resolve local marketplace source path: {0}",
+        "解析本地市场源路径失败：{0}",
+    ),
+    (
+        "workspace plugin create response did not include a plugin id",
+        "工作区插件创建响应未包含插件id",
+    ),
+    (
+        "created workspace plugin `{0}` did not include share_principals",
+        "创建的工作区插件`{0}`未包含share_principals",
+    ),
+    (
+        "workspace plugin share requires an account id",
+        "工作区插件分享需要account id",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

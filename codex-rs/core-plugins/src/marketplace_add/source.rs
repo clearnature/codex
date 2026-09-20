@@ -1,5 +1,8 @@
 use super::MarketplaceAddError;
 use crate::marketplace::validate_marketplace_root;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_plugin::validate_plugin_segment;
 use std::path::Path;
 use std::path::PathBuf;
@@ -22,7 +25,7 @@ pub(crate) fn parse_marketplace_source(
     let source = source.trim();
     if source.is_empty() {
         return Err(MarketplaceAddError::InvalidRequest(
-            "marketplace source must not be empty".to_string(),
+            tr(current(), "marketplace source must not be empty").to_string(),
         ));
     }
 
@@ -32,13 +35,21 @@ pub(crate) fn parse_marketplace_source(
     if looks_like_local_path(&base_source) {
         if ref_name.is_some() {
             return Err(MarketplaceAddError::InvalidRequest(
-                "--ref is only supported for git marketplace sources".to_string(),
+                tr(
+                    current(),
+                    "--ref is only supported for git marketplace sources",
+                )
+                .to_string(),
             ));
         }
         let path = resolve_local_source_path(&base_source)?;
         if path.is_file() {
             return Err(MarketplaceAddError::InvalidRequest(
-                "local marketplace source must be a directory, not a file".to_string(),
+                tr(
+                    current(),
+                    "local marketplace source must be a directory, not a file",
+                )
+                .to_string(),
             ));
         }
         return Ok(MarketplaceSource::Local { path });
@@ -59,7 +70,7 @@ pub(crate) fn parse_marketplace_source(
     }
 
     Err(MarketplaceAddError::InvalidRequest(
-        "invalid marketplace source format; expected owner/repo, a git URL, or a local marketplace path"
+        tr(current(), "invalid marketplace source format; expected owner/repo, a git URL, or a local marketplace path")
             .to_string(),
     ))
 }
@@ -75,7 +86,11 @@ where
 {
     if !sparse_paths.is_empty() && !matches!(source, MarketplaceSource::Git { .. }) {
         return Err(MarketplaceAddError::InvalidRequest(
-            "--sparse is only supported for git marketplace sources".to_string(),
+            tr(
+                current(),
+                "--sparse is only supported for git marketplace sources",
+            )
+            .to_string(),
         ));
     }
 
@@ -153,16 +168,20 @@ fn resolve_local_source_path(source: &str) -> Result<PathBuf, MarketplaceAddErro
     } else {
         std::env::current_dir()
             .map_err(|err| {
-                MarketplaceAddError::Internal(format!(
-                    "failed to read current working directory for local marketplace source: {err}"
+                MarketplaceAddError::Internal(tr_with(
+                    current(),
+                    "failed to read current working directory for local marketplace source: {0}",
+                    &[&err.to_string()],
                 ))
             })?
             .join(path)
     };
 
     path.canonicalize().map_err(|err| {
-        MarketplaceAddError::InvalidRequest(format!(
-            "failed to resolve local marketplace source path: {err}"
+        MarketplaceAddError::InvalidRequest(tr_with(
+            current(),
+            "failed to resolve local marketplace source path: {0}",
+            &[&err.to_string()],
         ))
     })
 }

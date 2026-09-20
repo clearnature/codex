@@ -2,6 +2,9 @@ use super::*;
 use crate::plugin_bundle_archive::PluginBundlePackError;
 use crate::plugin_bundle_archive::pack_plugin_bundle_tar_gz;
 use codex_http_client::RouteAwareRequestBuilder;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::CodexAuth;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use http::Method;
@@ -186,7 +189,11 @@ pub async fn save_remote_plugin_share(
     .await?;
     if response.plugin_id.is_empty() {
         return Err(RemotePluginCatalogError::UnexpectedResponse(
-            "workspace plugin create response did not include a plugin id".to_string(),
+            tr(
+                current(),
+                "workspace plugin create response did not include a plugin id",
+            )
+            .to_string(),
         ));
     }
 
@@ -227,8 +234,10 @@ pub async fn list_remote_plugin_shares(
             .collect::<BTreeMap<_, _>>();
     let local_plugin_paths =
         local_paths::load_plugin_share_local_paths(codex_home).map_err(|err| {
-            RemotePluginCatalogError::UnexpectedResponse(format!(
-                "failed to load plugin share local path mapping: {err}"
+            RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                current(),
+                "failed to load plugin share local path mapping: {0}",
+                &[&err.to_string()],
             ))
         })?;
 
@@ -242,9 +251,10 @@ pub async fn list_remote_plugin_shares(
                 .and_then(|context| context.share_principals.as_ref())
                 .is_none()
             {
-                return Err(RemotePluginCatalogError::UnexpectedResponse(format!(
-                    "created workspace plugin `{}` did not include share_principals",
-                    plugin.id
+                return Err(RemotePluginCatalogError::UnexpectedResponse(tr_with(
+                    current(),
+                    "created workspace plugin `{0}` did not include share_principals",
+                    &[plugin.id.as_str()],
                 )));
             }
             let local_plugin_path = local_plugin_paths.get(&plugin.id).cloned();
@@ -341,7 +351,7 @@ fn ensure_unlisted_workspace_target(
     }
     let account_id = auth.get_account_id().ok_or_else(|| {
         RemotePluginCatalogError::UnexpectedResponse(
-            "workspace plugin share requires an account id".to_string(),
+            tr(current(), "workspace plugin share requires an account id").to_string(),
         )
     })?;
     let mut targets = targets.unwrap_or_default();

@@ -884,3 +884,37 @@ let plugin = match self.plugin_provider.resolve_bound(selected_root).await {
 - `provider.rs` 8 → 0（8 条登记）；`marketplace_add/install.rs` 7 → 0；crate：55 → **40**。
 - `i18n-check` `r-mu9ia0ds-tbke43`（3696 词条 / duplicate 0 / spacing 0 / unused 0 / coverage 99.8%）；
   `clippy` `r-mu9idbyv-csqihs`（145.2s，首次即绿）。
+
+## 二十七、第二十一批：marketplace_add/source.rs 7 条全译 + remote/share.rs 7 条（4 译 / 3 登记）
+
+### 27.1 source.rs：全部是 `MarketplaceAddError` ⇒ 与 §26.2 同链，全译
+
+`parse_marketplace_source`（`:18`）与 `resolve_local_source_path`（`:149`）的 7 条都返回 `MarketplaceAddError`
+（app-server `marketplace_processor.rs:138-139` 与 CLI `marketplace_cmd.rs:162` 渲染）⇒ **全译**。
+其中 5 条是**无占位符**的纯句（`:25 :35 :41 :62 :78`）⇒ `kind:"arg"`；`:157 :165` 是 io 错误 ⇒ `kind:"format"` + `&err.to_string()`。
+`--ref` / `--sparse` 两条键以 `--` 开头，用 `grep -Fc -e` 才不会被当成选项（预检② 的操作细节）。
+
+### 27.2 share.rs：**公开导出的错误 ≠ 它的每个字段都该单独译**
+
+| 站点                  | 形态                                                                                              | 判定                                                                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `:189` `:246` `:344`  | `RemotePluginCatalogError::UnexpectedResponse(format!(…))` / 变体字段                             | **译**（与 §24.1 同链：该枚举在 app-server 与 CLI 都是用户可见面）                                                                                                                                       |
+| `:231`                | `UnexpectedResponse(format!("failed to load plugin share local path mapping: {err}"))`            | **译**（此条是 `list_remote_plugin_shares` 的 `?` 出口）                                                                                                                                                 |
+| `:270`                | `io::Error::new(InvalidData, format!("invalid remote plugin id in share local path mapping: …"))` | **登记**：它是一个 `io::Error`，经 `local_paths` 冒泡到 app-server `plugins.rs:149`，被那里的 `internal_error(format!("failed to load plugin share local path mapping: {err}"))` 当作 **`err` 字段**渲染 |
+| `:432`（`:439` 同值） | `RemotePluginCatalogError::Request/UnexpectedStatus { url: "workspace plugin upload URL" }`       | **登记**：它是 **`url` 字段**（占位标识），渲染模板是 `remote.rs:407-411` 的变体属性，不是这句话本身                                                                                                     |
+| `:469`                | `InvalidArchive { reason: "plugin path must end in a valid UTF-8 directory name" }`               | **登记**：同上，`reason` 字段由变体属性模板渲染                                                                                                                                                          |
+
+⚠ 两条口径细节：
+
+1. **`:231` 与 app-server 的 `plugins.rs:154` 是两组不同的字符串**——`:231` 的键带 `{err}`（`RemotePluginCatalogError` 链），
+   `plugins.rs:154` 那条键是 app-server 自己的（仍在候选清单里，全仓 app-server 还有上百条）。**不要**因为「看起来同一句话」就以为重复。
+2. 本批 `:270` 判登记**不是**「它不重要」，而是「它是别人模板里的 `err` 字段」——被渲染的是**外层模板**，
+   而那层模板属于 **app-server 批次**（`i18n_todo --root codex-rs/app-server` 有它）。
+   ⇒ 顺带确认了一条**跨 crate 的边界**：`core-plugins` 的批次不替 app-server 的模板收口。
+
+### 27.3 对账与门禁
+
+- `marketplace_add/source.rs` 7 → 0（余 1 条登记者）；`remote/share.rs` 7 → 0（余 3 条登记者）；
+  crate：40 → **26**（差额**正好 14**）。
+- `i18n-check` `r-mu9iiuhq-j39h0f`（3705 词条 / spacing 0 / duplicate 0 / unused 0 / nested 0 / coverage 99.8%）；
+  `clippy` `r-mu9im248-7kqk9i`（147.8s，首次即绿）。

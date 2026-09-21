@@ -104,12 +104,13 @@ codex-rs/
         ┌─────────────┐
         │ codex-i18n  │  ← 纯函数、无 IO、无 workspace 内部依赖
         └─────────────┘
-           ▲   ▲   ▲   ▲   ▲
-           │   │   │   │   └──────── codex-mcp   ┐ §3.4 步 5–6 铺开后
-           │   │   │   └──────────── codex-core  ┘ 新增的两条边
-           │   │   └──────────────── codex-exec
-           │   └──────────────────── codex-cli
-           └──────────────────────── codex-tui
+           ▲   ▲   ▲   ▲   ▲   ▲
+           │   │   │   │   │   └──────── codex-app-server  ┐ 2026-09-21 人类裁决
+           │   │   │   │   └──────────── codex-mcp         │ j-muajv7wb-3pvn「转正」：
+           │   │   │   └──────────────── codex-core        │ JSON-RPC 错误串被 TUI 渲染为
+           │   │   └──────────────────── codex-exec        │ error message，属用户可见面，
+           │   └──────────────────────── codex-cli         │ 正式纳入范围（§3.4 步 5–6）
+           └──────────────────────────── codex-tui         ┘
 ```
 
 `codex-i18n` 不依赖任何其他 workspace crate（唯一外部依赖是探系统 locale 的 `sys-locale`），

@@ -1,5 +1,5 @@
 {
-  "_note": "范围级裁定：整块子系统有意不译。计数器必须扣掉它们，否则「剩余工作量」被已裁定排除的部分虚增（doctor 的裁定此前只存在于台账/文档，机器看不见）。",
+  "_note": "范围级裁定：整块子系统有意不译。计数器必须扣掉它们，否则「剩余工作量」被已裁定排除的部分虚增（doctor 的裁定此前只存在于台账/文档，机器看不见）。app-server 曾在此被排除（2026-09-21 人类裁决 j-muajv7wb-3pvn『转正』）：JSON-RPC 错误串被 TUI 渲染为 error message（用户可见面），故正式纳入范围 —— 已从 out_of_scope_crates 移除，计数器重新计入其剩余候选（plugins.rs 41 处已译，其余 644 条待做）。",
   "excluded": [
     {
       "path_prefix": "codex-rs/cli/src/doctor",
@@ -8,7 +8,5 @@
       "doc": "docs/plan/i18n-verification.md 范围表（cli = 部分：帮助已译，doctor 有意整体不译）"
     }
   ],
-  "out_of_scope_crates": {
-    "codex-rs/app-server": "docs/plan/i18n-design.md §3.1 依赖图只列 tui/cli/exec/core/mcp 五条边；app-server 不在 i18n 范围内（其错误串属 JSON-RPC 协议契约）"
-  }
+  "out_of_scope_crates": {}
 }

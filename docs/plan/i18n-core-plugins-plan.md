@@ -1079,6 +1079,10 @@ let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
 
 ⚠ **不改变裁定本身**：app-server 误做的 44 处保留原地，其去留仍是待裁决 `j-muajv7wb-3pvn`。
 
+> ⚠ **后续裁决（2026-09-21）**：本节所述的「app-server 范围外」已被人类裁决『转正』
+> （台账 `j-muajv7wb-3pvn`）：JSON-RPC 错误串被 TUI 渲染为用户可见 error message ⇒
+> **正式纳入范围**。`i18n_scope.json` 已移除该排除；本节保留为当时的决策上下文。
+
 ## 三十二、codex-mcp 批 1–2：agent_plugin_config.rs 22 登记 + rmcp_client.rs 11 条（9 译 / 2 登记）
 
 ### 32.1 这是一个「登记为主」的 crate —— 判据链逐条闭合

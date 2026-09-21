@@ -1697,8 +1697,12 @@ for f in m.scan(Path("codex-rs/core")):
 **机制（本轮新增）**：`scripts/i18n_scope.json`
 
 - `excluded[]`：`path_prefix` + `reason` + `ledger`（台账 id）+ `doc`；
-- `out_of_scope_crates`：整块范围外的 crate 及其依据（如 `app-server`：§3.1 依赖图只列出
-  `tui`/`cli`/`exec`/`core`/`mcp` 五条边，其错误串属 JSON-RPC 协议契约）；
+- `out_of_scope_crates`：整块范围外的 crate 及其依据（机制仍保留；当前为空）。
+  ⚠ **app-server 曾在此列**（`codex-rs/app-server`：§3.1 依赖图只列
+  `tui`/`cli`/`exec`/`core`/`mcp` 五条边，其错误串属 JSON-RPC 协议契约），
+  **2026-09-21 人类裁决『转正』**（台账 `j-muajv7wb-3pvn`）：JSON-RPC 错误串被 TUI 渲染为
+  `error message`（用户可见面），故**正式纳入范围**并从 `out_of_scope_crates` 移除 ——
+  原不到 41 处已译（plugins.rs）、其余候选重新计入剩余；
 - 计数器据此扣减并**打印**扣减量（`excluded by scope ruling: N candidates`），不再静默虚增；
 - **纪律**：任何范围级裁定落台账的同时**必须**落这个文件 —— 否则下一批读到的「剩余」就是假的。
 
@@ -1707,15 +1711,15 @@ for f in m.scan(Path("codex-rs/core")):
 
 **在范围内剩余候选（第 469 轮实测，取自计数器输出）**：
 
-| crate                 | 剩余候选   | 说明                                                                                                                                                                                                               |
-| --------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `codex-rs/cli/src`    | **0**      | 第 599 轮清 `desktop_app/mac.rs` 34 站点（33 译 + 1 登记，§12.68）⇒ **cli 全范围清空**；已扣 doctor 851（裁定排除）                                                                                                |
-| `codex-rs/core/src`   | **0**      | 第 611 轮用**属性级最小改法**清空最后 10 条（§12.70）                                                                                                                                                              |
-| `codex-rs/tui/src`    | **0**      | 第 603 轮把最后 3 条按「机器语法/匹配键」登记（§12.69）                                                                                                                                                            |
-| `codex-rs/core`       | **10**     | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`） |
-| `codex-rs/exec/src`   | **0**      | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内                                                                                                                                                                       |
-| `codex-rs/tui/src`    | **3**      | §3.4 步 5–6 已铺开，接近清零                                                                                                                                                                                       |
-| `codex-rs/app-server` | **范围外** | §3.1 依赖图未列（实测 687 条，不计入剩余）                                                                                                                                                                         |
+| crate                 | 剩余候选   | 说明                                                                                                                                                                                                                              |
+| --------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `codex-rs/cli/src`    | **0**      | 第 599 轮清 `desktop_app/mac.rs` 34 站点（33 译 + 1 登记，§12.68）⇒ **cli 全范围清空**；已扣 doctor 851（裁定排除）                                                                                                               |
+| `codex-rs/core/src`   | **0**      | 第 611 轮用**属性级最小改法**清空最后 10 条（§12.70）                                                                                                                                                                             |
+| `codex-rs/tui/src`    | **0**      | 第 603 轮把最后 3 条按「机器语法/匹配键」登记（§12.69）                                                                                                                                                                           |
+| `codex-rs/core`       | **10**     | 第 525 轮收尾 `environment_selection.rs:625`（登记：两处消费者都丢弃原文）；**剩余 10 条全部是 thiserror 族（卡裁决 j-mu7lh6vq-fp6o）**；最大单文件仍是 9 条（`unified_exec/errors.rs`，待裁决 `j-mu7lh6vq-fp6o`）                |
+| `codex-rs/exec/src`   | **0**      | 第 525 轮清空（译 23 + 登记 5）；§3.1 范围内                                                                                                                                                                                      |
+| `codex-rs/tui/src`    | **3**      | §3.4 步 5–6 已铺开，接近清零                                                                                                                                                                                                      |
+| `codex-rs/app-server` | **已纳入** | 2026-09-21 人类裁决『转正』（`j-muajv7wb-3pvn`）：JSON-RPC 错误串被 TUI 渲染为 error message，用户可见 ⇒ 范围外 → 范围内。plugins.rs 41 处已译（提交 `89458ccfa`），其余 ~644 条候选重新计入剩余（本表此前记"范围外/不计入"作废） |
 
 **同轮收尾**：by-value 队列（`--fanout`）在 **core 与 tui 均清零**。
 `MCP runtime refresh semaphore closed` 判为 `{err:#}` **明细**：接收者链

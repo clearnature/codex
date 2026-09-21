@@ -1232,3 +1232,27 @@ codex-mcp 的授权/请求链路里三种形态，终点各不相同：
 ### 36.4 门禁
 
 `i18n-check` `r-muapcr8w-cmqudl`（3799 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。
+
+## 三十七、app-server 批 A-3：thread_processor.rs 继续推进（111 → ~90）
+
+### 37.1 本批范围
+
+`invalid session id`、spawned descendants、elicitation 计数器、memory reset、gitInfo/metadata 校验、
+revert 全流程（shutdown/timeout/listener/disappear/reload/restore）——全部 `internal_error`/`invalid_request`
+（JSON-RPC 用户可见）⇒ **译**。
+
+### 37.2 弯路（3 次返回工，都在手写批量替换）
+
+1. **多行 format 缩进猜测失败 2 次**：`invalid_request(format!(
+"x",
+))` 的缩进是 16 还是 20 空格——
+   逐处读字节才发现。教训：**批量替换多行结构前先 python 打印目标区域的 repr**。
+2. **猜变量名**：`:1882` 我猜参数是 `memory_dirs.join(", ")`，实际是 `self.config.codex_home.display()`——预检③第三次同型。
+3. **丢闭括号**：多行 `invalid_request(
+"x",
+)` → 单行替换时丢了 `)`（原 `))` 变 `)`）——E0516 括号不匹配。
+   **教训**：多行→单行替换后**必须**编译，不能只靠 i18n-check（它只看字符串不看括号）。
+
+### 37.3 门禁
+
+`i18n-check` `r-muarw19j-qjggpv`（3819 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。

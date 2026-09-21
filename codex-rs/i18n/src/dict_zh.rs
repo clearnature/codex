@@ -9845,7 +9845,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("duplicate dynamic tool name: {0}", "动态工具名称重复：{0}"),
     ("unarchive", "取消归档"),
     ("truncate thread for fork", "为fork截断线程"),
-    ("thread/rollback is deprecated and will be removed soon", "thread/rollback已弃用，即将移除"),
+    (
+        "thread/rollback is deprecated and will be removed soon",
+        "thread/rollback已弃用，即将移除",
+    ),
     ("thread not found: {0}", "未找到线程：{0}"),
     ("set thread name", "设置线程名称"),
     ("set thread memory mode", "设置线程内存模式"),
@@ -9856,28 +9859,150 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("invalid before thread id: {0}", "无效的before线程id：{0}"),
     ("inherit source thread name", "继承源线程名称"),
     ("failed to {0} session: {1}", "{0}会话失败：{1}"),
-    ("failed to set app server client info: {0}", "设置app server客户端信息失败：{0}"),
-    ("failed to acquire thread list state permit: {0}", "获取线程列表状态许可失败：{0}"),
-    ("dynamic tool namespace must not be empty", "动态工具命名空间不能为空"),
-    ("dynamic tool namespace is reserved: {0}", "动态工具命名空间被保留：{0}"),
-    ("dynamic tool namespace description must be at most 1024 characters", "动态工具命名空间描述最长1024个字符"),
-    ("dynamic tool namespace collides with a reserved Responses API namespace: {0}", "动态工具命名空间{0}与保留的Responses API命名空间冲突"),
-    ("dynamic tool input schema is not supported for {0}: {1}", "动态工具{0}不支持该输入schema：{1}"),
-    ("duplicate dynamic tool namespace: {0}", "动态工具命名空间重复：{0}"),
-    ("deferred dynamic tool must include a namespace: {0}", "延迟加载的动态工具必须包含命名空间：{0}"),
-    ("beforeThreadId requires a non-null sectionId", "beforeThreadId需要非空的sectionId"),
+    (
+        "failed to set app server client info: {0}",
+        "设置app server客户端信息失败：{0}",
+    ),
+    (
+        "failed to acquire thread list state permit: {0}",
+        "获取线程列表状态许可失败：{0}",
+    ),
+    (
+        "dynamic tool namespace must not be empty",
+        "动态工具命名空间不能为空",
+    ),
+    (
+        "dynamic tool namespace is reserved: {0}",
+        "动态工具命名空间被保留：{0}",
+    ),
+    (
+        "dynamic tool namespace description must be at most 1024 characters",
+        "动态工具命名空间描述最长1024个字符",
+    ),
+    (
+        "dynamic tool namespace collides with a reserved Responses API namespace: {0}",
+        "动态工具命名空间{0}与保留的Responses API命名空间冲突",
+    ),
+    (
+        "dynamic tool input schema is not supported for {0}: {1}",
+        "动态工具{0}不支持该输入schema：{1}",
+    ),
+    (
+        "duplicate dynamic tool namespace: {0}",
+        "动态工具命名空间重复：{0}",
+    ),
+    (
+        "deferred dynamic tool must include a namespace: {0}",
+        "延迟加载的动态工具必须包含命名空间：{0}",
+    ),
+    (
+        "beforeThreadId requires a non-null sectionId",
+        "beforeThreadId需要非空的sectionId",
+    ),
     ("archive", "归档"),
-    ("Full-history hydration is deprecated for paginated threads; use `excludeTurns: true`, then page with `thread/turns/list` and `thread/items/list`.", "分页线程不再支持完整历史回填；请使用`excludeTurns: true`，然后用`thread/turns/list`和`thread/items/list`翻页。"),
-    ("Full-history hydration is deprecated for paginated threads; omit `includeTurns` or set it to `false`, then page with `thread/turns/list` and `thread/items/list`.", "分页线程不再支持完整历史回填；请省略`includeTurns`或设为`false`，然后用`thread/turns/list`和`thread/items/list`翻页。"),
+    (
+        "Full-history hydration is deprecated for paginated threads; use `excludeTurns: true`, then page with `thread/turns/list` and `thread/items/list`.",
+        "分页线程不再支持完整历史回填；请使用`excludeTurns: true`，然后用`thread/turns/list`和`thread/items/list`翻页。",
+    ),
+    (
+        "Full-history hydration is deprecated for paginated threads; omit `includeTurns` or set it to `false`, then page with `thread/turns/list` and `thread/items/list`.",
+        "分页线程不再支持完整历史回填；请省略`includeTurns`或设为`false`，然后用`thread/turns/list`和`thread/items/list`翻页。",
+    ),
     ("error creating thread: {0}", "创建线程出错：{0}"),
     ("project not found: {0}", "未找到项目：{0}"),
     ("failed to read project: {0}", "读取项目失败：{0}"),
     ("projectId must not be empty", "projectId不能为空"),
-    ("`permissions` cannot be combined with `sandbox`", "`permissions`不能与`sandbox`组合使用"),
+    (
+        "`permissions` cannot be combined with `sandbox`",
+        "`permissions`不能与`sandbox`组合使用",
+    ),
     ("dynamic tool namespace", "动态工具命名空间"),
     ("dynamic tool name", "动态工具名称"),
-    ("invalid thread/list cwd filter `{0}`: {1}", "无效的thread/list cwd过滤器`{0}`：{1}"),
-    ("dynamic tool namespace has leading/trailing whitespace: {0}", "动态工具命名空间首尾有空白：{0}"),
+    (
+        "invalid thread/list cwd filter `{0}`: {1}",
+        "无效的thread/list cwd过滤器`{0}`：{1}",
+    ),
+    (
+        "dynamic tool namespace has leading/trailing whitespace: {0}",
+        "动态工具命名空间首尾有空白：{0}",
+    ),
+    (
+        "failed to restore thread settings after revert: {0}",
+        "回滚后恢复线程设置失败：{0}",
+    ),
+    (
+        "thread {0} reloaded as {1} after revert",
+        "线程{0}在回滚后重新加载为{1}",
+    ),
+    (
+        "error reloading thread after revert: {0}",
+        "回滚后重新加载线程出错：{0}",
+    ),
+    (
+        "thread {0} disappeared before revert",
+        "线程{0}在回滚前消失",
+    ),
+    (
+        "thread {0} listener stopped before draining shutdown events",
+        "线程{0}监听器在排空关闭事件前停止",
+    ),
+    (
+        "timed out waiting for thread {0} listener to drain shutdown events",
+        "等待线程{0}监听器排空关闭事件超时",
+    ),
+    (
+        "timed out shutting down thread {0} before revert",
+        "回滚前关闭线程{0}超时",
+    ),
+    (
+        "failed to shut down thread {0} before revert",
+        "回滚前关闭线程{0}失败",
+    ),
+    (
+        "connection closed before thread {0} could be reverted",
+        "连接在线程{0}可回滚前关闭",
+    ),
+    (
+        "failed to read thread metadata: {0}",
+        "读取线程元数据失败：{0}",
+    ),
+    (
+        "gitInfo.originUrl must be a valid Git remote",
+        "gitInfo.originUrl必须是有效的Git远程地址",
+    ),
+    (
+        "gitInfo must include at least one field",
+        "gitInfo必须至少包含一个字段",
+    ),
+    (
+        "thread metadata update must include at least one field",
+        "线程元数据更新必须至少包含一个字段",
+    ),
+    (
+        "failed to clear memory directories under {0}: {1}",
+        "清除{0}下的内存目录失败：{1}",
+    ),
+    (
+        "failed to clear memory rows in memories db: {0}",
+        "清除memories数据库中的内存行失败：{0}",
+    ),
+    (
+        "sqlite state db unavailable for memory reset",
+        "内存重置需要sqlite状态数据库，当前不可用",
+    ),
+    (
+        "failed to decrement out-of-band elicitation counter: {0}",
+        "递减带外提示计数器失败：{0}",
+    ),
+    (
+        "failed to increment out-of-band elicitation counter: {0}",
+        "递增带外提示计数器失败：{0}",
+    ),
+    (
+        "failed to list spawned descendants for thread id {0}: {1}",
+        "列出线程{0}派生的子进程失败：{1}",
+    ),
+    ("invalid session id: {0}", "无效的会话id：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -1256,3 +1256,17 @@ revert 全流程（shutdown/timeout/listener/disappear/reload/restore）——�
 ### 37.3 门禁
 
 `i18n-check` `r-muarw19j-qjggpv`（3819 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。
+
+## 三十八、app-server 批 A-4：thread_processor.rs（rollback/compaction/shell/Guardian 系列）
+
+### 38.1 本批范围
+
+动态工具 namespace 至少一个工具、rollout path、numTurns>=1、paginated rollback 拒绝、
+rollback 进行中、compaction/shell/Guardian/background terminal 系列 —— 全 `invalid_request`/`internal_error`（译）。
+`:2542` numTurns 是 app-server 自身独立调用点（与 core 那处特判无关），走 invalid_request ⇒ 译。
+`:5082/:5260` 是 `unreachable!`（不译）。
+
+### 38.2 对账与门禁
+
+thread_processor.rs 继续推进（本批 ~20 条）；`i18n-check` `r-muas4y3x-b33o2j`
+（3836 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；cargo check/clippy EXIT=0。

@@ -10003,6 +10003,56 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "列出线程{0}派生的子进程失败：{1}",
     ),
     ("invalid session id: {0}", "无效的会话id：{0}"),
+    ("thread name must not be empty", "线程名称不能为空"),
+    (
+        "rollout path missing after reloading thread {0}",
+        "重新加载线程{0}后缺少rollout路径",
+    ),
+    (
+        "rollback already in progress for this thread",
+        "此线程已有回滚正在进行",
+    ),
+    (
+        "parentThreadId and ancestorThreadId are mutually exclusive",
+        "parentThreadId与ancestorThreadId互斥",
+    ),
+    (
+        "paginated threads do not support thread/rollback",
+        "分页线程不支持thread/rollback",
+    ),
+    (
+        "originator filtering is not supported by the local app-server",
+        "本地app-server不支持发起方过滤",
+    ),
+    ("numTurns must be >= 1", "numTurns必须>= 1"),
+    ("local environment is not configured", "未配置本地环境"),
+    (
+        "invalid background terminal process id: {0}",
+        "无效的后台终端进程id：{0}",
+    ),
+    (
+        "invalid Guardian denial event: {0}",
+        "无效的Guardian拒绝事件：{0}",
+    ),
+    (
+        "failed to start shell command: {0}",
+        "启动shell命令失败：{0}",
+    ),
+    ("failed to start rollback: {0}", "启动回滚失败：{0}"),
+    ("failed to start compaction: {0}", "启动压缩失败：{0}"),
+    (
+        "failed to clean background terminals: {0}",
+        "清理后台终端失败：{0}",
+    ),
+    (
+        "failed to approve Guardian denial: {0}",
+        "批准Guardian拒绝事件失败：{0}",
+    ),
+    (
+        "dynamic tool namespace must contain at least one tool: {0}",
+        "动态工具命名空间{0}必须至少包含一个工具",
+    ),
+    ("command must not be empty", "命令不能为空"),
 ];
 
 /// English source text -> Simplified Chinese.

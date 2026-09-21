@@ -486,8 +486,10 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
                     ));
                 }
                 if namespace.tools.is_empty() {
-                    return Err(format!(
-                        "dynamic tool namespace must contain at least one tool: {name}"
+                    return Err(tr_with(
+                        current(),
+                        "dynamic tool namespace must contain at least one tool: {0}",
+                        &[name],
                     ));
                 }
                 let mut seen_namespace_tools = HashSet::new();
@@ -1945,7 +1947,10 @@ impl ThreadRequestProcessor {
             ))
         })?;
         let Some(name) = codex_core::util::normalize_thread_name(&name) else {
-            return Err(invalid_request("thread name must not be empty"));
+            return Err(invalid_request(tr(
+                current(),
+                "thread name must not be empty",
+            )));
         };
 
         let _thread_list_state_permit = self.acquire_thread_list_state_permit().await?;
@@ -2488,8 +2493,10 @@ impl ThreadRequestProcessor {
         .await?;
         let SessionConfiguredEvent { rollout_path, .. } = session_configured;
         let rollout_path = rollout_path.ok_or_else(|| {
-            internal_error(format!(
-                "rollout path missing after reloading thread {thread_id}"
+            internal_error(tr_with(
+                current(),
+                "rollout path missing after reloading thread {0}",
+                &[&thread_id.to_string()],
             ))
         })?;
         // Revert keeps the existing thread state and subscriptions across the internal reload.
@@ -2539,7 +2546,7 @@ impl ThreadRequestProcessor {
         } = params;
 
         if num_turns == 0 {
-            return Err(invalid_request("numTurns must be >= 1"));
+            return Err(invalid_request(tr(current(), "numTurns must be >= 1")));
         }
 
         let (thread_id, thread) = self.load_thread(&thread_id).await?;
@@ -2548,9 +2555,10 @@ impl ThreadRequestProcessor {
             thread.config_snapshot().await.history_mode,
             ThreadHistoryMode::Paginated
         ) {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "paginated threads do not support thread/rollback",
-            ));
+            )));
         }
 
         let request = request_id.clone();
@@ -2566,9 +2574,10 @@ impl ThreadRequestProcessor {
             }
         };
         if rollback_already_in_progress {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "rollback already in progress for this thread",
-            ));
+            )));
         }
 
         if let Err(err) = self
@@ -2584,7 +2593,11 @@ impl ThreadRequestProcessor {
             let thread_state = self.thread_state_manager.thread_state(thread_id).await;
             thread_state.lock().await.pending_rollbacks = None;
 
-            return Err(internal_error(format!("failed to start rollback: {err}")));
+            return Err(internal_error(tr_with(
+                current(),
+                "failed to start rollback: {0}",
+                &[&err.to_string()],
+            )));
         }
         Ok(())
     }
@@ -2600,7 +2613,13 @@ impl ThreadRequestProcessor {
         ensure_direct_input_allowed(thread.as_ref()).await?;
         self.submit_core_op(request_id, thread.as_ref(), Op::Compact)
             .await
-            .map_err(|err| internal_error(format!("failed to start compaction: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to start compaction: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         Ok(ThreadCompactStartResponse {})
     }
 
@@ -2615,7 +2634,11 @@ impl ThreadRequestProcessor {
         self.submit_core_op(request_id, thread.as_ref(), Op::CleanBackgroundTerminals)
             .await
             .map_err(|err| {
-                internal_error(format!("failed to clean background terminals: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to clean background terminals: {0}",
+                    &[&err.to_string()],
+                ))
             })?;
         Ok(ThreadBackgroundTerminalsCleanResponse {})
     }
@@ -2660,7 +2683,11 @@ impl ThreadRequestProcessor {
             process_id,
         } = params;
         let process_id = process_id.parse::<i32>().map_err(|err| {
-            invalid_request(format!("invalid background terminal process id: {err}"))
+            invalid_request(tr_with(
+                current(),
+                "invalid background terminal process id: {0}",
+                &[&err.to_string()],
+            ))
         })?;
 
         let (_, thread) = self.load_thread(&thread_id).await?;
@@ -2680,7 +2707,7 @@ impl ThreadRequestProcessor {
         } = params;
         let command = command.trim().to_string();
         if command.is_empty() {
-            return Err(invalid_request("command must not be empty"));
+            return Err(invalid_request(tr(current(), "command must not be empty")));
         }
 
         let timeout_ms = timeout_ms
@@ -2704,7 +2731,10 @@ impl ThreadRequestProcessor {
             .try_local_environment()
             .is_none()
         {
-            return Err(internal_error("local environment is not configured"));
+            return Err(internal_error(tr(
+                current(),
+                "local environment is not configured",
+            )));
         }
 
         self.submit_core_op(
@@ -2716,7 +2746,13 @@ impl ThreadRequestProcessor {
             },
         )
         .await
-        .map_err(|err| internal_error(format!("failed to start shell command: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to start shell command: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         Ok(ThreadShellCommandResponse {})
     }
 
@@ -2726,8 +2762,13 @@ impl ThreadRequestProcessor {
         params: ThreadApproveGuardianDeniedActionParams,
     ) -> Result<ThreadApproveGuardianDeniedActionResponse, JSONRPCErrorError> {
         let ThreadApproveGuardianDeniedActionParams { thread_id, event } = params;
-        let event = serde_json::from_value(event)
-            .map_err(|err| invalid_request(format!("invalid Guardian denial event: {err}")))?;
+        let event = serde_json::from_value(event).map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid Guardian denial event: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         let (_, thread) = self.load_thread(&thread_id).await?;
         ensure_direct_input_allowed(thread.as_ref()).await?;
 
@@ -2737,7 +2778,13 @@ impl ThreadRequestProcessor {
             Op::ApproveGuardianDeniedAction { event },
         )
         .await
-        .map_err(|err| internal_error(format!("failed to approve Guardian denial: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to approve Guardian denial: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         Ok(ThreadApproveGuardianDeniedActionResponse {})
     }
 
@@ -2766,36 +2813,46 @@ impl ThreadRequestProcessor {
             .as_ref()
             .is_some_and(|values| !values.is_empty())
         {
-            return Err(invalid_params(
+            return Err(invalid_params(tr(
+                current(),
                 "originator filtering is not supported by the local app-server",
-            ));
+            )));
         }
         if project_id.is_some() && !self.thread_store.supports_projects() {
             return Err(unsupported_thread_store_operation("projects"));
         }
         if let Some(Some(project_id)) = project_id.as_ref() {
             if project_id.is_empty() {
-                return Err(invalid_params("projectId must not be empty"));
+                return Err(invalid_params(tr(current(), "projectId must not be empty")));
             }
             match self.thread_store.read_project(project_id.clone()).await {
                 Ok(Some(_)) => {}
                 Ok(None) => {
-                    return Err(invalid_params(format!("project not found: {project_id}")));
+                    return Err(invalid_params(tr_with(
+                        current(),
+                        "project not found: {0}",
+                        &[project_id],
+                    )));
                 }
                 Err(ThreadStoreError::Unsupported { operation }) => {
                     return Err(unsupported_thread_store_operation(operation));
                 }
                 Err(err) => {
-                    return Err(internal_error(format!("failed to read project: {err}")));
+                    return Err(internal_error(tr_with(
+                        current(),
+                        "failed to read project: {0}",
+                        &[&err.to_string()],
+                    )));
                 }
             }
         }
         let cwd_filters = normalize_thread_list_cwd_filters(cwd)?;
         let relation_filter = match (parent_thread_id, ancestor_thread_id) {
             (Some(_), Some(_)) => {
-                return Err(invalid_request(
+                return Err(invalid_request(tr(
+                    current(),
                     "parentThreadId and ancestorThreadId are mutually exclusive",
-                ));
+                )));
             }
             (Some(parent_thread_id), None) => Some(StoreThreadRelationFilter::DirectChildrenOf(
                 ThreadId::from_string(&parent_thread_id)

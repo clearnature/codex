@@ -1417,3 +1417,57 @@ elicitation request channel closed unexpectedly	codex-rs/codex-mcp/src/elicitati
 	codex-rs/codex-mcp/src/user_verification_elicitation.rs:32	§12.3 同值已在 elicitation.rs:150/:483 登记（site-only）
 failed to deliver user-verification request	codex-rs/codex-mcp/src/user_verification_elicitation.rs:50	§12.3 日志/错误链：.context() 错误链上下文
 user-verification response channel closed	codex-rs/codex-mcp/src/user_verification_elicitation.rs:53	§12.3 同上
+originating MCP tool call was not found or did not complete successfully	codex-rs/codex-mcp/src/resource_origin.rs:178	§12.6 协议/内部：resource_origin 的 anyhow::bail!，read_resource(binding.rs:145)->协议回包错误，无 TUI 直接渲染
+originating MCP tool call does not match the requested resource	codex-rs/codex-mcp/src/resource_origin.rs:255	§12.6 同上
+originating MCP tool call has ambiguous account selection	codex-rs/codex-mcp/src/resource_origin.rs:258	§12.6 同上
+originating MCP tool is unavailable	codex-rs/codex-mcp/src/resource_origin.rs:263	§12.6 同上
+originating MCP tool connector does not match its app context	codex-rs/codex-mcp/src/resource_origin.rs:265	§12.6 同上
+originating MCP tool link does not match its app context	codex-rs/codex-mcp/src/resource_origin.rs:273	§12.6 同上
+originating MCP tool requires an explicit account link	codex-rs/codex-mcp/src/resource_origin.rs:282	§12.6 同上
+originating MCP tool is disabled by app configuration	codex-rs/codex-mcp/src/resource_origin.rs:297	§12.6 同上
+codex_apps MCP server is unavailable	codex-rs/codex-mcp/src/runtime.rs:250	§12.3/§12.6：anyhow! 内部错误，进 startup/运行时链或协议回包
+MCP runtime is not configured	codex-rs/codex-mcp/src/runtime.rs:540	§12.3/§12.6：同上
+MCP server '{server}' is not registered by the hosted runtime	codex-rs/codex-mcp/src/runtime.rs:649	§12.3/§12.6：同上
+Event subscriptions are unavailable for this task	codex-rs/codex-mcp/src/runtime.rs:668	§12.3/§12.6：同上
+the MCP server is disabled by managed requirements	codex-rs/codex-mcp/src/runtime.rs:733	§12.3/§12.6：resolve_server_environment 的 String 错误，经 connection_manager.rs:320 进 startup 链
+HTTP headers helpers can only run in the local environment	codex-rs/codex-mcp/src/runtime.rs:744	§12.3/§12.6：同上
+local stdio MCP server `{server_name}` requires a local environment	codex-rs/codex-mcp/src/runtime.rs:804	§12.3/§12.6：同上
+MCP server `{server_name}` references unknown environment id `{}`	codex-rs/codex-mcp/src/runtime.rs:811	§12.3/§12.6：同上
+unknown MCP server '{server}'	codex-rs/codex-mcp/src/connection_manager.rs:914	§12.2 喂模型：call_tool 的 anyhow/bail 错误 → core src/mcp_tool_call.rs:909 组装 CallToolResult（工具结果给模型读）
+MCP server `{server}` is running in environment `{}`, expected `{environment_id}`	codex-rs/codex-mcp/src/connection_manager.rs:919	§12.2 同上
+tool '{tool}' is disabled for MCP server '{server}'	codex-rs/codex-mcp/src/connection_manager.rs:925	§12.2 同上
+failed to get client	codex-rs/codex-mcp/src/connection_manager.rs:932	§12.2 同上
+MCP server '{server}' is not connected	codex-rs/codex-mcp/src/connection_manager.rs:938	§12.2 同上
+MCP server '{server}' is not connected	codex-rs/codex-mcp/src/connection_manager.rs:940	§12.2 同上
+tool call failed for `{server}/{tool}`	codex-rs/codex-mcp/src/connection_manager.rs:959	§12.2 同上（with_context 错误链）
+hosted MCP event server was removed	codex-rs/codex-mcp/src/resource_client.rs:112	§12.3 内部：anyhow! 事件服务器移除错误，进内部任务链
+event subscription closed	codex-rs/codex-mcp/src/resource_client.rs:151	§12.3 内部：cancel 的 reason 字符串
+failed to serialize MCP resource	codex-rs/codex-mcp/src/resource_client.rs:318	§12.3 内部：.context() 序列化错误
+failed to convert MCP resource	codex-rs/codex-mcp/src/resource_client.rs:319	§12.3 内部：.context() 转换错误
+failed to serialize MCP resource content	codex-rs/codex-mcp/src/resource_client.rs:324	§12.3 内部：同上
+failed to convert MCP resource content	codex-rs/codex-mcp/src/resource_client.rs:325	§12.3 内部：同上
+invalid cwd `{configured_cwd}`: {err}	codex-rs/codex-mcp/src/plugin_config.rs:173	§12.3 日志：environment_cwd/bind_environment_env_vars 的 String 错误，全部汇入 outcome.errors[].message（plugin_config.rs:116-118 push PluginMcpServerParseError）；唯一消费者 ext/mcp provider.rs:130 / discovery.rs:145 的 tracing::warn!
+cwd `{configured_cwd}` must remain within plugin root `{root}`	codex-rs/codex-mcp/src/plugin_config.rs:176	§12.3 同上
+`env_http_headers` requires executor-side environment resolution for an executor-owned HTTP MCP	codex-rs/codex-mcp/src/plugin_config.rs:198	§12.3 同上
+env_vars entry `{name}` cannot use source `remote` in a local environment	codex-rs/codex-mcp/src/plugin_config.rs:219	§12.3 同上
+env_vars entry `{name}` cannot use source `local` in an executor-owned plugin	codex-rs/codex-mcp/src/plugin_config.rs:225	§12.3 同上
+timed out awaiting tools/call after {timeout:.0?}	codex-rs/codex-mcp/src/binding.rs:337	§12.2 喂模型：tools/call 超时错误，McpBinding::call → CallToolResult（core mcp_tool_call.rs:909 组装给模型读）
+timed out awaiting tools/call after {timeout:.0?}	codex-rs/codex-mcp/src/binding.rs:347	§12.2 同上（同值第二处站点）
+tool call failed for `{}/{tool_name}`	codex-rs/codex-mcp/src/binding.rs:358	§12.2 同上（tool call failed 错误）
+tool call rejected because the catalog changed after `{}/{tool_name}` was prepared	codex-rs/codex-mcp/src/binding.rs:362	§12.2 同上（catalog changed 拒绝）
+MCP server '{server}' was not ready for this step	codex-rs/codex-mcp/src/binding_clients.rs:41	§12.2 喂模型：server 未就绪错误，call 链 → CallToolResult
+MCP server '{server}' was not ready for this step	codex-rs/codex-mcp/src/binding_clients.rs:56	§12.2 同上（同值第二处站点）
+MCP server '{server}' was not ready for this step	codex-rs/codex-mcp/src/binding_clients.rs:71	§12.2 同上（同值第三处站点）
+resource templates	codex-rs/codex-mcp/src/binding_clients.rs:133	§12.3 内部：resource templates 分页上下文
+{method} exceeded the pagination limit of {MAX_MCP_CATALOG_PAGES} pages	codex-rs/codex-mcp/src/pagination.rs:46	§12.3 内部/协议：分页限制错误（PaginationOutcomeError），非用户可见文案
+{method} exceeded the catalog limit of {max_items} items	codex-rs/codex-mcp/src/pagination.rs:56	§12.3 同上
+{method} returned a pagination cursor exceeding {MAX_MCP_PAGINATION_CURSOR_BYTES} bytes	codex-rs/codex-mcp/src/pagination.rs:66	§12.3 同上
+{method} returned a repeated pagination cursor	codex-rs/codex-mcp/src/pagination.rs:70	§12.3 同上
+MCP server tools unavailable while building tool list	codex-rs/codex-mcp/src/connection_manager/tool_catalog.rs:137	§12.3 日志：tracing::warn! 的 message 位（:132 起为结构化字段）
+built MCP tool list	codex-rs/codex-mcp/src/connection_manager/tool_catalog.rs:166	§12.3 日志：tracing::info! 的 message 位（built MCP tool list 是统计日志）
+failed to refresh tools for MCP server '{CODEX_APPS_MCP_SERVER_NAME}'	codex-rs/codex-mcp/src/connection_manager/tool_catalog.rs:471	§12.3 错误链：.with_context() 上下文串
+required MCP servers failed to initialize: {details}	codex-rs/codex-mcp/src/connection_manager/required.rs:63	§12.3 错误链：required servers 初始化失败聚合错误。外层 Failed.error 由 rmcp_client.rs:610 属性级译过；此处是聚合 details 串本身。
+MCP startup cancelled	codex-rs/codex-mcp/src/connection_manager/required.rs:70	§12.3 同值第二处：MCP startup cancelled 已在 rmcp_client.rs:606 译过；此处是 startup_outcome_error_message 辅助函数输出的同值，登记避免双重翻译。
+event subscription access changed	codex-rs/codex-mcp/src/event_stream.rs:69	§12.3 内部：bail! 事件订阅访问变化错误，进内部链
+event subscription account changed	codex-rs/codex-mcp/src/event_stream.rs:75	§12.3 内部：bail! 账户变化错误
+unknown MCP server '{name}'	codex-rs/codex-mcp/src/connection_manager/resources.rs:166	§12.2 喂模型：unknown MCP server，call 链（与 connection_manager.rs:914 同族，值不同因用 {name}）

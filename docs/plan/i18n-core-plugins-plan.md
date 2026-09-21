@@ -1143,3 +1143,37 @@ codex-mcp 的授权/请求链路里三种形态，终点各不相同：
 - 107 → **56**（-51 = 批1 22 + 批2 11 + 批3 18）；还剩 56 条。
 - `i18n-check` `r-muakwwh9-7j1vcf`（3755 词条 / 全零）；`clippy` `r-muakze7f-ndqxks`（110.1s）；
   `cargo check -p codex-mcp --all-targets` EXIT=0。
+
+## 三十四、codex-mcp 批 4–7 + 收官：计划范围五条边全部清零
+
+### 34.1 判据汇总（codex-mcp 全 crate 107 条）
+
+| 判定              | 条数 | 依据                                                                                                                                                                                                                                                                                     |
+| ----------------- | ---: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 译（TUI 渲染）    |   13 | rmcp_client.rs 9 条（`StartupOutcomeError::Failed.error` → `McpStartupStatus::Failed.error` → `tui/chatwidget/mcp_startup.rs:99` 渲染）；auth_elicitation.rs 4 条（`ElicitationRequestEvent.message` → `mcp_server_elicitation.rs:988` overlay）                                         |
+| 登记（喂模型）    |   21 | rmcp_client.rs:720/723（ToolInfo.description）；connection_manager.rs 7 条 + binding.rs 4 条 + binding_clients.rs 4 条 + resources.rs 1 条（call_tool 链 → CallToolResult 给模型）；auth_elicitation.rs:174（CallToolResult.content）；plugin_config.rs 5 条（→ outcome.errors → warn!） |
+| 登记（协议/内部） |   73 | serde_json 消息、anyhow/context 错误链、分页限制、事件订阅、required 聚合等                                                                                                                                                                                                              |
+
+⚠ **同值跨文件**：`"MCP startup cancelled"`（rmcp_client.rs:606 译过）在 required.rs:70 出现第二处 ⇒ 登记避免双重翻译。
+⚠ **工具盲区**：`#[path]` 子模块（user_verification_elicitation.rs）不在 `i18n_apply.py` 行号表 ⇒ 手工写 TSV。
+
+### 34.2 收官账
+
+| crate                    |     起点 |  剩余 |
+| ------------------------ | -------: | ----: |
+| tui                      |     3229 | **0** |
+| cli                      |     1281 | **0** |
+| exec                     |       75 | **0** |
+| core                     |     1164 | **0** |
+| codex-mcp                |      119 | **0** |
+| core-plugins（额外纳入） |        — | **0** |
+| **计划范围合计**         | **5868** | **0** |
+
+`i18n-check` `r-muall718-yf9gfv`（3755 词条 / missing 0 / duplicate 0 / spacing 0 / nested 0 / placeholder 0 / coverage 99.8%）；
+`clippy` `r-mualnjp6-38l3n3`（103.6s 首次即绿）。
+
+### 34.3 边界（如实）
+
+- app-server 44 处误译仍处待裁决 `j-muajv7wb-3pvn`（工具修复 `8de6157a2` 后不再被诱导）。
+- 平台门控 54 行清单仍待 macOS/Windows CI。
+- 「计划范围 0」是**启发式扫描**的 0——诚实的说法是「已包 5868 / 全部候选」，见 §3.4 边界。

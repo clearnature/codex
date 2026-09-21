@@ -1181,3 +1181,27 @@ codex-mcp 的授权/请求链路里三种形态，终点各不相同：
 - app-server 44 处误译仍处待裁决 `j-muajv7wb-3pvn`（工具修复 `8de6157a2` 后不再被诱导）。
 - 平台门控 54 行清单仍待 macOS/Windows CI。
 - 「计划范围 0」是**启发式扫描**的 0——诚实的说法是「已包 5868 / 全部候选」，见 §3.4 边界。
+
+## 三十五、app-server 批 A-1：thread_processor.rs 22 条（9 译 / 13 登记）
+
+### 35.1 判据（转正后 app-server 第一次实操）
+
+| 站点                                                    | 终点                                                             | 判定     |
+| ------------------------------------------------------- | ---------------------------------------------------------------- | -------- |
+| `:51 :54`（`stage_pending_thread_metadata` 的 map_err） | `method_not_found` / `internal_error` → JSON-RPC **用户可见**    | **译**   |
+| `:259`（thread/list cwd filter）                        | `invalid_params` → JSON-RPC 用户可见                             | **译**   |
+| `:326 :332 :346 :350 :356 :361`（动态工具名校验）       | `:1424` `.map_err(invalid_request)?` → 用户可见                  | **译**   |
+| `:112-217`（metadata 差异报告 13 条）                   | `mismatch_details.join("; ")` → `tracing::warn!`（`:4272` 字段） | **登记** |
+
+### 35.2 工具盲区（第 N 次确认）与绕过
+
+- **const 内插被工具误计**：`:326` 的 `{DYNAMIC_TOOL_IDENTIFIER_PATTERN}` 是 const 内插（不是参数），
+  工具按占位符数 3 报错（给了 2 个表达式）⇒ 整批改走 **`extra_edits` / python 直改**。
+- **命名捕获 + 位置占位混用**：`:326/:332` 用 `tr_with`，const 正则/数值展平为字面量、命名参数转 `{N}`。
+- 字典先例佐证：`dict_zh.rs:6696` 已有 `"{0} must match ^[a-zA-Z0-9_-]+$"`（同款正则展平）。
+
+### 35.3 对账与门禁
+
+- thread_processor.rs 剩余：184 → **162**；app-server 剩余 643 → **621**。
+- `i18n-check` `r-muaox3cd-4b41lt`（3764 词条 / duplicate 0 / placeholder 0 / coverage 99.8%）；
+  `cargo check -p codex-app-server --all-targets` EXIT=0。

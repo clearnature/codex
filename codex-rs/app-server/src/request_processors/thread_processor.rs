@@ -17,6 +17,9 @@ use codex_app_server_protocol::ThreadSectionMoveParams;
 use codex_app_server_protocol::ThreadSectionMoveResponse;
 use codex_extension_api::ExtensionDataInit;
 use codex_extension_api::ThreadIdleCause;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::SanitizedGitUrl;
 use codex_protocol::config_types::MultiAgentMode;
 use codex_protocol::error::CodexErrorDetails;
@@ -47,11 +50,17 @@ async fn stage_pending_thread_metadata(
         .stage_pending_thread_metadata(thread_id, patch)
         .await
         .map_err(|error| match error {
-            ThreadStoreError::Unsupported { .. } => {
-                method_not_found(format!("{operation} is unavailable without sqlite state"))
-            }
+            ThreadStoreError::Unsupported { .. } => method_not_found(tr_with(
+                current(),
+                "{0} is unavailable without sqlite state",
+                &[operation],
+            )),
             ThreadStoreError::InvalidRequest { message } => invalid_request(message),
-            error => internal_error(format!("failed to stage {operation} metadata: {error}")),
+            error => internal_error(tr_with(
+                current(),
+                "failed to stage {0} metadata: {1}",
+                &[operation, &error.to_string()],
+            )),
         })?;
     Ok(Some(thread_id))
 }
@@ -322,15 +331,21 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
         {
-            return Err(format!(
-                "{label} must match {DYNAMIC_TOOL_IDENTIFIER_PATTERN} to match Responses API: {}",
-                escape_identifier_for_error(value),
+            return Err(tr_with(
+                current(),
+                "{0} must match ^[a-zA-Z0-9_-]+$ to match Responses API: {1}",
+                &[label, &escape_identifier_for_error(value)],
             ));
         }
         if value.chars().count() > max_len {
-            return Err(format!(
-                "{label} must be at most {max_len} characters to match Responses API: {}",
-                escape_identifier_for_error(value),
+            return Err(tr_with(
+                current(),
+                "{0} must be at most {1} characters to match Responses API: {2}",
+                &[
+                    label,
+                    &max_len.to_string(),
+                    &escape_identifier_for_error(value),
+                ],
             ));
         }
         Ok(())
@@ -343,25 +358,36 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
     ) -> Result<(), String> {
         let name = tool.name.trim();
         if name.is_empty() {
-            return Err("dynamic tool name must not be empty".to_string());
+            return Err(tr(current(), "dynamic tool name must not be empty").to_string());
         }
         if name != tool.name {
-            return Err(format!(
-                "dynamic tool name has leading/trailing whitespace: {}",
-                escape_identifier_for_error(&tool.name),
+            return Err(tr_with(
+                current(),
+                "dynamic tool name has leading/trailing whitespace: {0}",
+                &[&escape_identifier_for_error(&tool.name)],
             ));
         }
         validate_dynamic_tool_identifier(name, "dynamic tool name", DYNAMIC_TOOL_NAME_MAX_LEN)?;
         if name == "mcp" || name.starts_with("mcp__") {
-            return Err(format!("dynamic tool name is reserved: {name}"));
+            return Err(tr_with(
+                current(),
+                "dynamic tool name is reserved: {0}",
+                &[name],
+            ));
         }
         if !seen.insert(name) {
             if let Some(namespace) = namespace {
-                return Err(format!(
-                    "duplicate dynamic tool name in namespace {namespace}: {name}"
+                return Err(tr_with(
+                    current(),
+                    "duplicate dynamic tool name in namespace {0}: {1}",
+                    &[namespace, name],
                 ));
             }
-            return Err(format!("duplicate dynamic tool name: {name}"));
+            return Err(tr_with(
+                current(),
+                "duplicate dynamic tool name: {0}",
+                &[name],
+            ));
         }
         if tool.defer_loading && namespace.is_none() {
             return Err(format!(

@@ -9810,6 +9810,39 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Sign in to {0} on ChatGPT to continue.",
         "请在ChatGPT上登录{0}以继续",
     ),
+    (
+        "{0} is unavailable without sqlite state",
+        "无sqlite状态时{0}不可用",
+    ),
+    (
+        "failed to stage {0} metadata: {1}",
+        "暂存{0}元数据失败：{1}",
+    ),
+    (
+        "{0} must match ^[a-zA-Z0-9_-]+$ to match Responses API: {1}",
+        "{0}必须匹配^[a-zA-Z0-9_-]+$以符合Responses API参数要求：{1}",
+    ),
+    (
+        "{0} must be at most {1} characters to match Responses API: {2}",
+        "{0}最长不能超过{1}个字符以符合Responses API参数要求：{2}",
+    ),
+    (
+        "dynamic tool name must not be empty",
+        "动态工具名称不能为空",
+    ),
+    (
+        "dynamic tool name has leading/trailing whitespace: {0}",
+        "动态工具名称首尾有空白：{0}",
+    ),
+    (
+        "dynamic tool name is reserved: {0}",
+        "动态工具名称被保留：{0}",
+    ),
+    (
+        "duplicate dynamic tool name in namespace {0}: {1}",
+        "命名空间{0}中的动态工具名称重复：{1}",
+    ),
+    ("duplicate dynamic tool name: {0}", "动态工具名称重复：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

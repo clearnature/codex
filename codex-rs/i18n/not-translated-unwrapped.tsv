@@ -1471,3 +1471,16 @@ MCP startup cancelled	codex-rs/codex-mcp/src/connection_manager/required.rs:70	�
 event subscription access changed	codex-rs/codex-mcp/src/event_stream.rs:69	§12.3 内部：bail! 事件订阅访问变化错误，进内部链
 event subscription account changed	codex-rs/codex-mcp/src/event_stream.rs:75	§12.3 内部：bail! 账户变化错误
 unknown MCP server '{name}'	codex-rs/codex-mcp/src/connection_manager/resources.rs:166	§12.2 喂模型：unknown MCP server，call 链（与 connection_manager.rs:914 同族，值不同因用 {name}）
+model requested={requested_model} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:112	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+model_provider requested={requested_provider} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:120	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+service_tier requested={requested_service_tier:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:128	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+cwd requested={} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:136	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+runtime_workspace_roots requested={requested_runtime_workspace_roots:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:146	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+approval_policy requested={requested_approval:?} active={active_approval:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:155	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+approvals_reviewer requested={requested_review_policy:?} active={active_review_policy:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:164	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+sandbox requested={requested_sandbox:?} active={active_sandbox:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:188	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+permissions override was provided and ignored while running; active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:194	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+personality requested={requested_personality:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:202	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+config overrides were provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:209	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+baseInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:213	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+developerInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:217	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）

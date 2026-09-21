@@ -10094,6 +10094,72 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "ephemeral threads do not support thread/turns/list",
         "临时线程不支持thread/turns/list",
     ),
+    (
+        "cannot resume paginated thread {0} with stale path: requested {1}, current {2}; omit path and resume by thread id",
+        "无法用过期路径恢复分页线程{0}：请求{1}，当前{2}；请省略路径并按线程id恢复",
+    ),
+    (
+        "session {0} is archived. Run `codex unarchive {0}` to unarchive it first.",
+        "会话{0}已归档。请先运行`codex unarchive {0}`取消归档。",
+    ),
+    (
+        "rollout path missing for thread {0}",
+        "缺少线程{0}的rollout路径",
+    ),
+    (
+        "paginated_threads is not supported yet",
+        "暂不支持paginated_threads",
+    ),
+    (
+        "invalid `approval_policy` config override: {0}",
+        "无效的`approval_policy`配置覆盖：{0}",
+    ),
+    ("history must not be empty", "历史不能为空"),
+    (
+        "failed to read thread from store: {0}",
+        "从存储读取线程失败：{0}",
+    ),
+    (
+        "failed to prepare paginated fork: {0}",
+        "准备分页fork失败：{0}",
+    ),
+    (
+        "failed to enqueue running thread resume for thread {0}: thread listener command channel is closed",
+        "为线程{0}排队运行中恢复失败：线程监听器命令通道已关闭",
+    ),
+    (
+        "failed to enqueue running thread resume for thread {0}: thread listener is not running",
+        "为线程{0}排队运行中恢复失败：线程监听器未运行",
+    ),
+    (
+        "failed to build resume response for thread {0}: initial history missing",
+        "为线程{0}构建恢复响应失败：缺少初始历史",
+    ),
+    ("error resuming thread: {0}", "恢复线程出错：{0}"),
+    (
+        "ephemeral paginated thread/fork requires `excludeTurns: true`",
+        "临时分页线程/fork需要`excludeTurns: true`",
+    ),
+    (
+        "cannot resume running thread {0} with stale path: requested `{1}`, active `{2}`",
+        "无法用过期路径恢复正在运行的线程{0}：请求的`{1}`，当前的`{2}`",
+    ),
+    (
+        "cannot resume thread {0} with history while it is already running",
+        "线程{0}已在运行，无法带历史恢复",
+    ),
+    (
+        "cannot resume an unloaded multi-agent v2 sub-agent through its parent; resume the parent first, or use thread/read to inspect it",
+        "无法通过父线程恢复未加载的multi-agent v2子代理；请先恢复父线程，或用thread/read检查它",
+    ),
+    (
+        "`deferGoalContinuation` cannot be combined with `ephemeral`",
+        "`deferGoalContinuation`不能与`ephemeral`组合使用",
+    ),
+    (
+        "`beforeTurnId` cannot be combined with `lastTurnId`",
+        "`beforeTurnId`不能与`lastTurnId`组合使用",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

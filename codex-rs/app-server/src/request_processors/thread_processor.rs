@@ -3987,7 +3987,10 @@ impl ThreadRequestProcessor {
             self.outgoing
                 .send_error(
                     request_id,
-                    invalid_request("`permissions` cannot be combined with `sandbox`"),
+                    invalid_request(tr(
+                        current(),
+                        "`permissions` cannot be combined with `sandbox`",
+                    )),
                 )
                 .await;
             return Ok(ControlFlow::Break(()));
@@ -4113,9 +4116,7 @@ impl ThreadRequestProcessor {
                         error = %err,
                         "failed to resume a multi-agent v2 child through its parent"
                     );
-                    invalid_request(
-                        "cannot resume an unloaded multi-agent v2 sub-agent through its parent; resume the parent first, or use thread/read to inspect it",
-                    )
+                    invalid_request(tr(current(), "cannot resume an unloaded multi-agent v2 sub-agent through its parent; resume the parent first, or use thread/read to inspect it"))
                 })?;
 
             let cold_resume_history = paginated_resume.then(|| thread_history.get_rollout_items());
@@ -4137,9 +4138,10 @@ impl ThreadRequestProcessor {
                 .await?
             {
                 RunningThreadResumeResult::Handled => Ok(ControlFlow::Break(())),
-                RunningThreadResumeResult::NotRunning(_) => Err(invalid_request(
+                RunningThreadResumeResult::NotRunning(_) => Err(invalid_request(tr(
+                    current(),
                     "cannot resume an unloaded multi-agent v2 sub-agent through its parent; resume the parent first, or use thread/read to inspect it",
-                )),
+                ))),
             };
         }
 
@@ -4184,8 +4186,10 @@ impl ThreadRequestProcessor {
                     self.outgoing
                         .send_error(
                             request_id,
-                            invalid_params(format!(
-                                "invalid `approval_policy` config override: {err}"
+                            invalid_params(tr_with(
+                                current(),
+                                "invalid `approval_policy` config override: {0}",
+                                &[&err.to_string()],
                             )),
                         )
                         .await;
@@ -4280,8 +4284,11 @@ impl ThreadRequestProcessor {
                 let instruction_sources = codex_thread.legacy_instruction_sources().await;
                 let SessionConfiguredEvent { rollout_path, .. } = session_configured;
                 let Some(rollout_path) = rollout_path else {
-                    let error =
-                        internal_error(format!("rollout path missing for thread {thread_id}"));
+                    let error = internal_error(tr_with(
+                        current(),
+                        "rollout path missing for thread {0}",
+                        &[&thread_id.to_string()],
+                    ));
                     self.outgoing.send_error(request_id, error).await;
                     return Ok(ControlFlow::Break(()));
                 };
@@ -4475,7 +4482,11 @@ impl ThreadRequestProcessor {
             Err(err) => {
                 let error = match err.details() {
                     CodexErrorDetails::InvalidRequest(message) => invalid_request(message.clone()),
-                    _ => internal_error(format!("error resuming thread: {err}")),
+                    _ => internal_error(tr_with(
+                        current(),
+                        "error resuming thread: {0}",
+                        &[&err.to_string()],
+                    )),
                 };
                 self.outgoing.send_error(request_id, error).await;
             }
@@ -4537,8 +4548,10 @@ impl ThreadRequestProcessor {
                     .await
                     .is_ok()
             {
-                return Err(invalid_request(format!(
-                    "cannot resume thread {existing_thread_id} with history while it is already running"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "cannot resume thread {0} with history while it is already running",
+                    &[&existing_thread_id.to_string()],
                 )));
             }
             None
@@ -4582,10 +4595,14 @@ impl ThreadRequestProcessor {
             if let (Some(requested_path), Some(active_path)) = (params.path.as_ref(), active_path)
                 && !path_utils::paths_match_after_normalization(requested_path, active_path)
             {
-                return Err(invalid_request(format!(
-                    "cannot resume running thread {existing_thread_id} with stale path: requested `{}`, active `{}`",
-                    requested_path.display(),
-                    active_path.display()
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "cannot resume running thread {0} with stale path: requested `{1}`, active `{2}`",
+                    &[
+                        &existing_thread_id.to_string(),
+                        &requested_path.display().to_string(),
+                        &active_path.display().to_string(),
+                    ],
                 )));
             }
             let config_snapshot = existing_thread.config_snapshot().await;
@@ -4674,8 +4691,10 @@ impl ThreadRequestProcessor {
                     .take()
                     .map(|history| history.items)
                     .ok_or_else(|| {
-                        internal_error(format!(
-                            "thread {existing_thread_id} did not include persisted history"
+                        internal_error(tr_with(
+                            current(),
+                            "thread {0} did not include persisted history",
+                            &[&existing_thread_id.to_string()],
                         ))
                     })?
             } else {
@@ -4718,8 +4737,10 @@ impl ThreadRequestProcessor {
                 thread_state.listener_command_tx()
             };
             let Some(listener_command_tx) = listener_command_tx else {
-                return Err(internal_error(format!(
-                    "failed to enqueue running thread resume for thread {existing_thread_id}: thread listener is not running"
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to enqueue running thread resume for thread {0}: thread listener is not running",
+                    &[&existing_thread_id.to_string()],
                 )));
             };
 
@@ -4799,9 +4820,7 @@ impl ThreadRequestProcessor {
                 }),
             );
             if listener_command_tx.send(command).is_err() {
-                return Err(internal_error(format!(
-                    "failed to enqueue running thread resume for thread {existing_thread_id}: thread listener command channel is closed"
-                )));
+                return Err(internal_error(tr_with(current(), "failed to enqueue running thread resume for thread {0}: thread listener command channel is closed", &[&existing_thread_id.to_string()])));
             }
             return Ok(RunningThreadResumeResult::Handled);
         }
@@ -4814,7 +4833,7 @@ impl ThreadRequestProcessor {
         history: &[ResponseItem],
     ) -> Result<InitialHistory, JSONRPCErrorError> {
         if history.is_empty() {
-            return Err(invalid_request("history must not be empty"));
+            return Err(invalid_request(tr(current(), "history must not be empty")));
         }
         Ok(InitialHistory::Forked(
             history
@@ -4913,18 +4932,17 @@ impl ThreadRequestProcessor {
                     codex_rollout::plain_rollout_path(current_path).as_path(),
                 )
             {
-                return Err(invalid_request(format!(
-                    "cannot resume paginated thread {} with stale path: requested {}, current {}; omit path and resume by thread id",
-                    stored_thread.thread_id,
-                    requested_path.display(),
-                    current_path.display()
+                return Err(invalid_request(tr_with(
+                    current(), "cannot resume paginated thread {0} with stale path: requested {1}, current {2}; omit path and resume by thread id", &[&stored_thread.thread_id.to_string(), &requested_path.display().to_string(), &current_path.display().to_string()],
                 )));
             }
         }
         if stored_thread.archived_at.is_some() {
             let thread_id = stored_thread.thread_id;
-            return Err(invalid_request(format!(
-                "session {thread_id} is archived. Run `codex unarchive {thread_id}` to unarchive it first."
+            return Err(invalid_request(tr_with(
+                current(),
+                "session {0} is archived. Run `codex unarchive {0}` to unarchive it first.",
+                &[&thread_id.to_string()],
             )));
         }
 
@@ -5053,9 +5071,11 @@ impl ThreadRequestProcessor {
                             &self.config.cwd,
                         )
                         .0),
-                        Err(read_err) => {
-                            Err(format!("failed to read thread from store: {read_err}"))
-                        }
+                        Err(read_err) => Err(tr_with(
+                            current(),
+                            "failed to read thread from store: {0}",
+                            &[&read_err.to_string()],
+                        )),
                     }
                 }
             }
@@ -5070,8 +5090,10 @@ impl ThreadRequestProcessor {
                 thread.preview = preview_from_rollout_items(items);
                 Ok(thread)
             }
-            InitialHistory::New | InitialHistory::Cleared => Err(format!(
-                "failed to build resume response for thread {thread_id}: initial history missing"
+            InitialHistory::New | InitialHistory::Cleared => Err(tr_with(
+                current(),
+                "failed to build resume response for thread {0}: initial history missing",
+                &[&thread_id.to_string()],
             )),
         };
         let mut thread = thread?;
@@ -5158,19 +5180,22 @@ impl ThreadRequestProcessor {
             .await?;
         let paginated_source = matches!(source_thread.history_mode, ThreadHistoryMode::Paginated);
         if last_turn_id.is_some() && before_turn_id.is_some() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "`beforeTurnId` cannot be combined with `lastTurnId`",
-            ));
+            )));
         }
         if ephemeral && defer_goal_continuation {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "`deferGoalContinuation` cannot be combined with `ephemeral`",
-            ));
+            )));
         }
         if paginated_source && ephemeral && include_turns {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "ephemeral paginated thread/fork requires `excludeTurns: true`",
-            ));
+            )));
         }
         if paginated_source && include_turns {
             self.send_deprecation_notice(
@@ -5209,10 +5234,15 @@ impl ThreadRequestProcessor {
                             "no rollout found for thread id {0}",
                             &[&thread_id.to_string()],
                         )),
-                        ThreadStoreError::Unsupported { .. } => {
-                            method_not_found("paginated_threads is not supported yet")
-                        }
-                        err => internal_error(format!("failed to prepare paginated fork: {err}")),
+                        ThreadStoreError::Unsupported { .. } => method_not_found(tr(
+                            current(),
+                            "paginated_threads is not supported yet",
+                        )),
+                        err => internal_error(tr_with(
+                            current(),
+                            "failed to prepare paginated fork: {0}",
+                            &[&err.to_string()],
+                        )),
                     })?,
             )
         } else {

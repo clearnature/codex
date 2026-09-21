@@ -1294,3 +1294,22 @@ thread_processor.rs 继续推进（本批 ~20 条）；`i18n-check` `r-muas4y3x-
 ### 39.3 门禁
 
 `i18n-check` `r-muasc256-2izldt`（3850 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；cargo check/clippy EXIT=0。
+
+## 四十、app-server 批 A-6：thread_processor.rs（resume/rollback/分页 fork 系列）
+
+### 40.1 本批范围
+
+multi-agent 子代理 resume、approval_policy 覆盖、rollout path、resume with history/stale path、
+enqueue running resume、paginated fork/beforeTurnId/deferGoal/ephemeral 组合校验 —— 全 JSON-RPC 用户可见 ⇒ 译。
+
+### 40.2 三次返工
+
+- **同值第三处漏译**：`:3990` `permissions`+`sandbox`（:1286/:5149 已译，第三处漏）—— 值在词典存在但**该站点**还是字面量。
+  ⚠ i18n-check 只查「渲染键」，任何一个站点漏包都不会报 unused（键被别处渲染了）⇒ **漏站点只能靠 i18n_todo 的候选清单抓**。
+- **i18n-check 报 unused 的真相**：`:4824 :4938` 是**漏译**（而非误加词条）—— 我往词典加了翻译但源码没渲染，unused 提醒了我「该译没译」。
+  ⚠ 「unused = 我加多了」是**错的分诊**——先查源码是不是漏包，再决定删词条 or 补译。
+- **`:4938` 参数未接完整**：多行替换后旧参数行（`requested_path.display()`）残留在 tr_with 外 → 编译错/半成品。多行→结构改造后**必读全文确认括号与参数闭合**。
+
+### 40.3 门禁
+
+`i18n-check` `r-muasn3wu-0q6bv7`（3868 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。

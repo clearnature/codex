@@ -6276,7 +6276,7 @@ fn thread_store_resume_read_error(err: ThreadStoreError) -> JSONRPCErrorError {
             "no rollout found for thread id {0}",
             &[&thread_id.to_string()],
         )),
-        err => internal_error(format!("failed to read thread: {err}")),
+        err => internal_error(tr_with(current(), "failed to read thread: {0}", &[&err.to_string()])),
     }
 }
 
@@ -6314,11 +6314,19 @@ fn thread_read_history_load_error(
         ThreadStoreError::InvalidRequest { message }
             if message.starts_with("failed to resolve rollout path `") =>
         {
-            ThreadReadViewError::InvalidRequest(tr_with(current(), "thread {0} is not materialized yet; includeTurns is unavailable before first user message", &[&thread_id.to_string()]))
+            ThreadReadViewError::InvalidRequest(tr_with(
+                current(),
+                "thread {0} is not materialized yet; includeTurns is unavailable before first user message",
+                &[&thread_id.to_string()],
+            ))
         }
         ThreadStoreError::ThreadNotFound {
             thread_id: missing_thread_id,
-        } if missing_thread_id == thread_id => ThreadReadViewError::InvalidRequest(tr_with(current(), "thread {0} is not materialized yet; includeTurns is unavailable before first user message", &[&thread_id.to_string()])),
+        } if missing_thread_id == thread_id => ThreadReadViewError::InvalidRequest(tr_with(
+            current(),
+            "thread {0} is not materialized yet; includeTurns is unavailable before first user message",
+            &[&thread_id.to_string()],
+        )),
         ThreadStoreError::InvalidRequest { message } => {
             ThreadReadViewError::InvalidRequest(message)
         }
@@ -6689,9 +6697,13 @@ fn paginate_background_terminals(
 ) -> Result<(Vec<ThreadBackgroundTerminal>, Option<String>), JSONRPCErrorError> {
     let start = match cursor {
         Some(cursor) => {
-            let cursor = cursor
-                .parse::<i32>()
-                .map_err(|err| invalid_request(format!("invalid cursor: {err}")))?;
+            let cursor = cursor.parse::<i32>().map_err(|err| {
+                invalid_request(tr_with(
+                    current(),
+                    "invalid cursor: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
             terminals
                 .iter()
                 .position(|terminal| {

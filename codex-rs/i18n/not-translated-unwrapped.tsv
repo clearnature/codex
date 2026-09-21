@@ -1491,3 +1491,4 @@ no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_proce
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6245	§12.1 匹配键：`message.starts_with("failed to resolve rollout path")` 比对入站错误文本
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6267	§12.1 匹配键：同上（第二处）
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6292	§12.1 匹配键：`message == no_rollout_message`（:6293）比对 ThreadStoreError 文本
+	codex-rs/app-server/src/request_processors/thread_processor.rs:6338	§12.1 匹配键：`message == no_rollout_message`（:6340）比对 ThreadStoreError 文本

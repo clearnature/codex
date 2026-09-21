@@ -3,6 +3,8 @@
 //! This module owns protocol-neutral auth elicitation parsing and payload shaping.
 //! Session orchestration stays in `codex-core`.
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::mcp::CallToolResult;
 use serde::Serialize;
 
@@ -199,21 +201,25 @@ fn string_auth_failure_field(
 
 fn auth_elicitation_message(auth_failure: &CodexAppsConnectorAuthFailure) -> String {
     match auth_failure.auth_reason.as_deref() {
-        Some("oauth_upgrade_required") => format!(
-            "Reconnect {} on ChatGPT to grant the permissions needed for this request.",
-            auth_failure.connector_name
+        Some("oauth_upgrade_required") => tr_with(
+            current(),
+            "Reconnect {0} on ChatGPT to grant the permissions needed for this request.",
+            &[auth_failure.connector_name.as_str()],
         ),
-        Some("reauthentication_required") => format!(
-            "Reconnect {} on ChatGPT to restore access for this request.",
-            auth_failure.connector_name
+        Some("reauthentication_required") => tr_with(
+            current(),
+            "Reconnect {0} on ChatGPT to restore access for this request.",
+            &[auth_failure.connector_name.as_str()],
         ),
-        Some("missing_link") => format!(
-            "Sign in to {} on ChatGPT to use it in Codex.",
-            auth_failure.connector_name
+        Some("missing_link") => tr_with(
+            current(),
+            "Sign in to {0} on ChatGPT to use it in Codex.",
+            &[auth_failure.connector_name.as_str()],
         ),
-        _ => format!(
-            "Sign in to {} on ChatGPT to continue.",
-            auth_failure.connector_name
+        _ => tr_with(
+            current(),
+            "Sign in to {0} on ChatGPT to continue.",
+            &[auth_failure.connector_name.as_str()],
         ),
     }
 }

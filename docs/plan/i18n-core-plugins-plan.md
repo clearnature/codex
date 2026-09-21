@@ -1114,3 +1114,32 @@ codex-mcp 的字符串绝大多数进 `tracing` 或协议字段，**不在 TUI �
 - **首轮 spec 漏了 4 条**：`cm2.json` 只写了 5 个 extra_edits，`translate` 一节完全没写——`:868 :871 :874 :884` 第一次没被处理（对账 107→78 ≠ 74 暴露）。
 - **工具对多行 `anyhow!` 的定位限制**：`kind:"format"/"anyhow"` 要求字符串在**该行行内**；多行形态（`Err(anyhow!(\n "…"\n))`）只能走 `extra_edits`。
 - **clippy 一次返工**：`:370` 我写 `format!("{:?}", startup_timeout)` 被`uninlined_format_args` 拦截（AGENTS.md 点名的项目约束）→ 改 `{startup_timeout:?}`。**同一句教训**：AGENTS.md 明文的 lint 必须当成 pre-check，不是「clippy 会告诉我」。
+
+## 三十三、codex-mcp 批 3：elicitation 系 18 条（4 译 / 14 登记）
+
+### 33.1 判据：同是 elicitation，一条译十条登记
+
+codex-mcp 的授权/请求链路里三种形态，终点各不相同：
+
+| 站点                                                                                               | 形态                                                                   | 终点                                                                                  | 判定                       |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------- |
+| `auth_elicitation.rs:203 :207 :211 :215`                                                           | `auth_elicitation_message(..)` → `ElicitationRequestEvent.message`     | `tui/chatwidget/mcp_server_elicitation.rs:988` `&self.request.message` 渲染进 overlay | **译**                     |
+| `auth_elicitation.rs:174`                                                                          | `format!` 结果进 `CallToolResult.content` 的 `{type:"text"}`           | **MCP 工具返回给模型**                                                                | **登记**（§12.2 喂模型）   |
+| `elicitation.rs:46`                                                                                | `STRICT_AUTO_REVIEW_DECLINE_MESSAGE` → `ElicitationResponse.meta` JSON | 协议回包，机器读                                                                      | **登记**（§12.6 协议载荷） |
+| `elicitation.rs:150/152/155/432/435/446/483/500/502` + `user_verification_elicitation.rs:32/50/53` | `anyhow!()` / `.context()` 错误链                                      | 上游 warn! 或错误链上下文                                                             | **登记**（§12.3）          |
+
+⚠ 同文件 `auth_elicitation.rs` 内 :174 vs :203-215 判定相反 —— 依据是**消费端**（模型 vs TUI overlay），
+不是「都是认证提示」。
+
+### 33.2 工具路径的两次绕行（`#[path]` 子模块不适用）
+
+- `user_verification_elicitation.rs` 是 `elicitation.rs` 的 `#[path]` 子模块，`i18n_apply.py` 的
+  `--file` 行号表**不含它** ⇒ 三条登记全部**手工写 TSV**（值行 + site-only 行）。
+- `:32`（`elicitation request router unavailable`）是**第三处同值**（:150/:483 已登记）⇒ 用
+  site-only 行（空值列），符合既有约定（`tui/src/app/side.rs:56` 等先例）。
+
+### 33.3 对账与门禁
+
+- 107 → **56**（-51 = 批1 22 + 批2 11 + 批3 18）；还剩 56 条。
+- `i18n-check` `r-muakwwh9-7j1vcf`（3755 词条 / 全零）；`clippy` `r-muakze7f-ndqxks`（110.1s）；
+  `cargo check -p codex-mcp --all-targets` EXIT=0。

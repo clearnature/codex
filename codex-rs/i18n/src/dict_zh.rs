@@ -9794,6 +9794,22 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Invalid MCP server name '{0}': must match pattern {1}",
         "无效的MCP服务器名'{0}'：必须匹配模式{1}",
     ),
+    (
+        "Reconnect {0} on ChatGPT to grant the permissions needed for this request.",
+        "请在ChatGPT上重新连接{0}，以授予此请求所需的权限",
+    ),
+    (
+        "Reconnect {0} on ChatGPT to restore access for this request.",
+        "请在ChatGPT上重新连接{0}，以恢复此请求的访问权限",
+    ),
+    (
+        "Sign in to {0} on ChatGPT to use it in Codex.",
+        "请在ChatGPT上登录{0}以在Codex中使用它",
+    ),
+    (
+        "Sign in to {0} on ChatGPT to continue.",
+        "请在ChatGPT上登录{0}以继续",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

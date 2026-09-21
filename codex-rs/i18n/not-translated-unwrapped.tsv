@@ -1403,3 +1403,17 @@ failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs
 failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:476	§12.3 日志：同上
 This tool is part of plugin `{}`.	codex-rs/codex-mcp/src/rmcp_client.rs:720	§12.2 喂模型：plugin_source_note 被拼进 ToolInfo.description（rmcp_client.rs:713 注释「appends a model-visible plugin membership note」），翻译会改变模型可见的工具描述
 This tool is part of plugins {}.	codex-rs/codex-mcp/src/rmcp_client.rs:723	§12.2 喂模型：同上
+Authentication for {} was requested and accepted. Retry this tool call now.	codex-rs/codex-mcp/src/auth_elicitation.rs:174	§12.2 喂模型：结果进 CallToolResult.content 的 {type:text} —— MCP 工具返回值给模型读；翻译会改变模型看到的工具结果
+Automated review of this operation failed. Do not proceed without asking the user for explicit approval.	codex-rs/codex-mcp/src/elicitation.rs:46	§12.6 协议载荷：STRICT_AUTO_REVIEW_DECLINE_MESSAGE 进 ElicitationResponse.meta 的 JSON message 字段（elicitation.rs:514），机器读的协议回包，无 TUI 渲染证据
+elicitation request router unavailable	codex-rs/codex-mcp/src/elicitation.rs:150	§12.3 日志/错误链：anyhow!(...) 错误链上下文
+elicitation request not found	codex-rs/codex-mcp/src/elicitation.rs:152	§12.3 同上
+elicitation response receiver closed	codex-rs/codex-mcp/src/elicitation.rs:155	§12.3 同上
+failed to serialize MCP elicitation metadata	codex-rs/codex-mcp/src/elicitation.rs:432	§12.3 同上（.context()）
+failed to serialize MCP elicitation schema	codex-rs/codex-mcp/src/elicitation.rs:435	§12.3 同上
+failed to serialize MCP elicitation metadata	codex-rs/codex-mcp/src/elicitation.rs:446	§12.3 同上
+elicitation request router unavailable	codex-rs/codex-mcp/src/elicitation.rs:483	§12.3 同上
+failed to deliver MCP elicitation request	codex-rs/codex-mcp/src/elicitation.rs:500	§12.3 同上
+elicitation request channel closed unexpectedly	codex-rs/codex-mcp/src/elicitation.rs:502	§12.3 同上
+	codex-rs/codex-mcp/src/user_verification_elicitation.rs:32	§12.3 同值已在 elicitation.rs:150/:483 登记（site-only）
+failed to deliver user-verification request	codex-rs/codex-mcp/src/user_verification_elicitation.rs:50	§12.3 日志/错误链：.context() 错误链上下文
+user-verification response channel closed	codex-rs/codex-mcp/src/user_verification_elicitation.rs:53	§12.3 同上

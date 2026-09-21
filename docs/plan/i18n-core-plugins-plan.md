@@ -1205,3 +1205,30 @@ codex-mcp 的授权/请求链路里三种形态，终点各不相同：
 - thread_processor.rs 剩余：184 → **162**；app-server 剩余 643 → **621**。
 - `i18n-check` `r-muaox3cd-4b41lt`（3764 词条 / duplicate 0 / placeholder 0 / coverage 99.8%）；
   `cargo check -p codex-app-server --all-targets` EXIT=0。
+
+## 三十六、app-server 批 A-2：thread_processor.rs 大量推进（184 → 111）
+
+### 36.1 本批覆盖
+
+| 族                      | 站点                                                                                                                           | 判定                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| 弃用通知 const          | `THREAD_ROLLBACK` / `PAGINATED_FULL` / `PAGINATED_READ`                                                                        | **const → fn 改造**（§3.6）：`fn ...() -> &'static str { tr(current(), ...) }`，5 消费点加 `()` |
+| 动态工具 namespace 校验 | `:398 :404 :416 :420 :433 :437 :441 :445 :449`                                                                                 | **译**（:1424 invalid_request 链）                                                              |
+| thread/section 校验     | `:716 :721 :725 :731 :740 :933 :992 :1010 :1030 :1052`（含 `invalid thread id` 19 处全局）                                     | **译**（invalid_request/internal_error 用户可见）                                               |
+| 操作标签族              | `core_thread_write_error` / `thread_store_mutation_error` 的 operation 标签（move/set name/archive/unarchive/revert 等 12 个） | **译**（标签进 `failed to {0}: {1}` 用户可见模板；模板也转位置参数）                            |
+| cwd filter              | `:273`                                                                                                                         | **译**（补上批漏网）                                                                            |
+
+### 36.2 两次返工（都是同一类：类型没核对）
+
+1. `:273` `cwd` 是 `String` 却写成 `&[cwd, ...]`（要 `&cwd`）—— E0308。
+2. `:432` `Err(tr(...))` 缺 `.to_string()`（函数返回 `Result<(), String>`）—— E0308。
+   ⚠ 两处都在**手写 python 替换**时产生：批量替换后**必须**编译验证（工具不强制，但编译器是最后闸门）。
+
+### 36.3 数字修正教训
+
+`:433` 的 const 内插 `DYNAMIC_TOOL_NAMESPACE_DESCRIPTION_MAX_LEN` 我误写成 `256`（实际 `1024`）——
+**En 逐字节不变**原则下这是违约。已修正。⚠ const 内插展平为字面量时**必须读 const 的实际值**。
+
+### 36.4 门禁
+
+`i18n-check` `r-muapcr8w-cmqudl`（3799 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。

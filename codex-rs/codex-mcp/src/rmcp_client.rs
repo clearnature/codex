@@ -9,6 +9,9 @@
 #[path = "rmcp_client/status.rs"]
 mod status;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -361,9 +364,11 @@ impl ManagedClientStartup {
                 {
                     Ok(result) => Arc::new(result?),
                     Err(_) => {
-                        return Err(StartupOutcomeError::from(anyhow!(
-                            "MCP client startup timed out after {startup_timeout:?}"
-                        )));
+                        return Err(StartupOutcomeError::from(anyhow!(tr_with(
+                            current(),
+                            "MCP client startup timed out after {0}",
+                            &[&format!("{startup_timeout:?}")]
+                        ))));
                     }
                 };
                 start_server_task(
@@ -603,11 +608,11 @@ impl AsyncManagedClient {
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum StartupOutcomeError {
-    #[error("MCP startup cancelled")]
+    #[error("{}", tr(current(), "MCP startup cancelled"))]
     Cancelled,
     // We can't store the original error here because anyhow::Error doesn't implement
     // `Clone`.
-    #[error("MCP startup failed: {error}")]
+    #[error("{}", tr_with(current(), "MCP startup failed: {0}", &[error]))]
     Failed {
         error: String,
         is_authentication_required: bool,
@@ -861,29 +866,36 @@ fn resolve_bearer_token(
     match env::var(env_var) {
         Ok(value) => {
             if value.is_empty() {
-                Err(anyhow!(
-                    "Environment variable {env_var} for MCP server '{server_name}' is empty"
-                ))
+                Err(anyhow!(tr_with(
+                    current(),
+                    "Environment variable {0} for MCP server '{1}' is empty",
+                    &[env_var, server_name]
+                )))
             } else {
                 Ok(Some(value))
             }
         }
-        Err(env::VarError::NotPresent) => Err(anyhow!(
-            "Environment variable {env_var} for MCP server '{server_name}' is not set"
-        )),
-        Err(env::VarError::NotUnicode(_)) => Err(anyhow!(
-            "Environment variable {env_var} for MCP server '{server_name}' contains invalid Unicode"
-        )),
+        Err(env::VarError::NotPresent) => Err(anyhow!(tr_with(
+            current(),
+            "Environment variable {0} for MCP server '{1}' is not set",
+            &[env_var, server_name]
+        ))),
+        Err(env::VarError::NotUnicode(_)) => Err(anyhow!(tr_with(
+            current(),
+            "Environment variable {0} for MCP server '{1}' contains invalid Unicode",
+            &[env_var, server_name]
+        ))),
     }
 }
 
 fn validate_mcp_server_name(server_name: &str) -> Result<()> {
     let re = regex_lite::Regex::new(r"^[a-zA-Z0-9_:@/.-]+$")?;
     if !re.is_match(server_name) {
-        return Err(anyhow!(
-            "Invalid MCP server name '{server_name}': must match pattern {pattern}",
-            pattern = re.as_str()
-        ));
+        return Err(anyhow!(tr_with(
+            current(),
+            "Invalid MCP server name '{0}': must match pattern {1}",
+            &[server_name, re.as_str()]
+        )));
     }
     Ok(())
 }
@@ -1123,9 +1135,11 @@ pub(crate) async fn make_rmcp_client(
         && !config.is_local_environment()
         && !has_explicit_http_authorization(&config)
     {
-        return Err(StartupOutcomeError::from(anyhow!(
-            "executor-owned MCP server `{server_name}` cannot use hosted ChatGPT authentication; configure executor-owned credentials instead"
-        )));
+        return Err(StartupOutcomeError::from(anyhow!(tr_with(
+            current(),
+            "executor-owned MCP server `{0}` cannot use hosted ChatGPT authentication; configure executor-owned credentials instead",
+            &[server_name]
+        ))));
     }
     let resolved_environment =
         resolved_environment.map_err(|err| StartupOutcomeError::from(anyhow!(err)))?;
@@ -1194,9 +1208,11 @@ pub(crate) async fn make_rmcp_client(
                 && bearer_token_env_var.is_some()
             {
                 let Some(environment) = resolved_environment.as_ref() else {
-                    return Err(StartupOutcomeError::from(anyhow!(
-                        "non-local HTTP MCP server `{server_name}` did not resolve an execution environment"
-                    )));
+                    return Err(StartupOutcomeError::from(anyhow!(tr_with(
+                        current(),
+                        "non-local HTTP MCP server `{0}` did not resolve an execution environment",
+                        &[server_name]
+                    ))));
                 };
                 environment
                     .info()

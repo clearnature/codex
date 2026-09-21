@@ -9764,6 +9764,36 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("failed to uninstall plugin: {0}", "卸载插件失败：{0}"),
     ("failed to {0}: {1}", "{0}失败：{1}"),
+    (
+        "MCP client startup timed out after {0}",
+        "MCP客户端启动在{0}后超时",
+    ),
+    ("MCP startup cancelled", "MCP启动已取消"),
+    ("MCP startup failed: {0}", "MCP启动失败：{0}"),
+    (
+        "executor-owned MCP server `{0}` cannot use hosted ChatGPT authentication; configure executor-owned credentials instead",
+        "executor拥有的MCP服务器`{0}`不能使用托管的ChatGPT认证；请改用executor自有的凭据",
+    ),
+    (
+        "non-local HTTP MCP server `{0}` did not resolve an execution environment",
+        "非本地HTTP MCP服务器`{0}`未能解析执行环境",
+    ),
+    (
+        "Environment variable {0} for MCP server '{1}' is empty",
+        "MCP服务器'{1}'的环境变量{0}为空",
+    ),
+    (
+        "Environment variable {0} for MCP server '{1}' is not set",
+        "MCP服务器'{1}'的环境变量{0}未设置",
+    ),
+    (
+        "Environment variable {0} for MCP server '{1}' contains invalid Unicode",
+        "MCP服务器'{1}'的环境变量{0}包含无效Unicode",
+    ),
+    (
+        "Invalid MCP server name '{0}': must match pattern {1}",
+        "无效的MCP服务器名'{0}'：必须匹配模式{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

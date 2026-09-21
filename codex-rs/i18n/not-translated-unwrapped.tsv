@@ -1379,3 +1379,27 @@ prompt must be at most {MAX_DEFAULT_PROMPT_LEN} characters	codex-rs/core-plugins
 failed to list plugin marketplaces for tool suggestions	codex-rs/core-plugins/src/discoverable.rs:87	§12.3 日志：anyhow context，唯一终点是 core/src/session/turn.rs:1643 warn!("failed to load discoverable tool suggestions: {err:#}") 后 None
 remote plugin install failed	codex-rs/app-server/src/request_processors/plugins.rs:1747	§12.3 日志：本行即 tracing::warn! 的消息（:1740 起为结构化字段 marketplace_name/error_type/error）
 skipping plugin MCP OAuth for an unowned environment	codex-rs/app-server/src/request_processors/plugins.rs:1859	§12.3 日志：本行即 tracing::warn! 的消息（:1855 起为字段 plugin/server/environment_id）
+unsupported Agent Plugins MCP schema `{schema}`; supported schemas: {}	codex-rs/codex-mcp/src/agent_plugin_config.rs:92	§12.3 日志：serde_json::Error 自定义消息；出口 loader.rs:1658 warn!("failed to parse plugin MCP config: {err}")
+Agent Plugins MCP server must be an object	codex-rs/codex-mcp/src/agent_plugin_config.rs:118	§12.3 日志：同上（plugin_mcp_json_error 包装进 serde_json::Error）
+Agent Plugins legacy SSE transport is not supported by Codex	codex-rs/codex-mcp/src/agent_plugin_config.rs:144	§12.3 日志：同上
+Agent Plugins stdio command must be a bare executable name or a contained `./` path	codex-rs/codex-mcp/src/agent_plugin_config.rs:173	§12.3 日志：同上
+Agent Plugins stdio `env` cannot override reserved variable `{reserved}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:183	§12.3 日志：同上
+duplicate case-insensitive Agent Plugins environment variable `{name}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:194	§12.3 日志：同上
+Agent Plugins MCP `{field}` must use its declared type when present	codex-rs/codex-mcp/src/agent_plugin_config.rs:251	§12.3 日志：同上
+Agent Plugins HTTP server requires a non-empty `url`	codex-rs/codex-mcp/src/agent_plugin_config.rs:287	§12.3 日志：同上
+invalid Agent Plugins MCP URL `{raw_url}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:290	§12.3 日志：同上
+Agent Plugins MCP URL must be absolute HTTP or HTTPS	codex-rs/codex-mcp/src/agent_plugin_config.rs:292	§12.3 日志：同上
+Agent Plugins MCP URL must not contain user information or a fragment	codex-rs/codex-mcp/src/agent_plugin_config.rs:296	§12.3 日志：同上
+non-loopback Agent Plugins MCP endpoints must use HTTPS	codex-rs/codex-mcp/src/agent_plugin_config.rs:306	§12.3 日志：同上
+duplicate case-insensitive Agent Plugins HTTP header `{name}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:316	§12.3 日志：同上
+invalid Agent Plugins HTTP header name `{name}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:320	§12.3 日志：同上
+invalid Agent Plugins HTTP header value for `{name}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:327	§12.3 日志：同上
+failed to resolve plugin path: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:404	§12.3 日志：normalize_* 返回的 String 进 outcome.errors[].message（PluginMcpServerParseError），唯一消费者是 ext/mcp provider.rs:130 / discovery.rs:145 的 tracing::warn!(error = error.message) ⇒ 只进 tracing
+expanded path `{}` must remain within `{}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:423	§12.3 日志：同上（resolve_contained_host_path / absolute_plugin_path 的 String 冒泡到 outcome.errors）
+failed to resolve symlinked path `{}`	codex-rs/codex-mcp/src/agent_plugin_config.rs:447	§12.3 日志：同上
+failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:453	§12.3 日志：同上
+failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:462	§12.3 日志：同上
+failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:469	§12.3 日志：同上
+failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:476	§12.3 日志：同上
+This tool is part of plugin `{}`.	codex-rs/codex-mcp/src/rmcp_client.rs:720	§12.2 喂模型：plugin_source_note 被拼进 ToolInfo.description（rmcp_client.rs:713 注释「appends a model-visible plugin membership note」），翻译会改变模型可见的工具描述
+This tool is part of plugins {}.	codex-rs/codex-mcp/src/rmcp_client.rs:723	§12.2 喂模型：同上

@@ -1078,3 +1078,39 @@ let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
 - 修后总账：`excluded by scope ruling: 2186 candidates`（doctor 851 + app-server 644，去重后 1335 从剩余消失）
 
 ⚠ **不改变裁定本身**：app-server 误做的 44 处保留原地，其去留仍是待裁决 `j-muajv7wb-3pvn`。
+
+## 三十二、codex-mcp 批 1–2：agent_plugin_config.rs 22 登记 + rmcp_client.rs 11 条（9 译 / 2 登记）
+
+### 32.1 这是一个「登记为主」的 crate —— 判据链逐条闭合
+
+codex-mcp 的字符串绝大多数进 `tracing` 或协议字段，**不在 TUI 屏幕**。本批的判定：
+
+| 文件                     | 站点                                                                                 | 终点                                                                                                                                                                                                | 判定                     |
+| ------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `agent_plugin_config.rs` | `:92 :118 :144 :173 :183 :194 :251 :287 :290 :292 :296 :306 :316 :320 :327`（15 条） | `serde_json::Error` 自定义消息 → `core-plugins/src/loader.rs:1658` `warn!("failed to parse plugin MCP config: {err}")`                                                                              | **登记**（§28.1 同型）   |
+| `agent_plugin_config.rs` | `:404 :423 :447 :453 :462 :469 :476`（7 条）                                         | `normalize_*` 的 `String` → `outcome.errors[].message`（`PluginMcpServerParseError.message`）→ 唯一消费者 `ext/mcp/provider.rs:130` / `discovery.rs:145` 的 `tracing::warn!(error = error.message)` | **登记**                 |
+| `rmcp_client.rs`         | `:365 :606 :610 :1127 :1198`                                                         | `StartupOutcomeError`（thiserror）→ protocol `McpStartupStatus::Failed.error` → **TUI 渲染**（`tui/chatwidget/mcp_startup.rs:99` `add_mcp_startup_warning(vec![error.clone()], …)`）                | **译**                   |
+| `rmcp_client.rs`         | `:865 :872 :875 :884`                                                                | `anyhow!` → `StartupOutcomeError::from`（`error.into()` 进同链）→ 同上 TUI                                                                                                                          | **译**                   |
+| `rmcp_client.rs`         | `:720 :723`                                                                          | `plugin_source_note` 拼进 `ToolInfo.description`（注释明写 **model-visible**）                                                                                                                      | **登记**（§12.2 喂模型） |
+
+⚠ 判据要点：**「这个 crate 的名字叫 mcp」不能当成「它全在协议层」**——
+`McpStartupStatus::Failed.error` 是协议字段，但它的值是**上游 anyhow 文本**，而那个字段被 TUI 直接渲染。
+反例对照：`plugin_source_note` 虽也是字符串，但消费端是**模型**（`ToolInfo.description`），所以登记。
+同是 codex-mcp 的字符串，**一条译一条登记**，依据全是消费端不是名字。
+
+### 32.2 细节
+
+- `:365` 的 `{startup_timeout:?}` 是 `Duration` 的 `{:?}` 格式说明符 —— 工具不计入占位符，用 `extra_edits` 转 `tr_with("…after {0}", &[&format!("{:?}", startup_timeout)])`。
+- `:610` 的 `error` 是 `Failed { error: String }` 字段 ⇒ `error.as_str()`（预检⑤ 事前核对，未返工）。
+- `:1127 :1198` 的 `server_name: &str`（`make_rmcp_client` 签名 `:1128`）⇒ 裸传。
+- 对账：107 → **74**（−33 = 22 + 11，精确）。
+
+### 32.3 门禁
+
+`cargo check -p codex-mcp --all-targets` EXIT=0（`FMT=0`）；`i18n-check` 全零值见下节。
+
+### 32.4 补记（批 2 的实际执行细节）
+
+- **首轮 spec 漏了 4 条**：`cm2.json` 只写了 5 个 extra_edits，`translate` 一节完全没写——`:868 :871 :874 :884` 第一次没被处理（对账 107→78 ≠ 74 暴露）。
+- **工具对多行 `anyhow!` 的定位限制**：`kind:"format"/"anyhow"` 要求字符串在**该行行内**；多行形态（`Err(anyhow!(\n "…"\n))`）只能走 `extra_edits`。
+- **clippy 一次返工**：`:370` 我写 `format!("{:?}", startup_timeout)` 被`uninlined_format_args` 拦截（AGENTS.md 点名的项目约束）→ 改 `{startup_timeout:?}`。**同一句教训**：AGENTS.md 明文的 lint 必须当成 pre-check，不是「clippy 会告诉我」。

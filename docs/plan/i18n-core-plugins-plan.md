@@ -1313,3 +1313,26 @@ enqueue running resume、paginated fork/beforeTurnId/deferGoal/ephemeral 组合�
 ### 40.3 门禁
 
 `i18n-check` `r-muasn3wu-0q6bv7`（3868 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。
+
+## 四十一、app-server 批 A-7：thread_processor.rs 收尾（fork/历史/会话摘要系列）
+
+### 41.1 本批范围
+
+thread did not include persisted history（2 值）、fork source thread、flush/inherit goal、
+rollout path 查询、anchor turn 游标、序列化/反序列化游标、`{operation} is not supported yet`、
+list threads、not materialized（thread/turns/list 与 includeTurns 两键）、会话摘要 —— 全 JSON-RPC 用户可见 ⇒ 译。
+
+### 41.2 匹配键 vs 生成串（第三次同型）
+
+`:6245 :6267`（`message.starts_with("failed to resolve rollout path \`")`）与 `:6292`
+（`no_rollout_message` 变量，`==` 比对）是匹配键 ⇒ 登记。**同值两种用法**（no rollout found for thread id）
+按上下文区分处理。
+
+### 41.3 返工
+
+- **unused 1 条真相**：`includeTurns is unavailable` 键我加了词条但 `:6318/:6324` 两处**没译**——又是「unused = 漏译非加多」。
+- **clippy redundant clone `:5550`**：`failed to flush source thread goal` 的 map_err 里 `err` 是 `&str`（`.to_string()` 冗余）——取 `&[err]`。
+
+### 41.4 门禁
+
+`i18n-check` `r-muat7hob-iks5gc`（3882 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。

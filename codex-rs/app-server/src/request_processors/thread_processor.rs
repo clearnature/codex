@@ -4820,7 +4820,11 @@ impl ThreadRequestProcessor {
                 }),
             );
             if listener_command_tx.send(command).is_err() {
-                return Err(internal_error(tr_with(current(), "failed to enqueue running thread resume for thread {0}: thread listener command channel is closed", &[&existing_thread_id.to_string()])));
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to enqueue running thread resume for thread {0}: thread listener command channel is closed",
+                    &[&existing_thread_id.to_string()],
+                )));
             }
             return Ok(RunningThreadResumeResult::Handled);
         }
@@ -4933,7 +4937,13 @@ impl ThreadRequestProcessor {
                 )
             {
                 return Err(invalid_request(tr_with(
-                    current(), "cannot resume paginated thread {0} with stale path: requested {1}, current {2}; omit path and resume by thread id", &[&stored_thread.thread_id.to_string(), &requested_path.display().to_string(), &current_path.display().to_string()],
+                    current(),
+                    "cannot resume paginated thread {0} with stale path: requested {1}, current {2}; omit path and resume by thread id",
+                    &[
+                        &stored_thread.thread_id.to_string(),
+                        &requested_path.display().to_string(),
+                        &current_path.display().to_string(),
+                    ],
                 )));
             }
         }
@@ -4960,8 +4970,10 @@ impl ThreadRequestProcessor {
             .take()
             .map(|history| history.items)
             .ok_or_else(|| {
-                internal_error(format!(
-                    "thread {thread_id} did not include persisted history"
+                internal_error(tr_with(
+                    current(),
+                    "thread {0} did not include persisted history",
+                    &[&thread_id.to_string()],
                 ))
             })?;
         Ok(InitialHistory::Resumed(ResumedHistory {
@@ -5264,8 +5276,10 @@ impl ThreadRequestProcessor {
                     .take()
                     .map(|history| history.items)
                     .ok_or_else(|| {
-                        internal_error(format!(
-                            "thread {source_thread_id} did not include persisted history"
+                        internal_error(tr_with(
+                            current(),
+                            "thread {0} did not include persisted history",
+                            &[&source_thread_id.to_string()],
                         ))
                     })?,
             )
@@ -5482,10 +5496,18 @@ impl ThreadRequestProcessor {
                     .await;
                 return Err(match err.details() {
                     CodexErrorDetails::Io(_) | CodexErrorDetails::Json(_) => {
-                        invalid_request(format!("failed to load thread {source_thread_id}: {err}"))
+                        invalid_request(tr_with(
+                            current(),
+                            "failed to load thread {0}: {1}",
+                            &[&source_thread_id.to_string(), &err.to_string()],
+                        ))
                     }
                     CodexErrorDetails::InvalidRequest(message) => invalid_request(message.clone()),
-                    _ => internal_error(format!("error forking thread: {err}")),
+                    _ => internal_error(tr_with(
+                        current(),
+                        "error forking thread: {0}",
+                        &[&err.to_string()],
+                    )),
                 });
             }
         };
@@ -5522,12 +5544,20 @@ impl ThreadRequestProcessor {
                     .flush_goal_progress_for_fork(source_thread_id)
                     .await
                     .map_err(|err| {
-                        internal_error(format!("failed to flush source thread goal: {err}"))
+                        internal_error(tr_with(
+                            current(),
+                            "failed to flush source thread goal: {0}",
+                            &[err.as_str()],
+                        ))
                     })?;
                 inherit_thread_goal_snapshot(&state_db, source_thread_id, thread_id)
                     .await
                     .map_err(|err| {
-                        internal_error(format!("failed to inherit source thread goal: {err}"))
+                        internal_error(tr_with(
+                            current(),
+                            "failed to inherit source thread goal: {0}",
+                            &[&err.to_string()],
+                        ))
                     })?
             } else {
                 false
@@ -5705,9 +5735,10 @@ impl ThreadRequestProcessor {
                     .as_any()
                     .downcast_ref::<LocalThreadStore>()
                 else {
-                    return Err(invalid_request(
+                    return Err(invalid_request(tr(
+                        current(),
                         "rollout path queries are only supported with the local thread store",
-                    ));
+                    )));
                 };
 
                 local_thread_store
@@ -5933,9 +5964,10 @@ fn paginate_thread_turns(
         .as_ref()
         .and_then(|anchor| turns.iter().position(|turn| turn.id == anchor.turn_id));
     if anchor.is_some() && anchor_index.is_none() {
-        return Err(invalid_request(
+        return Err(invalid_request(tr(
+            current(),
             "invalid cursor: anchor turn is no longer present",
-        ));
+        )));
     }
 
     let mut keyed_turns: Vec<_> = turns.into_iter().enumerate().collect();
@@ -5996,11 +6028,18 @@ fn serialize_thread_turns_cursor(
         turn_id: turn_id.to_string(),
         include_anchor,
     })
-    .map_err(|err| internal_error(format!("failed to serialize cursor: {err}")))
+    .map_err(|err| {
+        internal_error(tr_with(
+            current(),
+            "failed to serialize cursor: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }
 
 fn parse_thread_turns_cursor(cursor: &str) -> Result<ThreadTurnsCursor, JSONRPCErrorError> {
-    serde_json::from_str(cursor).map_err(|_| invalid_request(format!("invalid cursor: {cursor}")))
+    serde_json::from_str(cursor)
+        .map_err(|_| invalid_request(tr_with(current(), "invalid cursor: {0}", &[cursor])))
 }
 
 struct ThreadTurnsPageOptions<'a> {
@@ -6167,9 +6206,10 @@ fn deserialize_stored_thread_item(
     item: codex_thread_store::StoredThreadItem,
 ) -> Result<ThreadItem, JSONRPCErrorError> {
     serde_json::from_slice::<ThreadItem>(&item.item_json).map_err(|err| {
-        internal_error(format!(
-            "failed to deserialize stored thread item {}: {err}",
-            item.item_id
+        internal_error(tr_with(
+            current(),
+            "failed to deserialize stored thread item {0}: {1}",
+            &[&item.item_id.to_string(), &err.to_string()],
         ))
     })
 }
@@ -6208,7 +6248,7 @@ fn stored_turn_to_api_turn(
 }
 
 pub(super) fn unsupported_thread_store_operation(operation: &'static str) -> JSONRPCErrorError {
-    method_not_found(format!("{operation} is not supported yet"))
+    method_not_found(tr_with(current(), "{0} is not supported yet", &[operation]))
 }
 
 fn thread_store_list_error(err: ThreadStoreError) -> JSONRPCErrorError {
@@ -6217,7 +6257,11 @@ fn thread_store_list_error(err: ThreadStoreError) -> JSONRPCErrorError {
         ThreadStoreError::Unsupported { operation } => {
             unsupported_thread_store_operation(operation)
         }
-        err => internal_error(format!("failed to list threads: {err}")),
+        err => internal_error(tr_with(
+            current(),
+            "failed to list threads: {0}",
+            &[&err.to_string()],
+        )),
     }
 }
 
@@ -6244,16 +6288,20 @@ fn thread_turns_list_history_load_error(
         ThreadStoreError::InvalidRequest { message }
             if message.starts_with("failed to resolve rollout path `") =>
         {
-            ThreadReadViewError::InvalidRequest(format!(
-                "thread {thread_id} is not materialized yet; thread/turns/list is unavailable before first user message"
+            ThreadReadViewError::InvalidRequest(tr_with(
+                current(),
+                "thread {0} is not materialized yet; thread/turns/list is unavailable before first user message",
+                &[&thread_id.to_string()],
             ))
         }
         ThreadStoreError::InvalidRequest { message } => {
             ThreadReadViewError::InvalidRequest(message)
         }
         ThreadStoreError::Unsupported { operation } => ThreadReadViewError::Unsupported(operation),
-        err => ThreadReadViewError::Internal(format!(
-            "failed to load thread history for thread {thread_id}: {err}"
+        err => ThreadReadViewError::Internal(tr_with(
+            current(),
+            "failed to load thread history for thread {0}: {1}",
+            &[&thread_id.to_string(), &err.to_string()],
         )),
     }
 }
@@ -6266,21 +6314,19 @@ fn thread_read_history_load_error(
         ThreadStoreError::InvalidRequest { message }
             if message.starts_with("failed to resolve rollout path `") =>
         {
-            ThreadReadViewError::InvalidRequest(format!(
-                "thread {thread_id} is not materialized yet; includeTurns is unavailable before first user message"
-            ))
+            ThreadReadViewError::InvalidRequest(tr_with(current(), "thread {0} is not materialized yet; includeTurns is unavailable before first user message", &[&thread_id.to_string()]))
         }
         ThreadStoreError::ThreadNotFound {
             thread_id: missing_thread_id,
-        } if missing_thread_id == thread_id => ThreadReadViewError::InvalidRequest(format!(
-            "thread {thread_id} is not materialized yet; includeTurns is unavailable before first user message"
-        )),
+        } if missing_thread_id == thread_id => ThreadReadViewError::InvalidRequest(tr_with(current(), "thread {0} is not materialized yet; includeTurns is unavailable before first user message", &[&thread_id.to_string()])),
         ThreadStoreError::InvalidRequest { message } => {
             ThreadReadViewError::InvalidRequest(message)
         }
         ThreadStoreError::Unsupported { operation } => ThreadReadViewError::Unsupported(operation),
-        err => ThreadReadViewError::Internal(format!(
-            "failed to load thread history for thread {thread_id}: {err}"
+        err => ThreadReadViewError::Internal(tr_with(
+            current(),
+            "failed to load thread history for thread {0}: {1}",
+            &[&thread_id.to_string(), &err.to_string()],
         )),
     }
 }
@@ -6301,8 +6347,10 @@ fn conversation_summary_thread_id_read_error(
             conversation_summary_not_found_error(conversation_id)
         }
         ThreadStoreError::InvalidRequest { message } => invalid_request(message),
-        err => internal_error(format!(
-            "failed to load conversation summary for {conversation_id}: {err}"
+        err => internal_error(tr_with(
+            current(),
+            "failed to load conversation summary for {0}: {1}",
+            &[&conversation_id.to_string(), &err.to_string()],
         )),
     }
 }
@@ -6324,10 +6372,10 @@ fn conversation_summary_rollout_path_read_error(
         ThreadStoreError::Unsupported { operation } => {
             unsupported_thread_store_operation(operation)
         }
-        err => internal_error(format!(
-            "failed to load conversation summary from {}: {}",
-            path.display(),
-            err
+        err => internal_error(tr_with(
+            current(),
+            "failed to load conversation summary from {0}: {1}",
+            &[&path.display().to_string(), &err.to_string()],
         )),
     }
 }

@@ -10160,6 +10160,50 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "`beforeTurnId` cannot be combined with `lastTurnId`",
         "`beforeTurnId`不能与`lastTurnId`组合使用",
     ),
+    (
+        "failed to load conversation summary from {0}: {1}",
+        "从{0}加载会话摘要失败：{1}",
+    ),
+    (
+        "failed to deserialize stored thread item {0}: {1}",
+        "反序列化已存储的线程项{0}失败：{1}",
+    ),
+    (
+        "thread {0} is not materialized yet; includeTurns is unavailable before first user message",
+        "线程{0}尚未物化；在第一条用户消息之前includeTurns不可用",
+    ),
+    (
+        "thread {0} is not materialized yet; thread/turns/list is unavailable before first user message",
+        "线程{0}尚未物化；在第一条用户消息之前thread/turns/list不可用",
+    ),
+    (
+        "rollout path queries are only supported with the local thread store",
+        "rollout路径查询仅支持本地线程存储",
+    ),
+    (
+        "invalid cursor: anchor turn is no longer present",
+        "无效的游标：锚点turn已不存在",
+    ),
+    ("failed to serialize cursor: {0}", "序列化游标失败：{0}"),
+    ("failed to load thread {0}: {1}", "加载线程{0}失败：{1}"),
+    (
+        "failed to load thread history for thread {0}: {1}",
+        "加载线程{0}的历史失败：{1}",
+    ),
+    (
+        "failed to load conversation summary for {0}: {1}",
+        "加载会话{0}摘要失败：{1}",
+    ),
+    ("failed to list threads: {0}", "列出线程失败：{0}"),
+    (
+        "failed to inherit source thread goal: {0}",
+        "继承源线程目标失败：{0}",
+    ),
+    (
+        "failed to flush source thread goal: {0}",
+        "刷新源线程目标失败：{0}",
+    ),
+    ("error forking thread: {0}", "创建fork线程出错：{0}"),
 ];
 
 /// English source text -> Simplified Chinese.

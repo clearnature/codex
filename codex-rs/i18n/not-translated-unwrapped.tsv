@@ -1484,3 +1484,7 @@ personality requested={requested_personality:?} active={:?}	codex-rs/app-server/
 config overrides were provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:209	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
 baseInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:213	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
 developerInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:217	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_processors/thread_processor.rs:3256	§12.1 匹配键：`if message == format!(...)` 比对入站 ThreadStoreError 文本，译了检测失效
+no rollout found for thread id {thread_uuid}	codex-rs/app-server/src/request_processors/thread_processor.rs:3382	§12.1 匹配键：同上（thread_uuid 变体）
+no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_processors/thread_processor.rs:3798	§12.1 匹配键：同上
+	codex-rs/app-server/src/request_processors/thread_processor.rs:6195	§12.1 匹配键：`message == no_rollout_message`（:6197）比对 ThreadStoreError 文本

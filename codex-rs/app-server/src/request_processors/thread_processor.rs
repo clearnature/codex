@@ -2855,12 +2855,22 @@ impl ThreadRequestProcessor {
                 )));
             }
             (Some(parent_thread_id), None) => Some(StoreThreadRelationFilter::DirectChildrenOf(
-                ThreadId::from_string(&parent_thread_id)
-                    .map_err(|err| invalid_request(format!("invalid parent thread id: {err}")))?,
+                ThreadId::from_string(&parent_thread_id).map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid parent thread id: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?,
             )),
             (None, Some(ancestor_thread_id)) => Some(StoreThreadRelationFilter::DescendantsOf(
-                ThreadId::from_string(&ancestor_thread_id)
-                    .map_err(|err| invalid_request(format!("invalid ancestor thread id: {err}")))?,
+                ThreadId::from_string(&ancestor_thread_id).map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid ancestor thread id: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?,
             )),
             (None, None) => None,
         };
@@ -3077,7 +3087,13 @@ impl ThreadRequestProcessor {
             Some(cursor) => {
                 let cursor = match ThreadId::from_string(&cursor) {
                     Ok(id) => id.to_string(),
-                    Err(_) => return Err(invalid_request(format!("invalid cursor: {cursor}"))),
+                    Err(_) => {
+                        return Err(invalid_request(tr_with(
+                            current(),
+                            "invalid cursor: {0}",
+                            &[&cursor],
+                        )));
+                    }
                 };
                 match data.binary_search(&cursor) {
                     Ok(idx) => idx + 1,
@@ -3266,8 +3282,10 @@ impl ThreadRequestProcessor {
             Err(ThreadStoreError::Unsupported { operation }) => {
                 Err(ThreadReadViewError::Unsupported(operation))
             }
-            Err(err) => Err(ThreadReadViewError::Internal(format!(
-                "failed to read thread: {err}"
+            Err(err) => Err(ThreadReadViewError::Internal(tr_with(
+                current(),
+                "failed to read thread: {0}",
+                &[&err.to_string()],
             ))),
         }
     }
@@ -3387,7 +3405,13 @@ impl ThreadRequestProcessor {
             Err(ThreadStoreError::Unsupported { operation }) => {
                 return Err(unsupported_thread_store_operation(operation));
             }
-            Err(err) => return Err(internal_error(format!("failed to read thread: {err}"))),
+            Err(err) => {
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to read thread: {0}",
+                    &[&err.to_string()],
+                )));
+            }
         }
 
         let items = self
@@ -3470,10 +3494,16 @@ impl ThreadRequestProcessor {
                 ThreadStoreError::Unsupported { operation } => {
                     unsupported_thread_store_operation(operation)
                 }
-                ThreadStoreError::ThreadNotFound { thread_id } => {
-                    invalid_request(format!("no rollout found for thread id {thread_id}"))
-                }
-                err => internal_error(format!("failed to search thread occurrences: {err}")),
+                ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+                    current(),
+                    "no rollout found for thread id {0}",
+                    &[&thread_id.to_string()],
+                )),
+                err => internal_error(tr_with(
+                    current(),
+                    "failed to search thread occurrences: {0}",
+                    &[&err.to_string()],
+                )),
             })?;
         Ok(ThreadSearchOccurrencesResponse {
             data: page
@@ -3531,10 +3561,16 @@ impl ThreadRequestProcessor {
                 ThreadStoreError::Unsupported { operation } => {
                     unsupported_thread_store_operation(operation)
                 }
-                ThreadStoreError::ThreadNotFound { thread_id } => {
-                    invalid_request(format!("no rollout found for thread id {thread_id}"))
-                }
-                err => internal_error(format!("failed to list thread history: {err}")),
+                ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+                    current(),
+                    "no rollout found for thread id {0}",
+                    &[&thread_id.to_string()],
+                )),
+                err => internal_error(tr_with(
+                    current(),
+                    "failed to list thread history: {0}",
+                    &[&err.to_string()],
+                )),
             })?;
         let mut turns = Vec::with_capacity(page.turns.len());
         for turn in page.turns {
@@ -3596,8 +3632,10 @@ impl ThreadRequestProcessor {
                 return Ok(items);
             };
             if cursor.as_ref() == Some(&next_cursor) {
-                return Err(internal_error(format!(
-                    "failed to load full turn items for {turn_id}: thread store returned a repeated cursor"
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to load full turn items for {0}: thread store returned a repeated cursor",
+                    &[turn_id],
                 )));
             }
             cursor = Some(next_cursor);
@@ -3627,8 +3665,10 @@ impl ThreadRequestProcessor {
                 return Ok(turns);
             };
             if cursor.as_ref() == Some(&next_cursor) {
-                return Err(internal_error(format!(
-                    "failed to load full thread turns for {thread_id}: thread store returned a repeated cursor"
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to load full thread turns for {0}: thread store returned a repeated cursor",
+                    &[&thread_id.to_string()],
                 )));
             }
             cursor = Some(next_cursor);
@@ -3751,10 +3791,16 @@ impl ThreadRequestProcessor {
                 ThreadStoreError::Unsupported { .. } => {
                     method_not_found("thread/items/list is not supported yet")
                 }
-                ThreadStoreError::ThreadNotFound { thread_id } => {
-                    invalid_request(format!("no rollout found for thread id {thread_id}"))
-                }
-                err => internal_error(format!("failed to list thread items: {err}")),
+                ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+                    current(),
+                    "no rollout found for thread id {0}",
+                    &[&thread_id.to_string()],
+                )),
+                err => internal_error(tr_with(
+                    current(),
+                    "failed to list thread items: {0}",
+                    &[&err.to_string()],
+                )),
             })?;
         let data = page
             .items
@@ -3788,8 +3834,10 @@ impl ThreadRequestProcessor {
         {
             Ok(stored_thread) => {
                 let history = stored_thread.history.ok_or_else(|| {
-                    ThreadReadViewError::Internal(format!(
-                        "thread store did not return history for thread {thread_id}"
+                    ThreadReadViewError::Internal(tr_with(
+                        current(),
+                        "thread store did not return history for thread {0}",
+                        &[&thread_id.to_string()],
                     ))
                 })?;
                 return Ok(history.items);
@@ -3806,8 +3854,10 @@ impl ThreadRequestProcessor {
                 return Err(ThreadReadViewError::Unsupported(operation));
             }
             Err(err) => {
-                return Err(ThreadReadViewError::Internal(format!(
-                    "failed to read thread: {err}"
+                return Err(ThreadReadViewError::Internal(tr_with(
+                    current(),
+                    "failed to read thread: {0}",
+                    &[&err.to_string()],
                 )));
             }
         }
@@ -3822,7 +3872,11 @@ impl ThreadRequestProcessor {
         let config_snapshot = thread.config_snapshot().await;
         if config_snapshot.ephemeral {
             return Err(ThreadReadViewError::InvalidRequest(
-                "ephemeral threads do not support thread/turns/list".to_string(),
+                tr(
+                    current(),
+                    "ephemeral threads do not support thread/turns/list",
+                )
+                .to_string(),
             ));
         }
 
@@ -3919,8 +3973,10 @@ impl ThreadRequestProcessor {
             self.outgoing
                 .send_error(
                     request_id,
-                    invalid_request(format!(
-                        "thread {thread_id} is closing; retry thread/resume after the thread is closed"
+                    invalid_request(tr_with(
+                        current(),
+                        "thread {0} is closing; retry thread/resume after the thread is closed",
+                        &[&thread_id.to_string()],
                     )),
                 )
                 .await;
@@ -4024,9 +4080,10 @@ impl ThreadRequestProcessor {
                 .await
                 .contains(&resumed.conversation_id)
         {
-            return Err(invalid_request(format!(
-                "thread {} is closing; retry thread/resume after the thread is closed",
-                resumed.conversation_id
+            return Err(invalid_request(tr_with(
+                current(),
+                "thread {0} is closing; retry thread/resume after the thread is closed",
+                &[&resumed.conversation_id.to_string()],
             )));
         }
         let paginated_thread_id = resume_source_thread.as_ref().and_then(|thread| {
@@ -5147,9 +5204,11 @@ impl ThreadRequestProcessor {
                     .await
                     .map_err(|err| match err {
                         ThreadStoreError::InvalidRequest { message } => invalid_request(message),
-                        ThreadStoreError::ThreadNotFound { thread_id } => {
-                            invalid_request(format!("no rollout found for thread id {thread_id}"))
-                        }
+                        ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+                            current(),
+                            "no rollout found for thread id {0}",
+                            &[&thread_id.to_string()],
+                        )),
                         ThreadStoreError::Unsupported { .. } => {
                             method_not_found("paginated_threads is not supported yet")
                         }
@@ -6061,10 +6120,16 @@ fn paginated_history_list_error(err: ThreadStoreError) -> JSONRPCErrorError {
         ThreadStoreError::Unsupported { operation } => {
             unsupported_thread_store_operation(operation)
         }
-        ThreadStoreError::ThreadNotFound { thread_id } => {
-            invalid_request(format!("no rollout found for thread id {thread_id}"))
-        }
-        err => internal_error(format!("failed to list thread history: {err}")),
+        ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+            current(),
+            "no rollout found for thread id {0}",
+            &[&thread_id.to_string()],
+        )),
+        err => internal_error(tr_with(
+            current(),
+            "failed to list thread history: {0}",
+            &[&err.to_string()],
+        )),
     }
 }
 
@@ -6132,9 +6197,11 @@ fn thread_store_resume_read_error(err: ThreadStoreError) -> JSONRPCErrorError {
         ThreadStoreError::Unsupported { operation } => {
             unsupported_thread_store_operation(operation)
         }
-        ThreadStoreError::ThreadNotFound { thread_id } => {
-            invalid_request(format!("no rollout found for thread id {thread_id}"))
-        }
+        ThreadStoreError::ThreadNotFound { thread_id } => invalid_request(tr_with(
+            current(),
+            "no rollout found for thread id {0}",
+            &[&thread_id.to_string()],
+        )),
         err => internal_error(format!("failed to read thread: {err}")),
     }
 }
@@ -6211,8 +6278,10 @@ fn conversation_summary_thread_id_read_error(
 }
 
 fn conversation_summary_not_found_error(conversation_id: ThreadId) -> JSONRPCErrorError {
-    invalid_request(format!(
-        "no rollout found for conversation id {conversation_id}"
+    invalid_request(tr_with(
+        current(),
+        "no rollout found for conversation id {0}",
+        &[&conversation_id.to_string()],
     ))
 }
 

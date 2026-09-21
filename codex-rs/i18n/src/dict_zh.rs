@@ -10053,6 +10053,47 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "动态工具命名空间{0}必须至少包含一个工具",
     ),
     ("command must not be empty", "命令不能为空"),
+    (
+        "thread {0} is closing; retry thread/resume after the thread is closed",
+        "线程{0}正在关闭；请在线程关闭后重试thread/resume",
+    ),
+    (
+        "thread store did not return history for thread {0}",
+        "线程存储未返回线程{0}的历史",
+    ),
+    (
+        "no rollout found for thread id {0}",
+        "未找到线程{0}的rollout",
+    ),
+    (
+        "no rollout found for conversation id {0}",
+        "未找到会话{0}的rollout",
+    ),
+    ("invalid parent thread id: {0}", "无效的父线程id：{0}"),
+    ("invalid cursor: {0}", "无效的游标：{0}"),
+    ("invalid ancestor thread id: {0}", "无效的祖先线程id：{0}"),
+    (
+        "failed to search thread occurrences: {0}",
+        "搜索线程出现失败：{0}",
+    ),
+    ("failed to read thread: {0}", "读取线程失败：{0}"),
+    (
+        "failed to load full turn items for {0}: thread store returned a repeated cursor",
+        "加载线程{0}的完整turn项失败：线程存储返回了重复的游标",
+    ),
+    (
+        "failed to load full thread turns for {0}: thread store returned a repeated cursor",
+        "加载线程{0}的完整turn失败：线程存储返回了重复的游标",
+    ),
+    ("failed to list thread items: {0}", "列出线程项失败：{0}"),
+    (
+        "failed to list thread history: {0}",
+        "列出线程历史失败：{0}",
+    ),
+    (
+        "ephemeral threads do not support thread/turns/list",
+        "临时线程不支持thread/turns/list",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

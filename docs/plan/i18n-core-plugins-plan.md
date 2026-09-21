@@ -1270,3 +1270,27 @@ rollback 进行中、compaction/shell/Guardian/background terminal 系列 ——
 
 thread_processor.rs 继续推进（本批 ~20 条）；`i18n-check` `r-muas4y3x-b33o2j`
 （3836 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；cargo check/clippy EXIT=0。
+
+## 三十九、app-server 批 A-5：thread_processor.rs（rollout/历史/游标/回滚系列）
+
+### 39.1 本批的关键分化：匹配键 vs 生成串（同一个值两种用法）
+
+`no rollout found for thread id {thread_id}` 在文件里**两种用途**：
+
+| 用途                                                    | 站点                                                         | 判定                            |
+| ------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------- |
+| **匹配键**（`if message == format!(...)` 比对入站错误） | `:3256 :3382 :3798` + `:6195`（变量化 `no_rollout_message`） | **登记**（§12.1：译了检测失效） |
+| **生成**（`invalid_request(format!(...))` 回给用户）    | `:3474 :3535 :3755 :5151 :6065 :6136`                        | **译**                          |
+
+⚠ 同一值跨两种用途，**不能用「按值统一替换」**——必须按 `==` 右侧 vs `invalid_request(format!(` 上下文区分。
+本批先用正则只替换 `invalid_request(format!("no rollout found ...))` 形态，匹配键保持原样。
+
+### 39.2 三次类型返工（批量替换后编译兜底）
+
+- `:3094` `cursor: String` 需 `&cursor`（E0308）
+- `:4086` `conversation_id: ThreadId`（不是 String）——`.as_str()` 不存在（E0599）→ `.to_string()` → 又需 `&`（E0308）→ `&xxx.to_string()`。**ThreadId 类型的教训**：先看类型再选取值法（§预检⑤）。
+- `:3638` `turn_id: &str` 却 `.to_string()`（unnecessary to_string，clippy 抓）
+
+### 39.3 门禁
+
+`i18n-check` `r-muasc256-2izldt`（3850 词条 / missing 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；cargo check/clippy EXIT=0。

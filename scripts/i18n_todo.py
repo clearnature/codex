@@ -38,13 +38,22 @@ def load_scope_exclusions():
     A ruling that lives only in the ledger/docs is invisible to this counter, so
     the crate keeps looking like it still has that work left. Recording it here
     (with the ledger id) keeps the measurement honest.
+
+    Two shapes are honored: `excluded` (a path_prefix list) and
+    `out_of_scope_crates` (a {crate_path: reason} map). Both were documented
+    since the start, but only `excluded` was read — which made app-server
+    (ruled out of scope) still top the "busiest files" list and misdirect the
+    next-batch selection (see known_issues i18n-counter-blind-to-out-of-scope-crates).
     """
     import json
 
     if not SCOPE_FILE.is_file():
         return []
     data = json.loads(SCOPE_FILE.read_text(encoding="utf-8"))
-    return [(e["path_prefix"], e.get("ledger", "")) for e in data.get("excluded", [])]
+    rows = [(e["path_prefix"], e.get("ledger", "")) for e in data.get("excluded", [])]
+    for crate, reason in (data.get("out_of_scope_crates") or {}).items():
+        rows.append((crate, f"out_of_scope_crates: {reason}"))
+    return rows
 
 
 SCOPE_EXCLUDED = load_scope_exclusions()

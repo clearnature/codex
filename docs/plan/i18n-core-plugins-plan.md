@@ -1054,3 +1054,27 @@ let remote_plugin_id = plugin.remote_plugin_id.clone().ok_or_else(|| {
 - `plugins.rs`：42 → **20**（本批 22 条）；crate：705 candidates / wrapped 19 → **41**。
 - `i18n-check` `r-mu9jwr99-x14d2h`（3731 词条 / 全零 / coverage 99.8%）；
   `clippy` `r-mu9k193c-bq8prq`（203.9s，首次即绿）；`cargo check -p codex-app-server --all-targets` EXIT=0。
+
+## 三十一、工具修复：`i18n_todo.py` 采纳 `out_of_scope_crates`（第 774 轮）
+
+### 31.1 缺陷与根因
+
+`scripts/i18n_todo.py` 的 `load_scope_exclusions()` 只读 `excluded`（path_prefix 形态），
+**从不读**同一文件里的姊妹键 `out_of_scope_crates`（整 crate 形态），尽管函数的 docstring
+自己就写着「A ruling that lives only in the ledger/docs is invisible to this counter」。
+
+后果：`codex-rs/app-server`（裁定为范围外，依据 `docs/plan/i18n-design.md` §3.1 依赖图
+只列 tui/cli/exec/core/mcp 五条边；其错误串属 JSON-RPC 协议契约）一直排在
+「busiest files」**榜首**（644 条），诱导连续两批在范围外工作
+（commit `89458ccfa` 译了 `app-server/src/request_processors/plugins.rs` 44 处）。
+已登记 `known_issues: i18n-counter-blind-to-out-of-scope-crates`（high）。
+
+### 31.2 修复
+
+`load_scope_exclusions()` 现在把 `out_of_scope_crates` 的键也作为前缀返回：
+
+- `excluded`（doctor：`codex-rs/cli/src/doctor`）+ `out_of_scope_crates`（app-server：`codex-rs/app-server`）
+- 修后：`app-server` 视角 `unwrapped candidates: 0`（644 全被排除）；`codex-mcp` 不受影响（仍 107，它是计划内五条边之一）
+- 修后总账：`excluded by scope ruling: 2186 candidates`（doctor 851 + app-server 644，去重后 1335 从剩余消失）
+
+⚠ **不改变裁定本身**：app-server 误做的 44 处保留原地，其去留仍是待裁决 `j-muajv7wb-3pvn`。

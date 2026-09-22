@@ -1413,3 +1413,25 @@ fmt/check/clippy EXIT=0。对账：account 42→0；app-server 389→**348**。
 
 `i18n-check` `r-mucyygmc-9w0kw7`（3986 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
 fmt/check/clippy EXIT=0。对账：lib.rs 25→0；app-server 348→**322**。
+
+## 四十五、app-server 批 F：projects.rs 16 条全译
+
+### 45.1 判据
+
+project CRUD（read/update/move/delete 的 `project not found` ×4）、sortDirection/idempotencyKey/项目名校验、
+duplicate root/thread id、store 错误模板（`{operation} is unavailable…` / `failed to run {0}: {1}`）
+—— 全 `invalid_params`/`internal_error`/`method_not_found` ⇒ JSON-RPC 用户可见 ⇒ **全译**。
+`project_store_error` 的 `project/read` 等标签是 **RPC 方法名（标识符）** ⇒ 保持英文（§12.6），
+只译模板。
+
+### 45.2 复用与教训
+
+- 复用既有键 2 组：`project not found: {0}`、`failed to acquire thread list state permit: {0}`、
+  `{0} is unavailable without sqlite state`（线程批次已建）。
+- **词条补写时序**：`duplicate project root` 两条的替换在**词条提取之后**才做 ⇒ i18n-check
+  missing 2 抓回。**规矩**：词条提取必须在**所有源码替换完成后**再跑（或替换后重提取）。
+
+### 45.3 门禁
+
+`i18n-check` `r-muczgawd-gegngn`（3995 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
+fmt/check/clippy EXIT=0。

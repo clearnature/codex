@@ -10524,6 +10524,24 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
         "在项目被信任之前，以下目录中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。",
     ),
+    ("sortDirection requires sortKey", "sortDirection需要sortKey"),
+    ("project name must not be empty", "项目名称不能为空"),
+    ("idempotencyKey must not be empty", "idempotencyKey不能为空"),
+    (
+        "idempotencyKey must be at most 512 bytes",
+        "idempotencyKey最长512字节",
+    ),
+    ("invalid project root: {0}", "无效的项目根目录：{0}"),
+    ("duplicate thread id: {0}", "线程id {0}重复"),
+    (
+        "stored project root is not absolute: {0}",
+        "已存的项目根目录不是绝对路径：{0}",
+    ),
+    ("duplicate project root: {0}", "重复的项目根目录：{0}"),
+    (
+        "duplicate resolved project root: {0}",
+        "解析后的项目根目录重复：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

@@ -25,6 +25,9 @@ use codex_app_server_protocol::ProjectUpdateResponse;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::SortDirection;
 use codex_app_server_protocol::ThreadProjectUpdatedNotification;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_thread_store::CreateProjectParams as StoreCreateProjectParams;
 use codex_thread_store::ListProjectsParams as StoreListProjectsParams;
 use codex_thread_store::MoveProjectParams as StoreMoveProjectParams;
@@ -71,7 +74,10 @@ impl ProjectRequestProcessor {
         params: ProjectListParams,
     ) -> Result<Option<ClientResponsePayload>, JSONRPCErrorError> {
         if params.sort_key.is_none() && params.sort_direction.is_some() {
-            return Err(invalid_params("sortDirection requires sortKey"));
+            return Err(invalid_params(tr(
+                current(),
+                "sortDirection requires sortKey",
+            )));
         }
         let sort_key = match params.sort_key.unwrap_or(ProjectSortKey::Position) {
             ProjectSortKey::Position => StoreProjectSortKey::Position,
@@ -121,7 +127,13 @@ impl ProjectRequestProcessor {
             .read_project(params.project_id.clone())
             .await
             .map_err(|error| project_store_error("project/read", error))?
-            .ok_or_else(|| invalid_params(format!("project not found: {}", params.project_id)))?;
+            .ok_or_else(|| {
+                invalid_params(tr_with(
+                    current(),
+                    "project not found: {0}",
+                    &[&params.project_id],
+                ))
+            })?;
         Ok(Some(
             ProjectReadResponse {
                 project: api_project(project)?,
@@ -191,7 +203,13 @@ impl ProjectRequestProcessor {
             })
             .await
             .map_err(|error| project_store_error("project/update", error))?
-            .ok_or_else(|| invalid_params(format!("project not found: {}", params.project_id)))?;
+            .ok_or_else(|| {
+                invalid_params(tr_with(
+                    current(),
+                    "project not found: {0}",
+                    &[&params.project_id],
+                ))
+            })?;
         let project = api_project(updated.project)?;
         if updated.changed {
             self.notify_project_changed(&project.id, ProjectChangeType::Updated)
@@ -213,7 +231,9 @@ impl ProjectRequestProcessor {
             })
             .await
             .map_err(|error| project_store_error("project/move", error))?
-            .ok_or_else(|| invalid_params(format!("project not found: {project_id}")))?;
+            .ok_or_else(|| {
+                invalid_params(tr_with(current(), "project not found: {0}", &[&project_id]))
+            })?;
         if outcome == ProjectMoveOutcome::Moved {
             self.notify_project_changed(&project_id, ProjectChangeType::Updated)
                 .await;
@@ -231,7 +251,13 @@ impl ProjectRequestProcessor {
             .delete_project(params.project_id.clone())
             .await
             .map_err(|error| project_store_error("project/delete", error))?
-            .ok_or_else(|| invalid_params(format!("project not found: {}", params.project_id)))?;
+            .ok_or_else(|| {
+                invalid_params(tr_with(
+                    current(),
+                    "project not found: {0}",
+                    &[&params.project_id],
+                ))
+            })?;
         self.notify_project_changed(&params.project_id, ProjectChangeType::Deleted)
             .await;
         self.notify_thread_projects(deleted.affected_active_thread_ids, /*project_id*/ None)
@@ -295,7 +321,11 @@ impl ProjectRequestProcessor {
             .acquire()
             .await
             .map_err(|err| {
-                internal_error(format!("failed to acquire thread list state permit: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to acquire thread list state permit: {0}",
+                    &[&err.to_string()],
+                ))
             })
     }
 }
@@ -303,17 +333,26 @@ impl ProjectRequestProcessor {
 fn validate_name(name: String) -> Result<String, JSONRPCErrorError> {
     let name = name.trim().to_string();
     if name.is_empty() {
-        return Err(invalid_params("project name must not be empty"));
+        return Err(invalid_params(tr(
+            current(),
+            "project name must not be empty",
+        )));
     }
     Ok(name)
 }
 
 fn validate_idempotency_key(key: String) -> Result<String, JSONRPCErrorError> {
     if key.trim().is_empty() {
-        return Err(invalid_params("idempotencyKey must not be empty"));
+        return Err(invalid_params(tr(
+            current(),
+            "idempotencyKey must not be empty",
+        )));
     }
     if key.len() > 512 {
-        return Err(invalid_params("idempotencyKey must be at most 512 bytes"));
+        return Err(invalid_params(tr(
+            current(),
+            "idempotencyKey must be at most 512 bytes",
+        )));
     }
     Ok(key)
 }
@@ -327,20 +366,28 @@ fn validate_roots(roots: Vec<ProjectRoot>) -> Result<Vec<StoredProjectRoot>, JSO
             let path = codex_utils_absolute_path::AbsolutePathBuf::from_absolute_path_checked(
                 root.path.into_path_buf(),
             )
-            .map_err(|error| invalid_params(format!("invalid project root: {error}")))?
+            .map_err(|error| {
+                invalid_params(tr_with(
+                    current(),
+                    "invalid project root: {0}",
+                    &[&error.to_string()],
+                ))
+            })?
             .into_path_buf();
             if !logical.insert(path.clone()) {
-                return Err(invalid_params(format!(
-                    "duplicate project root: {}",
-                    path.display()
+                return Err(invalid_params(tr_with(
+                    current(),
+                    "duplicate project root: {0}",
+                    &[&path.display().to_string()],
                 )));
             }
             if let Ok(resolved) = std::fs::canonicalize(&path)
                 && !canonical.insert(resolved)
             {
-                return Err(invalid_params(format!(
-                    "duplicate resolved project root: {}",
-                    path.display()
+                return Err(invalid_params(tr_with(
+                    current(),
+                    "duplicate resolved project root: {0}",
+                    &[&path.display().to_string()],
                 )));
             }
             Ok(StoredProjectRoot {
@@ -354,7 +401,11 @@ fn validate_thread_ids(thread_ids: Vec<String>) -> Result<Vec<String>, JSONRPCEr
     let mut seen = HashSet::new();
     for thread_id in &thread_ids {
         if !seen.insert(thread_id.clone()) {
-            return Err(invalid_params(format!("duplicate thread id: {thread_id}")));
+            return Err(invalid_params(tr_with(
+                current(),
+                "duplicate thread id: {0}",
+                &[thread_id],
+            )));
         }
     }
     Ok(thread_ids)
@@ -371,7 +422,11 @@ fn api_project(project: StoredProject) -> Result<Project, JSONRPCErrorError> {
                 Ok(ProjectRoot {
                     path: codex_utils_absolute_path::AbsolutePathBuf::from_absolute_path(root.path)
                         .map_err(|error| {
-                            internal_error(format!("stored project root is not absolute: {error}"))
+                            internal_error(tr_with(
+                                current(),
+                                "stored project root is not absolute: {0}",
+                                &[&error.to_string()],
+                            ))
                         })?,
                 })
             })
@@ -388,15 +443,21 @@ fn api_project(project: StoredProject) -> Result<Project, JSONRPCErrorError> {
 
 fn project_store_error(operation: &'static str, error: ThreadStoreError) -> JSONRPCErrorError {
     match error {
-        ThreadStoreError::Unsupported { .. } => {
-            method_not_found(format!("{operation} is unavailable without sqlite state"))
-        }
+        ThreadStoreError::Unsupported { .. } => method_not_found(tr_with(
+            current(),
+            "{0} is unavailable without sqlite state",
+            &[operation],
+        )),
         ThreadStoreError::InvalidRequest { message } => invalid_params(message),
         ThreadStoreError::Internal { message }
             if message.contains("thread not found") || message.contains("project not found") =>
         {
             invalid_params(message)
         }
-        error => internal_error(format!("failed to run {operation}: {error}")),
+        error => internal_error(tr_with(
+            current(),
+            "failed to run {0}: {1}",
+            &[operation, &error.to_string()],
+        )),
     }
 }

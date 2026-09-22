@@ -1357,3 +1357,29 @@ list threads、not materialized（thread/turns/list 与 includeTurns 两键）�
 
 `i18n-check` `r-mucx8sx1-tl4htd`（3931 词条全零）；fmt/check/clippy EXIT=0。
 对账：turn_processor 45→0；app-server 435→**389**。
+
+## 四十三、app-server 批 D：account_processor.rs 42 条全译（41→0 + 1 补漏）
+
+### 43.1 判据
+
+登录/登出/速率限制/token 用量/工作区消息/Bedrock/API 密钥全族 —— 42 条全是
+`invalid_request`/`internal_error`/login 完成通知的 message 字段 ⇒ JSON-RPC 用户可见 ⇒ **全译**。
+
+### 43.2 六次返工（本会话最多的一批，全在批量替换质量上）
+
+1. **字符串手术写坏两行**：`"Login timed out".to_string()` 的手工切片把右引号吃掉
+   ⇒ `tr(current(), "Login timed out).to_string()` —— 键跨行污染正则提取。修法：逐行 grep 定位+补引号。
+2. **`lit[:-1]` 少补一个 `)`**（3 处 timeout 静态）⇒ 括号不匹配，E0516 ×3。
+3. **E0282 类型推断**：`CODEX_OPEN_APP_URL.parse()` 的 `err` 在 `format!("{err}")` 下靠 Display 延迟推断，
+   换 `.to_string()`（方法调用需已知类型）⇒ 破坏推断 ⇒ 改回 `&format!("{err}")`。
+4. **丢 `?`**（:586 map_err 后）⇒ E0308。
+5. **`timestamp: String` 需 `&`**（E0308）。
+6. **漏 1 条 straggler**：`invalid thread id: {err}`（预检值列表时漏看）⇒ i18n_todo 剩余抓回。
+
+⚠ **教训（可判据化）**：**不要用字符串切片手术改 Rust 字面量**（`lit[:-1]`、`.rstrip` 之类）——
+用**整段 old→new 文本替换**，替换后 grep 目标行确认引号闭合，再编译。
+
+### 43.3 门禁（最终态）
+
+`i18n-check` `r-mucy4mlr-mtcvbu`（3968 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
+fmt/check/clippy EXIT=0。对账：account 42→0；app-server 389→**348**。

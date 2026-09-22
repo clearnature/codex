@@ -8,6 +8,9 @@ use crate::external_auth::ExternalAuthBridge;
 use chrono::DateTime;
 use codex_app_server_protocol::DesktopOnboardingEntrypoint;
 use codex_app_server_protocol::GetAccountRateLimitsParams;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_login::LoginOnboardingEntrypoint;
 use codex_login::login_with_bedrock_access_keys;
 use codex_model_provider::is_supported_amazon_bedrock_region;
@@ -313,7 +316,11 @@ impl AccountRequestProcessor {
                     };
                     LoginSuccessPage::Hosted {
                         url: CODEX_OPEN_APP_URL.parse().map_err(|err| {
-                            internal_error(format!("invalid Codex open app URL: {err}"))
+                            internal_error(tr_with(
+                                current(),
+                                "invalid Codex open app URL: {0}",
+                                &[&format!("{err}")],
+                            ))
                         })?,
                         app_brand,
                     }
@@ -369,15 +376,17 @@ impl AccountRequestProcessor {
     }
 
     fn external_auth_active_error(&self) -> JSONRPCErrorError {
-        invalid_request(
+        invalid_request(tr(
+            current(),
             "External auth is active. Use account/login/start (chatgptAuthTokens) to update it or account/logout to clear it.",
-        )
+        ))
     }
 
     fn configured_auth_owned_by_host_error(&self) -> JSONRPCErrorError {
-        invalid_request(
+        invalid_request(tr(
+            current(),
             "Configured external authentication is owned by the app-server host and cannot be changed through account RPCs.",
-        )
+        ))
     }
 
     fn ensure_bedrock_login_allowed(&self) -> Result<(), JSONRPCErrorError> {
@@ -391,9 +400,10 @@ impl AccountRequestProcessor {
             .auth_manager
             .is_login_method_allowed(ForcedLoginMethod::Api)
         {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "Amazon Bedrock login is disabled. Use ChatGPT login instead.",
-            ));
+            )));
         }
         Ok(())
     }
@@ -410,9 +420,10 @@ impl AccountRequestProcessor {
             .auth_manager
             .is_login_method_allowed(ForcedLoginMethod::Api)
         {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "API key login is disabled. Use ChatGPT login instead.",
-            ));
+            )));
         }
 
         // Cancel any active login attempt.
@@ -434,7 +445,11 @@ impl AccountRequestProcessor {
                 self.config_manager.clear_cloud_config_bundle_loader();
                 Ok(())
             }
-            Err(err) => Err(internal_error(format!("failed to save api key: {err}"))),
+            Err(err) => Err(internal_error(tr_with(
+                current(),
+                "failed to save api key: {0}",
+                &[&err.to_string()],
+            ))),
         }
     }
 
@@ -464,7 +479,10 @@ impl AccountRequestProcessor {
             match &credentials {
                 BedrockLoginCredentials::ApiKey(api_key) => {
                     if api_key.trim().is_empty() {
-                        return Err(invalid_request("Amazon Bedrock API key must not be empty."));
+                        return Err(invalid_request(tr(
+                            current(),
+                            "Amazon Bedrock API key must not be empty.",
+                        )));
                     }
                 }
                 BedrockLoginCredentials::AccessKeys {
@@ -473,16 +491,19 @@ impl AccountRequestProcessor {
                     ..
                 } => {
                     if access_key_id.trim().is_empty() || secret_access_key.trim().is_empty() {
-                        return Err(invalid_request(
+                        return Err(invalid_request(tr(
+                            current(),
                             "AWS access key ID and secret access key must not be empty.",
-                        ));
+                        )));
                     }
                 }
             }
             let region = region.trim();
             if !is_supported_amazon_bedrock_region(region) {
-                return Err(invalid_request(format!(
-                    "Amazon Bedrock does not support region `{region}`"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "Amazon Bedrock does not support region `{0}`",
+                    &[region],
                 )));
             }
 
@@ -525,7 +546,13 @@ impl AccountRequestProcessor {
                     )
                 }
             }
-            .map_err(|err| internal_error(format!("failed to save Amazon Bedrock auth: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to save Amazon Bedrock auth: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
             self.auth_manager.reload().await;
             self.config_manager.clear_cloud_config_bundle_loader();
             Ok(LoginAccountResponse::AmazonBedrock {})
@@ -556,9 +583,10 @@ impl AccountRequestProcessor {
             .auth_manager
             .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
         {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "ChatGPT login is disabled. Use API key login instead.",
-            ));
+            )));
         }
 
         let mut opts = LoginServerOptions {
@@ -584,9 +612,13 @@ impl AccountRequestProcessor {
             && let Ok(open_app_url) = std::env::var(LOGIN_OPEN_APP_URL_OVERRIDE_ENV_VAR)
             && !open_app_url.trim().is_empty()
         {
-            *url = open_app_url
-                .parse()
-                .map_err(|err| internal_error(format!("invalid Codex open app URL: {err}")))?;
+            *url = open_app_url.parse().map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "invalid Codex open app URL: {0}",
+                    &[&format!("{err}")],
+                ))
+            })?;
         }
 
         Ok(opts)
@@ -597,7 +629,11 @@ impl AccountRequestProcessor {
         if is_not_found {
             invalid_request(err.to_string())
         } else {
-            internal_error(format!("failed to request device code: {err}"))
+            internal_error(tr_with(
+                current(),
+                "failed to request device code: {0}",
+                &[&err.to_string()],
+            ))
         }
     }
 
@@ -621,8 +657,13 @@ impl AccountRequestProcessor {
         let opts = self
             .login_chatgpt_common(codex_streamlined_login, login_success_page)
             .await?;
-        let server = run_login_server(opts)
-            .map_err(|err| internal_error(format!("failed to start login server: {err}")))?;
+        let server = run_login_server(opts).map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to start login server: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         let login_id = Uuid::new_v4();
         let shutdown_handle = server.cancel_handle();
 
@@ -660,10 +701,22 @@ impl AccountRequestProcessor {
                             DesktopOnboardingEntrypoint::LifeSciences
                         }),
                 ),
-                Ok(Err(err)) => (false, Some(format!("Login server error: {err}")), None),
+                Ok(Err(err)) => (
+                    false,
+                    Some(tr_with(
+                        current(),
+                        "Login server error: {0}",
+                        &[&err.to_string()],
+                    )),
+                    None,
+                ),
                 Err(_elapsed) => {
                     shutdown_handle.shutdown();
-                    (false, Some("Login timed out".to_string()), None)
+                    (
+                        false,
+                        Some(tr(current(), "Login timed out").to_string()),
+                        None,
+                    )
                 }
             };
 
@@ -736,7 +789,7 @@ impl AccountRequestProcessor {
         tokio::spawn(async move {
             let (success, error_msg) = tokio::select! {
                 _ = cancel.cancelled() => {
-                    (false, Some("Login was not completed".to_string()))
+                    (false, Some(tr(current(), "Login was not completed").to_string()))
                 }
                 r = complete_device_code_login(opts, device_code) => {
                     match r {
@@ -793,8 +846,9 @@ impl AccountRequestProcessor {
         params: CancelLoginAccountParams,
     ) -> Result<CancelLoginAccountResponse, JSONRPCErrorError> {
         let login_id = params.login_id;
-        let uuid = Uuid::parse_str(&login_id)
-            .map_err(|_| invalid_request(format!("invalid login id: {login_id}")))?;
+        let uuid = Uuid::parse_str(&login_id).map_err(|_| {
+            invalid_request(tr_with(current(), "invalid login id: {0}", &[&login_id]))
+        })?;
         let status = match self.cancel_login_chatgpt_common(uuid).await {
             Ok(()) => CancelLoginAccountStatus::Canceled,
             Err(CancelLoginError::NotFound) => CancelLoginAccountStatus::NotFound,
@@ -831,9 +885,10 @@ impl AccountRequestProcessor {
             .auth_manager
             .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
         {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "External ChatGPT auth is disabled. Use API key login instead.",
-            ));
+            )));
         }
 
         // Cancel any active login attempt to avoid persisting managed auth state.
@@ -847,8 +902,13 @@ impl AccountRequestProcessor {
         if let Some(expected_workspaces) = self.auth_manager.effective_chatgpt_workspaces()
             && !expected_workspaces.contains(&chatgpt_account_id)
         {
-            return Err(invalid_request(format!(
-                "External auth must use one of workspace(s) {expected_workspaces:?}, but received {chatgpt_account_id:?}.",
+            return Err(invalid_request(tr_with(
+                current(),
+                "External auth must use one of workspace(s) {0}, but received {1}.",
+                &[
+                    &format!("{expected_workspaces:?}"),
+                    &format!("{chatgpt_account_id:?}"),
+                ],
             )));
         }
 
@@ -857,14 +917,26 @@ impl AccountRequestProcessor {
             &chatgpt_account_id,
             chatgpt_plan_type.as_deref(),
         )
-        .map_err(|err| internal_error(format!("failed to set external auth: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to set external auth: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         self.auth_manager
             .set_external_auth(Arc::new(ExternalAuthBridge::new(
                 Arc::clone(&self.outgoing),
                 auth,
             )))
             .await
-            .map_err(|err| internal_error(format!("failed to set external auth: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to set external auth: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         self.config_manager.replace_cloud_config_bundle_loader(
             self.auth_manager.clone(),
             self.config.chatgpt_base_url.clone(),
@@ -965,7 +1037,11 @@ impl AccountRequestProcessor {
         match self.auth_manager.logout_with_revoke().await {
             Ok(_) => {}
             Err(err) => {
-                return Err(internal_error(format!("logout failed: {err}")));
+                return Err(internal_error(tr_with(
+                    current(),
+                    "logout failed: {0}",
+                    &[&err.to_string()],
+                )));
             }
         }
 
@@ -1131,15 +1207,17 @@ impl AccountRequestProcessor {
         params: GetAccountRateLimitsParams,
     ) -> Result<GetAccountRateLimitsResponse, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "codex account authentication required to read rate limits",
-            ));
+            )));
         };
 
         if !auth.uses_codex_backend() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "chatgpt authentication required to read rate limits",
-            ));
+            )));
         }
 
         let client = BackendClient::from_auth(
@@ -1165,12 +1243,18 @@ impl AccountRequestProcessor {
                 Self::detailed_rate_limit_reset_credits(&client).await
             }
         },);
-        let response = response
-            .map_err(|err| internal_error(format!("failed to fetch codex rate limits: {err}")))?;
+        let response = response.map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to fetch codex rate limits: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         if response.rate_limits.is_empty() {
-            return Err(internal_error(
+            return Err(internal_error(tr(
+                current(),
                 "failed to fetch codex rate limits: no snapshots returned",
-            ));
+            )));
         }
 
         let rate_limits_by_limit_id: HashMap<_, _> = response
@@ -1236,21 +1320,28 @@ impl AccountRequestProcessor {
         let thread_id = params
             .and_then(|params| params.thread_id)
             .map(|thread_id| {
-                ThreadId::from_string(&thread_id)
-                    .map_err(|err| invalid_request(format!("invalid thread id: {err}")))
+                ThreadId::from_string(&thread_id).map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid thread id: {0}",
+                        &[&err.to_string()],
+                    ))
+                })
             })
             .transpose()?;
 
         let Some(auth) = self.auth_manager.auth().await else {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "codex account authentication required to read token usage",
-            ));
+            )));
         };
 
         if !auth.uses_codex_backend() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "chatgpt authentication required to read token usage",
-            ));
+            )));
         }
 
         let client = BackendClient::from_auth(
@@ -1265,7 +1356,7 @@ impl AccountRequestProcessor {
                 client.get_thread_usage(&thread_id),
             )
             .await
-            .map_err(|_| internal_error("thread usage fetch timed out"))?;
+            .map_err(|_| internal_error(tr(current(), "thread usage fetch timed out")))?;
             let thread_usage = match usage {
                 Ok(usage) => Some(codex_app_server_protocol::ThreadUsage {
                     thread_id: usage.thread_id,
@@ -1296,8 +1387,10 @@ impl AccountRequestProcessor {
                     None
                 }
                 Err(err) => {
-                    return Err(internal_error(format!(
-                        "failed to fetch thread usage: {err}"
+                    return Err(internal_error(tr_with(
+                        current(),
+                        "failed to fetch thread usage: {0}",
+                        &[&err.to_string()],
                     )));
                 }
             };
@@ -1318,8 +1411,14 @@ impl AccountRequestProcessor {
             client.get_token_usage_profile(),
         )
         .await
-        .map_err(|_| internal_error("token usage profile fetch timed out"))?
-        .map_err(|err| internal_error(format!("failed to fetch token usage profile: {err}")))?;
+        .map_err(|_| internal_error(tr(current(), "token usage profile fetch timed out")))?
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to fetch token usage profile: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         Ok(Self::account_token_usage_response(profile))
     }
 
@@ -1327,15 +1426,17 @@ impl AccountRequestProcessor {
         &self,
     ) -> Result<GetWorkspaceMessagesResponse, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "codex account authentication required to read workspace messages",
-            ));
+            )));
         };
 
         if !auth.uses_codex_backend() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "chatgpt authentication required to read workspace messages",
-            ));
+            )));
         }
 
         let client = BackendClient::from_auth(
@@ -1348,7 +1449,7 @@ impl AccountRequestProcessor {
             client.list_workspace_messages(),
         )
         .await
-        .map_err(|_| internal_error("workspace messages fetch timed out"))?;
+        .map_err(|_| internal_error(tr(current(), "workspace messages fetch timed out")))?;
 
         match messages {
             Ok(messages) => {
@@ -1362,8 +1463,10 @@ impl AccountRequestProcessor {
                     /*feature_enabled*/ false,
                 )
             }
-            Err(err) => Err(internal_error(format!(
-                "failed to fetch workspace messages: {err}"
+            Err(err) => Err(internal_error(tr_with(
+                current(),
+                "failed to fetch workspace messages: {0}",
+                &[&err.to_string()],
             ))),
         }
     }
@@ -1419,15 +1522,17 @@ impl AccountRequestProcessor {
         params: SendAddCreditsNudgeEmailParams,
     ) -> Result<AddCreditsNudgeEmailStatus, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "codex account authentication required to notify workspace owner",
-            ));
+            )));
         };
 
         if !auth.uses_codex_backend() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "chatgpt authentication required to notify workspace owner",
-            ));
+            )));
         }
 
         let client = BackendClient::from_auth(
@@ -1444,8 +1549,10 @@ impl AccountRequestProcessor {
             Err(err) if err.status().is_some_and(|status| status.as_u16() == 429) => {
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive)
             }
-            Err(err) => Err(internal_error(format!(
-                "failed to notify workspace owner: {err}"
+            Err(err) => Err(internal_error(tr_with(
+                current(),
+                "failed to notify workspace owner: {0}",
+                &[&err.to_string()],
             ))),
         }
     }
@@ -1478,8 +1585,10 @@ fn workspace_message_timestamp_from_backend(
             DateTime::parse_from_rfc3339(&timestamp)
                 .map(|timestamp| timestamp.timestamp())
                 .map_err(|err| {
-                    internal_error(format!(
-                        "failed to parse workspace message timestamp `{timestamp}`: {err}"
+                    internal_error(tr_with(
+                        current(),
+                        "failed to parse workspace message timestamp `{0}`: {1}",
+                        &[&timestamp, &err.to_string()],
                     ))
                 })
         })

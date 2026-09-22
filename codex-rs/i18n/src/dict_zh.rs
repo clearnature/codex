@@ -10343,6 +10343,121 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Input exceeds the maximum length of 100000 characters.",
         "输入超出最大长度100000个字符。",
     ),
+    ("workspace messages fetch timed out", "获取工作区消息超时"),
+    (
+        "token usage profile fetch timed out",
+        "获取token用量档案超时",
+    ),
+    ("thread usage fetch timed out", "获取线程用量超时"),
+    ("logout failed: {0}", "登出失败：{0}"),
+    ("invalid login id: {0}", "无效的登录id：{0}"),
+    (
+        "invalid Codex open app URL: {0}",
+        "无效的Codex打开应用URL：{0}",
+    ),
+    (
+        "failed to start login server: {0}",
+        "启动登录服务器失败：{0}",
+    ),
+    ("failed to set external auth: {0}", "设置外部认证失败：{0}"),
+    ("failed to save api key: {0}", "保存API密钥失败：{0}"),
+    (
+        "failed to save Amazon Bedrock auth: {0}",
+        "保存Amazon Bedrock认证失败：{0}",
+    ),
+    ("failed to request device code: {0}", "请求设备码失败：{0}"),
+    (
+        "failed to parse workspace message timestamp `{0}`: {1}",
+        "解析工作区消息时间戳`{0}`失败：{1}",
+    ),
+    (
+        "failed to notify workspace owner: {0}",
+        "通知工作区所有者失败：{0}",
+    ),
+    (
+        "failed to fetch workspace messages: {0}",
+        "获取工作区消息失败：{0}",
+    ),
+    (
+        "failed to fetch token usage profile: {0}",
+        "获取token用量档案失败：{0}",
+    ),
+    ("failed to fetch thread usage: {0}", "获取线程用量失败：{0}"),
+    (
+        "failed to fetch codex rate limits: {0}",
+        "获取codex速率限制失败：{0}",
+    ),
+    (
+        "failed to fetch codex rate limits: no snapshots returned",
+        "获取codex速率限制失败：未返回快照",
+    ),
+    (
+        "codex account authentication required to read workspace messages",
+        "读取工作区消息需要codex账号认证",
+    ),
+    (
+        "codex account authentication required to read token usage",
+        "读取token用量需要codex账号认证",
+    ),
+    (
+        "codex account authentication required to read rate limits",
+        "读取速率限制需要codex账号认证",
+    ),
+    (
+        "codex account authentication required to notify workspace owner",
+        "通知工作区所有者需要codex账号认证",
+    ),
+    (
+        "chatgpt authentication required to read workspace messages",
+        "读取工作区消息需要chatgpt认证",
+    ),
+    (
+        "chatgpt authentication required to read token usage",
+        "读取token用量需要chatgpt认证",
+    ),
+    (
+        "chatgpt authentication required to read rate limits",
+        "读取速率限制需要chatgpt认证",
+    ),
+    (
+        "chatgpt authentication required to notify workspace owner",
+        "通知工作区所有者需要chatgpt认证",
+    ),
+    ("Login was not completed", "登录未完成"),
+    ("Login timed out", "登录超时"),
+    ("Login server error: {0}", "登录服务器错误：{0}"),
+    (
+        "External auth must use one of workspace(s) {0}, but received {1}.",
+        "外部认证必须使用工作区{0}之一，但收到{1}。",
+    ),
+    (
+        "External auth is active. Use account/login/start (chatgptAuthTokens) to update it or account/logout to clear it.",
+        "外部认证处于激活状态。请用account/login/start(chatgptAuthTokens)更新，或用account/logout清除。",
+    ),
+    (
+        "External ChatGPT auth is disabled. Use API key login instead.",
+        "外部ChatGPT认证已禁用。请改用API密钥登录。",
+    ),
+    (
+        "Configured external authentication is owned by the app-server host and cannot be changed through account RPCs.",
+        "已配置的外部认证由app-server宿主拥有，不能通过account RPC更改。",
+    ),
+    (
+        "Amazon Bedrock login is disabled. Use ChatGPT login instead.",
+        "Amazon Bedrock登录已禁用。请改用ChatGPT登录。",
+    ),
+    (
+        "Amazon Bedrock does not support region `{0}`",
+        "Amazon Bedrock不支持区域`{0}`",
+    ),
+    (
+        "Amazon Bedrock API key must not be empty.",
+        "Amazon Bedrock API密钥不能为空。",
+    ),
+    (
+        "AWS access key ID and secret access key must not be empty.",
+        "AWS访问密钥ID和私有访问密钥不能为空。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

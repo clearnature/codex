@@ -518,7 +518,10 @@ async fn create_empty_user_layer(
     let toml_value = match read_path {
         Some(path) => match tokio::fs::read_to_string(&path).await {
             Ok(contents) => toml::from_str(&contents).map_err(|e| {
-                ConfigManagerError::toml("failed to parse existing user config.toml", e)
+                ConfigManagerError::toml(
+                    tr(current(), "failed to parse existing user config.toml"),
+                    e,
+                )
             })?,
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 write_empty_user_config(write_path.clone()).await?;
@@ -526,7 +529,7 @@ async fn create_empty_user_layer(
             }
             Err(err) => {
                 return Err(ConfigManagerError::io(
-                    "failed to read user config.toml",
+                    tr(current(), "failed to read user config.toml"),
                     err,
                 ));
             }
@@ -549,7 +552,12 @@ async fn write_empty_user_config(write_path: PathBuf) -> Result<(), ConfigManage
     task::spawn_blocking(move || write_atomically(&write_path, ""))
         .await
         .map_err(|err| ConfigManagerError::anyhow("config persistence task panicked", err.into()))?
-        .map_err(|err| ConfigManagerError::io("failed to create empty user config.toml", err))
+        .map_err(|err| {
+            ConfigManagerError::io(
+                tr(current(), "failed to create empty user config.toml"),
+                err,
+            )
+        })
 }
 
 fn parse_value(value: JsonValue) -> Result<Option<TomlValue>, String> {
@@ -559,12 +567,12 @@ fn parse_value(value: JsonValue) -> Result<Option<TomlValue>, String> {
 
     serde_json::from_value::<TomlValue>(value)
         .map(Some)
-        .map_err(|err| format!("invalid value: {err}"))
+        .map_err(|err| tr_with(current(), "invalid value: {0}", &[&err.to_string()]))
 }
 
 fn parse_key_path(path: &str) -> Result<Vec<String>, String> {
     if path.trim().is_empty() {
-        return Err("keyPath must not be empty".to_string());
+        return Err(tr(current(), "keyPath must not be empty").to_string());
     }
 
     let mut segments = Vec::new();
@@ -583,26 +591,26 @@ fn parse_key_path(path: &str) -> Result<Vec<String>, String> {
                 // Quoted segments may escape punctuation that would otherwise
                 // participate in parsing, such as `.` or `"`.
                 let Some(escaped) = chars.next() else {
-                    return Err("unterminated escape in keyPath".to_string());
+                    return Err(tr(current(), "unterminated escape in keyPath").to_string());
                 };
                 segment.push(escaped);
             }
             '.' if !quoted => {
                 if segment.is_empty() {
-                    return Err("keyPath segments must not be empty".to_string());
+                    return Err(tr(current(), "keyPath segments must not be empty").to_string());
                 }
                 segments.push(std::mem::take(&mut segment));
             }
-            '"' => return Err("invalid quoted keyPath segment".to_string()),
+            '"' => return Err(tr(current(), "invalid quoted keyPath segment").to_string()),
             _ => segment.push(ch),
         }
     }
 
     if quoted {
-        return Err("unterminated quoted keyPath segment".to_string());
+        return Err(tr(current(), "unterminated quoted keyPath segment").to_string());
     }
     if segment.is_empty() {
-        return Err("keyPath segments must not be empty".to_string());
+        return Err(tr(current(), "keyPath segments must not be empty").to_string());
     }
 
     segments.push(segment);
@@ -636,7 +644,7 @@ fn apply_merge(
 
     let Some((last, parents)) = segments.split_last() else {
         return Err(MergeError::Validation(
-            "keyPath must not be empty".to_string(),
+            tr(codex_i18n::current(), "keyPath must not be empty").to_string(),
         ));
     };
 
@@ -685,7 +693,13 @@ fn apply_merge(
     }
 
     let table = current.as_table_mut().ok_or_else(|| {
-        MergeError::Validation("cannot set value on non-table parent".to_string())
+        MergeError::Validation(
+            tr(
+                codex_i18n::current(),
+                "cannot set value on non-table parent",
+            )
+            .to_string(),
+        )
     })?;
 
     let changed = table
@@ -719,7 +733,7 @@ fn shell_environment_policy_representation_switch(
 fn clear_path(root: &mut TomlValue, segments: &[String]) -> Result<bool, MergeError> {
     let Some((last, parents)) = segments.split_last() else {
         return Err(MergeError::Validation(
-            "keyPath must not be empty".to_string(),
+            tr(codex_i18n::current(), "keyPath must not be empty").to_string(),
         ));
     };
 
@@ -784,9 +798,10 @@ fn toml_value_to_value(value: &TomlValue) -> anyhow::Result<toml_edit::Value> {
 fn validate_config(value: &TomlValue) -> anyhow::Result<()> {
     let config: ConfigToml = value.clone().try_into()?;
     if config.approval_policy == Some(AskForApproval::UnlessTrusted) {
-        anyhow::bail!(
+        anyhow::bail!(tr(
+            current(),
             "approval_policy = \"untrusted\" is no longer supported; remove this setting"
-        );
+        ));
     }
     Ok(())
 }
@@ -845,32 +860,46 @@ fn value_at_semantic_path<'a>(root: &'a TomlValue, segments: &[String]) -> Optio
 
 fn override_message(layer: &ConfigLayerSource) -> String {
     match layer {
-        ConfigLayerSource::PackagedDefaults { file } => {
-            format!("Overridden by packaged defaults: {}", file.display())
-        }
-        ConfigLayerSource::Mdm { domain, key: _ } => {
-            format!("Overridden by managed policy (MDM): {domain}")
-        }
-        ConfigLayerSource::System { file } => {
-            format!("Overridden by managed config (system): {}", file.display())
-        }
-        ConfigLayerSource::EnterpriseManaged { id: _, name } => {
-            format!("Overridden by enterprise-managed config: {name}")
-        }
-        ConfigLayerSource::Project { dot_codex_folder } => format!(
-            "Overridden by project config: {}/{CONFIG_TOML_FILE}",
-            dot_codex_folder.display(),
+        ConfigLayerSource::PackagedDefaults { file } => tr_with(
+            current(),
+            "Overridden by packaged defaults: {0}",
+            &[&file.display().to_string()],
         ),
-        ConfigLayerSource::SessionFlags => "Overridden by session flags".to_string(),
-        ConfigLayerSource::User { file, .. } => {
-            format!("Overridden by user config: {}", file.display())
-        }
-        ConfigLayerSource::LegacyManagedConfigTomlFromFile { file } => {
-            format!(
-                "Overridden by legacy managed_config.toml: {}",
-                file.display()
-            )
-        }
+        ConfigLayerSource::Mdm { domain, key: _ } => tr_with(
+            current(),
+            "Overridden by managed policy (MDM): {0}",
+            &[domain],
+        ),
+        ConfigLayerSource::System { file } => tr_with(
+            current(),
+            "Overridden by managed config (system): {0}",
+            &[&file.display().to_string()],
+        ),
+        ConfigLayerSource::EnterpriseManaged { id: _, name } => tr_with(
+            current(),
+            "Overridden by enterprise-managed config: {0}",
+            &[name],
+        ),
+        ConfigLayerSource::Project { dot_codex_folder } => tr_with(
+            current(),
+            "Overridden by project config: {0}",
+            &[&format!(
+                "{}/{}",
+                dot_codex_folder.display(),
+                CONFIG_TOML_FILE
+            )],
+        ),
+        ConfigLayerSource::SessionFlags => tr(current(), "Overridden by session flags").to_string(),
+        ConfigLayerSource::User { file, .. } => tr_with(
+            current(),
+            "Overridden by user config: {0}",
+            &[&file.display().to_string()],
+        ),
+        ConfigLayerSource::LegacyManagedConfigTomlFromFile { file } => tr_with(
+            current(),
+            "Overridden by legacy managed_config.toml: {0}",
+            &[&file.display().to_string()],
+        ),
         ConfigLayerSource::LegacyManagedConfigTomlFromMdm => tr(
             current(),
             "Overridden by legacy managed configuration from MDM",

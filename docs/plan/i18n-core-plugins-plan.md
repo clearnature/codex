@@ -1510,3 +1510,26 @@ old 里带 `?` 则 new 必须带；替换后 grep `})?,` / `});` 清点逐处确
 
 `i18n-check` `r-mud1a08d-4ysdok`（4024 词条全零）；fmt/check/clippy EXIT=0。
 对账：thread_goal 14→0；app-server 263→**249**。
+
+## 五十、app-server 批 K：config_manager_service.rs 第二段 22 条（含对账口径教训）
+
+### 50.1 对账失误的真相（批 B「清零」是误读）
+
+批 B 用 `--file … | tail -1` 对账，把「最后一行」当成「清零」——实际文件下半段
+（`:521`–`:870`：user config.toml 读写、keyPath 解析族、approval_policy bail、
+`override_message` 全族 Overridden by…）**从未处理**，一直以 22 条存在。
+✅ **修正后的对账口径**：必须认机器字样 `0 unwrapped candidates in <file>`；
+`tail -1` **不是**计数（本轮由 busiest-files 反查发现）。
+
+### 50.2 本批执行
+
+- 22 条全译（`:521/:529/:552` ConfigManagerError 上下文 static、keyPath 解析器返回 String、
+  `approval_policy` bail（键含 `\"` 转义）、`override_message` 9 条 Overridden 族）。
+- **预检① 再次命中**：`:675 let mut current = root` 遮蔽 ⇒ `:688`/`:647`/`:736` 三处
+  用 `codex_i18n::current()` 限定路径。
+- python 双引号键需单引号串（`\"` 转义曾致整段 parse 失败——parse 失败=零执行，安全重跑）。
+
+### 50.3 门禁
+
+`i18n-check` `r-mud27ydp-qglqes`（4043 词条全零）；fmt/check/clippy EXIT=0。
+对账（正确口径）：config_manager `0 unwrapped`；app-server 249→**227**。

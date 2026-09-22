@@ -10646,6 +10646,58 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "sqlite state db unavailable for thread goals",
         "线程goals需要sqlite状态数据库，当前不可用",
     ),
+    (
+        "failed to parse existing user config.toml",
+        "解析已存在的用户config.toml失败",
+    ),
+    (
+        "failed to create empty user config.toml",
+        "创建空的用户config.toml失败",
+    ),
+    ("invalid value: {0}", "无效的值：{0}"),
+    ("keyPath must not be empty", "keyPath不能为空"),
+    (
+        "unterminated escape in keyPath",
+        "keyPath中的转义序列未终止",
+    ),
+    ("keyPath segments must not be empty", "keyPath段不能为空"),
+    (
+        "unterminated quoted keyPath segment",
+        "带引号的keyPath段未终止",
+    ),
+    (
+        "cannot set value on non-table parent",
+        "无法在非表类型的父节点上设值",
+    ),
+    (
+        "approval_policy = \"untrusted\" is no longer supported; remove this setting",
+        "approval_policy = \"untrusted\" 已不再支持；请移除该设置",
+    ),
+    (
+        "Overridden by packaged defaults: {0}",
+        "被打包默认值覆盖：{0}",
+    ),
+    (
+        "Overridden by managed policy (MDM): {0}",
+        "被托管策略(MDM)覆盖：{0}",
+    ),
+    (
+        "Overridden by managed config (system): {0}",
+        "被系统托管配置覆盖：{0}",
+    ),
+    (
+        "Overridden by enterprise-managed config: {0}",
+        "被企业托管配置覆盖：{0}",
+    ),
+    ("Overridden by project config: {0}", "被项目配置覆盖：{0}"),
+    ("Overridden by session flags", "被会话标志覆盖"),
+    ("Overridden by user config: {0}", "被用户配置覆盖：{0}"),
+    (
+        "Overridden by legacy managed_config.toml: {0}",
+        "被旧式managed_config.toml覆盖：{0}",
+    ),
+    ("failed to read user config.toml", "读取用户config.toml失败"),
+    ("invalid quoted keyPath segment", "无效的带引号keyPath段"),
 ];
 
 /// English source text -> Simplified Chinese.

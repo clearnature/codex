@@ -266,46 +266,47 @@ impl ThreadQueueRequestProcessor {
                 &[&error.to_string()],
             ))
         })?;
-        let (loaded_thread, source) = if let Ok(thread) =
-            self.thread_manager.get_thread(thread_id).await
-        {
-            let snapshot = thread.config_snapshot().await;
-            if snapshot.ephemeral {
-                return Err(invalid_request(tr_with(
-                    current(),
-                    "ephemeral thread does not support queued submissions: {0}",
-                    &[&thread_id.to_string()],
-                )));
-            }
-            (Some(thread), snapshot.session_source)
-        } else {
-            let stored = self
-                .thread_store
-                .read_thread(ReadThreadParams {
-                    thread_id,
-                    include_archived: true,
-                    include_history: false,
-                })
-                .await
-                .map_err(|error| match error {
-                    ThreadStoreError::ThreadNotFound { .. } => {
-                        invalid_request(tr_with(current(), "thread not found: {0}", &[&thread_id.to_string()]))
-                    }
-                    error => internal_error(tr_with(
+        let (loaded_thread, source) =
+            if let Ok(thread) = self.thread_manager.get_thread(thread_id).await {
+                let snapshot = thread.config_snapshot().await;
+                if snapshot.ephemeral {
+                    return Err(invalid_request(tr_with(
                         current(),
-                        "failed to read thread: {0}",
-                        &[&error.to_string()],
-                    )),
-                })?;
-            if stored.archived_at.is_some() {
-                return Err(invalid_request(tr_with(
-                    current(),
-                    "session {0} is archived. Run `codex unarchive {0}` to unarchive it first.",
-                    &[&thread_id.to_string()],
-                )));
-            }
-            (None, stored.source)
-        };
+                        "ephemeral thread does not support queued submissions: {0}",
+                        &[&thread_id.to_string()],
+                    )));
+                }
+                (Some(thread), snapshot.session_source)
+            } else {
+                let stored = self
+                    .thread_store
+                    .read_thread(ReadThreadParams {
+                        thread_id,
+                        include_archived: true,
+                        include_history: false,
+                    })
+                    .await
+                    .map_err(|error| match error {
+                        ThreadStoreError::ThreadNotFound { .. } => invalid_request(tr_with(
+                            current(),
+                            "thread not found: {0}",
+                            &[&thread_id.to_string()],
+                        )),
+                        error => internal_error(tr_with(
+                            current(),
+                            "failed to read thread: {0}",
+                            &[&error.to_string()],
+                        )),
+                    })?;
+                if stored.archived_at.is_some() {
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "session {0} is archived. Run `codex unarchive {0}` to unarchive it first.",
+                        &[&thread_id.to_string()],
+                    )));
+                }
+                (None, stored.source)
+            };
 
         Ok((thread_id, loaded_thread, source))
     }

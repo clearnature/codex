@@ -10600,6 +10600,31 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to update skill settings: {0}",
         "更新技能设置失败：{0}",
     ),
+    (
+        "failed to refresh MCP servers: {0}",
+        "刷新MCP服务器失败：{0}",
+    ),
+    (
+        "failed to resolve MCP server runtime: {0}",
+        "解析MCP服务器运行时失败：{0}",
+    ),
+    (
+        "failed to resolve MCP OAuth callback: {0}",
+        "解析MCP OAuth回调失败：{0}",
+    ),
+    (
+        "failed to login to MCP server '{0}': {1}",
+        "登录MCP服务器'{0}'失败：{1}",
+    ),
+    (
+        "cursor {0} exceeds total MCP servers {1}",
+        "游标{0}超出MCP服务器总数{1}",
+    ),
+    ("originCallId requires threadId", "originCallId需要threadId"),
+    (
+        "failed to deserialize MCP resource read response: {0}",
+        "反序列化MCP资源读取响应失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

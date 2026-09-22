@@ -1473,3 +1473,21 @@ clippy 报 `:460` redundant clone（`resolve_cwd_config` err 是 **String**）�
 
 `i18n-check` `r-mud08ii8-deo0nx`（4011 词条全零）；fmt/check/clippy EXIT=0。
 对账：catalog 14→0；app-server 291→**277**。
+
+## 四十八、app-server 批 I：mcp_processor.rs 14 条全译
+
+### 48.1 判据
+
+MCP 服务器刷新/OAuth 登录/运行时解析/游标分页/资源读取反序列化/originCallId 校验 ——
+全 JSON-RPC 用户可见 ⇒ **全译**。复用既有键 4 组（failed to reload config / invalid thread id /
+thread not found / invalid cursor）。
+
+### 48.2 返工（§47 教训的正面应用）
+
+clippy 报 `:223` redundant clone —— 按**行上下文**（`resolve_http_client` 块）精确定位而非按键盲替 ⇒
+一次修对（同键 `:191` 另一调用点 err 类型不同，未被误伤）。
+
+### 48.3 门禁
+
+`i18n-check` `r-mud0jv5e-7m3258`（4018 词条全零）；fmt/check/clippy EXIT=0。
+对账：mcp 14→0；app-server 277→**263**。

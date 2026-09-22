@@ -1,6 +1,9 @@
 use super::thread_input::ensure_direct_input_allowed;
 use super::*;
 use codex_core::McpManager;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_mcp::McpServerSource;
 use codex_mcp::ReadResourceRequestParams;
 use codex_mcp::resolve_oauth_callback;
@@ -89,7 +92,13 @@ impl McpRequestProcessor {
     ) -> Result<McpServerRefreshResponse, JSONRPCErrorError> {
         crate::mcp_refresh::reload_mcp_config(&self.thread_manager, &self.config_manager)
             .await
-            .map_err(|err| internal_error(format!("failed to refresh MCP servers: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to refresh MCP servers: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         Ok(McpServerRefreshResponse {})
     }
 
@@ -100,21 +109,38 @@ impl McpRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 
     pub(super) async fn load_thread(
         &self,
         thread_id: &str,
     ) -> Result<(ThreadId, Arc<CodexThread>), JSONRPCErrorError> {
-        let thread_id = ThreadId::from_string(thread_id)
-            .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
+        let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid thread id: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
 
         let thread = self
             .thread_manager
             .get_thread(thread_id)
             .await
-            .map_err(|_| invalid_request(format!("thread not found: {thread_id}")))?;
+            .map_err(|_| {
+                invalid_request(tr_with(
+                    current(),
+                    "thread not found: {0}",
+                    &[&thread_id.to_string()],
+                ))
+            })?;
 
         Ok((thread_id, thread))
     }
@@ -160,8 +186,10 @@ impl McpRequestProcessor {
         };
         let effective_servers = codex_mcp::effective_mcp_servers(&mcp_config, auth.as_ref());
         let Some(server) = effective_servers.get(&name) else {
-            return Err(invalid_request(format!(
-                "No MCP server named '{name}' found."
+            return Err(invalid_request(tr_with(
+                current(),
+                "No MCP server named '{0}' found.",
+                &[&name],
             )));
         };
         let redirect_mode = if server.is_agent_plugin() {
@@ -179,16 +207,21 @@ impl McpRequestProcessor {
                 ..
             } => (url.clone(), http_headers.clone(), env_http_headers.clone()),
             _ => {
-                return Err(invalid_request(
+                return Err(invalid_request(tr(
+                    current(),
                     "OAuth login is only supported for streamable HTTP servers.",
-                ));
+                )));
             }
         };
 
         let http_client = runtime_context
             .resolve_http_client(&name, server)
             .map_err(|err| {
-                internal_error(format!("failed to resolve MCP server runtime: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to resolve MCP server runtime: {0}",
+                    &[&err],
+                ))
             })?;
 
         let discovered_scopes = if scopes.is_none() && server.scopes.is_none() {
@@ -208,7 +241,11 @@ impl McpRequestProcessor {
         let callback_url =
             resolve_oauth_callback(server, &url, mcp_config.mcp_oauth_callback_url.as_deref())
                 .map_err(|err| {
-                    internal_error(format!("failed to resolve MCP OAuth callback: {err}"))
+                    internal_error(tr_with(
+                        current(),
+                        "failed to resolve MCP OAuth callback: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
 
         let handle = perform_oauth_login_return_url(
@@ -230,7 +267,13 @@ impl McpRequestProcessor {
             redirect_mode,
         )
         .await
-        .map_err(|err| internal_error(format!("failed to login to MCP server '{name}': {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to login to MCP server '{0}': {1}",
+                &[&name, &err.to_string()],
+            ))
+        })?;
         let authorization_url = handle.authorization_url().to_string();
         let notification_name = name.clone();
         let notification_thread_id = thread_id;
@@ -276,7 +319,13 @@ impl McpRequestProcessor {
                     .config_manager
                     .load_latest_config_for_thread(thread_config.as_ref())
                     .await
-                    .map_err(|err| internal_error(format!("failed to reload config: {err}")))?;
+                    .map_err(|err| {
+                        internal_error(tr_with(
+                            current(),
+                            "failed to reload config: {0}",
+                            &[&err.to_string()],
+                        ))
+                    })?;
                 (config, Some(thread))
             }
             None => (self.load_latest_config(/*fallback_cwd*/ None).await?, None),
@@ -366,14 +415,22 @@ impl McpRequestProcessor {
         let start = match params.cursor {
             Some(cursor) => match cursor.parse::<usize>() {
                 Ok(idx) => idx,
-                Err(_) => return Err(invalid_request(format!("invalid cursor: {cursor}"))),
+                Err(_) => {
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "invalid cursor: {0}",
+                        &[&cursor],
+                    )));
+                }
             },
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(format!(
-                "cursor {start} exceeds total MCP servers {total}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "cursor {0} exceeds total MCP servers {1}",
+                &[&start.to_string(), &total.to_string()],
             )));
         }
 
@@ -467,7 +524,10 @@ impl McpRequestProcessor {
         }
 
         if origin_call_id.is_some() {
-            return Err(invalid_request("originCallId requires threadId"));
+            return Err(invalid_request(tr(
+                current(),
+                "originCallId requires threadId",
+            )));
         }
 
         let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
@@ -514,8 +574,10 @@ impl McpRequestProcessor {
             .map_err(mcp_operation_error)
             .and_then(|result| {
                 serde_json::from_value::<McpResourceReadResponse>(result).map_err(|error| {
-                    internal_error(format!(
-                        "failed to deserialize MCP resource read response: {error}"
+                    internal_error(tr_with(
+                        current(),
+                        "failed to deserialize MCP resource read response: {0}",
+                        &[&error.to_string()],
                     ))
                 })
             })

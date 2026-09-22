@@ -6276,7 +6276,11 @@ fn thread_store_resume_read_error(err: ThreadStoreError) -> JSONRPCErrorError {
             "no rollout found for thread id {0}",
             &[&thread_id.to_string()],
         )),
-        err => internal_error(tr_with(current(), "failed to read thread: {0}", &[&err.to_string()])),
+        err => internal_error(tr_with(
+            current(),
+            "failed to read thread: {0}",
+            &[&err.to_string()],
+        )),
     }
 }
 

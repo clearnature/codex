@@ -10204,6 +10204,46 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "刷新源线程目标失败：{0}",
     ),
     ("error forking thread: {0}", "创建fork线程出错：{0}"),
+    (
+        "user layer not found in updated layers",
+        "在更新的配置层中未找到用户层",
+    ),
+    ("invalid configuration", "无效的配置"),
+    ("failed to serialize configuration", "序列化配置失败"),
+    ("failed to resolve user config path", "未能解析用户配置路径"),
+    (
+        "failed to resolve config cwd to an absolute path",
+        "未能将配置cwd解析为绝对路径",
+    ),
+    ("failed to read configuration layers", "读取配置层失败"),
+    ("failed to persist config.toml", "持久化config.toml失败"),
+    ("failed to deserialize configuration", "反序列化配置失败"),
+    ("failed to build config edits", "构建配置编辑失败"),
+    (
+        "`{0}` is managed by requirements and cannot be changed",
+        "`{0}`由requirements管理，不能更改",
+    ),
+    (
+        "`profiles` contains legacy config profile tables and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+        "`profiles`包含旧的配置profile表，不能再写入；请改用`--profile <name>`配合`<name>.config.toml`",
+    ),
+    (
+        "`profile` is a legacy config selector and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+        "`profile`是旧的配置选择器，不能再写入；请改用`--profile <name>`配合`<name>.config.toml`",
+    ),
+    (
+        "Only writes to the user config are allowed",
+        "只允许写入用户配置",
+    ),
+    ("Invalid configuration: {0}", "无效的配置：{0}"),
+    (
+        "Configuration was modified since last read. Fetch latest version and retry.",
+        "自上次读取后配置已被修改。请获取最新版本后重试。",
+    ),
+    (
+        "Overridden by legacy managed configuration from MDM",
+        "被MDM的旧式托管配置覆盖",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

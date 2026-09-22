@@ -31,6 +31,9 @@ use codex_core::path_utils;
 use codex_core::path_utils::SymlinkWritePaths;
 use codex_core::path_utils::resolve_symlink_write_paths;
 use codex_core::path_utils::write_atomically;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::AskForApproval;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use serde_json::Value as JsonValue;
@@ -119,30 +122,41 @@ impl ConfigManager {
         let layers = match params.cwd.as_deref() {
             Some(cwd) => {
                 let cwd = AbsolutePathBuf::try_from(PathBuf::from(cwd)).map_err(|err| {
-                    ConfigManagerError::io("failed to resolve config cwd to an absolute path", err)
+                    ConfigManagerError::io(
+                        tr(
+                            current(),
+                            "failed to resolve config cwd to an absolute path",
+                        ),
+                        err,
+                    )
                 })?;
                 self.load_config_layers(Some(cwd)).await.map_err(|err| {
-                    ConfigManagerError::io("failed to read configuration layers", err)
+                    ConfigManagerError::io(
+                        tr(current(), "failed to read configuration layers"),
+                        err,
+                    )
                 })?
             }
             None => self.load_thread_agnostic_config().await.map_err(|err| {
-                ConfigManagerError::io("failed to read configuration layers", err)
+                ConfigManagerError::io(tr(current(), "failed to read configuration layers"), err)
             })?,
         };
 
         let effective = layers.effective_config();
         let mut effective_config_toml: ConfigToml = effective
             .try_into()
-            .map_err(|err| ConfigManagerError::toml("invalid configuration", err))?;
+            .map_err(|err| ConfigManagerError::toml(tr(current(), "invalid configuration"), err))?;
         layers
             .requirements_toml()
             .apply_exact_to_config(&mut effective_config_toml);
         effective_config_toml.allow_login_shell.get_or_insert(true);
 
-        let json_value = serde_json::to_value(&effective_config_toml)
-            .map_err(|err| ConfigManagerError::json("failed to serialize configuration", err))?;
-        let config: ApiConfig = serde_json::from_value(json_value)
-            .map_err(|err| ConfigManagerError::json("failed to deserialize configuration", err))?;
+        let json_value = serde_json::to_value(&effective_config_toml).map_err(|err| {
+            ConfigManagerError::json(tr(current(), "failed to serialize configuration"), err)
+        })?;
+        let config: ApiConfig = serde_json::from_value(json_value).map_err(|err| {
+            ConfigManagerError::json(tr(current(), "failed to deserialize configuration"), err)
+        })?;
 
         let mut origins = layers.origins();
         origins.retain(|path, metadata| {
@@ -177,10 +191,9 @@ impl ConfigManager {
     pub(crate) async fn read_requirements(
         &self,
     ) -> Result<Option<ConfigRequirementsToml>, ConfigManagerError> {
-        let layers = self
-            .load_thread_agnostic_config()
-            .await
-            .map_err(|err| ConfigManagerError::io("failed to read configuration layers", err))?;
+        let layers = self.load_thread_agnostic_config().await.map_err(|err| {
+            ConfigManagerError::io(tr(current(), "failed to read configuration layers"), err)
+        })?;
 
         let requirements = layers.requirements_toml().clone();
         if requirements.is_empty() {
@@ -219,26 +232,28 @@ impl ConfigManager {
         expected_version: Option<String>,
         edits: Vec<(String, JsonValue, MergeStrategy)>,
     ) -> Result<ConfigWriteResponse, ConfigManagerError> {
-        let allowed_path = self
-            .user_config_path()
-            .map_err(|err| ConfigManagerError::io("failed to resolve user config path", err))?;
+        let allowed_path = self.user_config_path().map_err(|err| {
+            ConfigManagerError::io(tr(current(), "failed to resolve user config path"), err)
+        })?;
         let provided_path = match file_path {
-            Some(path) => AbsolutePathBuf::from_absolute_path(PathBuf::from(path))
-                .map_err(|err| ConfigManagerError::io("failed to resolve user config path", err))?,
+            Some(path) => {
+                AbsolutePathBuf::from_absolute_path(PathBuf::from(path)).map_err(|err| {
+                    ConfigManagerError::io(tr(current(), "failed to resolve user config path"), err)
+                })?
+            }
             None => allowed_path.clone(),
         };
 
         if !paths_match(&allowed_path, &provided_path) {
             return Err(ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigLayerReadonly,
-                "Only writes to the user config are allowed",
+                tr(current(), "Only writes to the user config are allowed"),
             ));
         }
 
-        let layers = self
-            .load_thread_agnostic_config()
-            .await
-            .map_err(|err| ConfigManagerError::io("failed to load configuration", err))?;
+        let layers = self.load_thread_agnostic_config().await.map_err(|err| {
+            ConfigManagerError::io(tr(current(), "failed to load configuration"), err)
+        })?;
         let user_layer = match layers.get_active_user_layer() {
             Some(layer) => Cow::Borrowed(layer),
             None => Cow::Owned(create_empty_user_layer(&allowed_path).await?),
@@ -249,7 +264,10 @@ impl ConfigManager {
         {
             return Err(ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigVersionConflict,
-                "Configuration was modified since last read. Fetch latest version and retry.",
+                tr(
+                    current(),
+                    "Configuration was modified since last read. Fetch latest version and retry.",
+                ),
             ));
         }
 
@@ -267,7 +285,11 @@ impl ConfigManager {
             {
                 return Err(ConfigManagerError::write(
                     ConfigWriteErrorCode::ConfigRequirementReadonly,
-                    format!("`{field}` is managed by requirements and cannot be changed"),
+                    tr_with(
+                        current(),
+                        "`{0}` is managed by requirements and cannot be changed",
+                        &[field],
+                    ),
                 ));
             }
             if (value.is_null() || matches!(strategy, MergeStrategy::Upsert))
@@ -297,13 +319,19 @@ impl ConfigManager {
                     [segment] if segment == "profile" => {
                         return Err(ConfigManagerError::write(
                             ConfigWriteErrorCode::ConfigValidationError,
-                            "`profile` is a legacy config selector and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                            tr(
+                                current(),
+                                "`profile` is a legacy config selector and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                            ),
                         ));
                     }
                     [segment, ..] if segment == "profiles" => {
                         return Err(ConfigManagerError::write(
                             ConfigWriteErrorCode::ConfigValidationError,
-                            "`profiles` contains legacy config profile tables and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                            tr(
+                                current(),
+                                "`profiles` contains legacy config profile tables and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                            ),
                         ));
                     }
                     _ => {}
@@ -339,7 +367,7 @@ impl ConfigManager {
                     .map_err(|err| {
                         ConfigManagerError::write(
                             ConfigWriteErrorCode::ConfigValidationError,
-                            format!("Invalid configuration: {err}"),
+                            tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
                         )
                     })?;
             }
@@ -378,7 +406,10 @@ impl ConfigManager {
                     Some(value) => ConfigEdit::SetPath {
                         segments: persist_segments,
                         value: toml_value_to_item(&value).map_err(|err| {
-                            ConfigManagerError::anyhow("failed to build config edits", err)
+                            ConfigManagerError::anyhow(
+                                tr(current(), "failed to build config edits"),
+                                err,
+                            )
                         })?,
                     },
                     None => ConfigEdit::ClearPath {
@@ -396,7 +427,7 @@ impl ConfigManager {
         validate_config(&user_config).map_err(|err| {
             ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigValidationError,
-                format!("Invalid configuration: {err}"),
+                tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
             )
         })?;
         let user_config_toml =
@@ -404,7 +435,7 @@ impl ConfigManager {
                 |err| {
                     ConfigManagerError::write(
                         ConfigWriteErrorCode::ConfigValidationError,
-                        format!("Invalid configuration: {err}"),
+                        tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
                     )
                 },
             )?;
@@ -415,7 +446,7 @@ impl ConfigManager {
         .map_err(|err| {
             ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigValidationError,
-                format!("Invalid configuration: {err}"),
+                tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
             )
         })?;
         let updated_layers = layers
@@ -423,14 +454,14 @@ impl ConfigManager {
             .map_err(|err| {
                 ConfigManagerError::write(
                     ConfigWriteErrorCode::ConfigValidationError,
-                    format!("Invalid configuration: {err}"),
+                    tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
                 )
             })?;
         let effective = updated_layers.effective_config();
         validate_config(&effective).map_err(|err| {
             ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigValidationError,
-                format!("Invalid configuration: {err}"),
+                tr_with(current(), "Invalid configuration: {0}", &[&err.to_string()]),
             )
         })?;
 
@@ -439,7 +470,9 @@ impl ConfigManager {
                 .with_edits(config_edits)
                 .apply()
                 .await
-                .map_err(|err| ConfigManagerError::anyhow("failed to persist config.toml", err))?;
+                .map_err(|err| {
+                    ConfigManagerError::anyhow(tr(current(), "failed to persist config.toml"), err)
+                })?;
         }
 
         let overridden = first_overridden_edit(&updated_layers, &effective, &parsed_segments);
@@ -455,7 +488,7 @@ impl ConfigManager {
                 .ok_or_else(|| {
                     ConfigManagerError::write(
                         ConfigWriteErrorCode::UserLayerNotFound,
-                        "user layer not found in updated layers",
+                        tr(current(), "user layer not found in updated layers"),
                     )
                 })?
                 .version
@@ -479,8 +512,9 @@ async fn create_empty_user_layer(
     let SymlinkWritePaths {
         read_path,
         write_path,
-    } = resolve_symlink_write_paths(config_toml.as_path())
-        .map_err(|err| ConfigManagerError::io("failed to resolve user config path", err))?;
+    } = resolve_symlink_write_paths(config_toml.as_path()).map_err(|err| {
+        ConfigManagerError::io(tr(current(), "failed to resolve user config path"), err)
+    })?;
     let toml_value = match read_path {
         Some(path) => match tokio::fs::read_to_string(&path).await {
             Ok(contents) => toml::from_str(&contents).map_err(|e| {
@@ -837,9 +871,11 @@ fn override_message(layer: &ConfigLayerSource) -> String {
                 file.display()
             )
         }
-        ConfigLayerSource::LegacyManagedConfigTomlFromMdm => {
-            "Overridden by legacy managed configuration from MDM".to_string()
-        }
+        ConfigLayerSource::LegacyManagedConfigTomlFromMdm => tr(
+            current(),
+            "Overridden by legacy managed configuration from MDM",
+        )
+        .to_string(),
     }
 }
 

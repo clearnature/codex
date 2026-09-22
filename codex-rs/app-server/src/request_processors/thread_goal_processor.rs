@@ -7,6 +7,9 @@ use codex_goal_extension::GoalService;
 use codex_goal_extension::GoalServiceError;
 use codex_goal_extension::GoalSetRequest;
 use codex_goal_extension::GoalTokenBudgetUpdate;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
 use codex_protocol::protocol::ThreadSettingsAppliedEvent;
@@ -126,7 +129,7 @@ impl ThreadGoalRequestProcessor {
         params: ThreadGoalSetParams,
     ) -> Result<(), JSONRPCErrorError> {
         if !self.config.features.enabled(Feature::Goals) {
-            return Err(invalid_request("goals feature is disabled"));
+            return Err(invalid_request(tr(current(), "goals feature is disabled")));
         }
 
         let thread_id = parse_thread_id_for_request(params.thread_id.as_str())?;
@@ -226,7 +229,7 @@ impl ThreadGoalRequestProcessor {
         params: ThreadGoalGetParams,
     ) -> Result<ThreadGoalGetResponse, JSONRPCErrorError> {
         if !self.config.features.enabled(Feature::Goals) {
-            return Err(invalid_request("goals feature is disabled"));
+            return Err(invalid_request(tr(current(), "goals feature is disabled")));
         }
 
         let thread_id = parse_thread_id_for_request(params.thread_id.as_str())?;
@@ -248,7 +251,7 @@ impl ThreadGoalRequestProcessor {
         params: ThreadGoalClearParams,
     ) -> Result<(), JSONRPCErrorError> {
         if !self.config.features.enabled(Feature::Goals) {
-            return Err(invalid_request("goals feature is disabled"));
+            return Err(invalid_request(tr(current(), "goals feature is disabled")));
         }
 
         let thread_id = parse_thread_id_for_request(params.thread_id.as_str())?;
@@ -289,8 +292,10 @@ impl ThreadGoalRequestProcessor {
                 ensure_direct_input_allowed(thread.as_ref()).await?;
             }
             if thread.rollout_path().is_none() {
-                return Err(invalid_request(format!(
-                    "ephemeral thread does not support goals: {thread_id}"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "ephemeral thread does not support goals: {0}",
+                    &[&thread_id.to_string()],
                 )));
             }
             if let Some(state_db) = thread.state_db() {
@@ -304,19 +309,34 @@ impl ThreadGoalRequestProcessor {
             )
             .await
             .map_err(|err| {
-                internal_error(format!("failed to locate thread id {thread_id}: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to locate thread id {0}: {1}",
+                    &[&thread_id.to_string(), &err.to_string()],
+                ))
             })?
-            .ok_or_else(|| invalid_request(format!("thread not found: {thread_id}")))?;
+            .ok_or_else(|| {
+                invalid_request(tr_with(
+                    current(),
+                    "thread not found: {0}",
+                    &[&thread_id.to_string()],
+                ))
+            })?;
             if matches!(access, GoalAccess::Mutate) {
                 let session_meta = codex_rollout::read_session_meta_line(&rollout_path)
                     .await
                     .map_err(|err| {
-                        internal_error(format!("failed to read thread ownership: {err}"))
+                        internal_error(tr_with(
+                            current(),
+                            "failed to read thread ownership: {0}",
+                            &[&err.to_string()],
+                        ))
                     })?;
                 if session_meta.meta.id != thread_id {
-                    return Err(invalid_request(
+                    return Err(invalid_request(tr(
+                        current(),
                         "thread metadata does not match requested id",
-                    ));
+                    )));
                 }
                 if matches!(
                     session_meta.meta.source,
@@ -327,7 +347,11 @@ impl ThreadGoalRequestProcessor {
                     let history = RolloutRecorder::get_rollout_history(&rollout_path)
                         .await
                         .map_err(|err| {
-                            internal_error(format!("failed to read thread ownership: {err}"))
+                            internal_error(tr_with(
+                                current(),
+                                "failed to read thread ownership: {0}",
+                                &[&err.to_string()],
+                            ))
                         })?;
                     if !can_accept_direct_input(
                         history.get_multi_agent_version(),
@@ -341,9 +365,12 @@ impl ThreadGoalRequestProcessor {
             }
         }
 
-        self.state_db
-            .clone()
-            .ok_or_else(|| internal_error("sqlite state db unavailable for thread goals"))
+        self.state_db.clone().ok_or_else(|| {
+            internal_error(tr(
+                current(),
+                "sqlite state db unavailable for thread goals",
+            ))
+        })
     }
 
     async fn reconcile_thread_goal_rollout(
@@ -354,8 +381,10 @@ impl ThreadGoalRequestProcessor {
         let running_thread = self.thread_manager.get_thread(thread_id).await.ok();
         let rollout_path = match running_thread.as_ref() {
             Some(thread) => thread.rollout_path().ok_or_else(|| {
-                invalid_request(format!(
-                    "ephemeral thread does not support goals: {thread_id}"
+                invalid_request(tr_with(
+                    current(),
+                    "ephemeral thread does not support goals: {0}",
+                    &[&thread_id.to_string()],
                 ))
             })?,
             None => codex_rollout::find_thread_path_by_id_str(
@@ -365,9 +394,19 @@ impl ThreadGoalRequestProcessor {
             )
             .await
             .map_err(|err| {
-                internal_error(format!("failed to locate thread id {thread_id}: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to locate thread id {0}: {1}",
+                    &[&thread_id.to_string(), &err.to_string()],
+                ))
             })?
-            .ok_or_else(|| invalid_request(format!("thread not found: {thread_id}")))?,
+            .ok_or_else(|| {
+                invalid_request(tr_with(
+                    current(),
+                    "thread not found: {0}",
+                    &[&thread_id.to_string()],
+                ))
+            })?,
         };
 
         if let Ok(Some(metadata)) = state_db.get_thread(thread_id).await
@@ -525,6 +564,11 @@ fn goal_service_error(err: GoalServiceError) -> JSONRPCErrorError {
 }
 
 fn parse_thread_id_for_request(thread_id: &str) -> Result<ThreadId, JSONRPCErrorError> {
-    ThreadId::from_string(thread_id)
-        .map_err(|err| invalid_request(format!("invalid thread id: {err}")))
+    ThreadId::from_string(thread_id).map_err(|err| {
+        invalid_request(tr_with(
+            current(),
+            "invalid thread id: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }

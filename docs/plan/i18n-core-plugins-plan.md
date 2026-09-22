@@ -1491,3 +1491,22 @@ clippy 报 `:223` redundant clone —— 按**行上下文**（`resolve_http_cli
 
 `i18n-check` `r-mud0jv5e-7m3258`（4018 词条全零）；fmt/check/clippy EXIT=0。
 对账：mcp 14→0；app-server 277→**263**。
+
+## 四十九、app-server 批 J：thread_goal_processor.rs 14 条全译
+
+### 49.1 判据
+
+goals 特性开关/ephemeral 拒绝/线程定位与所有权读取/sqlite 缺失/元数据不匹配 ——
+全 JSON-RPC 用户可见（`invalid_request`/`internal_error`）⇒ **全译**。复用既有键 2 组（thread not found / invalid thread id）。
+
+### 49.2 返工：pattern A 丢 `?` 两次（同型两处）
+
+`old→new` 的新串漏带 `?` ⇒ `.ok_or_else(...)` 变体产生两处语义错误：
+`:324`（缺 `?` → Result 未解包）与 `:409`（match 臂类型不兼容）。均按编译指针修复。
+⚠ **教训（可判据化）**：单行 `.ok_or_else(...)` 替换时，`?` 是**模式的一部分**——
+old 里带 `?` 则 new 必须带；替换后 grep `})?,` / `});` 清点逐处确认（本轮两处都是编译兜住的，模式应自检）。
+
+### 49.3 门禁
+
+`i18n-check` `r-mud1a08d-4ysdok`（4024 词条全零）；fmt/check/clippy EXIT=0。
+对账：thread_goal 14→0；app-server 263→**249**。

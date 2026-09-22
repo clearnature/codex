@@ -10625,6 +10625,27 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "failed to deserialize MCP resource read response: {0}",
         "反序列化MCP资源读取响应失败：{0}",
     ),
+    ("goals feature is disabled", "goals特性已禁用"),
+    (
+        "ephemeral thread does not support goals: {0}",
+        "临时线程不支持goals：{0}",
+    ),
+    (
+        "failed to locate thread id {0}: {1}",
+        "定位线程id {0}失败：{1}",
+    ),
+    (
+        "failed to read thread ownership: {0}",
+        "读取线程所有权失败：{0}",
+    ),
+    (
+        "thread metadata does not match requested id",
+        "线程元数据与请求的id不匹配",
+    ),
+    (
+        "sqlite state db unavailable for thread goals",
+        "线程goals需要sqlite状态数据库，当前不可用",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

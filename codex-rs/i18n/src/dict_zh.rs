@@ -10542,6 +10542,44 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "duplicate resolved project root: {0}",
         "解析后的项目根目录重复：{0}",
     ),
+    (
+        "direct app-server input is not allowed for unloaded spawned sub-agents",
+        "不允许对未加载的派生子代理直接输入app-server消息",
+    ),
+    (
+        "invalid queue pagination cursor: {0}",
+        "无效的队列分页游标：{0}",
+    ),
+    ("queued submission not found: {0}", "未找到排队提交项：{0}"),
+    (
+        "resume the thread before starting a queued message",
+        "启动排队消息前请先恢复线程",
+    ),
+    (
+        "thread already has an active or pending turn",
+        "线程已有活跃或待处理的turn",
+    ),
+    (
+        "Core declined to start queued user message: {0}",
+        "Core拒绝启动排队用户消息：{0}",
+    ),
+    ("user message queue is unavailable", "用户消息队列不可用"),
+    (
+        "ephemeral thread does not support queued submissions: {0}",
+        "临时线程不支持排队提交：{0}",
+    ),
+    (
+        "queued submission operation failed: {0}",
+        "排队提交操作失败：{0}",
+    ),
+    (
+        "queued submission does not contain user input",
+        "排队提交不包含用户输入",
+    ),
+    (
+        "queued submission is missing its client message id",
+        "排队提交缺少客户端消息id",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

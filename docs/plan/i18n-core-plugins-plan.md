@@ -1435,3 +1435,22 @@ duplicate root/thread id、store 错误模板（`{operation} is unavailable…` 
 
 `i18n-check` `r-muczgawd-gegngn`（3995 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
 fmt/check/clippy EXIT=0。
+
+## 四十六、app-server 批 G：thread_queue_processor.rs 15 条全译
+
+### 46.1 判据与执行
+
+排队提交/游标/ephemeral/archived/Core 拒绝 全 JSON-RPC 用户可见 ⇒ 全译。
+`const DIRECT_INPUT_TO_UNLOADED_SUBAGENT_ERROR` → **const→fn**（§3.6，invalid_request 直接消费 ⇒ 译）。
+复用既有键 4 组（invalid thread id / thread not found / failed to read thread / session archived）。
+
+### 46.2 返工
+
+- `?;` vs `?,`（结构位置不同）一处 NF 后精确修正。
+- `thread_id: ThreadId` ×3 需 `.to_string()`（E0308）——**预检⑤ 又一次**：字段类型先查。
+- 词条提取放在**所有替换之后**（吸取 §45.2 教训）——本批 missing 11 一次补齐、零返工。
+
+### 46.3 门禁
+
+`i18n-check` `r-muczubmy-az1a6q`（**4006 词条**（词典首次破 4000）/ missing 0 / unused 0 / duplicate 0 / coverage 99.8%）；
+fmt/check/clippy EXIT=0。

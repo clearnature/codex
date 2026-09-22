@@ -10580,6 +10580,26 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "queued submission is missing its client message id",
         "排队提交缺少客户端消息id",
     ),
+    (
+        "cursor {0} exceeds total models {1}",
+        "游标{0}超出模型总数{1}",
+    ),
+    (
+        "cursor {0} exceeds total feature flags {1}",
+        "游标{0}超出特性开关总数{1}",
+    ),
+    (
+        "failed to resolve permission profiles: {0}",
+        "解析权限档案失败：{0}",
+    ),
+    (
+        "cursor {0} exceeds total permission profiles {1}",
+        "游标{0}超出权限档案总数{1}",
+    ),
+    (
+        "failed to update skill settings: {0}",
+        "更新技能设置失败：{0}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

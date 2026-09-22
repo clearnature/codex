@@ -1,6 +1,9 @@
 use super::*;
 use codex_core::config::permission_profile_catalog;
 use codex_hooks::HookListEntryHandler;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use futures::StreamExt;
 
 #[derive(Clone)]
@@ -237,7 +240,13 @@ impl CatalogRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 
     async fn list_models(
@@ -268,15 +277,17 @@ impl CatalogRequestProcessor {
         let effective_limit = limit.unwrap_or(total as u32).max(1) as usize;
         let effective_limit = effective_limit.min(total);
         let start = match cursor {
-            Some(cursor) => cursor
-                .parse::<usize>()
-                .map_err(|_| invalid_request(format!("invalid cursor: {cursor}")))?,
+            Some(cursor) => cursor.parse::<usize>().map_err(|_| {
+                invalid_request(tr_with(current(), "invalid cursor: {0}", &[&cursor]))
+            })?,
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(format!(
-                "cursor {start} exceeds total models {total}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "cursor {0} exceeds total models {1}",
+                &[&start.to_string(), &total.to_string()],
             )));
         }
 
@@ -318,18 +329,35 @@ impl CatalogRequestProcessor {
         } = params;
         let config = match thread_id.as_deref() {
             Some(thread_id) => {
-                let thread_id = ThreadId::from_string(thread_id)
-                    .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
+                let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid thread id: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?;
                 let thread = self
                     .thread_manager
                     .get_thread(thread_id)
                     .await
-                    .map_err(|_| invalid_request(format!("thread not found: {thread_id}")))?;
+                    .map_err(|_| {
+                        invalid_request(tr_with(
+                            current(),
+                            "thread not found: {0}",
+                            &[&thread_id.to_string()],
+                        ))
+                    })?;
                 let thread_config = thread.config().await;
                 self.config_manager
                     .load_latest_config_for_thread(thread_config.as_ref())
                     .await
-                    .map_err(|err| internal_error(format!("failed to reload config: {err}")))?
+                    .map_err(|err| {
+                        internal_error(tr_with(
+                            current(),
+                            "failed to reload config: {0}",
+                            &[&err.to_string()],
+                        ))
+                    })?
             }
             None => self.load_latest_config(/*fallback_cwd*/ None).await?,
         };
@@ -386,14 +414,22 @@ impl CatalogRequestProcessor {
         let start = match cursor {
             Some(cursor) => match cursor.parse::<usize>() {
                 Ok(idx) => idx,
-                Err(_) => return Err(invalid_request(format!("invalid cursor: {cursor}"))),
+                Err(_) => {
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "invalid cursor: {0}",
+                        &[&cursor],
+                    )));
+                }
             },
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(format!(
-                "cursor {start} exceeds total feature flags {total}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "cursor {0} exceeds total feature flags {1}",
+                &[&start.to_string(), &total.to_string()],
             )));
         }
 
@@ -416,20 +452,32 @@ impl CatalogRequestProcessor {
         let config_layer_stack = match cwd {
             Some(cwd) => {
                 let cwd = PathBuf::from(cwd);
-                let (_, config_layer_stack) = self
-                    .resolve_cwd_config(&cwd)
-                    .await
-                    .map_err(|err| internal_error(format!("failed to reload config: {err}")))?;
+                let (_, config_layer_stack) =
+                    self.resolve_cwd_config(&cwd).await.map_err(|err| {
+                        internal_error(tr_with(current(), "failed to reload config: {0}", &[&err]))
+                    })?;
                 config_layer_stack
             }
             None => self
                 .config_manager
                 .load_config_layers(/*cwd*/ None)
                 .await
-                .map_err(|err| internal_error(format!("failed to reload config: {err}")))?,
+                .map_err(|err| {
+                    internal_error(tr_with(
+                        current(),
+                        "failed to reload config: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?,
         };
         let profiles = permission_profile_catalog(&config_layer_stack)
-            .map_err(|err| internal_error(format!("failed to resolve permission profiles: {err}")))?
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to resolve permission profiles: {0}",
+                    &[&err.to_string()],
+                ))
+            })?
             .into_iter()
             .map(|profile| PermissionProfileSummary {
                 id: profile.id,
@@ -441,15 +489,17 @@ impl CatalogRequestProcessor {
         let effective_limit = limit.unwrap_or(total as u32).max(1) as usize;
         let effective_limit = effective_limit.min(total);
         let start = match cursor {
-            Some(cursor) => cursor
-                .parse::<usize>()
-                .map_err(|_| invalid_request(format!("invalid cursor: {cursor}")))?,
+            Some(cursor) => cursor.parse::<usize>().map_err(|_| {
+                invalid_request(tr_with(current(), "invalid cursor: {0}", &[&cursor]))
+            })?,
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(format!(
-                "cursor {start} exceeds total permission profiles {total}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "cursor {0} exceeds total permission profiles {1}",
+                &[&start.to_string(), &total.to_string()],
             )));
         }
 
@@ -670,6 +720,12 @@ impl CatalogRequestProcessor {
                     effective_enabled: enabled,
                 }
             })
-            .map_err(|err| internal_error(format!("failed to update skill settings: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to update skill settings: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 }

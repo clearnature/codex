@@ -1454,3 +1454,22 @@ fmt/check/clippy EXIT=0。
 
 `i18n-check` `r-muczubmy-az1a6q`（**4006 词条**（词典首次破 4000）/ missing 0 / unused 0 / duplicate 0 / coverage 99.8%）；
 fmt/check/clippy EXIT=0。
+
+## 四十七、app-server 批 H：catalog_processor.rs 14 条全译
+
+### 47.1 判据
+
+models/feature flags/permission profiles 三组分页（游标越界×3、invalid cursor×3、reload config×5）、
+skill settings 更新 —— 全 JSON-RPC 用户可见 ⇒ **全译**。复用既有键 2 组（invalid thread id / thread not found）。
+
+### 47.2 返工（双向类型错位）
+
+clippy 报 `:460` redundant clone（`resolve_cwd_config` err 是 **String**）；
+我按模糊模式替换却打中 `:731` skill settings（err 是 **Error**）⇒ E0308 反向。
+**教训**：clippy 指名的站点要按**该行上下文**精确定位，不能按「同字符串键」盲替——
+同键在不同调用点 err 类型可能不同（String vs io::Error vs anyhow）。
+
+### 47.3 门禁
+
+`i18n-check` `r-mud08ii8-deo0nx`（4011 词条全零）；fmt/check/clippy EXIT=0。
+对账：catalog 14→0；app-server 291→**277**。

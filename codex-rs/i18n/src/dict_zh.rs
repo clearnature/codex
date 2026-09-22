@@ -10244,6 +10244,105 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "Overridden by legacy managed configuration from MDM",
         "被MDM的旧式托管配置覆盖",
     ),
+    (
+        "{0} permission selection missing thread snapshot",
+        "{0}权限选择缺少线程快照",
+    ),
+    (
+        "turn settings operation ended before replying",
+        "turn设置操作在回复前结束",
+    ),
+    ("sha must not be empty", "sha不能为空"),
+    (
+        "paginated threads do not support detached review",
+        "分页线程不支持分离式review",
+    ),
+    ("no active turn to interrupt", "没有可中断的活跃turn"),
+    (
+        "items[{0}] is not a valid response item: {1}",
+        "items[{0}]不是有效的响应项：{1}",
+    ),
+    ("instructions must not be empty", "instructions不能为空"),
+    ("input must not be empty", "input不能为空"),
+    (
+        "failed to update thread settings: {0}",
+        "更新线程设置失败：{0}",
+    ),
+    (
+        "failed to submit turn settings: {0}",
+        "提交turn设置失败：{0}",
+    ),
+    (
+        "failed to stop realtime conversation: {0}",
+        "停止实时会话失败：{0}",
+    ),
+    ("failed to steer turn: {0}", "转向turn失败：{0}"),
+    ("failed to start review: {0}", "启动review失败：{0}"),
+    (
+        "failed to start realtime conversation: {0}",
+        "启动实时会话失败：{0}",
+    ),
+    (
+        "failed to start detached review: {0}",
+        "启动分离式review失败：{0}",
+    ),
+    ("failed to interrupt {0}: {1}", "中断{0}失败：{1}"),
+    (
+        "failed to inject response items: {0}",
+        "注入响应项失败：{0}",
+    ),
+    (
+        "failed to append realtime conversation text: {0}",
+        "追加实时会话文本失败：{0}",
+    ),
+    (
+        "failed to append realtime conversation speech: {0}",
+        "追加实时会话语音失败：{0}",
+    ),
+    (
+        "failed to append realtime conversation audio: {0}",
+        "追加实时会话音频失败：{0}",
+    ),
+    ("expectedTurnId must not be empty", "expectedTurnId不能为空"),
+    (
+        "expected active turn id {0} but found {1}",
+        "期望活跃turn id为{0}，实际为{1}",
+    ),
+    (
+        "expected active turn id `{0}` but found `{1}`",
+        "期望活跃turn id为`{0}`，实际为`{1}`",
+    ),
+    (
+        "existingCall transport does not support {0}",
+        "existingCall传输不支持{0}",
+    ),
+    ("cannot steer a review turn", "无法转向review turn"),
+    ("cannot steer a compact turn", "无法转向compact turn"),
+    ("branch must not be empty", "branch不能为空"),
+    (
+        "active turn uses a different output schema",
+        "当前活跃turn使用了不同的输出schema",
+    ),
+    (
+        "`toolOutput` cannot be combined with nonempty `input`",
+        "`toolOutput`不能与非空`input`组合使用",
+    ),
+    (
+        "`toolOutput.name` must not be empty",
+        "`toolOutput.name`不能为空",
+    ),
+    (
+        "`permissions` cannot be combined with `sandboxPolicy`",
+        "`permissions`不能与`sandboxPolicy`组合使用",
+    ),
+    (
+        "Use thread/start followed by review/start with delivery \"inline\" for a separate review thread, or thread/fork followed by turn/start with your own review instructions.",
+        "改用thread/start后接delivery为inline的review/start创建独立review线程，或thread/fork后接自定义review指令的turn/start。",
+    ),
+    (
+        "Input exceeds the maximum length of 100000 characters.",
+        "输入超出最大长度100000个字符。",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

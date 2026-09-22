@@ -1492,3 +1492,8 @@ no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_proce
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6267	§12.1 匹配键：同上（第二处）
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6292	§12.1 匹配键：`message == no_rollout_message`（:6293）比对 ThreadStoreError 文本
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6338	§12.1 匹配键：`message == no_rollout_message`（:6340）比对 ThreadStoreError 文本
+Review the current code changes (staged, unstaged, and untracked files).	codex-rs/app-server/src/request_processors/turn_processor.rs:455	§12.2 喂模型：target_prompt（review 目标提示）交给模型执行，译了会改模型行为
+Review the code changes against the base branch {branch:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:459	§12.2 同上
+Review the changes introduced by commit {sha:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:462	§12.2 同上
+review thread	codex-rs/app-server/src/request_processors/turn_processor.rs:1509	§12.3 日志标签：log_listener_attach_result 的 label 参数，只进 tracing
+Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1552	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）

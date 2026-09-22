@@ -3,6 +3,7 @@ use super::*;
 use codex_agent_extension::AgentInvocation;
 use codex_agent_extension::AgentRun;
 use codex_agent_extension::AgentRunner;
+use codex_i18n::{current, tr, tr_with};
 use codex_protocol::error::CodexErrorDetails;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::FunctionCallOutputBody;
@@ -230,10 +231,19 @@ impl TurnRequestProcessor {
             },
         )
         .await
-        .map_err(|err| internal_error(format!("failed to submit turn settings: {err}")))?;
-        let outcome = outcome
-            .await
-            .map_err(|_| internal_error("turn settings operation ended before replying"))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to submit turn settings: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
+        let outcome = outcome.await.map_err(|_| {
+            internal_error(tr(
+                current(),
+                "turn settings operation ended before replying",
+            ))
+        })?;
         let status = match outcome {
             TurnSettingsUpdateOutcome::Applied => TurnSettingsUpdateStatus::Applied,
             TurnSettingsUpdateOutcome::TargetUnavailable => {
@@ -339,7 +349,7 @@ impl TurnRequestProcessor {
                     &[request_id.connection_id],
                     ServerNotification::DeprecationNotice(DeprecationNoticeNotification {
                         summary: "review/start with delivery \"detached\" is deprecated and will be removed in a future release.".to_string(),
-                        details: Some("Use thread/start followed by review/start with delivery \"inline\" for a separate review thread, or thread/fork followed by turn/start with your own review instructions.".to_string()),
+                        details: Some(tr(current(), "Use thread/start followed by review/start with delivery \"inline\" for a separate review thread, or thread/fork followed by turn/start with your own review instructions.").to_string()),
                     }),
                 )
                 .await;
@@ -368,14 +378,25 @@ impl TurnRequestProcessor {
         thread_id: &str,
     ) -> Result<(ThreadId, Arc<CodexThread>), JSONRPCErrorError> {
         // Resolve the core conversation handle from a v2 thread id string.
-        let thread_id = ThreadId::from_string(thread_id)
-            .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
+        let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid thread id: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
 
         let thread = self
             .thread_manager
             .get_thread(thread_id)
             .await
-            .map_err(|_| invalid_request(format!("thread not found: {thread_id}")))?;
+            .map_err(|_| {
+                invalid_request(tr_with(
+                    current(),
+                    "thread not found: {0}",
+                    &[&thread_id.to_string()],
+                ))
+            })?;
 
         Ok((thread_id, thread))
     }
@@ -417,14 +438,18 @@ impl TurnRequestProcessor {
             ApiReviewTarget::BaseBranch { branch } => {
                 let branch = branch.trim().to_string();
                 if branch.is_empty() {
-                    return Err(invalid_request("branch must not be empty".to_string()));
+                    return Err(invalid_request(
+                        tr(current(), "branch must not be empty").to_string(),
+                    ));
                 }
                 ApiReviewTarget::BaseBranch { branch }
             }
             ApiReviewTarget::Commit { sha, title } => {
                 let sha = sha.trim().to_string();
                 if sha.is_empty() {
-                    return Err(invalid_request("sha must not be empty".to_string()));
+                    return Err(invalid_request(
+                        tr(current(), "sha must not be empty").to_string(),
+                    ));
                 }
                 let title = title
                     .map(|t| t.trim().to_string())
@@ -435,7 +460,7 @@ impl TurnRequestProcessor {
                 let trimmed = instructions.trim().to_string();
                 if trimmed.is_empty() {
                     return Err(invalid_request(
-                        "instructions must not be empty".to_string(),
+                        tr(current(), "instructions must not be empty").to_string(),
                     ));
                 }
                 ApiReviewTarget::Custom {
@@ -492,8 +517,9 @@ impl TurnRequestProcessor {
     }
 
     pub(super) fn input_too_large_error(actual_chars: usize) -> JSONRPCErrorError {
-        let mut error = invalid_params(format!(
-            "Input exceeds the maximum length of {MAX_USER_INPUT_TEXT_CHARS} characters."
+        let mut error = invalid_params(tr(
+            current(),
+            "Input exceeds the maximum length of 100000 characters.",
         ));
         error.data = Some(serde_json::json!({
             "input_error_code": INPUT_TOO_LARGE_ERROR_CODE,
@@ -528,12 +554,16 @@ impl TurnRequestProcessor {
             .await?;
         if let Some(tool_output) = &params.tool_output {
             if !params.input.is_empty() {
-                return Err(invalid_request(
+                return Err(invalid_request(tr(
+                    current(),
                     "`toolOutput` cannot be combined with nonempty `input`",
-                ));
+                )));
             }
             if tool_output.name.is_empty() {
-                return Err(invalid_request("`toolOutput.name` must not be empty"));
+                return Err(invalid_request(tr(
+                    current(),
+                    "`toolOutput.name` must not be empty",
+                )));
             }
         }
         let actual_chars = params
@@ -652,7 +682,11 @@ impl TurnRequestProcessor {
             )
             .await
             .map_err(|err| {
-                let error = internal_error(format!("failed to submit turn input: {err}"));
+                let error = internal_error(tr_with(
+                    current(),
+                    "failed to submit turn input: {0}",
+                    &[&err.to_string()],
+                ));
                 self.track_error_response(&request_id, &error, /*error_type*/ None);
                 error
             })?;
@@ -660,7 +694,11 @@ impl TurnRequestProcessor {
             TurnInputSubmission::Started { turn_id } => (turn_id, true),
             TurnInputSubmission::Steered { turn_id } => (turn_id, false),
             TurnInputSubmission::NotSubmitted { reason } => {
-                let error = internal_error(format!("failed to submit turn input: {reason:?}"));
+                let error = internal_error(tr_with(
+                    current(),
+                    "failed to submit turn input: {0}",
+                    &[&format!("{reason:?}")],
+                ));
                 self.track_error_response(&request_id, &error, /*error_type*/ None);
                 return Err(error);
             }
@@ -782,9 +820,10 @@ impl TurnRequestProcessor {
         } = params;
 
         if sandbox_policy.is_some() && permissions.is_some() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "`permissions` cannot be combined with `sandboxPolicy`",
-            ));
+            )));
         }
 
         let collaboration_mode =
@@ -819,8 +858,10 @@ impl TurnRequestProcessor {
         let (permission_profile, active_permission_profile, profile_workspace_roots) =
             if let Some(permissions) = permissions {
                 let Some(snapshot) = snapshot.as_ref() else {
-                    return Err(internal_error(format!(
-                        "{method} permission selection missing thread snapshot"
+                    return Err(internal_error(tr_with(
+                        current(),
+                        "{0} permission selection missing thread snapshot",
+                        &[method],
                     )));
                 };
                 let overrides = ConfigOverrides {
@@ -847,8 +888,10 @@ impl TurnRequestProcessor {
                 if let Some(warning) = config.startup_warnings.iter().find(|warning| {
                     warning.contains("Configured value for `permission_profile` is disallowed")
                 }) {
-                    return Err(invalid_request(format!(
-                        "invalid thread settings override: {warning}"
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "invalid thread settings override: {0}",
+                        &[warning],
                     )));
                 }
                 (
@@ -881,7 +924,11 @@ impl TurnRequestProcessor {
                 })
                 .await
                 .map_err(|err| {
-                    invalid_request(format!("invalid thread settings override: {err}"))
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid thread settings override: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
         }
 
@@ -947,7 +994,13 @@ impl TurnRequestProcessor {
                 Op::ThreadSettings { thread_settings },
             )
             .await
-            .map_err(|err| internal_error(format!("failed to update thread settings: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to update thread settings: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         }
 
         Ok(ThreadSettingsUpdateResponse {})
@@ -967,8 +1020,13 @@ impl TurnRequestProcessor {
             .into_iter()
             .enumerate()
             .map(|(index, value)| {
-                serde_json::from_value::<ResponseItem>(value)
-                    .map_err(|err| format!("items[{index}] is not a valid response item: {err}"))
+                serde_json::from_value::<ResponseItem>(value).map_err(|err| {
+                    tr_with(
+                        current(),
+                        "items[{0}] is not a valid response item: {1}",
+                        &[&index.to_string(), &err.to_string()],
+                    )
+                })
             })
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(invalid_request)?;
@@ -979,7 +1037,11 @@ impl TurnRequestProcessor {
             .await
             .map_err(|err| match err.details() {
                 CodexErrorDetails::InvalidRequest(message) => invalid_request(message.clone()),
-                _ => internal_error(format!("failed to inject response items: {err}")),
+                _ => internal_error(tr_with(
+                    current(),
+                    "failed to inject response items: {0}",
+                    &[&err.to_string()],
+                )),
             })?;
         Ok(ThreadInjectItemsResponse {})
     }
@@ -1000,7 +1062,13 @@ impl TurnRequestProcessor {
                 mcp_elicitations_auto_deny,
             )
             .await
-            .map_err(|err| internal_error(format!("failed to set app server client info: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to set app server client info: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 
     async fn turn_steer_inner(
@@ -1018,7 +1086,10 @@ impl TurnRequestProcessor {
             .await?;
 
         if params.expected_turn_id.is_empty() {
-            return Err(invalid_request("expectedTurnId must not be empty"));
+            return Err(invalid_request(tr(
+                current(),
+                "expectedTurnId must not be empty",
+            )));
         }
         self.outgoing
             .record_request_turn_id(request_id, &params.expected_turn_id)
@@ -1051,7 +1122,11 @@ impl TurnRequestProcessor {
             )
             .await
             .map_err(|err| {
-                let error = internal_error(format!("failed to steer turn: {err}"));
+                let error = internal_error(tr_with(
+                    current(),
+                    "failed to steer turn: {0}",
+                    &[&err.to_string()],
+                ));
                 self.track_error_response(request_id, &error, /*error_type*/ None);
                 error
             })?;
@@ -1067,7 +1142,11 @@ impl TurnRequestProcessor {
                         )),
                     ),
                     NotSubmittedReason::ExpectedTurnMismatch { expected, actual } => (
-                        format!("expected active turn id `{expected}` but found `{actual}`"),
+                        tr_with(
+                            current(),
+                            "expected active turn id `{0}` but found `{1}`",
+                            &[&expected, &actual],
+                        ),
                         None,
                         Some(AnalyticsJsonRpcError::TurnSteer(
                             TurnSteerRequestError::ExpectedTurnMismatch,
@@ -1076,11 +1155,11 @@ impl TurnRequestProcessor {
                     NotSubmittedReason::ActiveTurnNotSteerable { turn_kind } => {
                         let (message, turn_steer_error) = match turn_kind {
                             codex_protocol::protocol::NonSteerableTurnKind::Review => (
-                                "cannot steer a review turn".to_string(),
+                                tr(current(), "cannot steer a review turn").to_string(),
                                 TurnSteerRequestError::NonSteerableReview,
                             ),
                             codex_protocol::protocol::NonSteerableTurnKind::Compact => (
-                                "cannot steer a compact turn".to_string(),
+                                tr(current(), "cannot steer a compact turn").to_string(),
                                 TurnSteerRequestError::NonSteerableCompact,
                             ),
                         };
@@ -1109,12 +1188,12 @@ impl TurnRequestProcessor {
                         )
                     }
                     NotSubmittedReason::EmptyInput => (
-                        "input must not be empty".to_string(),
+                        tr(current(), "input must not be empty").to_string(),
                         None,
                         Some(AnalyticsJsonRpcError::Input(InputError::Empty)),
                     ),
                     NotSubmittedReason::ActiveTurnOutputSchemaMismatch => (
-                        "active turn uses a different output schema".to_string(),
+                        tr(current(), "active turn uses a different output schema").to_string(),
                         None,
                         None,
                     ),
@@ -1192,8 +1271,10 @@ impl TurnRequestProcessor {
                 None
             };
             if let Some(option) = unsupported_option {
-                return Err(invalid_request(format!(
-                    "existingCall transport does not support {option}"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "existingCall transport does not support {0}",
+                    &[option],
                 )));
             }
         }
@@ -1254,7 +1335,13 @@ impl TurnRequestProcessor {
             }),
         )
         .await
-        .map_err(|err| internal_error(format!("failed to start realtime conversation: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to start realtime conversation: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
         Ok(Some(ThreadRealtimeStartResponse::default()))
     }
 
@@ -1278,8 +1365,10 @@ impl TurnRequestProcessor {
         )
         .await
         .map_err(|err| {
-            internal_error(format!(
-                "failed to append realtime conversation audio: {err}"
+            internal_error(tr_with(
+                current(),
+                "failed to append realtime conversation audio: {0}",
+                &[&err.to_string()],
             ))
         })?;
         Ok(Some(ThreadRealtimeAppendAudioResponse::default()))
@@ -1306,8 +1395,10 @@ impl TurnRequestProcessor {
         )
         .await
         .map_err(|err| {
-            internal_error(format!(
-                "failed to append realtime conversation text: {err}"
+            internal_error(tr_with(
+                current(),
+                "failed to append realtime conversation text: {0}",
+                &[&err.to_string()],
             ))
         })?;
         Ok(Some(ThreadRealtimeAppendTextResponse::default()))
@@ -1331,8 +1422,10 @@ impl TurnRequestProcessor {
         )
         .await
         .map_err(|err| {
-            internal_error(format!(
-                "failed to append realtime conversation speech: {err}"
+            internal_error(tr_with(
+                current(),
+                "failed to append realtime conversation speech: {0}",
+                &[&err.to_string()],
             ))
         })?;
         Ok(Some(ThreadRealtimeAppendSpeechResponse::default()))
@@ -1352,7 +1445,11 @@ impl TurnRequestProcessor {
         self.submit_core_op(request_id, thread.as_ref(), Op::RealtimeConversationClose)
             .await
             .map_err(|err| {
-                internal_error(format!("failed to stop realtime conversation: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to stop realtime conversation: {0}",
+                    &[&err.to_string()],
+                ))
             })?;
         Ok(Some(ThreadRealtimeStopResponse::default()))
     }
@@ -1414,7 +1511,13 @@ impl TurnRequestProcessor {
                 Op::Review { review_request },
             )
             .await
-            .map_err(|err| internal_error(format!("failed to start review: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to start review: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         let turn = Self::build_review_turn(turn_id, display_text);
         self.emit_review_started(request_id, turn, parent_thread_id)
             .await;
@@ -1434,9 +1537,10 @@ impl TurnRequestProcessor {
             parent_thread.config_snapshot().await.history_mode,
             codex_protocol::protocol::ThreadHistoryMode::Paginated
         ) {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "paginated threads do not support detached review",
-            ));
+            )));
         }
         let mut config = self.config.as_ref().clone();
         if let Some(review_model) = &config.review_model {
@@ -1458,7 +1562,13 @@ impl TurnRequestProcessor {
                 },
             )
             .await
-            .map_err(|err| internal_error(format!("failed to start detached review: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to start detached review: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
 
         let fallback_provider = self.config.model_provider_id.as_str();
         let stored_thread = match review_thread
@@ -1582,15 +1692,19 @@ impl TurnRequestProcessor {
                 let mut thread_state = thread_state.lock().await;
                 if let Some(active_turn) = thread_state.active_turn_snapshot() {
                     if active_turn.id != turn_id {
-                        return Err(invalid_request(format!(
-                            "expected active turn id {turn_id} but found {}",
-                            active_turn.id
+                        return Err(invalid_request(tr_with(
+                            current(),
+                            "expected active turn id {0} but found {1}",
+                            &[&turn_id, &active_turn.id],
                         )));
                     }
                 } else if thread_state.last_terminal_turn_id.as_deref() == Some(turn_id.as_str())
                     || !is_running
                 {
-                    return Err(invalid_request("no active turn to interrupt"));
+                    return Err(invalid_request(tr(
+                        current(),
+                        "no active turn to interrupt",
+                    )));
                 }
                 thread_state.pending_interrupts.push(request_id.clone());
             }
@@ -1621,8 +1735,10 @@ impl TurnRequestProcessor {
                 } else {
                     "turn"
                 };
-                Err(internal_error(format!(
-                    "failed to interrupt {interrupt_target}: {err}"
+                Err(internal_error(tr_with(
+                    current(),
+                    "failed to interrupt {0}: {1}",
+                    &[interrupt_target, &err.to_string()],
                 )))
             }
         }

@@ -1336,3 +1336,24 @@ list threads、not materialized（thread/turns/list 与 includeTurns 两键）�
 ### 41.4 门禁
 
 `i18n-check` `r-muat7hob-iks5gc`（3882 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）。
+
+## 四十二、app-server 批 C：turn_processor.rs 45 条（40 译 / 5 登记）→ 清零
+
+### 42.1 判据
+
+| 类                     | 站点                                                                             | 依据                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 译                     | turn settings/steer/interrupt/realtime/review/权限选择/expectedTurnId 等 40 条   | JSON-RPC 用户可见（internal_error/invalid_request/invalid_params/DeprecationNotice） |
+| 登记（§12.2 喂模型）   | `:455 :459 :462`（review target_prompt）、`:1552`（detached review prompt 模板） | 交给模型执行的提示词，译了改模型行为                                                 |
+| 登记（§12.3 日志标签） | `:1509` `log_listener_attach_result` 的 `"review thread"` label                  | 只进 tracing                                                                         |
+
+### 42.2 细节
+
+- `:496` `{MAX_USER_INPUT_TEXT_CHARS}` const 内插展平为字面量 `100000`（En 逐字节不变原则：先读 const 实值）。
+- `{reason:?}` Debug 格式 → `&format!("{reason:?}")` 转位置参数。
+- 返工 3 次：**缺 import**（python 直改不带 `use codex_i18n`，E0425）——第 2 次同型（config_manager 同）；`expected/actual: String` 需 `&`（E0308）；`active_turn.id.to_string()` redundant clone（clippy）。
+
+### 42.3 门禁
+
+`i18n-check` `r-mucx8sx1-tl4htd`（3931 词条全零）；fmt/check/clippy EXIT=0。
+对账：turn_processor 45→0；app-server 435→**389**。

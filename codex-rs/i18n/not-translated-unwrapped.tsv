@@ -1497,3 +1497,4 @@ Review the code changes against the base branch {branch:?}.	codex-rs/app-server/
 Review the changes introduced by commit {sha:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:462	§12.2 同上
 review thread	codex-rs/app-server/src/request_processors/turn_processor.rs:1509	§12.3 日志标签：log_listener_attach_result 的 label 参数，只进 tracing
 Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1552	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）
+	codex-rs/app-server/src/lib.rs:1267	§12.3 日志：info! 的 message 位（结构化字段 exit_reason/connection_count/forced）

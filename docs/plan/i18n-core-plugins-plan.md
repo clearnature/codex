@@ -1383,3 +1383,33 @@ list threads、not materialized（thread/turns/list 与 includeTurns 两键）�
 
 `i18n-check` `r-mucy4mlr-mtcvbu`（3968 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
 fmt/check/clippy EXIT=0。对账：account 42→0；app-server 389→**348**。
+
+## 四十四、app-server 批 E：lib.rs 25 条（24 译 / 1 登记）→ 清零
+
+### 44.1 判据
+
+| 族                                 | 站点                                                                                       | 判定                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| 启动错误（io::Error → CLI stderr） | `-c overrides` / otel / sqlite / code-mode feature / remote control ×5                     | **译**（用户跑 `codex app-server` 直接看到） |
+| 警告通知                           | `ConfigWarningNotification`（rules / invalid config）、trust 提示（concat!→单 tr）         | **译**（TUI 渲染）                           |
+| sqlite 恢复提示                    | `emit_state_db_backup_warning` 系列（warn!+eprintln 兜底）+ `SqliteRecoveryNotice.details` | **译**（eprintln 用户可见兜底）              |
+| const→fn（§3.6）                   | `SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY`（2 消费点加 `()`）                                | **译**                                       |
+| 登记                               | `:1267`（行号漂移后）`info!` message                                                       | **§12.3 登记**                               |
+
+### 44.2 本批的教训（两轮返工都在「键提取」）
+
+1. **残留参数行**（4 处）：多行 old→new 只包了前两行 ⇒ 旧实参残留在 tr_with 后（E0061×3）+
+   `.display()` 用在 `String` 字段上（E0599×3）。**规矩**：结构性替换后逐个看输出区域的最终形态。
+2. **fmt 跨行吃掉键提取正则**（关键教训）：`just fmt` 把 `tr(current(),` 重排成
+   `tr(\n    current(),` ⇒ 我的正则 `tr\(current\(\)` 漏掉全部多行形态 ⇒ 7 个键
+   「提取不到 ⇒ 没写词条 ⇒ i18n-check missing 7」。**规矩**：键提取正则必须容忍
+   `tr[(_with]*\(\s*current\(\)`；且 **dict 键要与源码逐字符比对**（python 子串检查曾
+   「假全绿」——子串匹配 ≠ 转义等价）。
+3. **同句两键**：`Project-local … load.`（TUI `startup_prompts.rs:97`，无换行）
+   与 `…load.\n`（lib.rs concat，带换行）是**两个键**——修正 lib 键时曾把 TUI 键顶掉
+   （unused/missing 交替暴露），最终两键并存。
+
+### 44.3 门禁（最终态）
+
+`i18n-check` `r-mucyygmc-9w0kw7`（3986 词条 / missing 0 / unused 0 / duplicate 0 / placeholder 0 / coverage 99.8%）；
+fmt/check/clippy EXIT=0。对账：lib.rs 25→0；app-server 348→**322**。

@@ -6360,8 +6360,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "由于SKILL.md文件无效，已跳过加载{0}个技能。",
     ),
     (
-        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
-        "在项目被信任之前，以下文件夹中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。",
+        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.\n",
+        "在项目被信任之前，以下文件夹中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。\n",
     ),
     // Permission discovery menu (`tui/src/permission_discovery.rs`), the update
     // prompt (`tui/src/update_prompt.rs`) and the startup draft header
@@ -10457,6 +10457,72 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "AWS access key ID and secret access key must not be empty.",
         "AWS访问密钥ID和私有访问密钥不能为空。",
+    ),
+    (
+        "remote control is disabled by managed requirements",
+        "远程控制被托管要求禁用",
+    ),
+    (
+        "remote code-mode host requires the code_mode_host feature to be enabled",
+        "远程code-mode宿主需要启用code_mode_host特性",
+    ),
+    (
+        "no transport configured; use --listen or enable remote control",
+        "未配置传输；请使用--listen或启用远程控制",
+    ),
+    (
+        "no transport configured; remote control disabled by managed requirements",
+        "未配置传输；远程控制被托管要求禁用",
+    ),
+    (
+        "no transport configured; remote control disabled because sqlite state db is unavailable",
+        "未配置传输；sqlite状态数据库不可用，远程控制已禁用",
+    ),
+    (
+        "invalid test user config path: {0}",
+        "无效的测试用户配置路径：{0}",
+    ),
+    ("error parsing -c overrides: {0}", "解析-c覆盖配置出错：{0}"),
+    ("error loading otel config: {0}", "加载otel配置出错：{0}"),
+    (
+        "error loading default config after config error: {0}",
+        "配置出错后加载默认配置出错：{0}",
+    ),
+    (
+        "Invalid configuration; using defaults.",
+        "无效的配置；正在使用默认值。",
+    ),
+    (
+        "Error parsing rules; custom rules not applied.",
+        "解析规则出错；未应用自定义规则。",
+    ),
+    (
+        "failed to initialize sqlite state runtime under {1}: {0}",
+        "在{1}下初始化sqlite状态运行时失败：{0}",
+    ),
+    (
+        "failed to initialize sqlite state runtime after moving damaged database file into a backup folder: {0}",
+        "将受损数据库文件移入备份目录后初始化sqlite状态运行时失败：{0}",
+    ),
+    (
+        "Codex local database at {0} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
+        "{0}处的Codex本地数据库已受损。正在将其移入备份目录，以便app server从已存数据重建。",
+    ),
+    (
+        "failed to move damaged sqlite state database files into a backup folder: {0}; original error: {1}",
+        "将受损sqlite状态数据库文件移入备份目录失败：{0}；原始错误：{1}",
+    ),
+    (
+        "Moved damaged Codex local database file {0} to {1}",
+        "已将受损的Codex本地数据库文件{0}移至{1}",
+    ),
+    (
+        "Database path: {0}\nBackup folder: {1}",
+        "数据库路径：{0}\n备份目录：{1}",
+    ),
+    (
+        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.",
+        "在项目被信任之前，以下目录中的项目级配置、钩子和执行策略已禁用，但技能仍会加载。",
     ),
 ];
 

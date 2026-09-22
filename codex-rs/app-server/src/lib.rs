@@ -65,6 +65,9 @@ use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
 use codex_features::Feature;
 use codex_feedback::CodexFeedback;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::protocol::SessionSource;
 use codex_rollout::state_db as rollout_state_db;
 use codex_state::log_db;
@@ -81,7 +84,9 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::Registry;
 use tracing_subscriber::util::SubscriberInitExt;
 
-const SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY: &str = "Codex rebuilt its local database.";
+fn sqlite_recovery_config_warning_summary() -> &'static str {
+    tr(current(), "Codex rebuilt its local database.")
+}
 
 fn is_unsupported_untrusted_approval_policy_error(err: &std::io::Error) -> bool {
     err.get_ref().is_some_and(
@@ -345,7 +350,7 @@ fn exec_policy_warning_location(err: &ExecPolicyError) -> (Option<String>, Optio
 fn exec_policy_config_warning(err: &ExecPolicyError) -> ConfigWarningNotification {
     let (path, range) = exec_policy_warning_location(err);
     ConfigWarningNotification {
-        summary: "Error parsing rules; custom rules not applied.".to_string(),
+        summary: tr(current(), "Error parsing rules; custom rules not applied.").to_string(),
         details: Some(err.to_string()),
         path,
         range,
@@ -385,9 +390,9 @@ fn project_config_warning(config: &Config) -> Option<ConfigWarningNotification> 
         return None;
     }
 
-    let mut message = concat!(
-        "Project-local config, hooks, and exec policies are disabled in the following folders ",
-        "until the project is trusted, but skills still load.\n",
+    let mut message = tr(
+        current(),
+        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.\n",
     )
     .to_string();
     for (index, (folder, reason)) in disabled_folders.iter().enumerate() {
@@ -491,7 +496,11 @@ pub async fn run_main_with_transport_options(
     let cli_kv_overrides = cli_config_overrides.parse_overrides().map_err(|e| {
         std::io::Error::new(
             ErrorKind::InvalidInput,
-            format!("error parsing -c overrides: {e}"),
+            tr_with(
+                current(),
+                "error parsing -c overrides: {0}",
+                &[&format!("{e}")],
+            ),
         )
     })?;
     let codex_home = find_codex_home()?;
@@ -548,13 +557,20 @@ pub async fn run_main_with_transport_options(
                 return Err(err);
             }
 
-            let message = config_warning_from_error("Invalid configuration; using defaults.", &err);
+            let message = config_warning_from_error(
+                tr(current(), "Invalid configuration; using defaults."),
+                &err,
+            );
             config_warnings.push(message);
             plugin_startup_config = PluginStartupConfig::Defaults;
             config_manager.load_default_config().await.map_err(|e| {
                 std::io::Error::new(
                     ErrorKind::InvalidData,
-                    format!("error loading default config after config error: {e}"),
+                    tr_with(
+                        current(),
+                        "error loading default config after config error: {0}",
+                        &[&format!("{e}")],
+                    ),
                 )
             })?
         }
@@ -571,7 +587,10 @@ pub async fn run_main_with_transport_options(
                 if !config.features.enabled(Feature::CodeModeHost) {
                     return Err(std::io::Error::new(
                         ErrorKind::InvalidInput,
-                        "remote code-mode host requires the code_mode_host feature to be enabled",
+                        tr(
+                            current(),
+                            "remote code-mode host requires the code_mode_host feature to be enabled",
+                        ),
                     ));
                 }
                 Some(Arc::new(
@@ -604,7 +623,11 @@ pub async fn run_main_with_transport_options(
     .map_err(|e| {
         std::io::Error::new(
             ErrorKind::InvalidData,
-            format!("error loading otel config: {e}"),
+            tr_with(
+                current(),
+                "error loading otel config: {0}",
+                &[&format!("{e}")],
+            ),
         )
     })?;
     codex_core::otel_init::record_process_start(otel.as_ref(), OTEL_SERVICE_NAME);
@@ -621,16 +644,20 @@ pub async fn run_main_with_transport_options(
     let state_db_init = match init_sqlite_state_db_with_fresh_start_on_corruption(&config).await {
         Ok(state_db_init) => state_db_init,
         Err(err) => {
-            return Err(std::io::Error::other(format!(
-                "failed to initialize sqlite state runtime under {}: {err}",
-                config.sqlite_config().home().display()
+            return Err(std::io::Error::other(tr_with(
+                current(),
+                "failed to initialize sqlite state runtime under {1}: {0}",
+                &[
+                    &err.to_string(),
+                    &config.sqlite_config().home().display().to_string(),
+                ],
             )));
         }
     };
     let state_db = state_db_init.state_db;
     if let Some(recovery_notice) = state_db_init.recovery_notice {
         config_warnings.push(ConfigWarningNotification {
-            summary: SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY.to_string(),
+            summary: sqlite_recovery_config_warning_summary().to_string(),
             details: Some(recovery_notice.details),
             path: None,
             range: None,
@@ -721,7 +748,10 @@ pub async fn run_main_with_transport_options(
     {
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
-            "remote control is disabled by managed requirements",
+            tr(
+                current(),
+                "remote control is disabled by managed requirements",
+            ),
         ));
     }
     let installation_id = resolve_installation_id(&config.codex_home).await?;
@@ -796,11 +826,20 @@ pub async fn run_main_with_transport_options(
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
             if remote_control_policy == RemoteControlPolicy::DisabledByRequirements {
-                "no transport configured; remote control disabled by managed requirements"
+                tr(
+                    current(),
+                    "no transport configured; remote control disabled by managed requirements",
+                )
             } else if remote_control_explicitly_requested && state_db.is_none() {
-                "no transport configured; remote control disabled because sqlite state db is unavailable"
+                tr(
+                    current(),
+                    "no transport configured; remote control disabled because sqlite state db is unavailable",
+                )
             } else {
-                "no transport configured; use --listen or enable remote control"
+                tr(
+                    current(),
+                    "no transport configured; use --listen or enable remote control",
+                )
             },
         ));
     }
@@ -838,9 +877,15 @@ pub async fn run_main_with_transport_options(
             return Err(std::io::Error::new(
                 ErrorKind::InvalidInput,
                 if remote_control_policy == RemoteControlPolicy::DisabledByRequirements {
-                    "no transport configured; remote control disabled by managed requirements"
+                    tr(
+                        current(),
+                        "no transport configured; remote control disabled by managed requirements",
+                    )
                 } else {
-                    "no transport configured; use --listen or enable remote control"
+                    tr(
+                        current(),
+                        "no transport configured; use --listen or enable remote control",
+                    )
                 },
             ));
         }
@@ -1262,15 +1307,17 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
             Ok(state_db) => {
                 let recovery_notice = sqlite_recovery_notice(&recovered_databases);
                 if recovery_notice.is_some() {
-                    emit_state_db_backup_warning(SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY);
+                    emit_state_db_backup_warning(sqlite_recovery_config_warning_summary());
                     for recovered_database in &recovered_databases {
-                        emit_state_db_backup_warning(&format!(
-                            "Database path: {}",
-                            recovered_database.database_path
+                        emit_state_db_backup_warning(&tr_with(
+                            current(),
+                            "Database path: {0}",
+                            &[&recovered_database.database_path],
                         ));
-                        emit_state_db_backup_warning(&format!(
-                            "Backup folder: {}",
-                            recovered_database.backup_folder
+                        emit_state_db_backup_warning(&tr_with(
+                            current(),
+                            "Backup folder: {0}",
+                            &[&recovered_database.backup_folder],
                         ));
                     }
                 }
@@ -1290,28 +1337,34 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
         }
 
         if !attempted_backups.insert(database_path.clone()) {
-            return Err(anyhow::anyhow!(
-                "failed to initialize sqlite state runtime after moving damaged database file into a backup folder: {err}"
-            ));
+            return Err(anyhow::anyhow!(tr_with(
+                current(),
+                "failed to initialize sqlite state runtime after moving damaged database file into a backup folder: {0}",
+                &[&format!("{err}")],
+            )));
         }
 
         let original_error = err.to_string();
-        emit_state_db_backup_warning(&format!(
-            "Codex local database at {} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
-            database_path.display()
+        emit_state_db_backup_warning(&tr_with(
+            current(),
+            "Codex local database at {0} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
+            &[&database_path.display().to_string()],
         ));
         let backups = codex_state::backup_runtime_db_for_fresh_start(database_path.as_path())
             .await
             .map_err(|backup_err| {
-                anyhow::anyhow!(
-                    "failed to move damaged sqlite state database files into a backup folder: {backup_err}; original error: {original_error}"
-                )
+                anyhow::anyhow!(tr_with(
+                    current(), "failed to move damaged sqlite state database files into a backup folder: {0}; original error: {1}", &[&backup_err.to_string(), &original_error],
+                ))
             })?;
         for backup in &backups {
-            emit_state_db_backup_warning(&format!(
-                "Moved damaged Codex local database file {} to {}",
-                backup.original_path.display(),
-                backup.backup_path.display()
+            emit_state_db_backup_warning(&tr_with(
+                current(),
+                "Moved damaged Codex local database file {0} to {1}",
+                &[
+                    &backup.original_path.display().to_string(),
+                    &backup.backup_path.display().to_string(),
+                ],
             ));
         }
         if let Some(first_backup) = backups.first()
@@ -1342,9 +1395,13 @@ fn sqlite_recovery_notice(
     let details = recovered_databases
         .iter()
         .map(|recovered_database| {
-            format!(
-                "Database path: {}\nBackup folder: {}",
-                recovered_database.database_path, recovered_database.backup_folder
+            tr_with(
+                current(),
+                "Database path: {0}\nBackup folder: {1}",
+                &[
+                    &recovered_database.database_path,
+                    &recovered_database.backup_folder,
+                ],
             )
         })
         .collect::<Vec<_>>()
@@ -1383,7 +1440,11 @@ fn loader_overrides_with_test_user_config_file(
         let path = AbsolutePathBuf::from_absolute_path(path).map_err(|err| {
             std::io::Error::new(
                 ErrorKind::InvalidInput,
-                format!("invalid test user config path: {err}"),
+                tr_with(
+                    current(),
+                    "invalid test user config path: {0}",
+                    &[&format!("{err}")],
+                ),
             )
         })?;
         warn!(

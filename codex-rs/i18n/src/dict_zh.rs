@@ -10710,6 +10710,197 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("failed to read user config.toml", "读取用户config.toml失败"),
     ("invalid quoted keyPath segment", "无效的带引号keyPath段"),
+    (
+        "streaming command/exec is not supported with windows sandbox",
+        "windows沙箱不支持流式command/exec",
+    ),
+    (
+        "custom outputBytesCap is not supported with windows sandbox",
+        "windows沙箱不支持自定义outputBytesCap",
+    ),
+    (
+        "duplicate active command/exec process id: {0}",
+        "重复的活跃command/exec进程id：{0}",
+    ),
+    ("exec failed: {0}", "exec失败：{0}"),
+    ("invalid command cwd: {0}", "无效的命令cwd：{0}"),
+    ("failed to spawn command: {0}", "启动命令失败：{0}"),
+    ("invalid deltaBase64: {0}", "无效的deltaBase64：{0}"),
+    (
+        "no active command/exec for process id: {0}",
+        "进程id {0}没有活跃的command/exec",
+    ),
+    (
+        "stdin streaming is not enabled for this command/exec",
+        "该command/exec未启用stdin流式传输",
+    ),
+    ("stdin is already closed", "stdin已关闭"),
+    ("failed to resize PTY: {0}", "调整PTY大小失败：{0}"),
+    // in-process app-server 传输与 JSON-RPC 错误（批 L，app-server/src/in_process.rs）：
+    // 13 个站点按接收端全判用户面（JSON-RPC 错误回客户端、ConfigWarning 通知、
+    // IoError 沿 app-server-client 进 TUI 错误链）；"Error parsing rules; custom rules not
+    // applied." 复用既有键，故本批新增 11 键。
+    (
+        "in-process request response channel closed: {0}",
+        "进程内请求响应通道已关闭：{0}",
+    ),
+    (
+        "in-process app-server client queue is full",
+        "进程内app-server客户端队列已满",
+    ),
+    (
+        "in-process app-server runtime is closed",
+        "进程内app-server运行时已关闭",
+    ),
+    (
+        "in-process initialize failed: {0}",
+        "进程内initialize失败：{0}",
+    ),
+    ("duplicate request id: {0}", "重复的请求id：{0}"),
+    (
+        "in-process app-server request queue is full",
+        "进程内app-server请求队列已满",
+    ),
+    (
+        "in-process app-server request processor is closed",
+        "进程内app-server请求处理器已关闭",
+    ),
+    ("failed to serialize response: {0}", "序列化响应失败：{0}"),
+    (
+        "in-process server request queue is full",
+        "进程内服务端请求队列已满",
+    ),
+    (
+        "in-process server request consumer is closed",
+        "进程内服务端请求消费者已关闭",
+    ),
+    (
+        "in-process app-server runtime is shutting down",
+        "进程内app-server运行时正在关闭",
+    ),
+    // process/spawn·stdin·pty 传输与 JSON-RPC 错误（批 M，
+    // request_processors/process_exec_processor.rs）：13 个候选值 14 站点
+    // （:90/:285 同值双站点）按接收端全判用户面；其中 5 键复用既有条目
+    // （command must not be empty / local environment… / invalid deltaBase64 /
+    // stdin… / resize PTY），本批新增 8 键；{method_name}/{timeout_ms} 命名占位符转 {0}/{1}。
+    ("processHandle must not be empty", "processHandle不能为空"),
+    (
+        "{0} timeoutMs must be non-negative, got {1}",
+        "{0}的timeoutMs必须为非负数，实际收到{1}",
+    ),
+    (
+        "duplicate active process handle: {0}",
+        "重复的活跃进程句柄：{0}",
+    ),
+    ("failed to spawn process: {0}", "启动进程失败：{0}"),
+    (
+        "stdin streaming is not enabled for this process",
+        "该进程未启用stdin流式传输",
+    ),
+    (
+        "process size rows and cols must be greater than 0",
+        "进程size的rows和cols必须大于0",
+    ),
+    (
+        "no active process for process handle {0}",
+        "进程句柄{0}没有活跃进程",
+    ),
+    ("process {0} is no longer running", "进程{0}已不再运行"),
+    // external-agent 迁移导入（批 N，external_agent_migration/processor.rs）：
+    // 11 站点按接收端全判用户面（JSON-RPC 错误 + 导入进度/完成通知的标题字段），
+    // 新增 10 键（state database 双站点同键）；:594 tracing 日志按 §12.3 登记
+    // not-translated-unwrapped.tsv（不在此列）。
+    (
+        "failed to record detected connector candidates: {0}",
+        "记录检测到的连接器候选项失败：{0}",
+    ),
+    (
+        "external agent memory import is disabled",
+        "外部代理记忆导入未启用",
+    ),
+    (
+        "memory import requires at least one selected memory",
+        "记忆导入至少需要选择一条记忆",
+    ),
+    ("Import sessions", "导入会话"),
+    ("state database is unavailable", "状态数据库不可用"),
+    (
+        "failed to read import histories: {0}",
+        "读取导入历史失败：{0}",
+    ),
+    (
+        "failed to read imported connector candidates: {0}",
+        "读取已导入的连接器候选项失败：{0}",
+    ),
+    (
+        "failed to record import history: {0}",
+        "记录导入历史失败：{0}",
+    ),
+    ("Validate session imports", "校验会话导入"),
+    (
+        "external agent session was not detected for import: {0}",
+        "未检测到可导入的外部代理会话：{0}",
+    ),
+    // current-time 外部时钟链（批 O，app-server/src/current_time.rs）：
+    // 11 站点按接收端全判用户面——TimeProvider 错误经 sleep/current_time 两个
+    // 工具 handler（core/src/tools/handlers/）成为工具错误渲染；键内 {} 均转位置参数；
+    // 文件内单测断言 En 插值后的整句（tr_with(En) 对 key 插值 ⇒ 逐字节不变）。
+    (
+        "app-server current-time provider is unavailable",
+        "app-server当前时间提供者不可用",
+    ),
+    (
+        "external sleep duration is outside the supported range",
+        "外部sleep时长超出支持范围",
+    ),
+    (
+        "external sleep deadline is outside the supported range",
+        "外部sleep截止时间超出支持范围",
+    ),
+    (
+        "timed out waiting for a client to subscribe to the thread after {0}s",
+        "等待客户端订阅线程超时（{0}秒）",
+    ),
+    (
+        "current-time request failed: code={0} message={1}",
+        "当前时间请求失败：code={0} message={1}",
+    ),
+    (
+        "current-time request was canceled: {0}",
+        "当前时间请求已取消：{0}",
+    ),
+    (
+        "current-time request timed out after {0}s",
+        "当前时间请求超时（{0}秒）",
+    ),
+    ("invalid current-time response", "无效的当前时间响应"),
+    (
+        "current-time response is outside the supported range",
+        "当前时间响应超出支持范围",
+    ),
+    (
+        "expected exactly one client subscribed to the thread, found {0}",
+        "期望线程恰好有1个已订阅客户端，实际为{0}个",
+    ),
+    // apps/list 请求链（批 P，request_processors/apps_processor.rs）：
+    // 10 站点按接收端全判用户面（invalid_request/internal_error JSON-RPC 回客户端，
+    // :216/:229 经 String→internal_error 同链）；4 键复用既有条目（invalid cursor /
+    // invalid thread id / thread not found / failed to reload config，与 mcp_processor、
+    // turn_processor 同键），本批新增 5 键。
+    (
+        "failed to load accessible apps: {0}",
+        "加载可访问应用失败：{0}",
+    ),
+    ("failed to list apps: {0}", "列出应用失败：{0}"),
+    ("failed to load app lists", "加载应用列表失败"),
+    (
+        "timed out waiting for app lists after {0} seconds",
+        "等待应用列表超时（{0}秒）",
+    ),
+    (
+        "cursor {0} exceeds total apps {1}",
+        "游标{0}超出应用总数{1}",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

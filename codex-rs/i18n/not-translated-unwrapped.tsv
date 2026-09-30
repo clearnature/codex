@@ -1377,8 +1377,8 @@ expected a string, found {}	codex-rs/core-plugins/src/manifest.rs:517	§12.3 日
 expected a string or array of strings, found {}	codex-rs/core-plugins/src/manifest.rs:530	§12.3 日志：同上
 prompt must be at most {MAX_DEFAULT_PROMPT_LEN} characters	codex-rs/core-plugins/src/manifest.rs:549	§12.3 日志：同上
 failed to list plugin marketplaces for tool suggestions	codex-rs/core-plugins/src/discoverable.rs:87	§12.3 日志：anyhow context，唯一终点是 core/src/session/turn.rs:1643 warn!("failed to load discoverable tool suggestions: {err:#}") 后 None
-remote plugin install failed	codex-rs/app-server/src/request_processors/plugins.rs:1747	§12.3 日志：本行即 tracing::warn! 的消息（:1740 起为结构化字段 marketplace_name/error_type/error）
-skipping plugin MCP OAuth for an unowned environment	codex-rs/app-server/src/request_processors/plugins.rs:1859	§12.3 日志：本行即 tracing::warn! 的消息（:1855 起为字段 plugin/server/environment_id）
+remote plugin install failed	codex-rs/app-server/src/request_processors/plugins.rs:1753	§12.3 日志：本行即 tracing::warn! 的消息（:1740 起为结构化字段 marketplace_name/error_type/error）
+skipping plugin MCP OAuth for an unowned environment	codex-rs/app-server/src/request_processors/plugins.rs:1865	§12.3 日志：本行即 tracing::warn! 的消息（:1855 起为字段 plugin/server/environment_id）
 unsupported Agent Plugins MCP schema `{schema}`; supported schemas: {}	codex-rs/codex-mcp/src/agent_plugin_config.rs:92	§12.3 日志：serde_json::Error 自定义消息；出口 loader.rs:1658 warn!("failed to parse plugin MCP config: {err}")
 Agent Plugins MCP server must be an object	codex-rs/codex-mcp/src/agent_plugin_config.rs:118	§12.3 日志：同上（plugin_mcp_json_error 包装进 serde_json::Error）
 Agent Plugins legacy SSE transport is not supported by Codex	codex-rs/codex-mcp/src/agent_plugin_config.rs:144	§12.3 日志：同上
@@ -1401,9 +1401,9 @@ failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs
 failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:462	§12.3 日志：同上
 failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:469	§12.3 日志：同上
 failed to resolve path `{}`: {err}	codex-rs/codex-mcp/src/agent_plugin_config.rs:476	§12.3 日志：同上
-This tool is part of plugin `{}`.	codex-rs/codex-mcp/src/rmcp_client.rs:720	§12.2 喂模型：plugin_source_note 被拼进 ToolInfo.description（rmcp_client.rs:713 注释「appends a model-visible plugin membership note」），翻译会改变模型可见的工具描述
-This tool is part of plugins {}.	codex-rs/codex-mcp/src/rmcp_client.rs:723	§12.2 喂模型：同上
-Authentication for {} was requested and accepted. Retry this tool call now.	codex-rs/codex-mcp/src/auth_elicitation.rs:174	§12.2 喂模型：结果进 CallToolResult.content 的 {type:text} —— MCP 工具返回值给模型读；翻译会改变模型看到的工具结果
+This tool is part of plugin `{}`.	codex-rs/codex-mcp/src/rmcp_client.rs:725	§12.2 喂模型：plugin_source_note 被拼进 ToolInfo.description（rmcp_client.rs:713 注释「appends a model-visible plugin membership note」），翻译会改变模型可见的工具描述
+This tool is part of plugins {}.	codex-rs/codex-mcp/src/rmcp_client.rs:728	§12.2 喂模型：同上
+Authentication for {} was requested and accepted. Retry this tool call now.	codex-rs/codex-mcp/src/auth_elicitation.rs:176	§12.2 喂模型：结果进 CallToolResult.content 的 {type:text} —— MCP 工具返回值给模型读；翻译会改变模型看到的工具结果
 Automated review of this operation failed. Do not proceed without asking the user for explicit approval.	codex-rs/codex-mcp/src/elicitation.rs:46	§12.6 协议载荷：STRICT_AUTO_REVIEW_DECLINE_MESSAGE 进 ElicitationResponse.meta 的 JSON message 字段（elicitation.rs:514），机器读的协议回包，无 TUI 渲染证据
 elicitation request router unavailable	codex-rs/codex-mcp/src/elicitation.rs:150	§12.3 日志/错误链：anyhow!(...) 错误链上下文
 elicitation request not found	codex-rs/codex-mcp/src/elicitation.rs:152	§12.3 同上
@@ -1471,30 +1471,31 @@ MCP startup cancelled	codex-rs/codex-mcp/src/connection_manager/required.rs:70	�
 event subscription access changed	codex-rs/codex-mcp/src/event_stream.rs:69	§12.3 内部：bail! 事件订阅访问变化错误，进内部链
 event subscription account changed	codex-rs/codex-mcp/src/event_stream.rs:75	§12.3 内部：bail! 账户变化错误
 unknown MCP server '{name}'	codex-rs/codex-mcp/src/connection_manager/resources.rs:166	§12.2 喂模型：unknown MCP server，call 链（与 connection_manager.rs:914 同族，值不同因用 {name}）
-model requested={requested_model} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:112	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-model_provider requested={requested_provider} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:120	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-service_tier requested={requested_service_tier:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:128	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-cwd requested={} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:136	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-runtime_workspace_roots requested={requested_runtime_workspace_roots:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:146	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-approval_policy requested={requested_approval:?} active={active_approval:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:155	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-approvals_reviewer requested={requested_review_policy:?} active={active_review_policy:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:164	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-sandbox requested={requested_sandbox:?} active={active_sandbox:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:188	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-permissions override was provided and ignored while running; active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:194	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-personality requested={requested_personality:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:202	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-config overrides were provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:209	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-baseInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:213	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
-developerInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:217	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+model requested={requested_model} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:135	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+model_provider requested={requested_provider} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:143	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+service_tier requested={requested_service_tier:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:151	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+cwd requested={} active={}	codex-rs/app-server/src/request_processors/thread_processor.rs:159	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+runtime_workspace_roots requested={requested_runtime_workspace_roots:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:169	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+approval_policy requested={requested_approval:?} active={active_approval:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:178	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+approvals_reviewer requested={requested_review_policy:?} active={active_review_policy:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:187	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+sandbox requested={requested_sandbox:?} active={active_sandbox:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:211	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+permissions override was provided and ignored while running; active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:217	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+personality requested={requested_personality:?} active={:?}	codex-rs/app-server/src/request_processors/thread_processor.rs:225	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+config overrides were provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:232	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+baseInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:236	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
+developerInstructions override was provided and ignored while running	codex-rs/app-server/src/request_processors/thread_processor.rs:240	§12.3 日志：metadata 差异报告 → mismatch_details.join("; ") → tracing::warn!（:4272 字段）
 no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_processors/thread_processor.rs:3256	§12.1 匹配键：`if message == format!(...)` 比对入站 ThreadStoreError 文本，译了检测失效
-no rollout found for thread id {thread_uuid}	codex-rs/app-server/src/request_processors/thread_processor.rs:3382	§12.1 匹配键：同上（thread_uuid 变体）
+no rollout found for thread id {thread_uuid}	codex-rs/app-server/src/request_processors/thread_processor.rs:3399	§12.1 匹配键：同上（thread_uuid 变体）
 no rollout found for thread id {thread_id}	codex-rs/app-server/src/request_processors/thread_processor.rs:3798	§12.1 匹配键：同上
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6195	§12.1 匹配键：`message == no_rollout_message`（:6197）比对 ThreadStoreError 文本
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6245	§12.1 匹配键：`message.starts_with("failed to resolve rollout path")` 比对入站错误文本
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6267	§12.1 匹配键：同上（第二处）
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6292	§12.1 匹配键：`message == no_rollout_message`（:6293）比对 ThreadStoreError 文本
 	codex-rs/app-server/src/request_processors/thread_processor.rs:6338	§12.1 匹配键：`message == no_rollout_message`（:6340）比对 ThreadStoreError 文本
-Review the current code changes (staged, unstaged, and untracked files).	codex-rs/app-server/src/request_processors/turn_processor.rs:455	§12.2 喂模型：target_prompt（review 目标提示）交给模型执行，译了会改模型行为
-Review the code changes against the base branch {branch:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:459	§12.2 同上
-Review the changes introduced by commit {sha:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:462	§12.2 同上
+Review the current code changes (staged, unstaged, and untracked files).	codex-rs/app-server/src/request_processors/turn_processor.rs:482	§12.2 喂模型：target_prompt（review 目标提示）交给模型执行，译了会改模型行为
+Review the code changes against the base branch {branch:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:486	§12.2 同上
+Review the changes introduced by commit {sha:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:489	§12.2 同上
 review thread	codex-rs/app-server/src/request_processors/turn_processor.rs:1509	§12.3 日志标签：log_listener_attach_result 的 label 参数，只进 tracing
-Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1552	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）
+Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1664	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）
 	codex-rs/app-server/src/lib.rs:1267	§12.3 日志：info! 的 message 位（结构化字段 exit_reason/connection_count/forced）
+external agent config migration item failed	codex-rs/app-server/src/external_agent_migration/processor.rs:618	**日志消息**：tracing::warn!（import_id/item_type/error_type/failure_stage/cwd/source 字段单列），仅进日志/遥测，无 UI/协议渲染方 ⇒ §12.3 内部诊断

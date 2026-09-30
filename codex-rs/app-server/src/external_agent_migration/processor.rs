@@ -43,6 +43,9 @@ use codex_external_agent_migration::sessions::ExternalAgentSessionMigration as C
 use codex_external_agent_migration::sessions::read_imported_connector_candidates;
 use codex_external_agent_migration::sessions::record_detected_session_connectors;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_rollout::StateDbHandle;
 use codex_state::ExternalAgentConfigImportFailureRecord;
 use codex_state::ExternalAgentConfigImportSuccessRecord;
@@ -162,8 +165,10 @@ impl ExternalAgentConfigRequestProcessor {
             connector_names_by_source_path,
         )
         .map_err(|err| {
-            internal_error(format!(
-                "failed to record detected connector candidates: {err}"
+            internal_error(tr_with(
+                current(),
+                "failed to record detected connector candidates: {0}",
+                &[&err.to_string()],
             ))
         })?;
 
@@ -181,7 +186,10 @@ impl ExternalAgentConfigRequestProcessor {
             .any(|item| item.item_type == ExternalAgentConfigMigrationItemType::Memory)
             && !self.external_agent_memory_import_enabled().await
         {
-            return Err(invalid_request("external agent memory import is disabled"));
+            return Err(invalid_request(tr(
+                current(),
+                "external agent memory import is disabled",
+            )));
         }
         if params.migration_items.iter().any(|item| {
             item.item_type == ExternalAgentConfigMigrationItemType::Memory
@@ -190,9 +198,10 @@ impl ExternalAgentConfigRequestProcessor {
                     .as_ref()
                     .is_none_or(|details| details.memory.is_empty())
         }) {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "memory import requires at least one selected memory",
-            ));
+            )));
         }
         let import_id = Uuid::new_v4().to_string();
         let analytics_source = params.source.clone().unwrap_or_default();
@@ -265,7 +274,7 @@ impl ExternalAgentConfigRequestProcessor {
         let session_import_result = (!pending_session_imports.is_empty()).then(|| {
             CoreImportItemResult::new(
                 CoreMigrationItemType::Sessions,
-                "Import sessions".to_string(),
+                tr(current(), "Import sessions").to_string(),
                 /*cwd*/ None,
             )
         });
@@ -379,19 +388,27 @@ impl ExternalAgentConfigRequestProcessor {
         let state_db = self
             .state_db
             .as_ref()
-            .ok_or_else(|| internal_error("state database is unavailable"))?;
+            .ok_or_else(|| internal_error(tr(current(), "state database is unavailable")))?;
         let histories = state_db
             .external_agent_config_import_history_records()
             .await
-            .map_err(|err| internal_error(format!("failed to read import histories: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to read import histories: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         let data = histories
             .into_iter()
             .map(protocol_import_history)
             .collect::<Result<Vec<_>, _>>()?;
         let connectors = read_imported_connector_candidates(self.migration_service.codex_home())
             .map_err(|err| {
-                internal_error(format!(
-                    "failed to read imported connector candidates: {err}"
+                internal_error(tr_with(
+                    current(),
+                    "failed to read imported connector candidates: {0}",
+                    &[&err.to_string()],
                 ))
             })?
             .into_iter()
@@ -412,7 +429,7 @@ impl ExternalAgentConfigRequestProcessor {
         let state_db = self
             .state_db
             .as_ref()
-            .ok_or_else(|| internal_error("state database is unavailable"))?;
+            .ok_or_else(|| internal_error(tr(current(), "state database is unavailable")))?;
         let import_id = Uuid::new_v4().to_string();
         let item_type_results = params
             .item_type_results
@@ -440,7 +457,13 @@ impl ExternalAgentConfigRequestProcessor {
             &item_type_results,
         )
         .await
-        .map_err(|err| internal_error(format!("failed to record import history: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to record import history: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
 
         Ok(ExternalAgentConfigImportHistoryRecordResponse { import_id })
     }
@@ -472,7 +495,7 @@ impl ExternalAgentConfigRequestProcessor {
         }
         let mut item_result = CoreImportItemResult::new(
             CoreMigrationItemType::Sessions,
-            "Validate session imports".to_string(),
+            tr(current(), "Validate session imports").to_string(),
             /*cwd*/ None,
         );
         let mut selected_session_paths = HashSet::new();
@@ -486,9 +509,10 @@ impl ExternalAgentConfigRequestProcessor {
                             &mut item_result,
                             "session_missing",
                             Some("session_not_detected"),
-                            format!(
-                                "external agent session was not detected for import: {}",
-                                session.path.display()
+                            tr_with(
+                                current(),
+                                "external agent session was not detected for import: {0}",
+                                &[&session.path.display().to_string()],
                             ),
                             Some(session.path.display().to_string()),
                         );

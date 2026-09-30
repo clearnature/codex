@@ -24,6 +24,9 @@ use codex_core::exec::ExecExpiration;
 use codex_core::exec::ExecExpirationOutcome;
 use codex_core::exec::IO_DRAIN_TIMEOUT_MS;
 use codex_exec_server::EnvironmentManager;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::exec_output::bytes_to_string_smart;
 use codex_protocol::shell_environment::is_non_inheritable_env_var;
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -87,10 +90,13 @@ impl ProcessExecRequestProcessor {
         let method_name = "process/spawn";
         tracing::debug!("{method_name} command: {command:?}");
         if command.is_empty() {
-            return Err(invalid_request("command must not be empty"));
+            return Err(invalid_request(tr(current(), "command must not be empty")));
         }
         if process_handle.is_empty() {
-            return Err(invalid_request("processHandle must not be empty"));
+            return Err(invalid_request(tr(
+                current(),
+                "processHandle must not be empty",
+            )));
         }
         if size.is_some() && !tty {
             return Err(invalid_params("process/spawn size requires tty: true"));
@@ -113,8 +119,11 @@ impl ProcessExecRequestProcessor {
             Some(Some(timeout_ms)) => match u64::try_from(timeout_ms) {
                 Ok(timeout_ms) => timeout_ms.into(),
                 Err(_) => {
-                    return Err(invalid_params(format!(
-                        "{method_name} timeoutMs must be non-negative, got {timeout_ms}"
+                    let timeout_str = timeout_ms.to_string();
+                    return Err(invalid_params(tr_with(
+                        current(),
+                        "{0} timeoutMs must be non-negative, got {1}",
+                        &[method_name, timeout_str.as_str()],
                     )));
                 }
             },
@@ -188,7 +197,7 @@ impl ProcessExecRequestProcessor {
             .try_local_environment()
             .is_some()
             .then_some(())
-            .ok_or_else(|| internal_error("local environment is not configured"))
+            .ok_or_else(|| internal_error(tr(current(), "local environment is not configured")))
     }
 }
 
@@ -282,7 +291,7 @@ impl ProcessExecManager {
 
         let (program, args) = command
             .split_first()
-            .ok_or_else(|| invalid_request("command must not be empty"))?;
+            .ok_or_else(|| invalid_request(tr(current(), "command must not be empty")))?;
         let stream_stdin = tty || stream_stdin;
         let stream_stdout_stderr = tty || stream_stdout_stderr;
         let arg0 = None;
@@ -296,8 +305,10 @@ impl ProcessExecManager {
             let mut sessions = self.sessions.lock().await;
             match sessions.entry(process_key.clone()) {
                 Entry::Occupied(_) => {
-                    return Err(invalid_request(format!(
-                        "duplicate active process handle: {process_handle:?}",
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "duplicate active process handle: {0}",
+                        &[&format!("{process_handle:?}")],
                     )));
                 }
                 Entry::Vacant(entry) => {
@@ -335,7 +346,11 @@ impl ProcessExecManager {
             Ok(spawned) => spawned,
             Err(err) => {
                 self.sessions.lock().await.remove(&process_key);
-                return Err(internal_error(format!("failed to spawn process: {err}")));
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to spawn process: {0}",
+                    &[&err.to_string()],
+                )));
             }
         };
 
@@ -375,9 +390,13 @@ impl ProcessExecManager {
         }
 
         let delta = match params.delta_base64 {
-            Some(delta_base64) => STANDARD
-                .decode(delta_base64)
-                .map_err(|err| invalid_params(format!("invalid deltaBase64: {err}")))?,
+            Some(delta_base64) => STANDARD.decode(delta_base64).map_err(|err| {
+                invalid_params(tr_with(
+                    current(),
+                    "invalid deltaBase64: {0}",
+                    &[&err.to_string()],
+                ))
+            })?,
             None => Vec::new(),
         };
 
@@ -681,16 +700,17 @@ async fn handle_process_write(
     close_stdin: bool,
 ) -> Result<(), JSONRPCErrorError> {
     if !stream_stdin {
-        return Err(invalid_request(
+        return Err(invalid_request(tr(
+            current(),
             "stdin streaming is not enabled for this process",
-        ));
+        )));
     }
     if !delta.is_empty() {
         session
             .writer_sender()
             .send(delta)
             .await
-            .map_err(|_| invalid_request("stdin is already closed"))?;
+            .map_err(|_| invalid_request(tr(current(), "stdin is already closed")))?;
     }
     if close_stdin {
         // Closing drops our sender; the writer task still drains any bytes
@@ -704,18 +724,23 @@ fn handle_process_resize(
     session: &ProcessHandle,
     size: TerminalSize,
 ) -> Result<(), JSONRPCErrorError> {
-    session
-        .resize(size)
-        .map_err(|err| invalid_request(format!("failed to resize PTY: {err}")))
+    session.resize(size).map_err(|err| {
+        invalid_request(tr_with(
+            current(),
+            "failed to resize PTY: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }
 
 fn terminal_size_from_protocol(
     size: ProcessTerminalSize,
 ) -> Result<TerminalSize, JSONRPCErrorError> {
     if size.rows == 0 || size.cols == 0 {
-        return Err(invalid_params(
+        return Err(invalid_params(tr(
+            current(),
             "process size rows and cols must be greater than 0",
-        ));
+        )));
     }
     Ok(TerminalSize {
         rows: size.rows,
@@ -724,11 +749,17 @@ fn terminal_size_from_protocol(
 }
 
 fn no_active_process_error(process_handle: &str) -> JSONRPCErrorError {
-    invalid_request(format!(
-        "no active process for process handle {process_handle:?}"
+    invalid_request(tr_with(
+        current(),
+        "no active process for process handle {0}",
+        &[&format!("{process_handle:?}")],
     ))
 }
 
 fn process_no_longer_running_error(process_handle: &str) -> JSONRPCErrorError {
-    invalid_request(format!("process {process_handle:?} is no longer running"))
+    invalid_request(tr_with(
+        current(),
+        "process {0} is no longer running",
+        &[&format!("{process_handle:?}")],
+    ))
 }

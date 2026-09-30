@@ -23,6 +23,9 @@ use codex_core::exec::ExecExpiration;
 use codex_core::exec::ExecExpirationOutcome;
 use codex_core::exec::IO_DRAIN_TIMEOUT_MS;
 use codex_core::sandboxing::ExecRequest;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::exec_output::bytes_to_string_smart;
 use codex_sandboxing::SandboxType;
 use codex_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
@@ -177,21 +180,24 @@ impl CommandExecManager {
 
         if matches!(exec_request.sandbox, SandboxType::WindowsRestrictedToken) {
             if tty || stream_stdin || stream_stdout_stderr {
-                return Err(invalid_request(
+                return Err(invalid_request(tr(
+                    current(),
                     "streaming command/exec is not supported with windows sandbox",
-                ));
+                )));
             }
             if output_bytes_cap != Some(DEFAULT_OUTPUT_BYTES_CAP) {
-                return Err(invalid_request(
+                return Err(invalid_request(tr(
+                    current(),
                     "custom outputBytesCap is not supported with windows sandbox",
-                ));
+                )));
             }
             if let InternalProcessId::Client(_) = &process_id {
                 let mut sessions = self.sessions.lock().await;
                 if sessions.contains_key(&process_key) {
-                    return Err(invalid_request(format!(
-                        "duplicate active command/exec process id: {}",
-                        process_key.process_id.error_repr(),
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "duplicate active command/exec process id: {0}",
+                        &[&process_key.process_id.error_repr()],
                     )));
                 }
                 sessions.insert(
@@ -219,7 +225,14 @@ impl CommandExecManager {
                     }
                     Err(err) => {
                         outgoing
-                            .send_error(request_id, internal_error(format!("exec failed: {err}")))
+                            .send_error(
+                                request_id,
+                                internal_error(tr_with(
+                                    current(),
+                                    "exec failed: {0}",
+                                    &[&err.to_string()],
+                                )),
+                            )
                             .await;
                     }
                 }
@@ -238,9 +251,13 @@ impl CommandExecManager {
             ..
         } = exec_request;
         // TODO(anp): Keep PathUri through the local command launch boundary.
-        let cwd = cwd
-            .to_abs_path()
-            .map_err(|err| invalid_request(format!("invalid command cwd: {err}")))?;
+        let cwd = cwd.to_abs_path().map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid command cwd: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
 
         let stream_stdin = tty || stream_stdin;
         let stream_stdout_stderr = tty || stream_stdout_stderr;
@@ -253,13 +270,14 @@ impl CommandExecManager {
         let sessions = Arc::clone(&self.sessions);
         let (program, args) = command
             .split_first()
-            .ok_or_else(|| invalid_request("command must not be empty"))?;
+            .ok_or_else(|| invalid_request(tr(current(), "command must not be empty")))?;
         {
             let mut sessions = self.sessions.lock().await;
             if sessions.contains_key(&process_key) {
-                return Err(invalid_request(format!(
-                    "duplicate active command/exec process id: {}",
-                    process_key.process_id.error_repr(),
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "duplicate active command/exec process id: {0}",
+                    &[&process_key.process_id.error_repr()],
                 )));
             }
             sessions.insert(
@@ -296,7 +314,11 @@ impl CommandExecManager {
             Ok(spawned) => spawned,
             Err(err) => {
                 self.sessions.lock().await.remove(&process_key);
-                return Err(internal_error(format!("failed to spawn command: {err}")));
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to spawn command: {0}",
+                    &[&err.to_string()],
+                )));
             }
         };
         tokio::spawn(async move {
@@ -330,9 +352,13 @@ impl CommandExecManager {
         }
 
         let delta = match params.delta_base64 {
-            Some(delta_base64) => STANDARD
-                .decode(delta_base64)
-                .map_err(|err| invalid_params(format!("invalid deltaBase64: {err}")))?,
+            Some(delta_base64) => STANDARD.decode(delta_base64).map_err(|err| {
+                invalid_params(tr_with(
+                    current(),
+                    "invalid deltaBase64: {0}",
+                    &[&err.to_string()],
+                ))
+            })?,
             None => Vec::new(),
         };
 
@@ -426,9 +452,10 @@ impl CommandExecManager {
                 .get(&process_id)
                 .cloned()
                 .ok_or_else(|| {
-                    invalid_request(format!(
-                        "no active command/exec for process id {}",
-                        process_id.process_id.error_repr(),
+                    invalid_request(tr_with(
+                        current(),
+                        "no active command/exec for process id: {0}",
+                        &[&process_id.process_id.error_repr()],
                     ))
                 })?
         };
@@ -637,16 +664,17 @@ async fn handle_process_write(
     close_stdin: bool,
 ) -> Result<(), JSONRPCErrorError> {
     if !stream_stdin {
-        return Err(invalid_request(
+        return Err(invalid_request(tr(
+            current(),
             "stdin streaming is not enabled for this command/exec",
-        ));
+        )));
     }
     if !delta.is_empty() {
         session
             .writer_sender()
             .send(delta)
             .await
-            .map_err(|_| invalid_request("stdin is already closed"))?;
+            .map_err(|_| invalid_request(tr(current(), "stdin is already closed")))?;
     }
     if close_stdin {
         session.close_stdin();
@@ -658,9 +686,13 @@ fn handle_process_resize(
     session: &ProcessHandle,
     size: TerminalSize,
 ) -> Result<(), JSONRPCErrorError> {
-    session
-        .resize(size)
-        .map_err(|err| invalid_request(format!("failed to resize PTY: {err}")))
+    session.resize(size).map_err(|err| {
+        invalid_request(tr_with(
+            current(),
+            "failed to resize PTY: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }
 
 pub(crate) fn terminal_size_from_protocol(

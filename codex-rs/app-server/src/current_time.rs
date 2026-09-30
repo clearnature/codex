@@ -13,6 +13,9 @@ use codex_app_server_protocol::ServerRequestPayload;
 use codex_core::SleepFuture;
 use codex_core::TimeFuture;
 use codex_core::TimeProvider;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use tokio::time::Duration;
 use tokio::time::Instant;
@@ -45,9 +48,10 @@ impl TimeProvider for AppServerTimeProvider {
         let outgoing = self.outgoing.clone();
         let thread_state_manager = self.thread_state_manager.clone();
         Box::pin(async move {
-            let outgoing = outgoing
-                .upgrade()
-                .context("app-server current-time provider is unavailable")?;
+            let outgoing = outgoing.upgrade().context(tr(
+                current(),
+                "app-server current-time provider is unavailable",
+            ))?;
             request_current_time(outgoing, thread_state_manager, thread_id).await
         })
     }
@@ -56,18 +60,22 @@ impl TimeProvider for AppServerTimeProvider {
         let outgoing = self.outgoing.clone();
         let thread_state_manager = self.thread_state_manager.clone();
         Box::pin(async move {
-            let outgoing = outgoing
-                .upgrade()
-                .context("app-server current-time provider is unavailable")?;
+            let outgoing = outgoing.upgrade().context(tr(
+                current(),
+                "app-server current-time provider is unavailable",
+            ))?;
             let started_at =
                 request_current_time(outgoing.clone(), thread_state_manager.clone(), thread_id)
                     .await?;
             let wake_at = started_at
-                .checked_add_signed(
-                    chrono::Duration::from_std(duration)
-                        .context("external sleep duration is outside the supported range")?,
-                )
-                .context("external sleep deadline is outside the supported range")?;
+                .checked_add_signed(chrono::Duration::from_std(duration).context(tr(
+                    current(),
+                    "external sleep duration is outside the supported range",
+                ))?)
+                .context(tr(
+                    current(),
+                    "external sleep deadline is outside the supported range",
+                ))?;
 
             loop {
                 tokio::time::sleep(CURRENT_TIME_POLL_INTERVAL).await;
@@ -94,10 +102,11 @@ async fn request_current_time(
     )
     .await
     .map_err(|_| {
-        anyhow!(
-            "timed out waiting for a client to subscribe to the thread after {}s",
-            CURRENT_TIME_REQUEST_TIMEOUT.as_secs()
-        )
+        anyhow!(tr_with(
+            current(),
+            "timed out waiting for a client to subscribe to the thread after {0}s",
+            &[&CURRENT_TIME_REQUEST_TIMEOUT.as_secs().to_string()],
+        ))
     })?;
     let connection_ids = thread_state_manager
         .subscribed_connection_ids(thread_id)
@@ -117,36 +126,46 @@ async fn request_current_time(
     let result = match timeout_at(deadline, rx).await {
         Ok(Ok(Ok(result))) => result,
         Ok(Ok(Err(err))) => {
-            bail!(
-                "current-time request failed: code={} message={}",
-                err.code,
-                err.message
-            );
+            bail!(tr_with(
+                current(),
+                "current-time request failed: code={0} message={1}",
+                &[&err.code.to_string(), &err.message],
+            ));
         }
-        Ok(Err(err)) => bail!("current-time request was canceled: {err}"),
+        Ok(Err(err)) => bail!(tr_with(
+            current(),
+            "current-time request was canceled: {0}",
+            &[&err.to_string()],
+        )),
         Err(_) => {
             let _canceled = outgoing.cancel_request(&request_id).await;
-            bail!(
-                "current-time request timed out after {}s",
-                CURRENT_TIME_REQUEST_TIMEOUT.as_secs()
-            );
+            bail!(tr_with(
+                current(),
+                "current-time request timed out after {0}s",
+                &[&CURRENT_TIME_REQUEST_TIMEOUT.as_secs().to_string()],
+            ));
         }
     };
     let response: CurrentTimeReadResponse =
-        serde_json::from_value(result).context("invalid current-time response")?;
+        serde_json::from_value(result).context(tr(current(), "invalid current-time response"))?;
 
-    DateTime::from_timestamp(response.current_time_at, 0)
-        .ok_or_else(|| anyhow!("current-time response is outside the supported range"))
+    DateTime::from_timestamp(response.current_time_at, 0).ok_or_else(|| {
+        anyhow!(tr(
+            current(),
+            "current-time response is outside the supported range"
+        ))
+    })
 }
 
 fn require_single_current_time_connection(connection_ids: &[ConnectionId]) -> Result<ConnectionId> {
     // External clocks are not interchangeable, so do not choose one silently.
     match connection_ids {
         [connection_id] => Ok(*connection_id),
-        _ => bail!(
-            "expected exactly one client subscribed to the thread, found {}",
-            connection_ids.len()
-        ),
+        _ => bail!(tr_with(
+            current(),
+            "expected exactly one client subscribed to the thread, found {0}",
+            &[&connection_ids.len().to_string()],
+        )),
     }
 }
 

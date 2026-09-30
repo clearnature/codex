@@ -1,6 +1,9 @@
 use super::*;
 use crate::app_info::app_info_to_api;
 use codex_connectors::AppToolPolicyEvaluator;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 mod installed;
 mod read;
@@ -182,7 +185,13 @@ impl AppsRequestProcessor {
         let start = match cursor {
             Some(cursor) => match cursor.parse::<usize>() {
                 Ok(idx) => idx,
-                Err(_) => return Err(invalid_request(format!("invalid cursor: {cursor}"))),
+                Err(_) => {
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "invalid cursor: {0}",
+                        &[&cursor],
+                    )));
+                }
             },
             None => 0,
         };
@@ -213,7 +222,13 @@ impl AppsRequestProcessor {
                 mcp_manager,
             )
             .await
-            .map_err(|err| format!("failed to load accessible apps: {err}"));
+            .map_err(|err| {
+                tr_with(
+                    current(),
+                    "failed to load accessible apps: {0}",
+                    &[&err.to_string()],
+                )
+            });
             let _ = accessible_tx.send(AppListLoadResult::Accessible(result));
         });
 
@@ -226,7 +241,7 @@ impl AppsRequestProcessor {
                 &all_plugin_apps,
             )
             .await
-            .map_err(|err| format!("failed to list apps: {err}"));
+            .map_err(|err| tr_with(current(), "failed to list apps: {0}", &[&err.to_string()]));
             let _ = tx.send(AppListLoadResult::Directory(result));
         });
 
@@ -260,12 +275,14 @@ impl AppsRequestProcessor {
             let result = match tokio::time::timeout_at(app_list_deadline, rx.recv()).await {
                 Ok(Some(result)) => result,
                 Ok(None) => {
-                    return Err(internal_error("failed to load app lists"));
+                    return Err(internal_error(tr(current(), "failed to load app lists")));
                 }
                 Err(_) => {
                     let timeout_seconds = APP_LIST_LOAD_TIMEOUT.as_secs();
-                    return Err(internal_error(format!(
-                        "timed out waiting for app lists after {timeout_seconds} seconds"
+                    return Err(internal_error(tr_with(
+                        current(),
+                        "timed out waiting for app lists after {0} seconds",
+                        &[&timeout_seconds.to_string()],
                     )));
                 }
             };
@@ -332,14 +349,25 @@ impl AppsRequestProcessor {
         &self,
         thread_id: &str,
     ) -> Result<(ThreadId, Arc<CodexThread>), JSONRPCErrorError> {
-        let thread_id = ThreadId::from_string(thread_id)
-            .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
+        let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid thread id: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
 
         let thread = self
             .thread_manager
             .get_thread(thread_id)
             .await
-            .map_err(|_| invalid_request(format!("thread not found: {thread_id}")))?;
+            .map_err(|_| {
+                invalid_request(tr_with(
+                    current(),
+                    "thread not found: {0}",
+                    &[&thread_id.to_string()],
+                ))
+            })?;
 
         Ok((thread_id, thread))
     }
@@ -351,7 +379,13 @@ impl AppsRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 
     async fn load_apps_config(&self, thread_id: Option<&str>) -> Result<Config, JSONRPCErrorError> {
@@ -363,7 +397,13 @@ impl AppsRequestProcessor {
         self.config_manager
             .load_latest_config_for_thread(thread_config.as_ref())
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 }
 
@@ -412,8 +452,10 @@ fn paginate_apps(
 ) -> Result<AppsListResponse, JSONRPCErrorError> {
     let total = connectors.len();
     if start > total {
-        return Err(invalid_request(format!(
-            "cursor {start} exceeds total apps {total}"
+        return Err(invalid_request(tr_with(
+            current(),
+            "cursor {0} exceeds total apps {1}",
+            &[&start.to_string(), &total.to_string()],
         )));
     }
 

@@ -496,11 +496,7 @@ pub async fn run_main_with_transport_options(
     let cli_kv_overrides = cli_config_overrides.parse_overrides().map_err(|e| {
         std::io::Error::new(
             ErrorKind::InvalidInput,
-            tr_with(
-                current(),
-                "error parsing -c overrides: {0}",
-                &[&format!("{e}")],
-            ),
+            tr_with(current(), "error parsing -c overrides: {0}", &[e.as_str()]),
         )
     })?;
     let codex_home = find_codex_home()?;

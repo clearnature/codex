@@ -2,7 +2,6 @@ use super::*;
 use codex_core::config::permission_profile_catalog;
 use codex_hooks::HookListEntryHandler;
 use codex_i18n::current;
-use codex_i18n::tr;
 use codex_i18n::tr_with;
 use futures::StreamExt;
 

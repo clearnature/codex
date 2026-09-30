@@ -35,7 +35,7 @@ pub(super) enum ReasoningShortcutDirection {
 
 impl ReasoningShortcutDirection {
     fn bound_message(self, effort: &ReasoningEffortConfig) -> String {
-        let label = ChatWidget::reasoning_effort_sentence_label(effort);
+        let label = ChatWidget::reasoning_effort_sentence_label(current(), effort);
         match self {
             Self::Lower => tr_with(
                 current(),
@@ -138,18 +138,22 @@ impl ChatWidget {
         if direction == ReasoningShortcutDirection::Raise
             && Self::is_advanced_reasoning_effort(&next_effort)
         {
-            let advanced_label = choices
+            let advanced_efforts: Vec<ReasoningEffortConfig> = choices
                 .iter()
                 .filter(|effort| Self::is_advanced_reasoning_effort(effort))
-                .map(Self::reasoning_effort_label)
+                .cloned()
+                .collect();
+            let advanced_label = advanced_efforts
+                .iter()
+                .map(|effort| Self::reasoning_effort_label(current(), effort))
                 .collect::<Vec<_>>()
-                .join(" and ");
+                .join(tr(current(), " and "));
             let model_path = if current_model.starts_with("codex-auto-") {
                 current_model
             } else {
                 tr_with(current(), "All models → {0}", &[&current_model])
             };
-            let message = if advanced_label.contains(" and ") {
+            let message = if advanced_efforts.len() > 1 {
                 tr_with(
                     current(),
                     "{0} are available under /model → {1} → More reasoning…",

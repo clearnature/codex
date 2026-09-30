@@ -2767,9 +2767,21 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     ("More reasoning…", "更多推理强度…"),
     ("Select Reasoning Level for {0}", "为 {0} 选择推理强度"),
+    // Reasoning-effort tier labels (`tui/src/chatwidget/model_popups.rs`,
+    // `reasoning_effort_label`). The tiers render as bare nouns in the picker,
+    // so each name is translated on its own; `status/thread_usage.rs` keeps its
+    // own English tier table because those literals double as lookup keys
+    // (§9.1.5, registered in `not-translated-unwrapped.tsv`).
+    ("Minimal", "最小"),
+    ("Low", "低"),
+    ("Medium", "中"),
+    ("High", "高"),
+    ("Max", "最高"),
+    ("Ultra", "终极"),
+    ("Persistent", "持久"),
     (
         "Ultra reasoning may proactively use multiple agents. This session is configured for {0} concurrent threads with up to {1} subagents which can increase usage quickly. Consider setting features.multi_agent_v2.max_concurrent_threads_per_session below 8.",
-        "Ultra推理可能会主动使用多个代理。本次会话配置为 {0} 个并发线程、最多 {1} 个子代理，这会很快增加用量。建议把features.multi_agent_v2.max_concurrent_threads_per_session设为小于8。",
+        "终极推理可能会主动使用多个代理。本次会话配置为 {0} 个并发线程、最多 {1} 个子代理，这会很快增加用量。建议把features.multi_agent_v2.max_concurrent_threads_per_session设为小于8。",
     ),
     // Windows sandbox prompts
     // (`tui/src/chatwidget/windows_sandbox_prompts.rs`). The mode names are the

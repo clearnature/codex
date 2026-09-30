@@ -1,6 +1,9 @@
 [codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = .git*,vendor,*-lock.yaml,*.lock,.codespellrc,*test.ts,*.jsonl,frame*.txt,*.snap,*.snap.new,target,.venv,node_modules
+skip = .git*,vendor,*-lock.yaml,*.lock,.codespellrc,*test.ts,*.jsonl,frame*.txt,*.snap,*.snap.new,target,.venv,node_modules,dist
+# `dist` is generated bundle output (untracked; no tracked file lives under a
+# `dist/` dir): minified sourcemaps yield false hits such as `EACF ==> EACH`.
+# Same class as the `target`/`node_modules` entries above.
 check-hidden = true
 ignore-regex = ^\s*"image/\S+": ".*|\b(afterAll)\b
 ignore-words-list = ratatui,ser,iTerm,iterm2,iterm,te,TE,PASE,SEH

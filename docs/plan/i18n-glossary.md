@@ -33,8 +33,10 @@
 | sandbox mode                  | 沙箱模式      | —         | `Full Access mode`/`Agent mode`/`Read-Only mode` 作「完全访问模式 / 代理模式 / 只读模式」 |
 | Plan mode                     | 计划模式      | —         | 模式名，统一                                                                              |
 | reasoning effort              | 推理强度      | —         |                                                                                           |
+| 推理强度档位名 None / Minimal / Low / Medium / High / Extra high / Max / Ultra / Persistent | 无 / 最小 / 低 / 中 / 高 / 极高 / 最高 / 终极 / 持久 | — | `model_popups.rs` 的 `reasoning_effort_label` 随语言渲染；`status/thread_usage.rs` 的档位表是协议 `display_name` 的查找键，保持英文（§9.1.5，已在 `not-translated-unwrapped.tsv` 登记） |
 | context window                | 上下文窗口    | —         |                                                                                           |
 | MCP / IDE / Git / token / URL | **不译**      | 同        | 产品名与协议名保持原文                                                                    |
+| connector                     | 连接器        | —         | 外部代理迁移/MCP 语境的「连接来源」；仅译 prose，协议类型名（`ExternalAgentImportedConnectorSource` 等）保持原文（批 N 首次入表） |
 
 **不译清单**：产品名（Codex、OpenAI、Fast、Plan…除模式名外）、命令与键位（`/goal`、`/keymap`、`ctrl + c`、`Enter`）、配置键（`config.toml`、`features.multi_agent_v2.…`）、内部 id、以及**喂给模型的提示词资产**（设计 §4 决策 3）。
 

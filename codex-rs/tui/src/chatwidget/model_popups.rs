@@ -5,6 +5,7 @@
 
 use super::*;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
+use codex_i18n::Lang;
 use codex_i18n::current;
 use codex_i18n::tr;
 use codex_i18n::tr_with;
@@ -359,7 +360,10 @@ impl ChatWidget {
             Some(selected_effort) => tr_with(
                 current(),
                 "{0} reasoning",
-                &[&Self::reasoning_effort_sentence_label(selected_effort)],
+                &[&Self::reasoning_effort_sentence_label(
+                    current(),
+                    selected_effort,
+                )],
             ),
             None => tr(current(), "the selected reasoning").to_string(),
         };
@@ -374,7 +378,10 @@ impl ChatWidget {
             tr_with(
                 current(),
                 "user-chosen Plan override ({0})",
-                &[&Self::reasoning_effort_sentence_label(plan_override)],
+                &[&Self::reasoning_effort_sentence_label(
+                    current(),
+                    plan_override,
+                )],
             )
         } else if let Some(plan_mask) = collaboration_modes::plan_mask(self.model_catalog.as_ref())
         {
@@ -386,7 +393,10 @@ impl ChatWidget {
                 Some(plan_effort) => tr_with(
                     current(),
                     "built-in Plan default ({0})",
-                    &[&Self::reasoning_effort_sentence_label(plan_effort)],
+                    &[&Self::reasoning_effort_sentence_label(
+                        current(),
+                        plan_effort,
+                    )],
                 ),
                 None => tr(current(), "built-in Plan default (no reasoning)").to_string(),
             }
@@ -489,7 +499,7 @@ impl ChatWidget {
             None
         };
         let warning_text = warn_effort.as_ref().map(|effort| {
-            let effort_label = Self::reasoning_effort_label(effort);
+            let effort_label = Self::reasoning_effort_label(current(), effort);
             tr_with(
                 current(),
                 "⚠ {0} reasoning effort can quickly consume Plus plan rate limits.",
@@ -558,7 +568,7 @@ impl ChatWidget {
         let mut items: Vec<SelectionItem> = Vec::new();
         for choice in choices.iter() {
             let effort = choice.clone();
-            let mut effort_label = Self::reasoning_effort_label(&effort);
+            let mut effort_label = Self::reasoning_effort_label(current(), &effort);
             if Some(choice) == default_choice.as_ref() {
                 effort_label.push_str(tr(current(), " (default)"));
             }
@@ -604,11 +614,6 @@ impl ChatWidget {
         }
 
         if !advanced_choices.is_empty() {
-            let advanced_label = advanced_choices
-                .iter()
-                .map(Self::reasoning_effort_label)
-                .collect::<Vec<_>>()
-                .join(" and ");
             let preset_for_action = preset;
             let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
                 tx.send(AppEvent::OpenAdvancedReasoningPopup {
@@ -617,19 +622,10 @@ impl ChatWidget {
             })];
             items.push(SelectionItem {
                 name: tr(current(), "More reasoning…").to_string(),
-                description: Some(if advanced_choices.len() == 1 {
-                    tr_with(
-                        current(),
-                        "{0} consumes usage limits faster",
-                        &[&advanced_label],
-                    )
-                } else {
-                    tr_with(
-                        current(),
-                        "{0} consume usage limits faster",
-                        &[&advanced_label],
-                    )
-                }),
+                description: Some(Self::advanced_usage_description(
+                    current(),
+                    &advanced_choices,
+                )),
                 is_current: is_current_model
                     && highlight_choice
                         .as_ref()
@@ -699,7 +695,7 @@ impl ChatWidget {
             );
 
             items.push(SelectionItem {
-                name: Self::reasoning_effort_label(&effort),
+                name: Self::reasoning_effort_label(current(), &effort),
                 description: Some(description.to_string()),
                 is_current: is_current_model && Some(&effort) == highlight_choice.as_ref(),
                 actions,
@@ -728,25 +724,52 @@ impl ChatWidget {
         )
     }
 
-    pub(super) fn reasoning_effort_label(effort: &ReasoningEffortConfig) -> String {
+    /// The description under the "More reasoning…" entry: the advanced tier
+    /// labels joined by the localized connector, then the singular or plural
+    /// usage-limit warning. The language is passed in rather than published so
+    /// the zh render can be asserted without racing the snapshot tests that
+    /// share this binary.
+    pub(super) fn advanced_usage_description(
+        lang: Lang,
+        advanced_efforts: &[ReasoningEffortConfig],
+    ) -> String {
+        let label = advanced_efforts
+            .iter()
+            .map(|effort| Self::reasoning_effort_label(lang, effort))
+            .collect::<Vec<_>>()
+            .join(tr(lang, " and "));
+        // Keep the template keys as literals at the `tr_with` call site: the
+        // drift checker reads the first string-literal argument, so routing
+        // them through a local `key` variable makes both keys look unused.
+        if advanced_efforts.len() == 1 {
+            tr_with(lang, "{0} consumes usage limits faster", &[&label])
+        } else {
+            tr_with(lang, "{0} consume usage limits faster", &[&label])
+        }
+    }
+
+    pub(super) fn reasoning_effort_label(lang: Lang, effort: &ReasoningEffortConfig) -> String {
         match effort {
-            ReasoningEffortConfig::None => "None".to_string(),
-            ReasoningEffortConfig::Minimal => "Minimal".to_string(),
-            ReasoningEffortConfig::Low => "Low".to_string(),
-            ReasoningEffortConfig::Medium => "Medium".to_string(),
-            ReasoningEffortConfig::High => "High".to_string(),
-            ReasoningEffortConfig::XHigh => tr(current(), "Extra high").to_string(),
-            ReasoningEffortConfig::Max => "Max".to_string(),
-            ReasoningEffortConfig::Ultra => "Ultra".to_string(),
-            ReasoningEffortConfig::Persistent => "Persistent".to_string(),
+            ReasoningEffortConfig::None => tr(lang, "None").to_string(),
+            ReasoningEffortConfig::Minimal => tr(lang, "Minimal").to_string(),
+            ReasoningEffortConfig::Low => tr(lang, "Low").to_string(),
+            ReasoningEffortConfig::Medium => tr(lang, "Medium").to_string(),
+            ReasoningEffortConfig::High => tr(lang, "High").to_string(),
+            ReasoningEffortConfig::XHigh => tr(lang, "Extra high").to_string(),
+            ReasoningEffortConfig::Max => tr(lang, "Max").to_string(),
+            ReasoningEffortConfig::Ultra => tr(lang, "Ultra").to_string(),
+            ReasoningEffortConfig::Persistent => tr(lang, "Persistent").to_string(),
             ReasoningEffortConfig::Custom(value) => value.clone(),
         }
     }
 
-    pub(super) fn reasoning_effort_sentence_label(effort: &ReasoningEffortConfig) -> String {
+    pub(super) fn reasoning_effort_sentence_label(
+        lang: Lang,
+        effort: &ReasoningEffortConfig,
+    ) -> String {
         match effort {
             ReasoningEffortConfig::Custom(value) => value.clone(),
-            effort => Self::reasoning_effort_label(effort).to_lowercase(),
+            effort => Self::reasoning_effort_label(lang, effort).to_lowercase(),
         }
     }
 
@@ -782,3 +805,7 @@ impl ChatWidget {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "model_popups_tests.rs"]
+mod tests;

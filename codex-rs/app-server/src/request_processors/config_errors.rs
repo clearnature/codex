@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 fn cloud_config_bundle_load_error(err: &std::io::Error) -> Option<&CloudConfigBundleLoadError> {
     let mut current: Option<&(dyn std::error::Error + 'static)> = err
@@ -29,7 +31,11 @@ pub(super) fn config_load_error(err: &std::io::Error) -> JSONRPCErrorError {
         data
     });
 
-    let mut error = invalid_request(format!("failed to load configuration: {err}"));
+    let mut error = invalid_request(tr_with(
+        current(),
+        "failed to load configuration: {0}",
+        &[&err.to_string()],
+    ));
     error.data = data;
     error
 }

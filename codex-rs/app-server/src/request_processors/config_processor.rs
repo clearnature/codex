@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 
 use crate::config_manager::ConfigManager;
@@ -229,8 +232,10 @@ impl ConfigRequestProcessor {
             .load_latest_config(fallback_cwd)
             .await
             .map_err(|err| {
-                internal_error(format!(
-                    "failed to resolve feature override precedence: {err}"
+                internal_error(tr_with(
+                    current(),
+                    "failed to resolve feature override precedence: {0}",
+                    &[&err.to_string()],
                 ))
             })
     }
@@ -311,7 +316,7 @@ impl ConfigRequestProcessor {
                     .iter()
                     .map(|(name, enabled)| (name.clone(), *enabled)),
             )
-            .map_err(|_| internal_error("failed to update feature enablement"))?;
+            .map_err(|_| internal_error(tr(current(), "failed to update feature enablement")))?;
 
         let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
         if should_start_background_rollout_migration && config.features.enabled(feature) {

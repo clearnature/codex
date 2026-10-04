@@ -2,6 +2,8 @@ use super::*;
 use crate::extensions::send_thread_warning;
 use codex_app_server_protocol::ThreadQueueChangedNotification;
 use codex_extension_api::ThreadIdleCause;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::config_types::MultiAgentMode;
 
 #[derive(Clone)]
@@ -151,16 +153,20 @@ pub(super) async fn ensure_conversation_listener(
     {
         Ok(conv) => conv,
         Err(_) => {
-            return Err(invalid_request(format!(
-                "thread not found: {conversation_id}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "thread not found: {0}",
+                &[&conversation_id.to_string()],
             )));
         }
     };
     let thread_state = {
         let pending_thread_unloads = listener_task_context.pending_thread_unloads.lock().await;
         if pending_thread_unloads.contains(&conversation_id) {
-            return Err(invalid_request(format!(
-                "thread {conversation_id} is closing; retry after the thread is closed"
+            return Err(invalid_request(tr_with(
+                current(),
+                "thread {0} is closing; retry after the thread is closed",
+                &[&conversation_id.to_string()],
             )));
         }
         let Some(thread_state) = listener_task_context
@@ -227,8 +233,10 @@ pub(super) async fn ensure_listener_task_running(
     )
     .await
     else {
-        return Err(invalid_request(format!(
-            "thread {conversation_id} is closing; retry after the thread is closed"
+        return Err(invalid_request(tr_with(
+            current(),
+            "thread {0} is closing; retry after the thread is closed",
+            &[&conversation_id.to_string()],
         )));
     };
     let config = conversation.config().await;
@@ -682,8 +690,10 @@ pub(super) async fn handle_pending_thread_resume_request(
             outgoing
                 .send_error(
                     request_id,
-                    invalid_request(format!(
-                        "thread {conversation_id} is closing; retry thread/resume after the thread is closed"
+                    invalid_request(tr_with(
+                        current(),
+                        "thread {0} is closing; retry thread/resume after the thread is closed",
+                        &[&conversation_id.to_string()],
                     )),
                 )
                 .await;

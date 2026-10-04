@@ -97,6 +97,8 @@ use codex_app_server_protocol::item_event_to_server_notification;
 use codex_core::CodexThread;
 use codex_core::ThreadManager;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use codex_protocol::items::CollabAgentTool as CoreCollabAgentTool;
 use codex_protocol::items::TurnItem as CoreTurnItem;
@@ -1252,8 +1254,10 @@ pub(crate) async fn apply_bespoke_event_handling(
                         outgoing
                             .send_error(
                                 request_id,
-                                internal_error(format!(
-                                    "failed to acquire thread list state permit: {err}"
+                                internal_error(tr_with(
+                                    current(),
+                                    "failed to acquire thread list state permit: {0}",
+                                    &[&err.to_string()],
                                 )),
                             )
                             .await;
@@ -1272,8 +1276,10 @@ pub(crate) async fn apply_bespoke_event_handling(
                         outgoing
                             .send_error(
                                 request_id.clone(),
-                                internal_error(format!(
-                                    "failed to read thread {conversation_id} after rollback: {err}"
+                                internal_error(tr_with(
+                                    current(),
+                                    "failed to read thread {0} after rollback: {1}",
+                                    &[&conversation_id.to_string(), &err.to_string()],
                                 )),
                             )
                             .await;
@@ -1662,8 +1668,10 @@ fn thread_rollback_response_from_stored_thread(
         thread_from_stored_thread(stored_thread, fallback_model_provider, fallback_cwd);
     thread.session_id = session_id;
     let Some(history) = history else {
-        return Err(format!(
-            "thread {thread_id} did not include persisted history after rollback"
+        return Err(tr_with(
+            current(),
+            "thread {0} did not include persisted history after rollback",
+            &[&thread_id.to_string()],
         ));
     };
     populate_thread_turns_from_history(&mut thread, &history.items, /*active_turn*/ None);
@@ -1922,7 +1930,11 @@ async fn on_request_permissions_response(
         // TODO(anp): Remove this native-path localization error path once core permission paths
         // remain PathUri after crossing the app-server boundary.
         Err(err) => {
-            let message = format!("failed to localize granted filesystem paths: {err}");
+            let message = tr_with(
+                current(),
+                "failed to localize granted filesystem paths: {0}",
+                &[&err.to_string()],
+            );
             handle_error_notification(
                 conversation_id,
                 &turn_id,

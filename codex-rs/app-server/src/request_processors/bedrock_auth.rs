@@ -12,6 +12,8 @@ use codex_config::ConfigLayerSource;
 use codex_config::format_config_layer_source;
 use codex_core::config::Config;
 use codex_core::config::edit::ConfigEditsBuilder;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_model_provider::AMAZON_BEDROCK_PROVIDER_ID;
 
 pub(super) struct BedrockProviderConfig<'a> {
@@ -58,8 +60,10 @@ pub(super) async fn configure_bedrock_provider(
         .map_err(map_config_error)?;
     if let Some(overridden) = response.overridden_metadata {
         let message = overridden.message;
-        return Err(invalid_request(format!(
-            "Amazon Bedrock configuration cannot take effect: {message}"
+        return Err(invalid_request(tr_with(
+            current(),
+            "Amazon Bedrock configuration cannot take effect: {0}",
+            &[&message],
         )));
     }
     Ok(())
@@ -71,12 +75,22 @@ pub(super) async fn ensure_user_model_provider_can_be_bedrock(
     let layers = config_manager
         .load_config_layers(/*cwd*/ None)
         .await
-        .map_err(|err| internal_error(format!("failed to load configuration layers: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to load configuration layers: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
     let user_precedence = match layers.get_active_user_layer() {
         Some(layer) => layer.name.precedence(),
         None => ConfigLayerSource::User {
             file: config_manager.user_config_path().map_err(|err| {
-                internal_error(format!("failed to resolve user config path: {err}"))
+                internal_error(tr_with(
+                    current(),
+                    "failed to resolve user config path: {0}",
+                    &[&err.to_string()],
+                ))
             })?,
             profile: None,
         }
@@ -94,8 +108,14 @@ pub(super) async fn ensure_user_model_provider_can_be_bedrock(
         && effective_provider.as_str() != Some(AMAZON_BEDROCK_PROVIDER_ID)
     {
         let source = format_config_layer_source(&overriding_layer.name, CONFIG_TOML_FILE);
-        return Err(invalid_request(format!(
-            "Amazon Bedrock login cannot select `{AMAZON_BEDROCK_PROVIDER_ID}` because {source} sets `model_provider` to {effective_provider}"
+        return Err(invalid_request(tr_with(
+            current(),
+            "Amazon Bedrock login cannot select `{0}` because {1} sets `model_provider` to {2}",
+            &[
+                AMAZON_BEDROCK_PROVIDER_ID,
+                &source,
+                &effective_provider.to_string(),
+            ],
         )));
     }
 
@@ -145,8 +165,10 @@ pub(super) async fn clear_user_model_provider_if_bedrock(
                     .load_latest_config(/*fallback_cwd*/ None)
                     .await
                     .map_err(|err| {
-                        internal_error(format!(
-                            "failed to reload Amazon Bedrock configuration: {err}"
+                        internal_error(tr_with(
+                            current(),
+                            "failed to reload Amazon Bedrock configuration: {0}",
+                            &[&err.to_string()],
                         ))
                     })?,
             );

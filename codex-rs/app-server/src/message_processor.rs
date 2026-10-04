@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashSet;
 use std::future::Future;
 use std::sync::Arc;
@@ -106,8 +109,13 @@ const CONNECTION_RPC_DRAIN_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 30);
 fn deserialize_client_request(request: JSONRPCRequest) -> Result<ClientRequest, JSONRPCErrorError> {
     reject_obsolete_request_fields(&request)?;
 
-    ClientRequest::try_from(request)
-        .map_err(|err| invalid_request(format!("Invalid request: {err}")))
+    ClientRequest::try_from(request).map_err(|err| {
+        invalid_request(tr_with(
+            current(),
+            "Invalid request: {0}",
+            &[&err.to_string()],
+        ))
+    })
 }
 
 fn reject_obsolete_request_fields(request: &JSONRPCRequest) -> Result<(), JSONRPCErrorError> {
@@ -126,8 +134,10 @@ fn reject_removed_permission_profile(request: &JSONRPCRequest) -> Result<(), JSO
         .is_some_and(|params| params.contains_key("permissionProfile"))
     {
         let method = request.method.as_str();
-        return Err(invalid_params(format!(
-            "`permissionProfile` is no longer supported for `{method}`; use `permissions` with a named profile id instead"
+        return Err(invalid_params(tr_with(
+            current(),
+            "`permissionProfile` is no longer supported for `{0}`; use `permissions` with a named profile id instead",
+            &[method],
         )));
     }
 
@@ -910,7 +920,7 @@ impl MessageProcessor {
         request_context: RequestContext,
     ) -> Result<(), JSONRPCErrorError> {
         if !session.initialized() {
-            return Err(invalid_request("Not initialized"));
+            return Err(invalid_request(tr(current(), "Not initialized")));
         }
 
         if let Some(reason) = codex_request.experimental_reason()
@@ -1557,7 +1567,10 @@ impl MessageProcessor {
             }
             ClientRequest::McpServerEventStreamStart { params, .. } => {
                 let ready = event_stream_ready.ok_or_else(|| {
-                    internal_error("MCP event subscription was not reserved before startup")
+                    internal_error(tr(
+                        current(),
+                        "MCP event subscription was not reserved before startup",
+                    ))
                 })?;
                 session
                     .mcp_event_streams

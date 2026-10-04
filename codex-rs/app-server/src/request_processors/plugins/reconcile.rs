@@ -9,6 +9,8 @@ use codex_app_server_protocol::PluginReconcileChangedPlugin;
 use codex_app_server_protocol::PluginReconcileParams;
 use codex_app_server_protocol::PluginReconcileResponse;
 use codex_core_plugins::remote::RemotePluginShareDiscoverability;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl PluginRequestProcessor {
     #[tracing::instrument(level = "debug", skip_all, fields(reason = ?params.reason))]
@@ -35,8 +37,10 @@ impl PluginRequestProcessor {
             .reconcile_remote_installed_plugins(&plugins_input, auth.as_ref())
             .await
             .map_err(|err| {
-                internal_error(format!(
-                    "failed to reconcile remote installed plugins: {err}"
+                internal_error(tr_with(
+                    current(),
+                    "failed to reconcile remote installed plugins: {0}",
+                    &[&err.to_string()],
                 ))
             })?;
 
@@ -81,10 +85,18 @@ impl PluginRequestProcessor {
             completion
                 .await
                 .map_err(|err| {
-                    internal_error(format!("plugin hook trust update was cancelled: {err}"))
+                    internal_error(tr_with(
+                        current(),
+                        "plugin hook trust update was cancelled: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?
                 .map_err(|err| {
-                    internal_error(format!("failed to trust materialized plugin hooks: {err}"))
+                    internal_error(tr_with(
+                        current(),
+                        "failed to trust materialized plugin hooks: {0}",
+                        &[&err],
+                    ))
                 })?;
         }
 

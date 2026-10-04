@@ -41,7 +41,6 @@ use codex_thread_store::ThreadStore;
 use codex_thread_store::ThreadStoreError;
 
 use super::TurnRequestProcessor;
-use super::thread_input::DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR;
 use super::thread_input::can_accept_direct_input;
 use super::thread_processor::THREAD_LIST_DEFAULT_LIMIT;
 use super::thread_processor::THREAD_LIST_MAX_LIMIT;
@@ -317,9 +316,12 @@ fn ensure_direct_input_allowed(
     source: &SessionSource,
 ) -> Result<(), JSONRPCErrorError> {
     match loaded_thread {
-        Some(thread) if !can_accept_direct_input(thread.multi_agent_version(), source) => Err(
-            invalid_request(DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR),
-        ),
+        Some(thread) if !can_accept_direct_input(thread.multi_agent_version(), source) => {
+            Err(invalid_request(tr(
+                current(),
+                "direct app-server input is not allowed for multi-agent v2 sub-agents",
+            )))
+        }
         None if matches!(
             source,
             SessionSource::SubAgent(SubAgentSource::ThreadSpawn { .. })

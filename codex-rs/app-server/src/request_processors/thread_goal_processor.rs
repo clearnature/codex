@@ -1,4 +1,3 @@
-use super::thread_input::DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR;
 use super::thread_input::can_accept_direct_input;
 use super::thread_input::ensure_direct_input_allowed;
 use super::*;
@@ -357,9 +356,10 @@ impl ThreadGoalRequestProcessor {
                         history.get_multi_agent_version(),
                         &session_meta.meta.source,
                     ) {
-                        return Err(invalid_request(
-                            DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR,
-                        ));
+                        return Err(invalid_request(tr(
+                            current(),
+                            "direct app-server input is not allowed for multi-agent v2 sub-agents",
+                        )));
                     }
                 }
             }

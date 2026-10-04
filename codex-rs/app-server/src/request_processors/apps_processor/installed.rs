@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 use codex_connectors::ConnectorRuntimeTool;
 use codex_connectors::connector_runtime_context_key;
@@ -155,8 +157,10 @@ impl AppsRequestProcessor {
                     Err(err) => {
                         refresh_disposition = "error";
                         retained_previous_snapshot = previous_snapshot.is_some();
-                        return Err(internal_error(format!(
-                            "failed to refresh installed connector runtime state: {err:#}"
+                        return Err(internal_error(tr_with(
+                            current(),
+                            "failed to refresh installed connector runtime state: {0}",
+                            &[&format!("{err:#}")],
                         )));
                     }
                 }

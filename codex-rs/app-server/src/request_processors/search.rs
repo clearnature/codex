@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -84,13 +87,20 @@ impl SearchRequestProcessor {
     ) -> Result<FuzzyFileSearchSessionStartResponse, JSONRPCErrorError> {
         let FuzzyFileSearchSessionStartParams { session_id, roots } = params;
         if session_id.is_empty() {
-            return Err(invalid_request("sessionId must not be empty"));
+            return Err(invalid_request(tr(
+                current(),
+                "sessionId must not be empty",
+            )));
         }
 
         let session =
             start_fuzzy_file_search_session(session_id.clone(), roots, self.outgoing.clone())
                 .map_err(|err| {
-                    internal_error(format!("failed to start fuzzy file search session: {err}"))
+                    internal_error(tr_with(
+                        current(),
+                        "failed to start fuzzy file search session: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
         self.fuzzy_search_sessions
             .lock()
@@ -114,8 +124,10 @@ impl SearchRequestProcessor {
             }
         };
         if !found {
-            return Err(invalid_request(format!(
-                "fuzzy file search session not found: {session_id}"
+            return Err(invalid_request(tr_with(
+                current(),
+                "fuzzy file search session not found: {0}",
+                &[&session_id],
             )));
         }
 

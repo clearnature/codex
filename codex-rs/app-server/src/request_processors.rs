@@ -406,6 +406,8 @@ use codex_feedback::FeedbackAttachmentPath;
 use codex_feedback::FeedbackUploadOptions;
 use codex_git_utils::git_diff_to_remote;
 use codex_git_utils::resolve_root_git_project_for_trust;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_login::AuthManager;
 use codex_login::CODEX_OPEN_APP_URL;
 use codex_login::CodexAuth;
@@ -623,7 +625,9 @@ pub(crate) fn apply_live_thread_settings(
 fn resolve_request_cwd(cwd: Option<PathBuf>) -> Result<Option<AbsolutePathBuf>, JSONRPCErrorError> {
     cwd.map(|cwd| {
         AbsolutePathBuf::relative_to_current_dir(path_utils::normalize_for_native_workdir(cwd))
-            .map_err(|err| invalid_request(format!("invalid cwd: {err}")))
+            .map_err(|err| {
+                invalid_request(tr_with(current(), "invalid cwd: {0}", &[&err.to_string()]))
+            })
     })
     .transpose()
 }
@@ -642,10 +646,7 @@ fn resolve_turn_environment_selections(
             .cwd
             .to_inferred_path_uri()
             .ok_or_else(|| {
-                invalid_request(format!(
-                    "invalid cwd for environment `{environment_id}`: path `{}` does not use absolute POSIX or Windows path syntax",
-                    environment.cwd
-                ))
+                invalid_request(tr_with(current(), "invalid cwd for environment `{0}`: path `{1}` does not use absolute POSIX or Windows path syntax", &[&environment_id, &environment.cwd.to_string()]))
             })?;
         let workspace_roots = environment
             .runtime_workspace_roots
@@ -653,9 +654,7 @@ fn resolve_turn_environment_selections(
                 let mut resolved_roots = Vec::new();
                 for root in roots {
                     let root = root.to_inferred_path_uri().ok_or_else(|| {
-                        invalid_request(format!(
-                            "invalid runtime workspace root for environment `{environment_id}`: path `{root}` does not use absolute POSIX or Windows path syntax"
-                        ))
+                        invalid_request(tr_with(current(), "invalid runtime workspace root for environment `{0}`: path `{1}` does not use absolute POSIX or Windows path syntax", &[&environment_id, &root.to_string()]))
                     })?;
                     if !resolved_roots.contains(&root) {
                         resolved_roots.push(root);

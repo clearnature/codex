@@ -16,6 +16,9 @@ use codex_app_server_protocol::ThreadSectionListParams;
 use codex_app_server_protocol::ThreadSectionListResponse;
 use codex_app_server_protocol::ThreadSectionUpdateParams;
 use codex_app_server_protocol::ThreadSectionUpdateResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_state::PINNED_THREAD_SECTION_ID;
 use codex_thread_store::CreateThreadSectionParams as StoreCreateThreadSectionParams;
 use codex_thread_store::DeleteThreadSectionParams as StoreDeleteThreadSectionParams;
@@ -64,7 +67,10 @@ impl ThreadRequestProcessor {
         self.ensure_thread_sections_supported(OPERATION)?;
         let name = params.name.trim();
         if name.is_empty() {
-            return Err(invalid_params("section name must not be empty"));
+            return Err(invalid_params(tr(
+                current(),
+                "section name must not be empty",
+            )));
         }
         if let Some(appearance) = params.appearance.as_ref() {
             validate_thread_section_appearance(appearance)?;
@@ -94,15 +100,19 @@ impl ThreadRequestProcessor {
         self.ensure_thread_sections_supported(OPERATION)?;
         let name = params.name.trim();
         if name.is_empty() {
-            return Err(invalid_params("section name must not be empty"));
+            return Err(invalid_params(tr(
+                current(),
+                "section name must not be empty",
+            )));
         }
         if params.section_id.trim().is_empty() {
-            return Err(invalid_params("sectionId must not be empty"));
+            return Err(invalid_params(tr(current(), "sectionId must not be empty")));
         }
         if params.section_id == PINNED_THREAD_SECTION_ID {
-            return Err(invalid_params(
+            return Err(invalid_params(tr(
+                current(),
                 "the built-in pinned section cannot be renamed",
-            ));
+            )));
         }
         if let Some(Some(appearance)) = params.appearance.as_ref() {
             validate_thread_section_appearance(appearance)?;
@@ -119,7 +129,11 @@ impl ThreadRequestProcessor {
             .await
             .map_err(|err| thread_section_store_error(OPERATION, err))?
             .ok_or_else(|| {
-                invalid_params(format!("thread section not found: {}", params.section_id))
+                invalid_params(tr_with(
+                    current(),
+                    "thread section not found: {0}",
+                    &[&params.section_id],
+                ))
             })?;
 
         Ok(Some(
@@ -137,12 +151,13 @@ impl ThreadRequestProcessor {
         const OPERATION: &str = "threadSection/delete";
         self.ensure_thread_sections_supported(OPERATION)?;
         if params.section_id.trim().is_empty() {
-            return Err(invalid_params("sectionId must not be empty"));
+            return Err(invalid_params(tr(current(), "sectionId must not be empty")));
         }
         if params.section_id == PINNED_THREAD_SECTION_ID {
-            return Err(invalid_params(
+            return Err(invalid_params(tr(
+                current(),
                 "the built-in pinned section cannot be deleted",
-            ));
+            )));
         }
         let deleted = self
             .thread_store
@@ -152,9 +167,10 @@ impl ThreadRequestProcessor {
             .await
             .map_err(|err| thread_section_store_error(OPERATION, err))?;
         if !deleted {
-            return Err(invalid_params(format!(
-                "thread section not found: {}",
-                params.section_id
+            return Err(invalid_params(tr_with(
+                current(),
+                "thread section not found: {0}",
+                &[&params.section_id],
             )));
         }
 
@@ -181,8 +197,13 @@ fn validate_thread_section_appearance(
         ("color", appearance.color.as_ref()),
     ] {
         if value.is_some_and(|value| value.len() > MAX_THREAD_SECTION_APPEARANCE_FIELD_BYTES) {
-            return Err(invalid_params(format!(
-                "section appearance {field} must not exceed {MAX_THREAD_SECTION_APPEARANCE_FIELD_BYTES} bytes"
+            return Err(invalid_params(tr_with(
+                current(),
+                "section appearance {0} must not exceed {1} bytes",
+                &[
+                    field,
+                    &MAX_THREAD_SECTION_APPEARANCE_FIELD_BYTES.to_string(),
+                ],
             )));
         }
     }
@@ -212,7 +233,11 @@ fn state_thread_section_appearance(
 }
 
 fn unsupported_thread_section_operation(operation: &'static str) -> JSONRPCErrorError {
-    method_not_found(format!("{operation} is unavailable without sqlite state"))
+    method_not_found(tr_with(
+        current(),
+        "{0} is unavailable without sqlite state",
+        &[operation],
+    ))
 }
 
 fn thread_section_store_error(

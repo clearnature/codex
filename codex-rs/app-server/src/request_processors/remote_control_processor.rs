@@ -15,6 +15,8 @@ use codex_app_server_protocol::RemoteControlPairingStartResponse;
 use codex_app_server_protocol::RemoteControlPairingStatusParams;
 use codex_app_server_protocol::RemoteControlPairingStatusResponse;
 use codex_app_server_protocol::RemoteControlStatusReadResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::io;
 
 #[derive(Clone)]
@@ -117,10 +119,12 @@ impl RemoteControlRequestProcessor {
     }
 
     fn handle(&self) -> Result<&RemoteControlHandle, JSONRPCErrorError> {
-        let handle = self
-            .remote_control_handle
-            .as_ref()
-            .ok_or_else(|| internal_error("remote control is unavailable for this app-server"))?;
+        let handle = self.remote_control_handle.as_ref().ok_or_else(|| {
+            internal_error(tr(
+                current(),
+                "remote control is unavailable for this app-server",
+            ))
+        })?;
         handle
             .ensure_remote_control_allowed()
             .map_err(|err| invalid_request(err.to_string()))?;

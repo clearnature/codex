@@ -1533,3 +1533,66 @@ old 里带 `?` 则 new 必须带；替换后 grep `})?,` / `});` 清点逐处确
 
 `i18n-check` `r-mud27ydp-qglqes`（4043 词条全零）；fmt/check/clippy EXIT=0。
 对账（正确口径）：config_manager `0 unwrapped`；app-server 249→**227**。
+
+## 五十一、app-server 批 Q：156 条收尾清零（156→0，含三条判据教训）
+
+### 51.1 执行结果
+
+`python3 scripts/i18n_todo.py --root codex-rs/app-server/src`：**156 → 0**。
+判决 **127 译 / 29 登记**，词典 4113 → **4212**（+99）。
+
+分 12 批经 `scripts/i18n_apply.py --spec/--specs` 落地（thread_sections、mcp_event_stream、
+session_importer、external_auth、code_mode_host、command_exec、thread_delete、bedrock_setup、
+rate_limit_resets、bedrock_auth、thread_lifecycle、feedback/message/bespoke、
+plugins/search+environment+initialize+reconcile、search+request_processors+config+marketplace、
+protocol+fs_watch+outgoing+user_verification、read+config_errors+fs+plugins/local+
+remote_control+request_errors+windows_sandbox、installed+git、thread_input 三文件、turn_processor）。
+
+### 51.2 登记 29 条（值形态为主）
+
+tracing 日志 8 条（`lib.rs`/`thread_state`×2/`turn_cost_worker`/`feedback_doctor_report`×2/
+`thread_lifecycle`/`bespoke:899`）；已译包装的 `{0}`/`{err:#}` 明细 7 条
+（`config_manager`/`effective_plugin_change`×2/`mcp_refresh`/`installed`×2）；
+`Result<_, String>` 只进 `tracing::warn!` 3 条（rate_limit_resets）；测试专用 bin 7 条
+（`bin/notify_capture.rs`，唯一调用点是 `tests/suite/v2/initialize.rs`）；
+模型面/按值断言 2 条（`dynamic_tools:16`/`image_url:2`）；协议字段 1 条（`plugins/local:76`）；
+匹配键 1 条（`thread_processor:6349`）；上传载荷 1 条（`feedback_thread_index:71`）。
+
+**登记形态教训（本轮三次踩中，可判据化）**：空键站点形态按 `path:line` 匹配，
+**同文件前面任何编辑（插 import、`just fmt` 折行）都会让行号漂移、登记静默失效**。
+本轮 `plugins/local.rs` 三连漂（`:76→:78→:84`），`rate_limit_resets`/`thread_lifecycle`/
+`bespoke` 也各漂一次。
+✅ **判据**：值唯一的登记一律用**值形态**（按文本匹配、抗漂移）；
+值有 fanout 的保留站点形态，但**必须在该文件全部编辑+fmt 之后**用 `--dump-rows` 复核，
+并把复核结果写进理由栏。`--audit-rows` 只报「行号未变但未生效」，**查不出漂移**——
+漂移的表现是该站点重新出现在 `--dump-rows` 里，故对账必须看 `dump-rows` 是否为空。
+
+### 51.3 4 处 format-spec 站点走 `extra_edits`（占位符正则不识别 `{err:#}`/`{cwd:?}`）
+
+`i18n_apply` 的占位符抽取正则 `\{([A-Za-z_][A-Za-z0-9_]*)?\}` **不匹配带 format-spec 的
+占位符**，若按 `kind=format` 直改，key 里会残留 `{err:#}`，而 `substitute` 只替换 `{N}`
+⇒ 英文输出把占位符原样打出来、**错误详情丢失**（破坏逐字节不变）。
+4 站点改用 `extra_edits` 手工改写为 `tr_with(current(), "… {0}", &[&format!("{err:#}")])`
+保语义：`installed.rs:159`、`feedback_processor.rs:316`、`git_processor.rs:32`、
+`mcp_event_stream.rs:106`（后者是 `{}`+`{error:#}` 混合，args 拆成 `[params.server, &format!("{error:#}")]`）。
+
+### 51.4 两处 const 结构改造（§12.50 路径③）
+
+- `thread_input.rs` 的 `DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR`：删 const，
+  字面量内联到 3 个调用点（thread_input/thread_queue_processor/thread_goal_processor），
+  同步删 2 处 `use super::thread_input::DIRECT_INPUT…`（grep 全 crate 确认无测试引用）。
+- `image_url.rs` 的 `REMOTE_IMAGE_URL_ERROR`：**双接收者拆分** —— `dynamic_tools.rs:71/:74`
+  走 `fallback_response` → `Op::DynamicToolResponse`（模型面，必须保英文）+ `error!` 日志；
+  `turn_processor.rs:32/73` 走 `invalid_request`（JSON-RPC 用户面）。
+  故 const 留给模型面并登记，用户面在 turn_processor 内联 `tr(current(), "…")` 新译
+  （此处两份英文是**必需的**，因两个接收者语言需求相反，不属 §12.50 拒绝的冗余副本）。
+
+### 51.5 门禁
+
+- `i18n-check`：词典 4212、rendered 4202、coverage **99.8%**、
+  missing/unused/spacing/nested/duplicate/placeholder/asset **全 0**（EXIT=0）。
+- `cargo check -p codex-app-server --all-targets`：0 error / 0 warning。
+- `just fix -p codex-app-server`：仅重排 reconcile.rs 的 import（clippy 无告警）。
+- `find codex-rs -name '*.snap.new'` = **0**（877 快照零改动，En 逐字节不变的旁证）。
+- `i18n_dossier_lines`：site column drifted = 0；undecidable 21 条全在 tui/core（本批前已存在）。
+- `i18n_todo --audit-rows`：silent no-op = 0。

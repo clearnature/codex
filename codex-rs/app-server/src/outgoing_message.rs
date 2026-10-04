@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -197,9 +199,10 @@ impl ThreadScopedOutgoingMessageSender {
             .cancel_requests_for_thread(
                 self.thread_id,
                 Some({
-                    let mut error = internal_error(
+                    let mut error = internal_error(tr(
+                        current(),
                         "client request resolved because the turn state was changed",
-                    );
+                    ));
                     error.data = Some(serde_json::json!({
                         "reason": TURN_TRANSITION_PENDING_REQUEST_ERROR_REASON,
                     }));

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::io::ErrorKind;
@@ -112,7 +115,10 @@ impl ExternalAgentSessionImporter {
                 &mut item_result,
                 "session_permit",
                 Some("failed_to_acquire_import_permit"),
-                "external agent session import permit could not be acquired",
+                tr(
+                    current(),
+                    "external agent session import permit could not be acquired",
+                ),
                 /*source*/ None,
             );
             return item_result;
@@ -376,13 +382,21 @@ impl ExternalAgentSessionImporter {
         .map_err(|err| {
             SessionImportStepFailure::new(
                 "session_preparation_task_failed",
-                format!("external agent session preparation task failed: {err}"),
+                tr_with(
+                    current(),
+                    "external agent session preparation task failed: {0}",
+                    &[&err.to_string()],
+                ),
             )
         })?
         .map_err(|err| {
             SessionImportStepFailure::new(
                 "failed_to_prepare_session",
-                format!("failed to prepare external agent session: {err}"),
+                tr_with(
+                    current(),
+                    "failed to prepare external agent session: {0}",
+                    &[&err.to_string()],
+                ),
             )
         })
     }
@@ -429,7 +443,11 @@ impl ExternalAgentSessionImporter {
                 };
                 SessionImportStepFailure::new(
                     format!("failed_to_load_session_config_{io_kind}"),
-                    format!("failed to load imported session config: {err}"),
+                    tr_with(
+                        current(),
+                        "failed to load imported session config: {0}",
+                        &[&err.to_string()],
+                    ),
                 )
             })?;
         let models_manager = self.thread_manager.get_models_manager();
@@ -544,7 +562,11 @@ impl ExternalAgentSessionImporter {
             .map_err(|err| {
                 SessionImportStepFailure::new(
                     "failed_to_create_thread",
-                    format!("failed to import session: {err}"),
+                    tr_with(
+                        current(),
+                        "failed to import session: {0}",
+                        &[&err.to_string()],
+                    ),
                 )
             })?;
         if !rollout_items.is_empty()
@@ -559,7 +581,11 @@ impl ExternalAgentSessionImporter {
             let _ = self.thread_store.discard_thread(thread_id).await;
             return Err(SessionImportStepFailure::new(
                 "failed_to_append_thread_items",
-                format!("failed to import session: {err}"),
+                tr_with(
+                    current(),
+                    "failed to import session: {0}",
+                    &[&err.to_string()],
+                ),
             ));
         }
 
@@ -573,7 +599,11 @@ impl ExternalAgentSessionImporter {
             .map_err(|err| {
                 SessionImportStepFailure::new(
                     "failed_to_update_thread_metadata",
-                    format!("failed to update imported session: {err}"),
+                    tr_with(
+                        current(),
+                        "failed to update imported session: {0}",
+                        &[&err.to_string()],
+                    ),
                 )
             })?;
         self.thread_store
@@ -582,7 +612,11 @@ impl ExternalAgentSessionImporter {
             .map_err(|err| {
                 SessionImportStepFailure::new(
                     "failed_to_persist_thread",
-                    format!("failed to persist imported session: {err}"),
+                    tr_with(
+                        current(),
+                        "failed to persist imported session: {0}",
+                        &[&err.to_string()],
+                    ),
                 )
             })?;
         self.thread_store
@@ -591,7 +625,11 @@ impl ExternalAgentSessionImporter {
             .map_err(|err| {
                 SessionImportStepFailure::new(
                     "failed_to_shutdown_thread",
-                    format!("failed to shutdown imported session: {err}"),
+                    tr_with(
+                        current(),
+                        "failed to shutdown imported session: {0}",
+                        &[&err.to_string()],
+                    ),
                 )
             })?;
         Ok(thread_id)

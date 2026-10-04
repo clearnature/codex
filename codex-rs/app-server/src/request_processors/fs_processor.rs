@@ -29,6 +29,8 @@ use codex_exec_server::CreateDirectoryOptions;
 use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecutorFileSystem;
 use codex_exec_server::RemoveOptions;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_utils_path_uri::PathUri;
 use std::io;
 use std::sync::Arc;
@@ -54,7 +56,7 @@ impl FsRequestProcessor {
         self.environment_manager
             .try_local_environment()
             .map(|environment| environment.get_filesystem())
-            .ok_or_else(|| internal_error("local filesystem is not configured"))
+            .ok_or_else(|| internal_error(tr(current(), "local filesystem is not configured")))
     }
 
     pub(crate) async fn connection_closed(&self, connection_id: ConnectionId) {

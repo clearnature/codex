@@ -1,5 +1,7 @@
 use super::*;
 use crate::app_info::connector_metadata_to_api;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 pub(in crate::request_processors) const APP_READ_MAX_IDS: usize = 100;
 const APPS_READ_DURATION_METRIC: &str = "codex.apps.read.duration_ms";
@@ -48,7 +50,13 @@ impl AppsRequestProcessor {
             missing_app_ids,
         } = connectors::read_connector_metadata(&config, auth, &app_ids, include_tools)
             .await
-            .map_err(|err| internal_error(format!("failed to read app metadata: {err}")))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to read app metadata: {0}",
+                    &[&err.to_string()],
+                ))
+            })?;
         let loaded_plugins = self
             .thread_manager
             .plugins_manager()

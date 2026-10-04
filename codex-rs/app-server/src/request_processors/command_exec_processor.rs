@@ -1,5 +1,8 @@
 use super::*;
 use codex_core::exec_env::inject_apply_patch_env;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::shell_environment::is_non_inheritable_env_var;
 
 #[derive(Clone)]
@@ -85,7 +88,7 @@ impl CommandExecRequestProcessor {
             .try_local_environment()
             .is_some()
             .then_some(())
-            .ok_or_else(|| internal_error("local environment is not configured"))
+            .ok_or_else(|| internal_error(tr(current(), "local environment is not configured")))
     }
 
     async fn exec_one_off_command(
@@ -107,7 +110,7 @@ impl CommandExecRequestProcessor {
         let request = request_id.clone();
 
         if params.command.is_empty() {
-            return Err(invalid_request("command must not be empty"));
+            return Err(invalid_request(tr(current(), "command must not be empty")));
         }
 
         let CommandExecParams {
@@ -127,9 +130,10 @@ impl CommandExecRequestProcessor {
             permission_profile,
         } = params;
         if sandbox_policy.is_some() && permission_profile.is_some() {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "`permissionProfile` cannot be combined with `sandboxPolicy`",
-            ));
+            )));
         }
 
         if size.is_some() && !tty {
@@ -222,12 +226,20 @@ impl CommandExecRequestProcessor {
                     Some(self.config.cwd.to_path_buf()),
                 )
                 .await
-                .map_err(|err| invalid_request(format!("invalid permission profile: {err}")))?;
+                .map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid permission profile: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?;
             if let Some(warning) = config.startup_warnings.iter().find(|warning| {
                 warning.contains("Configured value for `permission_profile` is disallowed")
             }) {
-                return Err(invalid_request(format!(
-                    "invalid permission profile: {warning}"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "invalid permission profile: {0}",
+                    &[warning.as_str()],
                 )));
             }
             (
@@ -241,7 +253,13 @@ impl CommandExecRequestProcessor {
             let mut permissions = self.config.permissions.clone();
             permissions
                 .set_legacy_sandbox_policy(policy, &sandbox_cwd)
-                .map_err(|err| invalid_request(format!("invalid sandbox policy: {err}")))?;
+                .map_err(|err| {
+                    invalid_request(tr_with(
+                        current(),
+                        "invalid sandbox policy: {0}",
+                        &[&err.to_string()],
+                    ))
+                })?;
             (
                 permissions.effective_permission_profile(),
                 self.config.permissions.network.clone(),
@@ -317,7 +335,9 @@ impl CommandExecRequestProcessor {
             &codex_linux_sandbox_exe,
             use_legacy_landlock,
         )
-        .map_err(|err| internal_error(format!("exec failed: {err}")))?;
+        .map_err(|err| {
+            internal_error(tr_with(current(), "exec failed: {0}", &[&err.to_string()]))
+        })?;
         self.command_exec_manager
             .start(StartCommandExecParams {
                 outgoing,

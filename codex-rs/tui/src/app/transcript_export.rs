@@ -153,8 +153,14 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         ThreadItem::FileChange {
             changes, status, ..
         } => {
-            let mut lines =
-                vec![format!("file changes: {status:?} · {} changes", changes.len()).into()];
+            let mut lines = vec![
+                tr_with(
+                    current(),
+                    "file changes: {0} · {1} changes",
+                    &[&format!("{status:?}"), &changes.len().to_string()],
+                )
+                .into(),
+            ];
             for change in changes {
                 lines.push(format!("{:?}: {}", change.kind, change.path).into());
                 lines.extend(change.diff.lines().map(|line| line.to_string().into()));
@@ -170,8 +176,19 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             error,
             ..
         } => {
-            let mut lines =
-                vec![format!("mcp tool: {server}/{tool}({arguments}) · {status:?}").into()];
+            let mut lines = vec![
+                tr_with(
+                    current(),
+                    "mcp tool: {0}/{1}({2}) · {3}",
+                    &[
+                        server.as_str(),
+                        tool.as_str(),
+                        &arguments.to_string(),
+                        &format!("{status:?}"),
+                    ],
+                )
+                .into(),
+            ];
             if let Some(result) = result {
                 for content in &result.content {
                     match serde_json::from_value::<rmcp::model::ContentBlock>(content.clone()) {
@@ -179,10 +196,10 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                             lines.extend(raw_lines_from_source(&text.text));
                         }
                         Ok(rmcp::model::ContentBlock::Image(_)) => {
-                            lines.push("<image content>".into());
+                            lines.push(tr(current(), "<image content>").into());
                         }
                         Ok(rmcp::model::ContentBlock::Audio(_)) => {
-                            lines.push("<audio content>".into());
+                            lines.push(tr(current(), "<audio content>").into());
                         }
                         Ok(rmcp::model::ContentBlock::Resource(_)) => {
                             let uri = content
@@ -192,17 +209,25 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                             lines.push(format!("embedded resource: {uri}").into());
                         }
                         Ok(rmcp::model::ContentBlock::ResourceLink(link)) => {
-                            lines.push(format!("link: {}", link.uri).into());
+                            lines
+                                .push(tr_with(current(), "link: {0}", &[link.uri.as_str()]).into());
                         }
                         _ => lines.push(content.to_string().into()),
                     }
                 }
                 if let Some(content) = &result.structured_content {
-                    lines.push(format!("structured result: {content}").into());
+                    lines.push(
+                        tr_with(current(), "structured result: {0}", &[&content.to_string()])
+                            .into(),
+                    );
                 }
             }
             if let Some(error) = error {
-                lines.extend(raw_lines_from_source(&format!("error: {}", error.message)));
+                lines.extend(raw_lines_from_source(&tr_with(
+                    current(),
+                    "error: {0}",
+                    &[error.message.as_str()],
+                )));
             }
             lines
         }
@@ -275,15 +300,15 @@ fn render_markdown_transcript(cells: &[Arc<dyn HistoryCell>]) -> Result<String, 
             continue;
         }
         let (heading, indent) = if cell.as_any().is::<UserHistoryCell>() {
-            ("User", false)
+            (tr(current(), "User"), false)
         } else if cell.as_any().is::<AgentMarkdownCell>() {
-            ("Assistant", false)
+            (tr(current(), "Assistant"), false)
         } else if cell.as_any().is::<ProposedPlanCell>() {
-            ("Plan", false)
+            (tr(current(), "Plan"), false)
         } else if cell.as_any().is::<ReasoningSummaryCell>() {
-            ("Reasoning", false)
+            (tr(current(), "Reasoning"), false)
         } else {
-            ("Activity", true)
+            (tr(current(), "Activity"), true)
         };
         markdown.push_str(&format!("\n## {heading}\n\n"));
         for line in lines {

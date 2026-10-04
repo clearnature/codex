@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -46,38 +49,49 @@ impl ExternalAuthBridge {
         let result = match timeout(EXTERNAL_AUTH_REFRESH_TIMEOUT, rx).await {
             Ok(result) => {
                 let result = result.map_err(|err| {
-                    std::io::Error::other(format!("auth refresh request canceled: {err}"))
+                    std::io::Error::other(tr_with(
+                        current(),
+                        "auth refresh request canceled: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
                 result.map_err(|err| {
                     // Don't log err.message because it may contain a token.
                     let code = err.code;
-                    std::io::Error::other(format!("auth refresh request failed: code={code}"))
+                    std::io::Error::other(tr_with(
+                        current(),
+                        "auth refresh request failed: code={0}",
+                        &[&code.to_string()],
+                    ))
                 })?
             }
             Err(_) => {
                 let _canceled = self.outgoing.cancel_request(&request_id).await;
-                return Err(std::io::Error::other(format!(
-                    "auth refresh request timed out after {}s",
-                    EXTERNAL_AUTH_REFRESH_TIMEOUT.as_secs()
+                return Err(std::io::Error::other(tr_with(
+                    current(),
+                    "auth refresh request timed out after {0}s",
+                    &[&EXTERNAL_AUTH_REFRESH_TIMEOUT.as_secs().to_string()],
                 )));
             }
         };
 
         // Don't propagate parser error messages because they may contain a token.
         let response: ChatgptAuthTokensRefreshResponse = serde_json::from_value(result)
-            .map_err(|_| std::io::Error::other("invalid auth refresh response"))?;
+            .map_err(|_| std::io::Error::other(tr(current(), "invalid auth refresh response")))?;
         let auth = CodexAuth::from_external_chatgpt_tokens(
             response.access_token.as_str(),
             response.chatgpt_account_id.as_str(),
             response.chatgpt_plan_type.as_deref(),
         )
         .map_err(|err| {
-            std::io::Error::new(err.kind(), "auth refresh returned invalid credentials")
+            std::io::Error::new(
+                err.kind(),
+                tr(current(), "auth refresh returned invalid credentials"),
+            )
         })?;
-        *self
-            .auth
-            .write()
-            .map_err(|_| std::io::Error::other("external auth lock is poisoned"))? = auth.clone();
+        *self.auth.write().map_err(|_| {
+            std::io::Error::other(tr(current(), "external auth lock is poisoned"))
+        })? = auth.clone();
         Ok(auth)
     }
 }
@@ -88,7 +102,7 @@ impl ExternalAuth for ExternalAuthBridge {
             self.auth
                 .read()
                 .map(|auth| auth.clone())
-                .map_err(|_| std::io::Error::other("external auth lock is poisoned"))
+                .map_err(|_| std::io::Error::other(tr(current(), "external auth lock is poisoned")))
         })
     }
 

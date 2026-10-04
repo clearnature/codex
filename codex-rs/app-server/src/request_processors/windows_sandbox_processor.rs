@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 #[derive(Clone)]
 pub(crate) struct WindowsSandboxRequestProcessor {
@@ -142,9 +144,7 @@ impl WindowsSandboxRequestProcessor {
                         })
                         .await
                         .map_err(|error| {
-                            anyhow::anyhow!(
-                                "Windows sandbox service provisioning task failed: {error}"
-                            )
+                            anyhow::anyhow!(tr_with(current(), "Windows sandbox service provisioning task failed: {0}", &[&error.to_string()]))
                         })
                         .and_then(std::convert::identity)
                         .inspect_err(|error| {
@@ -196,7 +196,13 @@ fn resolve_allowed_windows_sandbox_setup_mode(
     requirements
         .windows_sandbox_mode
         .can_set(&Some(config_mode))
-        .map_err(|err| invalid_request(format!("invalid Windows sandbox setup mode: {err}")))?;
+        .map_err(|err| {
+            invalid_request(tr_with(
+                current(),
+                "invalid Windows sandbox setup mode: {0}",
+                &[&err.to_string()],
+            ))
+        })?;
     Ok(setup_mode)
 }
 

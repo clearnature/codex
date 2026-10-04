@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 #[derive(Clone)]
 pub(crate) struct GitRequestProcessor;
@@ -28,8 +30,10 @@ impl GitRequestProcessor {
                 diff: value.diff,
             })
             .ok_or_else(|| {
-                invalid_request(format!(
-                    "failed to compute git diff to remote for cwd: {cwd:?}"
+                invalid_request(tr_with(
+                    current(),
+                    "failed to compute git diff to remote for cwd: {0}",
+                    &[&format!("{cwd:?}")],
                 ))
             })
     }

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::ffi::OsStr;
 
 use clap::Args;
@@ -51,7 +54,7 @@ impl TypedValueParser for RedactedHostUrlParser {
         let value = value.to_str().ok_or_else(|| {
             clap::Error::raw(
                 ErrorKind::InvalidUtf8,
-                "code-mode host URL must contain valid UTF-8",
+                tr(current(), "code-mode host URL must contain valid UTF-8"),
             )
             .with_cmd(command)
         })?;
@@ -62,18 +65,36 @@ impl TypedValueParser for RedactedHostUrlParser {
 }
 
 fn parse_host_url(value: &str) -> Result<Url, String> {
-    let url = Url::parse(value).map_err(|error| format!("invalid code-mode host URL: {error}"))?;
+    let url = Url::parse(value).map_err(|error| {
+        tr_with(
+            current(),
+            "invalid code-mode host URL: {0}",
+            &[&error.to_string()],
+        )
+    })?;
     if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
-        return Err("code-mode host URL must use http:// or https:// with a host".to_string());
+        return Err(tr(
+            current(),
+            "code-mode host URL must use http:// or https:// with a host",
+        )
+        .to_string());
     }
     if url.fragment().is_some() {
-        return Err("code-mode host URL must not contain a fragment".to_string());
+        return Err(tr(current(), "code-mode host URL must not contain a fragment").to_string());
     }
     if !url.username().is_empty() || url.password().is_some() {
-        return Err("gRPC code-mode host URL must not contain credentials".to_string());
+        return Err(tr(
+            current(),
+            "gRPC code-mode host URL must not contain credentials",
+        )
+        .to_string());
     }
     if url.path() != "/" || url.query().is_some() {
-        return Err("gRPC code-mode host URL must not contain a path or query".to_string());
+        return Err(tr(
+            current(),
+            "gRPC code-mode host URL must not contain a path or query",
+        )
+        .to_string());
     }
     Ok(url)
 }

@@ -13,6 +13,8 @@ use codex_file_watcher::FileWatcher;
 use codex_file_watcher::FileWatcherSubscriber;
 use codex_file_watcher::WatchPath;
 use codex_file_watcher::WatchRegistration;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::hash::Hash;
@@ -94,8 +96,10 @@ impl FsWatchManager {
 
         match self.state.lock().await.entries.entry(watch_key) {
             Entry::Occupied(_) => {
-                return Err(invalid_request(format!(
-                    "watchId already exists: {watch_id}"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "watchId already exists: {0}",
+                    &[&watch_id],
                 )));
             }
             Entry::Vacant(entry) => {

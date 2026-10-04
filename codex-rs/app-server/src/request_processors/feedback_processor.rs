@@ -9,6 +9,9 @@ use codex_feedback::CODEX_APPS_TOOLS_CACHE_ATTACHMENT_FILENAME;
 #[cfg(target_os = "windows")]
 use codex_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
 use codex_feedback::guardian_review_failures;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_rollout::RolloutRecorder;
 use sha2::Digest;
 use sha2::Sha256;
@@ -59,9 +62,10 @@ impl FeedbackRequestProcessor {
         params: FeedbackUploadParams,
     ) -> Result<FeedbackUploadResponse, JSONRPCErrorError> {
         if !self.config.feedback_enabled {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "sending feedback is disabled by configuration",
-            ));
+            )));
         }
         let permit = self
             .uploads
@@ -69,9 +73,11 @@ impl FeedbackRequestProcessor {
             .try_acquire_owned()
             .map_err(|_| JSONRPCErrorError {
                 code: OVERLOADED_ERROR_CODE,
-                message:
-                    "Three feedback uploads are already in progress; try again after one finishes"
-                        .to_string(),
+                message: tr(
+                    current(),
+                    "Three feedback uploads are already in progress; try again after one finishes",
+                )
+                .to_string(),
                 data: None,
             })?;
 
@@ -88,7 +94,13 @@ impl FeedbackRequestProcessor {
         let conversation_id = match thread_id.as_deref() {
             Some(thread_id) => match ThreadId::from_string(thread_id) {
                 Ok(conversation_id) => Some(conversation_id),
-                Err(err) => return Err(invalid_request(format!("invalid thread id: {err}"))),
+                Err(err) => {
+                    return Err(invalid_request(tr_with(
+                        current(),
+                        "invalid thread id: {0}",
+                        &[&err.to_string()],
+                    )));
+                }
             },
             None => None,
         };
@@ -306,14 +318,21 @@ impl FeedbackRequestProcessor {
         let upload_result = match upload_result {
             Ok(result) => result,
             Err(join_err) => {
-                return Err(internal_error(format!(
-                    "failed to upload feedback: {join_err}"
+                return Err(internal_error(tr_with(
+                    current(),
+                    "failed to upload feedback: {0}",
+                    &[&join_err.to_string()],
                 )));
             }
         };
 
-        upload_result
-            .map_err(|err| internal_error(format!("failed to upload feedback: {err:#}")))?;
+        upload_result.map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to upload feedback: {0}",
+                &[&format!("{err:#}")],
+            ))
+        })?;
         Ok(FeedbackUploadResponse { thread_id })
     }
 

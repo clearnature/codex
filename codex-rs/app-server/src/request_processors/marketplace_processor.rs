@@ -1,5 +1,7 @@
 use super::*;
 use crate::plugin_config_reload;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 #[derive(Clone)]
 pub(crate) struct MarketplaceRequestProcessor {
@@ -90,7 +92,13 @@ impl MarketplaceRequestProcessor {
             )
         })
         .await
-        .map_err(|err| internal_error(format!("failed to upgrade marketplaces: {err}")))?
+        .map_err(|err| {
+            internal_error(tr_with(
+                current(),
+                "failed to upgrade marketplaces: {0}",
+                &[&err.to_string()],
+            ))
+        })?
         .map_err(invalid_request)?;
 
         if !outcome.upgraded_roots.is_empty() {
@@ -147,6 +155,12 @@ impl MarketplaceRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to reload config: {0}",
+                    &[&err.to_string()],
+                ))
+            })
     }
 }

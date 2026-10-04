@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -51,27 +54,37 @@ impl McpEventStreams {
         processor: McpRequestProcessor,
     ) -> Result<McpEventStreamReady, JSONRPCErrorError> {
         if params.server != CODEX_APPS_MCP_SERVER_NAME {
-            return Err(invalid_request(
+            return Err(invalid_request(tr(
+                current(),
                 "MCP event subscriptions are only supported for hosted apps",
-            ));
+            )));
         }
-        let thread_id = ThreadId::from_string(&params.thread_id)
-            .map_err(|error| invalid_request(format!("invalid thread id: {error}")))?;
+        let thread_id = ThreadId::from_string(&params.thread_id).map_err(|error| {
+            invalid_request(tr_with(
+                current(),
+                "invalid thread id: {0}",
+                &[&error.to_string()],
+            ))
+        })?;
         let subscription_id = params.subscription_id.clone();
         let (ready_tx, ready_rx) = oneshot::channel();
         {
             let mut tasks = self.tasks.lock().await;
             tasks.retain(|_, task| !task.task.is_finished());
             if tasks.contains_key(&subscription_id) {
-                return Err(invalid_request(format!(
-                    "MCP event subscription '{subscription_id}' already exists"
+                return Err(invalid_request(tr_with(
+                    current(),
+                    "MCP event subscription '{0}' already exists",
+                    &[&subscription_id],
                 )));
             }
             if tasks.len() >= MAX_MCP_EVENT_STREAMS_PER_CONNECTION {
                 return Err(JSONRPCErrorError {
                     code: OVERLOADED_ERROR_CODE,
-                    message: format!(
-                        "MCP event subscription limit of {MAX_MCP_EVENT_STREAMS_PER_CONNECTION} reached"
+                    message: tr_with(
+                        current(),
+                        "MCP event subscription limit of {0} reached",
+                        &[&MAX_MCP_EVENT_STREAMS_PER_CONNECTION.to_string()],
                     ),
                     data: None,
                 });
@@ -81,7 +94,7 @@ impl McpEventStreams {
                     McpEventStreamAuthChanges::new(Arc::clone(&processor.auth_manager));
                 let opened = tokio::select! {
                     () = auth_changes.changed() => Err(internal_error(
-                        "MCP event subscription authentication changed during startup",
+                        tr(current(), "MCP event subscription authentication changed during startup"),
                     )),
                     result = async {
                         if !processor
@@ -90,9 +103,7 @@ impl McpEventStreams {
                             .await
                             .contains(&connection_id)
                         {
-                            return Err(invalid_request(format!(
-                                "connection is not subscribed to thread '{thread_id}'"
-                            )));
+                            return Err(invalid_request(tr_with(current(), "connection is not subscribed to thread '{0}'", &[&thread_id.to_string()])));
                         }
                         let (_, thread) = processor.load_thread(&params.thread_id).await?;
                         let stream = thread
@@ -102,9 +113,10 @@ impl McpEventStreams {
                                 params.meta.clone(),
                             )
                             .await
-                            .map_err(|error| internal_error(format!(
-                                "failed to start MCP event stream for '{}': {error:#}",
-                                params.server
+                            .map_err(|error| internal_error(tr_with(
+                                current(),
+                                "failed to start MCP event stream for '{0}': {1}",
+                                &[&params.server, &format!("{error:#}")],
                             )))?;
                         Ok((stream, thread))
                     } => result,
@@ -139,12 +151,16 @@ impl McpEventStreams {
     ) -> Result<(), JSONRPCErrorError> {
         match tokio::time::timeout(MCP_EVENT_STREAM_STARTUP_TIMEOUT, ready).await {
             Ok(Ok(result)) => result,
-            Ok(Err(_)) => Err(internal_error(
+            Ok(Err(_)) => Err(internal_error(tr(
+                current(),
                 "MCP event stream ended before becoming active",
-            )),
+            ))),
             Err(_) => {
                 self.stop(subscription_id).await;
-                Err(internal_error("MCP event stream startup timed out"))
+                Err(internal_error(tr(
+                    current(),
+                    "MCP event stream startup timed out",
+                )))
             }
         }
     }
@@ -278,9 +294,10 @@ async fn forward_events(
         }
     }
     if let Some(ready) = ready {
-        let _ = ready.send(Err(internal_error(
+        let _ = ready.send(Err(internal_error(tr(
+            current(),
             "MCP event stream ended before becoming active",
-        )));
+        ))));
     } else {
         send(McpServerEventNotification {
             method: "notifications/events/terminated".to_string(),

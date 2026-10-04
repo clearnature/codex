@@ -28,6 +28,8 @@ use codex_external_agent_migration::MigrationDetails as CoreMigrationDetails;
 use codex_external_agent_migration::NamedMigration;
 use codex_external_agent_migration::PluginsMigration as CorePluginsMigration;
 use codex_external_agent_migration::sessions::ExternalAgentSessionMigration;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_state::ExternalAgentConfigImportFailureRecord;
 use codex_state::ExternalAgentConfigImportSuccessRecord;
 
@@ -269,8 +271,10 @@ fn protocol_import_record_item_type(
     item_type: String,
 ) -> Result<ExternalAgentConfigMigrationItemType, JSONRPCErrorError> {
     serde_json::from_value(serde_json::Value::String(item_type.clone())).map_err(|err| {
-        internal_error(format!(
-            "failed to decode import item type {item_type}: {err}"
+        internal_error(tr_with(
+            current(),
+            "failed to decode import item type {0}: {1}",
+            &[&item_type, &err.to_string()],
         ))
     })
 }

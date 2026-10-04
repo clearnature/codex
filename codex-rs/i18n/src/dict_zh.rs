@@ -10901,6 +10901,350 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "cursor {0} exceeds total apps {1}",
         "游标{0}超出应用总数{1}",
     ),
+    // transcript export scaffold（i18n.export-scaffolding，人类裁「译」）：
+    // activity 行 + markdown heading。`# Codex conversation` 哨兵不译（§12.1
+    // 相等比较，transcript_export.rs:299 判空），其余 scaffold 接 tr。
+    (
+        "mcp tool: {0}/{1}({2}) · {3}",
+        "mcp工具：{0}/{1}({2}) · {3}",
+    ),
+    ("structured result: {0}", "结构化结果：{0}"),
+    ("error: {0}", "错误：{0}"),
+    ("User", "用户"),
+    ("Assistant", "助手"),
+    ("Plan", "计划"),
+    ("Reasoning", "推理"),
+    ("Activity", "活动"),
+    ("section name must not be empty", "分区名称不能为空"),
+    (
+        "the built-in pinned section cannot be renamed",
+        "内置置顶分区不可重命名",
+    ),
+    ("thread section not found: {0}", "未找到线程分区：{0}"),
+    (
+        "the built-in pinned section cannot be deleted",
+        "内置置顶分区不可删除",
+    ),
+    (
+        "section appearance {0} must not exceed {1} bytes",
+        "分区外观{0}不得超过{1}字节",
+    ),
+    (
+        "MCP event subscriptions are only supported for hosted apps",
+        "MCP事件订阅仅支持托管应用",
+    ),
+    (
+        "MCP event subscription '{0}' already exists",
+        "MCP事件订阅'{0}'已存在",
+    ),
+    (
+        "MCP event subscription limit of {0} reached",
+        "已达到MCP事件订阅上限{0}",
+    ),
+    (
+        "MCP event subscription authentication changed during startup",
+        "MCP事件订阅启动期间认证已变更",
+    ),
+    (
+        "connection is not subscribed to thread '{0}'",
+        "连接未订阅线程'{0}'",
+    ),
+    (
+        "MCP event stream ended before becoming active",
+        "MCP事件流在激活前已结束",
+    ),
+    ("MCP event stream startup timed out", "MCP事件流启动超时"),
+    (
+        "failed to start MCP event stream for '{0}': {1}",
+        "启动MCP事件流'{0}'失败：{1}",
+    ),
+    (
+        "external agent session import permit could not be acquired",
+        "无法获取外部代理会话导入许可",
+    ),
+    (
+        "external agent session preparation task failed: {0}",
+        "外部代理会话准备任务失败：{0}",
+    ),
+    (
+        "failed to prepare external agent session: {0}",
+        "准备外部代理会话失败：{0}",
+    ),
+    (
+        "failed to load imported session config: {0}",
+        "加载导入的会话配置失败：{0}",
+    ),
+    ("failed to import session: {0}", "导入会话失败：{0}"),
+    (
+        "failed to update imported session: {0}",
+        "更新导入的会话失败：{0}",
+    ),
+    (
+        "failed to persist imported session: {0}",
+        "持久化导入的会话失败：{0}",
+    ),
+    (
+        "failed to shutdown imported session: {0}",
+        "关闭导入的会话失败：{0}",
+    ),
+    (
+        "auth refresh request canceled: {0}",
+        "认证刷新请求已取消：{0}",
+    ),
+    (
+        "auth refresh request failed: code={0}",
+        "认证刷新请求失败：code={0}",
+    ),
+    (
+        "auth refresh request timed out after {0}s",
+        "认证刷新请求在{0}秒后超时",
+    ),
+    ("invalid auth refresh response", "无效的认证刷新响应"),
+    (
+        "auth refresh returned invalid credentials",
+        "认证刷新返回了无效凭据",
+    ),
+    ("external auth lock is poisoned", "外部认证锁已中毒"),
+    (
+        "code-mode host URL must contain valid UTF-8",
+        "code-mode主机URL必须是有效UTF-8",
+    ),
+    (
+        "invalid code-mode host URL: {0}",
+        "无效的code-mode主机URL：{0}",
+    ),
+    (
+        "code-mode host URL must use http:// or https:// with a host",
+        "code-mode主机URL必须使用http://或https://并包含主机名",
+    ),
+    (
+        "code-mode host URL must not contain a fragment",
+        "code-mode主机URL不能包含片段",
+    ),
+    (
+        "gRPC code-mode host URL must not contain credentials",
+        "gRPC code-mode主机URL不能包含凭据",
+    ),
+    (
+        "gRPC code-mode host URL must not contain a path or query",
+        "gRPC code-mode主机URL不能包含路径或查询",
+    ),
+    (
+        "`permissionProfile` cannot be combined with `sandboxPolicy`",
+        "`permissionProfile`不能与`sandboxPolicy`同时使用",
+    ),
+    ("invalid permission profile: {0}", "无效的权限配置：{0}"),
+    ("invalid sandbox policy: {0}", "无效的沙箱策略：{0}"),
+    (
+        "failed to delete app-server state for {0}: {1}",
+        "为线程{0}删除app-server状态失败：{1}",
+    ),
+    (
+        "thread is not persisted and cannot be deleted: {0}",
+        "线程未持久化，无法删除：{0}",
+    ),
+    (
+        "failed to read app-server state for {0}: {1}",
+        "为线程{0}读取app-server状态失败：{1}",
+    ),
+    ("failed to delete thread: {0}", "删除线程失败：{0}"),
+    (
+        "failed to discover AWS profiles: {0}",
+        "发现AWS配置文件失败：{0}",
+    ),
+    (
+        "Codex-managed Bedrock credentials are already configured and take priority over AWS environment credentials. Run `codex logout` and try again.",
+        "Codex托管的Bedrock凭据已配置，优先级高于AWS环境凭据。请运行`codex logout`后重试。",
+    ),
+    (
+        "AWS profile name must not be empty.",
+        "AWS配置文件名不能为空。",
+    ),
+    (
+        "failed to load credentials for AWS profile `{0}`: {1}",
+        "加载AWS配置文件`{0}`的凭据失败：{1}",
+    ),
+    (
+        "No AWS credentials found. Please Configure AWS credentials or complete AWS sign-in, then try again.",
+        "未找到AWS凭据。请先配置AWS凭据或完成AWS登录，然后重试。",
+    ),
+    ("creditId must not be empty", "creditId不能为空"),
+    (
+        "rate limit reset consume timed out",
+        "速率限制重置额度兑换超时",
+    ),
+    (
+        "failed to consume rate limit reset: {0}",
+        "兑换速率限制重置额度失败：{0}",
+    ),
+    (
+        "codex account authentication required for rate limit reset credits",
+        "兑换速率限制重置额度需要codex账户认证",
+    ),
+    (
+        "chatgpt authentication required for rate limit reset credits",
+        "兑换速率限制重置额度需要chatgpt认证",
+    ),
+    (
+        "Amazon Bedrock configuration cannot take effect: {0}",
+        "Amazon Bedrock配置无法生效：{0}",
+    ),
+    (
+        "failed to load configuration layers: {0}",
+        "加载配置层失败：{0}",
+    ),
+    (
+        "failed to resolve user config path: {0}",
+        "未能解析用户配置路径：{0}",
+    ),
+    (
+        "Amazon Bedrock login cannot select `{0}` because {1} sets `model_provider` to {2}",
+        "Amazon Bedrock登录无法选择`{0}`，因为{1}把`model_provider`设置为{2}",
+    ),
+    (
+        "failed to reload Amazon Bedrock configuration: {0}",
+        "重新加载Amazon Bedrock配置失败：{0}",
+    ),
+    (
+        "thread {0} is closing; retry after the thread is closed",
+        "线程{0}正在关闭，请等待其关闭后重试",
+    ),
+    (
+        "sending feedback is disabled by configuration",
+        "配置已禁用反馈发送",
+    ),
+    (
+        "Three feedback uploads are already in progress; try again after one finishes",
+        "已有三个反馈上传在进行中，请等其中一个完成后再试",
+    ),
+    ("failed to upload feedback: {0}", "上传反馈失败：{0}"),
+    ("Invalid request: {0}", "请求无效：{0}"),
+    (
+        "`permissionProfile` is no longer supported for `{0}`; use `permissions` with a named profile id instead",
+        "`permissionProfile`已不再支持`{0}`，请改用带命名profileid的`permissions`",
+    ),
+    ("Not initialized", "尚未初始化"),
+    (
+        "MCP event subscription was not reserved before startup",
+        "MCP事件订阅未在启动前预留",
+    ),
+    (
+        "failed to read thread {0} after rollback: {1}",
+        "回滚后读取线程{0}失败：{1}",
+    ),
+    (
+        "thread {0} did not include persisted history after rollback",
+        "线程{0}回滚后未包含持久化历史",
+    ),
+    (
+        "failed to localize granted filesystem paths: {0}",
+        "本地化已授权的文件系统路径失败：{0}",
+    ),
+    ("search remote plugin catalog", "搜索远程插件目录"),
+    (
+        "invalid remote plugin search result id: {0}",
+        "无效的远程插件搜索结果id：{0}",
+    ),
+    ("unknown environment id `{0}`", "未知的环境id`{0}`"),
+    (
+        "failed to get info for environment `{0}`: {1}",
+        "获取环境`{0}`的信息失败：{1}",
+    ),
+    ("Already initialized", "已经初始化过"),
+    (
+        "Invalid clientInfo.name: '{0}'. Must be a valid HTTP header value.",
+        "clientInfo.name无效：'{0}'。必须是合法的HTTP头值。",
+    ),
+    (
+        "failed to reconcile remote installed plugins: {0}",
+        "对账远程已安装插件失败：{0}",
+    ),
+    (
+        "plugin hook trust update was cancelled: {0}",
+        "插件钩子信任更新已取消：{0}",
+    ),
+    (
+        "failed to trust materialized plugin hooks: {0}",
+        "信任已物化的插件钩子失败：{0}",
+    ),
+    ("sessionId must not be empty", "sessionId不能为空"),
+    (
+        "failed to start fuzzy file search session: {0}",
+        "启动模糊文件搜索会话失败：{0}",
+    ),
+    (
+        "fuzzy file search session not found: {0}",
+        "未找到模糊文件搜索会话：{0}",
+    ),
+    ("invalid cwd: {0}", "无效的工作目录：{0}"),
+    (
+        "invalid cwd for environment `{0}`: path `{1}` does not use absolute POSIX or Windows path syntax",
+        "环境`{0}`的工作目录无效：路径`{1}`不是绝对POSIX或Windows路径语法",
+    ),
+    (
+        "invalid runtime workspace root for environment `{0}`: path `{1}` does not use absolute POSIX or Windows path syntax",
+        "环境`{0}`的运行时工作区根目录无效：路径`{1}`不是绝对POSIX或Windows路径语法",
+    ),
+    (
+        "failed to resolve feature override precedence: {0}",
+        "解析功能开关覆盖优先级失败：{0}",
+    ),
+    (
+        "failed to update feature enablement",
+        "更新功能启用状态失败",
+    ),
+    ("failed to upgrade marketplaces: {0}", "升级市场源失败：{0}"),
+    (
+        "failed to decode import item type {0}: {1}",
+        "解码导入条目类型{0}失败：{1}",
+    ),
+    ("watchId already exists: {0}", "watchId已存在：{0}"),
+    (
+        "client request resolved because the turn state was changed",
+        "客户端请求因轮次状态变化而被解除",
+    ),
+    (
+        "User verification is not available in this build.",
+        "当前构建不支持用户验证。",
+    ),
+    (
+        "failed to read app metadata: {0}",
+        "读取应用元数据失败：{0}",
+    ),
+    ("failed to load configuration: {0}", "加载配置失败：{0}"),
+    ("local filesystem is not configured", "未配置本地文件系统"),
+    (
+        "remote control is unavailable for this app-server",
+        "该app-server不支持远程控制",
+    ),
+    (
+        "failed to validate environment selections: {0}",
+        "校验环境选择失败：{0}",
+    ),
+    (
+        "Windows sandbox service provisioning task failed: {0}",
+        "Windows沙箱服务配置任务失败：{0}",
+    ),
+    (
+        "invalid Windows sandbox setup mode: {0}",
+        "无效的Windows沙箱设置模式：{0}",
+    ),
+    (
+        "failed to refresh installed connector runtime state: {0}",
+        "刷新已安装连接器的运行时状态失败：{0}",
+    ),
+    (
+        "failed to compute git diff to remote for cwd: {0}",
+        "为工作目录{0}计算到远程的git diff失败",
+    ),
+    (
+        "direct app-server input is not allowed for multi-agent v2 sub-agents",
+        "不允许直接向multi-agent v2子代理下发app-server输入",
+    ),
+    (
+        "remote image URLs are not supported; use an inline data URL instead",
+        "不支持远程图片URL，请改用内联data URL",
+    ),
 ];
 
 /// English source text -> Simplified Chinese.

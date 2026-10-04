@@ -3,6 +3,8 @@ use codex_core::config::ConfigOverrides;
 use codex_core_plugins::PluginMarketplaceContext;
 use codex_core_plugins::PluginMarketplaceScope;
 use codex_core_plugins::marketplace::MarketplaceListError;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use futures::StreamExt;
 
 const CONFIG_LOAD_CONCURRENCY: usize = 5;
@@ -16,7 +18,13 @@ impl PluginRequestProcessor {
             self.config_manager
                 .load_non_project_config()
                 .await
-                .map_err(|err| internal_error(format!("failed to reload config: {err}")))
+                .map_err(|err| {
+                    internal_error(tr_with(
+                        current(),
+                        "failed to reload config: {0}",
+                        &[&err.to_string()],
+                    ))
+                })
         } else {
             self.load_latest_config(/*fallback_cwd*/ None).await
         }?;

@@ -17,7 +17,6 @@ use codex_protocol::protocol::TurnSettingsUpdate;
 use codex_protocol::protocol::TurnSettingsUpdateOutcome;
 use codex_skills::system_cache_root_dir;
 
-use crate::image_url::REMOTE_IMAGE_URL_ERROR;
 use crate::image_url::is_remote_image_url;
 
 pub(super) fn validate_user_input_image_urls(
@@ -29,7 +28,10 @@ pub(super) fn validate_user_input_image_urls(
             V2UserInput::Image { url, .. } if is_remote_image_url(url)
         )
     }) {
-        return Err(invalid_request(REMOTE_IMAGE_URL_ERROR));
+        return Err(invalid_request(tr(
+            current(),
+            "remote image URLs are not supported; use an inline data URL instead",
+        )));
     }
     Ok(())
 }
@@ -70,7 +72,10 @@ fn validate_response_item_image_urls(items: &[ResponseItem]) -> Result<(), JSONR
         | ResponseItem::AdditionalTools { .. }
         | ResponseItem::Other => false,
     }) {
-        return Err(invalid_request(REMOTE_IMAGE_URL_ERROR));
+        return Err(invalid_request(tr(
+            current(),
+            "remote image URLs are not supported; use an inline data URL instead",
+        )));
     }
     Ok(())
 }

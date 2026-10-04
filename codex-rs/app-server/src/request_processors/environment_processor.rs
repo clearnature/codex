@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -35,10 +37,18 @@ impl EnvironmentRequestProcessor {
         let environment = self
             .environment_manager
             .get_environment(&environment_id)
-            .ok_or_else(|| invalid_request(format!("unknown environment id `{environment_id}`")))?;
+            .ok_or_else(|| {
+                invalid_request(tr_with(
+                    current(),
+                    "unknown environment id `{0}`",
+                    &[&environment_id],
+                ))
+            })?;
         let info = environment.force_info().await.map_err(|err| {
-            internal_error(format!(
-                "failed to get info for environment `{environment_id}`: {err}"
+            internal_error(tr_with(
+                current(),
+                "failed to get info for environment `{0}`: {1}",
+                &[&environment_id, &err.to_string()],
             ))
         })?;
         Ok(Some(
@@ -70,7 +80,11 @@ impl EnvironmentRequestProcessor {
             }
             None => (
                 EnvironmentStatusKind::Unknown,
-                Some(format!("unknown environment id `{environment_id}`")),
+                Some(tr_with(
+                    current(),
+                    "unknown environment id `{0}`",
+                    &[&environment_id],
+                )),
             ),
         };
         Ok(Some(EnvironmentStatusResponse { status, error }.into()))

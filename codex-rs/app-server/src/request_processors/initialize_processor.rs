@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
@@ -57,7 +60,7 @@ impl InitializeRequestProcessor {
             request_id,
         };
         if session.initialized() {
-            return Err(invalid_request("Already initialized"));
+            return Err(invalid_request(tr(current(), "Already initialized")));
         }
 
         // TODO(maxj): Revisit capability scoping for `experimental_api_enabled`.
@@ -86,8 +89,10 @@ impl InitializeRequestProcessor {
         // Validate before committing; set_default_originator validates while
         // mutating process-global metadata.
         if HeaderValue::from_str(&name).is_err() {
-            return Err(invalid_request(format!(
-                "Invalid clientInfo.name: '{name}'. Must be a valid HTTP header value."
+            return Err(invalid_request(tr_with(
+                current(),
+                "Invalid clientInfo.name: '{0}'. Must be a valid HTTP header value.",
+                &[&name],
             )));
         }
         let originator = name.clone();
@@ -105,7 +110,7 @@ impl InitializeRequestProcessor {
             })
             .is_err()
         {
-            return Err(invalid_request("Already initialized"));
+            return Err(invalid_request(tr(current(), "Already initialized")));
         }
 
         if mutates_global_identity {

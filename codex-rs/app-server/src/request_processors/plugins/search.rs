@@ -6,6 +6,9 @@ use codex_app_server_protocol::PluginSearchScope;
 use codex_core_plugins::OPENAI_BUNDLED_MARKETPLACE_NAME;
 use codex_core_plugins::remote::RemotePluginSearchRequest;
 use codex_core_plugins::remote::search_remote_plugins;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 const DEFAULT_PLUGIN_SEARCH_LIMIT: u32 = 16;
 const MAX_PLUGIN_SEARCH_LIMIT: u32 = 1_000;
@@ -89,14 +92,21 @@ impl PluginRequestProcessor {
             )
             .await
             .map_err(|err| {
-                remote_plugin_catalog_error_to_jsonrpc(err, "search remote plugin catalog")
+                remote_plugin_catalog_error_to_jsonrpc(
+                    err,
+                    tr(current(), "search remote plugin catalog"),
+                )
             })?;
 
             next_cursor = page.next_page_token;
             remote_results.reserve(page.plugins.len());
             for plugin in page.plugins {
                 let plugin_id = PluginId::parse(&plugin.id).map_err(|err| {
-                    internal_error(format!("invalid remote plugin search result id: {err}"))
+                    internal_error(tr_with(
+                        current(),
+                        "invalid remote plugin search result id: {0}",
+                        &[&err.to_string()],
+                    ))
                 })?;
 
                 // NOTE: (brisebois) filter out plugins from the results that belong to "shared"
@@ -152,8 +162,16 @@ impl PluginRequestProcessor {
                 )
             })
             .await
-            .map_err(|err| internal_error(format!("failed to list marketplace plugins: {err}")))?
-            .map_err(|err| Self::marketplace_error(err, "list marketplace plugins"))?;
+            .map_err(|err| {
+                internal_error(tr_with(
+                    current(),
+                    "failed to list marketplace plugins: {0}",
+                    &[&err.to_string()],
+                ))
+            })?
+            .map_err(|err| {
+                Self::marketplace_error(err, tr(current(), "list marketplace plugins"))
+            })?;
 
             for error in outcome.errors {
                 warn!(

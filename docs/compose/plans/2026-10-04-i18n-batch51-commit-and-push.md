@@ -1,5 +1,10 @@
 # i18n 收尾批：工作区提交 + 分支推送 Implementation Plan
 
+> [!NOTE]
+> This document may not reflect the current implementation.
+> See the final report for up-to-date state:
+> [Final Report](../reports/i18n-batch51-commit-and-push.md)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use compose:subagent (recommended) or compose:execute to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把工作区已完成的 44 个未提交文件（§51 app-server 批 156→0、tui transcript_export 接 tr、TSV 登记漂移修复、两份计划文档）跑完全量门禁后单提交入库，并推送 `feat/i18n` 上积压的提交，最后确认台账遗留项登记完整。

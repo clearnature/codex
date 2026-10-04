@@ -26,7 +26,23 @@
 | 30   | `clipboard_copy.rs`（28 对）                       | 991      | 4285 passed / 2 failed / snapshot 0 |
 
 **此表在 round 30 处停更。** 之后仍有推进（`2def58b6a` / `8b2a439be` / `e6847b6b8` 三个提交都改过 `dict_zh.rs`），
-但没有逐轮记录。以下是 **2026-09-16 对现状的独立实测**（每行标注口径，可复跑）：
+但没有逐轮记录。
+
+**2026-10-04 最新实测（当前权威现状表；普查细节与漂移修复见 §12.73）**：
+
+| 指标         | 实测值                                                                                                                                                                  | 口径                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 普查基线     | 2026-10-04 · HEAD `ff2fd98c7`（工作区含未提交改动）                                                                                                                     | `git rev-parse --short HEAD`                                                          |
+| 字典条目     | **4212**（rendered 4202、bound 14）                                                                                                                                     | `just i18n-check`                                                                     |
+| 漂移与覆盖   | missing / unused / spacing / nested / duplicate / placeholder / asset **全 0**；coverage 4193/4202 = **99.8%**（差 9 条是 `not-translated.tsv` 声明不译键）；**EXIT=0** | 同上                                                                                  |
+| 接入面       | **409 文件 / 5232 个 `tr`·`tr_with` 调用点**：tui 226/3371、core 77/396、app-server 53/642、core-plugins 26/375、cli 17/339、exec 4/75、codex-mcp 4/22、plugin 2/12     | 独立正则 `(?<![A-Za-z0-9_])tr(_with)?\(`（与旧表同口径，八 crate）                    |
+| 剩余候选     | **0** —— 八 scope 全零：tui 3229 / cli 1281 / core 1164 / app-server 708 / core-plugins 531 / codex-mcp 119 / exec 75 / plugin 16（candidates 均已处置）                | `python3 scripts/i18n_todo.py --root codex-rs/<crate>/src` 逐 scope                   |
+| 完成度       | **100%**（7123/7123 已处置 = 译或登记；`doctor` 851 按裁定排除不在分母）                                                                                                | 上两行                                                                                |
+| 快照         | 940 个 `.snap`、`.snap.new` **0**                                                                                                                                       | `find codex-rs -name '*.snap' \| wc -l` / `find codex-rs -name '*.snap.new' \| wc -l` |
+| 登记漂移修复 | tui 哨兵 2 站点 `:240/:299` → `:265/:324`（工作区改动使行号 +25，站点形态登记静默失效后修复）                                                                           | `not-translated-unwrapped.tsv`；详见 §12.73                                           |
+
+以下是 **2026-09-16 对现状的独立实测**（每行标注口径，可复跑；
+⚠ **历史快照**：其「完成度 ≈40%」已被上方 2026-10-04 表取代，原文保留备查）：
 
 | 指标                                  | 实测值                                                                                                                                                                                          | 口径                                                         |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -2432,6 +2448,9 @@ crate 全量 `r-mu83vvkr-51h4lm`（414 passed / 0 skipped）。
 | `exec/src` | 75         | 75                | **0**     |
 | **合计**   | 5749       | 5660（**98.5%**） | 89        |
 
+> ⚠ 第 588 轮**历史快照**：此后 §12.68–§12.71 已把 cli/core/tui/exec/plugin 各 scope 归零；
+> 最新普查（八 scope 7123/7123 = 100%）见 **§12.73**（2026-10-04）。
+
 `cli` 剩余 TOP：`desktop_app/mac.rs` 34（macOS-only）、`debug_sandbox.rs` 11、`bin/logs_client.rs` 7、
 `desktop_app/windows.rs` 7（Windows-only）、`sandbox_setup.rs` 7、`cloud_config.rs` 6、`exec_server_telemetry.rs` 2、`lib.rs` 1。
 
@@ -2664,3 +2683,55 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
    - **平台受限 43 处代码改动**（`mac.rs` 33 / `windows.rs` 6 / `debug_sandbox` 4）本机不编译 ⇒ 只能平台 CI；逐站点清单已备：`docs/plan/i18n-platform-ci-checklist.md`。`update_prompt.rs`（**6 处 tr**）那类 `cfg(not(debug_assertions))` 文件已由 `check-tui-release` 实际覆盖：`cargo check -p codex-tui --lib --release` ✅（`r-mu8d1zyy-nl89n9`；唯一告警在 `codex-app-server` 的 `unused_mut`，非本次改动）。另：`check-tui-lib` ✅ `r-mu8cygf1-dj92uf`、`argument-comment-lint` ✅ `r-mu8cuve9-lkbt2z`（949 targets）、`bazel-i18n` ✅ `r-mu8cpxxl-yum8un`、`bazel-lock-check` ✅ `r-mu8cp9zg-xeg9bh`。
    - **`core-plugins` 520 条**是**范围外**（与 `app-server` 687、`doctor` 851 同性质，前者为待裁决、后两者已按 §3.1/裁定排除）。
    - **两件待裁决**：`core-plugins` 范围、`i18n-locale-zh` 是否登记具名门禁（登记会作废约 360 份具名回执 + 需宿主重启）；外加 `w-5` 的笔误回执 id（−5，工具无移除能力）。
+
+### 12.73 2026-10-04 完成度刷新：登记漂移修复 + 八 scope 普查（docs 与实测对齐）
+
+**触发**：用户指出项目 docs 的完成度与前面分析仍有约 2 个百分点差距。核对结论：
+顶部 2026-09-16 表的「≈40%」与 §12.65 的「98.5%」都是**历史快照**（本轮已分别加注指针）；
+而 §12.69–§12.71 的「全 0」记录又被工作区未提交改动打破 —— 实测 `tui` 剩 **2** 条。
+
+**根因（计划 §51.2 教训再现）**：`tui/src/app/transcript_export.rs` 的未提交改动使整文件下移 25 行，
+`not-translated-unwrapped.tsv` 里哨兵的两条站点形态登记（`:240`/`:299`）按 `path:line` **精确匹配**
+⇒ 静默失效，两个站点重新变成候选。`--audit-rows` 查不出这类漂移（其判据是「行号未变但未生效」），
+必须靠 `i18n_todo` 的候选数对照才能暴露。
+
+**修复（判决未变）**：`:240` → `:265`、`:299` → `:324`。该值含真实换行且以 `#` 开头（TSV 按行首 `#` 判注释），
+值形态不可用，站点形态是唯一选项。修后 `tui` 归零、`--dump-rows` 0 行、`--audit-rows` silent no-op 0。
+「哨兵不译」的判决沿用 §12.69 / §12.1 匹配键 / `dict_zh.rs` 注释（`# Codex conversation` 哨兵不译），
+本轮不产生新裁定。
+
+**同回合八 scope 普查**（= 全部依赖 `codex-i18n` 的 crate，2026-10-04 · HEAD `ff2fd98c7` + 工作区未提交改动）：
+
+| scope          | candidates |              wrapped | remaining |
+| -------------- | ---------: | -------------------: | --------: |
+| `tui/src`      |       3229 |                 3229 |         0 |
+| `cli/src`      |       1281 |                 1281 |         0 |
+| `core/src`     |       1164 |                 1164 |         0 |
+| `app-server`   |        708 |                  708 |         0 |
+| `core-plugins` |        531 |                  531 |         0 |
+| `codex-mcp`    |        119 |                  119 |         0 |
+| `exec/src`     |         75 |                   75 |         0 |
+| `plugin/src`   |         16 |                   16 |         0 |
+| **合计**       |   **7123** | **7123**（**100%**） |     **0** |
+
+口径：`python3 scripts/i18n_todo.py --root codex-rs/<crate>/src` 逐 scope 实跑；
+`wrapped` 列为工具口径 = 已包 `tr` **或**已在 `not-translated-unwrapped.tsv` 登记豁免；
+`doctor` 851 按裁定排除（`i18n_scope.json`），不在分母。
+
+**与前文记录的差异（都是账本更新，不是新增工作）**：
+
+1. `core-plugins`：§12.72 记「520 条范围外待裁决」，此后计划文档 `i18n-core-plugins-plan.md`
+   的批次已将其做完（现 531/531 全处置）⇒ 该项已闭合。
+2. `app-server`：§12.72 记「687 同性质排除」，但人类裁决 `j-muajv7wb-3pvn` 已将其转正纳入
+   （`i18n_scope.json` 注记），批 A–Q 做完（现 708/708）。
+3. `codex-mcp`（119/119）与 `plugin`（16/16）纳入普查，均 0 剩余。
+4. TSV `:241`/`:300` 两行是更早批次留下的**死行**（按 HEAD 内容分别指向 `for cell in cells` / `Ok(markdown)`，
+   行号漂移后当前指向的更不是字面量行；两种状态下都从不匹配任何候选）—— 本轮不动，留此存照：后续清理时勿把它们当有效登记。
+
+**遗留（不变，见 §12.72）**：平台受限 43 处待平台 CI（清单 `i18n-platform-ci-checklist.md`）；
+`i18n-locale-zh` 是否登记具名门禁待裁决。
+
+**证据（本轮实跑）**：`just i18n-check` EXIT=0（4212 词条 / missing·unused·spacing·nested·duplicate·placeholder·asset 全 0 /
+coverage 4193/4202 = 99.8%）；八 scope `i18n_todo` remaining 全 0；`--dump-rows` = 0 行；
+`--audit-rows` silent no-op 0；`find codex-rs -name '*.snap.new'` = 0（`.snap` 940 个）。
+本轮代码侧改动仅 `not-translated-unwrapped.tsv` 两行行号，无 Rust 源码改动。

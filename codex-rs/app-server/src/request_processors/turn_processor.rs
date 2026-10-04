@@ -524,9 +524,10 @@ impl TurnRequestProcessor {
     }
 
     pub(super) fn input_too_large_error(actual_chars: usize) -> JSONRPCErrorError {
-        let mut error = invalid_params(tr(
+        let mut error = invalid_params(tr_with(
             current(),
-            "Input exceeds the maximum length of 100000 characters.",
+            "Input exceeds the maximum length of {0} characters.",
+            &[&MAX_USER_INPUT_TEXT_CHARS.to_string()],
         ));
         error.data = Some(serde_json::json!({
             "input_error_code": INPUT_TOO_LARGE_ERROR_CODE,

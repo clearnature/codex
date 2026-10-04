@@ -10352,8 +10352,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "改用thread/start后接delivery为inline的review/start创建独立review线程，或thread/fork后接自定义review指令的turn/start。",
     ),
     (
-        "Input exceeds the maximum length of 100000 characters.",
-        "输入超出最大长度100000个字符。",
+        "Input exceeds the maximum length of {0} characters.",
+        "输入超出最大长度{0}个字符。",
     ),
     ("workspace messages fetch timed out", "获取工作区消息超时"),
     (

@@ -117,6 +117,7 @@ jobs:
           python3 .github/scripts/verify_cargo_workspace_manifests.py
           python3 .github/scripts/verify_tui_core_boundary.py
       - name: i18n 侧 crate 测试
+        working-directory: codex-rs
         run: |
           set -e
           cargo test -q -p codex-i18n

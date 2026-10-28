@@ -374,7 +374,7 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
         Err(tr_with(
             current(),
             "`open {0}` exited with {1}",
-            &[&url, &status.to_string()],
+            &[url, &status.to_string()],
         ))
     }
 }

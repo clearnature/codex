@@ -6,6 +6,7 @@ use codex_features::Feature;
 use codex_features::Features;
 use codex_features::FeaturesToml;
 use codex_i18n::current;
+#[cfg(not(target_os = "windows"))]
 use codex_i18n::tr;
 use codex_i18n::tr_with;
 use codex_login::default_client::originator;

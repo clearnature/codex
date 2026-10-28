@@ -2732,7 +2732,13 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
 `macos-i18n-verify`（标准 runner macos-15 双 target + windows-2022，纯 cargo clippy，
 脚本 `scripts/i18n-macos-verify.sh`）实测，终验运行 `40667069857`（HEAD `261d7a5cc`）
 三 job 全绿；过程修复 5 处平台门控缺陷（明细见 `i18n-platform-ci-checklist.md`
-顶部状态块）。仍遗留：`i18n-locale-zh` 是否登记具名门禁待裁决。
+顶部状态块）。~~`i18n-locale-zh` 是否登记具名门禁~~ **已裁决：已登记并验证**——
+领域包 `codex-repo.json` 已含该门禁（命令与 §12.59 提议一致）；2026-10-28 实跑
+`LC_ALL=zh_CN.UTF-8 LANG=zh_CN.UTF-8 … --help` → CJK **26 行**（与 §12.59 探针
+同值），EXIT=0。**回执 stale 盘点**：当前表哈希 `d4889c3b6f14`，codex 工作区
+回执 961 份中 767 份 stale（领域包多次演进的累积，非本次登记造成）；处置按
+§13.5 先例存照不重签——历史回执结论有效但不可复核。宿主重启：包为磁盘版，
+新启宿主即生效，运行中宿主下次重启自愈。**遗留清单：空。**
 
 **证据（本轮实跑）**：`just i18n-check` EXIT=0（4212 词条 / missing·unused·spacing·nested·duplicate·placeholder·asset 全 0 /
 coverage 4193/4202 = 99.8%）；八 scope `i18n_todo` remaining 全 0；`--dump-rows` = 0 行；

@@ -519,11 +519,7 @@ async fn run_command_under_windows_session(
         Err(err) => {
             eprintln!(
                 "{}",
-                tr_with(
-                    current(),
-                    "windows sandbox failed: {0}",
-                    &[&err.to_string()]
-                )
+                tr_with(current(), "windows sandbox failed: {0}", &[&err])
             );
             std::process::exit(1);
         }

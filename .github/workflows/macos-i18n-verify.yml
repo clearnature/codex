@@ -22,3 +22,15 @@ jobs:
           persist-credentials: false
       - name: Run i18n platform verify script
         run: scripts/i18n-macos-verify.sh
+
+  windows:
+    name: 平台受限站点复核（windows-2022）
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run i18n platform verify script (windows target)
+        shell: bash
+        run: scripts/i18n-macos-verify.sh x86_64-pc-windows-msvc

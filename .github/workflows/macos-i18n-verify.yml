@@ -1,9 +1,11 @@
 name: macos-i18n-verify
 
 # i18n 平台受限站点的个人版复核（docs/plan/i18n-platform-ci-checklist.md）。
-# 只用 GitHub 标准 runner（macos-15，个人 public 仓库免费），不使用上游的
-# 企业级组件（Bazel / 自托管 runner / v8 预编译产物）；实际校验逻辑全部在
+# 只用 GitHub 标准 runner（macos-15 / windows-2022，个人 public 仓库免费），不使用
+# 上游的企业级组件（Bazel / 自托管 runner / v8 预编译产物）；实际校验逻辑全部在
 # scripts/i18n-macos-verify.sh，本机有 Mac 时可直接运行同一脚本。
+# 缓存：cargo home（registry/git 索引）+ sccache 编译产物，按 Cargo.lock 哈希做 key，
+# 源码改动不换 key ⇒ 复跑命中率高；与上游 lint_build 的缓存方案同构。
 
 on:
   workflow_dispatch:
@@ -16,12 +18,50 @@ jobs:
     name: 平台受限站点复核（macos-15）
     runs-on: macos-15
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e081816240890017053eacbb1bdf337761dc5582 # 1.95.0
+        with:
+          targets: ${{ matrix.target }}
+          components: clippy
+      - name: Restore cargo home cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo-home-macos-${{ matrix.target }}-${{ hashFiles('codex-rs/Cargo.lock', 'codex-rs/rust-toolchain.toml') }}
+      - name: Install sccache
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sccache
+          version: 0.7.5
+      - name: Restore sccache cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sccache
+          key: sccache-macos-${{ matrix.target }}-${{ hashFiles('codex-rs/Cargo.lock') }}
+          restore-keys: |
+            sccache-macos-${{ matrix.target }}-
+      - name: Configure sccache
+        run: |
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$HOME/.cache/sccache" >> "$GITHUB_ENV"
       - name: Run i18n platform verify script
         run: scripts/i18n-macos-verify.sh
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats
 
   windows:
     name: 平台受限站点复核（windows-2022）
@@ -31,6 +71,21 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e081816240890017053eacbb1bdf337761dc5582 # 1.95.0
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: clippy
+      - name: Restore cargo home cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo-home-windows-x86_64-pc-windows-msvc-${{ hashFiles('codex-rs/Cargo.lock', 'codex-rs/rust-toolchain.toml') }}
+      # Windows 不启用 sccache：与上游 lint_build 同口径（ring/cc-rs 在
+      # sccache 下可能产出混合架构归档），cargo home 缓存已足够。
       - name: Run i18n platform verify script (windows target)
         shell: bash
         run: scripts/i18n-macos-verify.sh x86_64-pc-windows-msvc

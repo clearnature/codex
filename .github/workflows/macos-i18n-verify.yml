@@ -89,3 +89,36 @@ jobs:
       - name: Run i18n platform verify script (windows target)
         shell: bash
         run: scripts/i18n-macos-verify.sh x86_64-pc-windows-msvc
+
+  linux-scripts:
+    name: 脚本套件（ubuntu-24.04，个人版）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e081816240890017053eacbb1bdf337761dc5582 # 1.95.0
+        with:
+          components: rustfmt, clippy
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: A 类脚本套件（与本地同口径）
+        run: |
+          set -e
+          python3 scripts/format.py --check
+          just i18n-check
+          just i18n-scan
+          python3 scripts/i18n_todo.py --top 3
+          ./scripts/asciicheck.py README.md
+          python3 scripts/readme_toc.py README.md
+          python3 .github/scripts/verify_cargo_workspace_manifests.py
+          python3 .github/scripts/verify_tui_core_boundary.py
+      - name: i18n 侧 crate 测试
+        run: |
+          set -e
+          cargo test -q -p codex-i18n
+          cargo test -q -p codex-i18n-check
+      - name: i18n 冒烟（真二进制渲染中文）
+        run: just i18n-smoke

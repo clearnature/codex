@@ -98,12 +98,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # 上游自带的环境 action：装 dotslash/buildifier、just、构建缓存路径（无企业依赖）
+      - uses: ./.github/actions/setup-ci
       - uses: dtolnay/rust-toolchain@e081816240890017053eacbb1bdf337761dc5582 # 1.95.0
         with:
           components: rustfmt, clippy
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just
+      - name: Install uv（format.py 的 Python formatter 组依赖）
+        uses: astral-sh/setup-uv@v5
       - name: A 类脚本套件（与本地同口径）
         run: |
           set -e

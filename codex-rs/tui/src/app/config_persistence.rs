@@ -131,8 +131,7 @@ impl App {
                 current(),
                 "Failed to rebuild config for permission profile {0}",
                 &[profile_id],
-            )
-            .to_string(),
+            ),
         )
         .await
     }
@@ -680,14 +679,11 @@ impl App {
                     feature = feature_key,
                     "failed to update constrained feature flags"
                 );
-                self.chat_widget.add_error_message(
-                    tr_with(
-                        current(),
-                        "Failed to update experimental feature `{0}`: {1}",
-                        &[feature_key, &err.to_string()],
-                    )
-                    .to_string(),
-                );
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to update experimental feature `{0}`: {1}",
+                    &[feature_key, &err.to_string()],
+                ));
                 continue;
             }
             let effective_enabled = feature_config.features.enabled(feature);
@@ -1376,14 +1372,11 @@ impl App {
             message,
             "Windows sandbox config write was overridden by effective config"
         );
-        self.chat_widget.add_error_message(
-            tr_with(
-                current(),
-                "Windows sandbox changes were saved but not applied: {0}",
-                &[message],
-            )
-            .to_string(),
-        );
+        self.chat_widget.add_error_message(tr_with(
+            current(),
+            "Windows sandbox changes were saved but not applied: {0}",
+            &[message],
+        ));
         let Some(effective_config) = self
             .read_effective_config_after_overridden_write(
                 app_server,

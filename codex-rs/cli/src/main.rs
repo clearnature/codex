@@ -1276,6 +1276,27 @@ async fn cli_main(
         profile_v2_for_subcommand(&interactive, subcommand)?;
     }
 
+    // Republish the UI language now that `config.toml` can be located, so
+    // non-TUI subcommands (`mcp`, `exec`, ...) honor the `locale` key too.
+    // The interactive path re-publishes again with the fully loaded config,
+    // which keeps the documented precedence (`--lang` > `locale` > env).
+    if let Ok(codex_home) = find_codex_home() {
+        let config_path = codex_home.join("config.toml");
+        if let Ok(text) = std::fs::read_to_string(&config_path) {
+            let locale = text
+                .lines()
+                .into_iter()
+                .find_map(|line| line.trim().strip_prefix("locale = "))
+                .map(|value| value.trim_matches('"').to_string());
+            if let Some(locale) = locale {
+                codex_i18n::set_current(codex_i18n::resolve_from_process(
+                    scanned_lang().as_deref(),
+                    Some(&locale),
+                ));
+            }
+        }
+    }
+
     let open_agents_overview = matches!(&subcommand, Some(Subcommand::Agents(_)));
     match subcommand {
         None | Some(Subcommand::Agents(_)) => {

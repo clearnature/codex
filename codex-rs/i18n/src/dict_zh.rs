@@ -3843,6 +3843,38 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "配置状态栏中显示的项目",
     ),
     ("choose a syntax highlighting theme", "选择语法高亮主题"),
+    ("switch the interface language", "切换界面语言"),
+    ("Select Language", "选择语言"),
+    ("Choose the interface language.", "选择界面语言。"),
+    ("Type to filter languages...", "输入以过滤语言..."),
+    ("Persistence", "持久化"),
+    (
+        "Keep the new interface language after restart?",
+        "重启后是否保留新界面语言？",
+    ),
+    ("Session only", "仅本次会话"),
+    ("Apply until you quit Codex.", "生效至退出 Codex。"),
+    ("Write to config.toml", "写入 config.toml"),
+    (
+        "Save the choice so it persists across restarts.",
+        "保存该选择，重启后依然生效。",
+    ),
+    (
+        "Interface language changed (session only).",
+        "界面语言已切换（仅本次会话）。",
+    ),
+    (
+        "Interface language changed and saved to config.toml.",
+        "界面语言已切换，并已写入 config.toml。",
+    ),
+    (
+        "Unrecognized language; pick one from the list.",
+        "无法识别的语言；请从列表中选择。",
+    ),
+    (
+        "Failed to write config.toml: {0}",
+        "写入 config.toml 失败：{0}",
+    ),
     ("choose or hide the terminal pet", "选择或隐藏终端宠物"),
     ("list background terminals", "列出后台终端"),
     ("stop all background terminals", "停止所有后台终端"),

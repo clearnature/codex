@@ -963,6 +963,20 @@ impl App {
             AppEvent::PetSelected { pet_id } => {
                 self.handle_pet_selected(tui, pet_id);
             }
+            AppEvent::InterfaceLanguageSelected { lang } => {
+                self.chat_widget.apply_interface_language(lang);
+            }
+            AppEvent::LanguageScopeSelected { lang, persist } => {
+                if persist {
+                    self.chat_widget.persist_interface_language(lang);
+                } else {
+                    self.chat_widget.show_language_status(lang, false);
+                }
+            }
+            AppEvent::LanguagePersisted { lang, result } => match result {
+                Ok(()) => self.chat_widget.show_language_status(lang, true),
+                Err(message) => self.chat_widget.add_warning_message(message),
+            },
             AppEvent::PetDisabled => {
                 self.handle_pet_disabled(tui).await;
             }

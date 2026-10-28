@@ -584,6 +584,9 @@ impl ChatWidget {
             SlashCommand::Theme => {
                 self.open_theme_picker();
             }
+            SlashCommand::Language => {
+                self.open_language_picker();
+            }
             SlashCommand::Pets => {
                 self.open_pets_picker();
             }
@@ -1097,6 +1100,19 @@ impl ChatWidget {
             SlashCommand::Pets if !trimmed.is_empty() => {
                 self.select_pet_by_id(args);
             }
+            SlashCommand::Language => {
+                match crate::chatwidget::language::parse_language_arg(&args) {
+                    Some(lang) => self.apply_interface_language(lang),
+                    None if args.trim().is_empty() => self.open_language_picker(),
+                    None => {
+                        self.add_warning_message(
+                            tr(current(), "Unrecognized language; pick one from the list.")
+                                .to_string(),
+                        );
+                        self.open_language_picker();
+                    }
+                }
+            }
             _ => self.dispatch_command(cmd),
         }
         if source == SlashCommandDispatchSource::Live && cmd != SlashCommand::Goal {
@@ -1320,6 +1336,7 @@ impl ChatWidget {
             | SlashCommand::Title
             | SlashCommand::Statusline
             | SlashCommand::Theme
+            | SlashCommand::Language
             | SlashCommand::Pets => QueueDrain::Stop,
         }
     }

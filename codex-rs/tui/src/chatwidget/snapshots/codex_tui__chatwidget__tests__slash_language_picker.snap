@@ -1,0 +1,13 @@
+---
+source: tui/src/chatwidget/tests/slash_commands.rs
+assertion_line: 3777
+expression: popup
+---
+  Select Language
+  Choose the interface language.
+
+  Type to filter languages...
+› English [en] (current)  switch the interface language
+  中 文  (Chinese) [zh]     switch the interface language
+
+  Press enter to confirm or esc to go back

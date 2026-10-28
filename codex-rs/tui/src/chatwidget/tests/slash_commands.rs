@@ -3763,3 +3763,62 @@ async fn compact_queues_user_messages_snapshot() {
         normalize_snapshot_paths(term.backend().vt100().screen().contents())
     );
 }
+
+#[tokio::test]
+#[serial]
+async fn slash_language_opens_picker() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command(SlashCommand::Language);
+
+    assert!(chat.bottom_pane.has_active_view());
+    assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
+    let popup = render_bottom_popup(&chat, /*width*/ 80);
+    assert_chatwidget_snapshot!("slash_language_picker", popup);
+}
+
+#[tokio::test]
+#[serial]
+async fn slash_language_with_arg_applies_and_prompts_scope() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.bottom_pane
+        .set_composer_text("/language zh".to_string(), Vec::new(), Vec::new());
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+
+    assert_eq!(codex_i18n::current(), codex_i18n::Lang::Zh);
+    assert!(chat.bottom_pane.has_active_view());
+    assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
+
+    // Enter on the scope prompt picks the highlighted "Session only" option.
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::LanguageScopeSelected {
+            lang: codex_i18n::Lang::Zh,
+            persist: false,
+        })
+    );
+
+    // Restore the process-global language for the remaining suite.
+    codex_i18n::set_current(codex_i18n::Lang::En);
+}
+
+#[tokio::test]
+#[serial]
+async fn slash_language_unknown_arg_warns_and_opens_picker() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.bottom_pane
+        .set_composer_text("/language klingon".to_string(), Vec::new(), Vec::new());
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+
+    assert!(chat.bottom_pane.has_active_view());
+    let cells = drain_insert_history(&mut rx);
+    let rendered = cells
+        .iter()
+        .map(|lines| lines_to_single_string(lines))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(rendered.contains("Unrecognized language"));
+}

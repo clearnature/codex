@@ -739,6 +739,24 @@ pub(crate) enum AppEvent {
         pet_id: String,
     },
 
+    /// Apply the picked interface language to the running session and open
+    /// the persistence (scope) prompt.
+    InterfaceLanguageSelected {
+        lang: codex_i18n::Lang,
+    },
+
+    /// Finish the interface-language switch with the chosen persistence scope.
+    LanguageScopeSelected {
+        lang: codex_i18n::Lang,
+        persist: bool,
+    },
+
+    /// Report the outcome of writing `locale` into config.toml.
+    LanguagePersisted {
+        lang: codex_i18n::Lang,
+        result: Result<(), String>,
+    },
+
     /// Persist terminal pets as disabled and remove the ambient pet.
     PetDisabled,
 

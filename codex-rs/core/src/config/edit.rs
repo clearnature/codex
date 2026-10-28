@@ -916,6 +916,14 @@ impl ConfigEditsBuilder {
         self
     }
 
+    pub fn set_locale(mut self, locale: &str) -> Self {
+        self.edits.push(ConfigEdit::SetPath {
+            segments: vec!["locale".to_string()],
+            value: value(locale),
+        });
+        self
+    }
+
     pub fn set_realtime_microphone(mut self, microphone: Option<&str>) -> Self {
         let segments = vec!["audio".to_string(), "microphone".to_string()];
         match microphone {

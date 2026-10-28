@@ -61,6 +61,8 @@ pub enum SlashCommand {
     Title,
     Statusline,
     Theme,
+    #[strum(to_string = "language", serialize = "lang")]
+    Language,
     #[strum(to_string = "pets", serialize = "pet")]
     Pets,
     Mcp,
@@ -150,6 +152,7 @@ impl SlashCommand {
                 tr(current(), "configure which items appear in the status line")
             }
             SlashCommand::Theme => tr(current(), "choose a syntax highlighting theme"),
+            SlashCommand::Language => tr(current(), "switch the interface language"),
             SlashCommand::Pets => tr(current(), "choose or hide the terminal pet"),
             SlashCommand::Ps => tr(current(), "list background terminals"),
             SlashCommand::Stop => tr(current(), "stop all background terminals"),
@@ -223,6 +226,7 @@ impl SlashCommand {
                 | SlashCommand::Pwd
                 | SlashCommand::Usage
                 | SlashCommand::Pets
+                | SlashCommand::Language
                 | SlashCommand::Side
                 | SlashCommand::Btw
                 | SlashCommand::Resume
@@ -307,7 +311,7 @@ impl SlashCommand {
             SlashCommand::Rollout => true,
             SlashCommand::TestApproval => true,
             SlashCommand::Agents | SlashCommand::MultiAgents => true,
-            SlashCommand::Theme | SlashCommand::Pets => false,
+            SlashCommand::Theme | SlashCommand::Pets | SlashCommand::Language => false,
         }
     }
 

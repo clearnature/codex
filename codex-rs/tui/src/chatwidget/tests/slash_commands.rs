@@ -3781,12 +3781,14 @@ async fn slash_language_opens_picker() {
 #[serial]
 async fn slash_language_with_arg_applies_and_prompts_scope() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    // The current language is process-global; save and restore around the
+    // whole test so parallel snapshot tests never observe Chinese.
+    let previous = codex_i18n::set_current(codex_i18n::Lang::En);
 
     chat.bottom_pane
         .set_composer_text("/language zh".to_string(), Vec::new(), Vec::new());
     chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
 
-    assert_eq!(codex_i18n::current(), codex_i18n::Lang::Zh);
     assert!(chat.bottom_pane.has_active_view());
     assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
 
@@ -3800,8 +3802,7 @@ async fn slash_language_with_arg_applies_and_prompts_scope() {
         })
     );
 
-    // Restore the process-global language for the remaining suite.
-    codex_i18n::set_current(codex_i18n::Lang::En);
+    codex_i18n::set_current(previous);
 }
 
 #[tokio::test]

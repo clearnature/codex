@@ -23,6 +23,13 @@
 > ④ `cli/src/debug_sandbox.rs:525` Windows 分支冗余克隆（err 已是 String，
 > `2588586a7`）；
 > ⑤ `cli/src/main.rs:1020/:1029` `&[&command]` 多余借用（`261d7a5cc`）。
+> **测试回执（2026-10-28 · Ubuntu · 1.95.0 同源工具链）**：tui lib 全量
+> `RUST_MIN_STACK=16777216 … --skip ide_context::ipc` → **4287 passed / 2 failed /
+> snapshot 失败 0**（`.snap.new` = 0）；2 条失败（`safety_buffering::
+> agents_overview_acknowledges_inactive_steer_before_interrupt`、`rollout_history::
+> cached_legacy_resume_revalidates_history_across_migration_settings`）均在 §「两条失败的
+> 归属」历史 flaky 集合内（round 28/29 已记录），单跑双双通过（2.33s）⇒ 负载敏感时序型，
+> 与 i18n 无关。
 > 第 1–6 轮失败日志留存于仓库 Actions 历史。下表保留备查。
 
 | 文件:行                                      | 平台门控                              | 种类       | 站点实参（`tr_with` 第 3 参）                                                                                                            | 文档              |

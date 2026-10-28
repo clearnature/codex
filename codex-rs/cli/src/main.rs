@@ -1017,7 +1017,7 @@ fn resolve_windows_update_command_from_path(
         anyhow::bail!(tr_with(
             current(),
             "Could not find an absolute update command `{0}` on PATH. Please update manually: https://developers.openai.com/codex/cli/",
-            &[&command],
+            &[command],
         ));
     }
     which::which_in_global(command, Some(&path_env))?
@@ -1026,7 +1026,7 @@ fn resolve_windows_update_command_from_path(
             anyhow::anyhow!(tr_with(
                 current(),
                 "could not find update command `{0}` on PATH",
-                &[&command],
+                &[command],
             ))
         })
 }

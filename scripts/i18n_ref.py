@@ -34,13 +34,23 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-QWEN = Path("/data/training/cli/qwen-code/packages/cli/src/i18n/locales")
-STUDIO = Path("/home/yanli/work/DeepSeek-Reasonix-studio-v2.13.0/internal/i18n")
+QWEN = Path(
+    os.environ.get(
+        "I18N_REF_QWEN", "/data/training/cli/qwen-code/packages/cli/src/i18n/locales"
+    )
+)
+STUDIO = Path(
+    os.environ.get(
+        "I18N_REF_STUDIO",
+        "/home/yanli/work/DeepSeek-Reasonix-studio-v2.13.0/internal/i18n",
+    )
+)
 OUR_DICT = REPO / "codex-rs/i18n/src/dict_zh.rs"
 
 JS_PAIR = re.compile(r"'((?:[^'\\]|\\.)*)'\s*:\s*'((?:[^'\\]|\\.)*)'", re.S)
@@ -75,7 +85,11 @@ def read_qwen(locale: str) -> dict[str, str]:
 
 
 def read_studio(locale: str) -> dict[str, str]:
-    en = read_go_fields(STUDIO / "messages_en.go")
+    en_path = STUDIO / "messages_en.go"
+    if not en_path.exists():
+        print(f"studio reference not found at {STUDIO}; skipping", file=sys.stderr)
+        return {}
+    en = read_go_fields(en_path)
     other = read_go_fields(STUDIO / f"messages_{locale}.go")
     return {en[k]: other[k] for k in en if k in other}
 

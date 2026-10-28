@@ -6,6 +6,25 @@
 
 **平台受限站点合计 45 个**（其中 **43 处是代码改动**：mac.rs 33 + windows.rs 6 + debug_sandbox 的 2 处 macOS 分支与 2 处 Windows 分支；另 2 个是登记行）。本表列出三个相关文件的全部 52 个站点以便对照 —— **注意**：`debug_sandbox.rs` 的另外 10 处在 Linux 编译路径上，已由 clippy/测试覆盖，不在「未验证」之列。
 
+> **✅ 已闭合（2026-10-28）**：43 处平台受限站点已由平台 CI 实测复核。载体为个人版
+> workflow `.github/workflows/macos-i18n-verify.yml`——标准 runner（macos-15 双
+> target + windows-2022，个人 public 仓库免费）上跑 `cargo clippy -p codex-cli
+> --all-targets --target <t> -- -D warnings`（脚本 `scripts/i18n-macos-verify.sh`），
+> 纯 cargo，不依赖 Bazel / 自托管 runner / v8 预编译产物。终验运行
+> [40667069857](https://github.com/clearnature/codex/actions/runs/40667069857)
+> （HEAD `261d7a5cc`）三 job 全绿；cargo home + sccache 两层缓存按 `Cargo.lock`
+> 哈希做 key。复核过程逐层（core → tui → cli lib → cli bin）抓出并修复 5 处
+> Linux 路径永远编译不到的门控缺陷：
+> ① `tui/src/app/history_ui.rs:377` 多余 to_string（`4ad2ddc2e`）；
+> ② `core/src/windows_sandbox.rs:9` Windows 路径 unused import，import 加
+> `not(windows)` cfg（`d514d54ef`）；
+> ③ `tui/src/app/config_persistence.rs` ×3 `tr_with(...).to_string()` 冗余克隆
+> （`2d6b29c8a`）；
+> ④ `cli/src/debug_sandbox.rs:525` Windows 分支冗余克隆（err 已是 String，
+> `2588586a7`）；
+> ⑤ `cli/src/main.rs:1020/:1029` `&[&command]` 多余借用（`261d7a5cc`）。
+> 第 1–6 轮失败日志留存于仓库 Actions 历史。下表保留备查。
+
 | 文件:行                                      | 平台门控                              | 种类       | 站点实参（`tr_with` 第 3 参）                                                                                                            | 文档              |
 | -------------------------------------------- | ------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------ |
 | `codex-rs/cli/src/debug_sandbox.rs:92`       | Linux 编译路径                        | `bail`     | `（无参）`                                                                                                                               | §12.66            |

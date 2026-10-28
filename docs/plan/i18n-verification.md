@@ -2728,8 +2728,11 @@ duplicate 0 / placeholder 0 / `scanned … 328 referencing codex_i18n`）、`fmt
 4. TSV `:241`/`:300` 两行是更早批次留下的**死行**（按 HEAD 内容分别指向 `for cell in cells` / `Ok(markdown)`，
    行号漂移后当前指向的更不是字面量行；两种状态下都从不匹配任何候选）—— 本轮不动，留此存照：后续清理时勿把它们当有效登记。
 
-**遗留（不变，见 §12.72）**：平台受限 43 处待平台 CI（清单 `i18n-platform-ci-checklist.md`）；
-`i18n-locale-zh` 是否登记具名门禁待裁决。
+**遗留（2026-10-28 更新）**：~~平台受限 43 处待平台 CI~~ **已闭合**——个人版 workflow
+`macos-i18n-verify`（标准 runner macos-15 双 target + windows-2022，纯 cargo clippy，
+脚本 `scripts/i18n-macos-verify.sh`）实测，终验运行 `40667069857`（HEAD `261d7a5cc`）
+三 job 全绿；过程修复 5 处平台门控缺陷（明细见 `i18n-platform-ci-checklist.md`
+顶部状态块）。仍遗留：`i18n-locale-zh` 是否登记具名门禁待裁决。
 
 **证据（本轮实跑）**：`just i18n-check` EXIT=0（4212 词条 / missing·unused·spacing·nested·duplicate·placeholder·asset 全 0 /
 coverage 4193/4202 = 99.8%）；八 scope `i18n_todo` remaining 全 0；`--dump-rows` = 0 行；

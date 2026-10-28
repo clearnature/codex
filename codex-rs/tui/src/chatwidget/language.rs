@@ -57,6 +57,62 @@ pub(crate) fn parse_language_arg(raw: &str) -> Option<Lang> {
     }
 }
 
+/// Parsed `/language` argument line: the target language (if any), the
+/// persistence flag (`--config` / `--session`), and whether the line was
+/// invalid (conflicting flags or an unrecognized language).
+pub(crate) struct LanguageRequest {
+    pub lang: Option<Lang>,
+    pub persist: Option<bool>,
+    pub conflicting_flags: bool,
+}
+
+pub(crate) fn parse_language_request(args: &str) -> LanguageRequest {
+    let mut persist = None;
+    let mut conflicting_flags = false;
+    let mut remaining = String::new();
+    for token in args.split_whitespace() {
+        match token {
+            "--config" => {
+                if persist == Some(false) {
+                    conflicting_flags = true;
+                }
+                persist = Some(true);
+            }
+            "--session" => {
+                if persist == Some(true) {
+                    conflicting_flags = true;
+                }
+                persist = Some(false);
+            }
+            other => {
+                if !remaining.is_empty() {
+                    remaining.push(' ');
+                }
+                remaining.push_str(other);
+            }
+        }
+    }
+    let lang = if remaining.is_empty() {
+        None
+    } else {
+        parse_language_arg(&remaining)
+    };
+    LanguageRequest {
+        lang,
+        persist,
+        conflicting_flags,
+    }
+}
+
+/// The comma-joined language list shown when an argument is not recognized.
+pub(crate) fn available_language_list() -> String {
+    LANGUAGE_ENTRIES
+        .iter()
+        .map(|entry| entry.name.to_string())
+        .collect::<Vec<_>>()
+        .join("、")
+}
+
 fn build_language_picker_params() -> crate::bottom_pane::SelectionViewParams {
     let current_lang = current();
     let mut initial_selected_idx = None;
@@ -180,6 +236,14 @@ impl ChatWidget {
             });
             tx.send(AppEvent::LanguagePersisted { lang, result });
         });
+    }
+
+    /// `/language <lang> --config|--session` -- switch now and take the
+    /// persistence decision from the flag, skipping the scope prompt.
+    pub(crate) fn apply_interface_language_direct(&mut self, lang: Lang, persist: bool) {
+        set_current(lang);
+        self.app_event_tx
+            .send(AppEvent::LanguageScopeSelected { lang, persist });
     }
 
     pub(crate) fn show_language_status(&mut self, lang: Lang, persisted: bool) {

@@ -1101,15 +1101,35 @@ impl ChatWidget {
                 self.select_pet_by_id(args);
             }
             SlashCommand::Language => {
-                match crate::chatwidget::language::parse_language_arg(&args) {
-                    Some(lang) => self.apply_interface_language(lang),
-                    None if args.trim().is_empty() => self.open_language_picker(),
-                    None => {
-                        self.add_warning_message(
-                            tr(current(), "Unrecognized language; pick one from the list.")
-                                .to_string(),
-                        );
-                        self.open_language_picker();
+                let request = crate::chatwidget::language::parse_language_request(&args);
+                if request.conflicting_flags {
+                    self.add_warning_message(
+                        tr(
+                            current(),
+                            "Cannot use both --config and --session. Choose one persistence flag.",
+                        )
+                        .to_string(),
+                    );
+                    self.open_language_picker();
+                } else {
+                    match (request.lang, request.persist) {
+                        (Some(lang), Some(persist)) => {
+                            self.apply_interface_language_direct(lang, persist);
+                        }
+                        (Some(lang), None) => self.apply_interface_language(lang),
+                        (None, _) if args.trim().is_empty() => self.open_language_picker(),
+                        (None, _) => {
+                            self.add_warning_message(
+                                tr(current(), "Unrecognized language; pick one from the list.")
+                                    .to_string(),
+                            );
+                            self.add_warning_message(tr_with(
+                                current(),
+                                "Available languages: {0}",
+                                &[&crate::chatwidget::language::available_language_list()],
+                            ));
+                            self.open_language_picker();
+                        }
                     }
                 }
             }

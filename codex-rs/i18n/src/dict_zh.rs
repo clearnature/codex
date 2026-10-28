@@ -3872,6 +3872,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "无法识别的语言；请从列表中选择。",
     ),
     (
+        "Cannot use both --config and --session. Choose one persistence flag.",
+        "不能同时使用--config与--session；请选择一个持久化旗标。",
+    ),
+    ("Available languages: {0}", "可用语言：{0}"),
+    (
         "Failed to write config.toml: {0}",
         "写入config.toml失败：{0}",
     ),

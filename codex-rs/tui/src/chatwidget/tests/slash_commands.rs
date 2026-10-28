@@ -3822,4 +3822,78 @@ async fn slash_language_unknown_arg_warns_and_opens_picker() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(rendered.contains("Unrecognized language"));
+    assert!(rendered.contains("English [en]"));
+    assert!(rendered.contains("中文 (Chinese) [zh]"));
+}
+
+#[tokio::test]
+#[serial]
+async fn slash_language_config_flag_skips_scope_prompt() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    let previous = codex_i18n::set_current(codex_i18n::Lang::En);
+
+    chat.bottom_pane
+        .set_composer_text("/language zh --config".to_string(), Vec::new(), Vec::new());
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+
+    assert!(!chat.bottom_pane.has_active_view());
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::LanguageScopeSelected {
+            lang: codex_i18n::Lang::Zh,
+            persist: true,
+        })
+    );
+
+    codex_i18n::set_current(previous);
+}
+
+#[tokio::test]
+#[serial]
+async fn slash_language_session_flag_skips_scope_prompt() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    let previous = codex_i18n::set_current(codex_i18n::Lang::En);
+
+    chat.bottom_pane.set_composer_text(
+        "/language zh --session".to_string(),
+        Vec::new(),
+        Vec::new(),
+    );
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+
+    assert!(!chat.bottom_pane.has_active_view());
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::LanguageScopeSelected {
+            lang: codex_i18n::Lang::Zh,
+            persist: false,
+        })
+    );
+
+    codex_i18n::set_current(previous);
+}
+
+#[tokio::test]
+#[serial]
+async fn slash_language_conflicting_flags_warn_and_open_picker() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    let previous = codex_i18n::set_current(codex_i18n::Lang::En);
+
+    chat.bottom_pane.set_composer_text(
+        "/language zh --config --session".to_string(),
+        Vec::new(),
+        Vec::new(),
+    );
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+
+    assert!(chat.bottom_pane.has_active_view());
+    let cells = drain_insert_history(&mut rx);
+    let rendered = cells
+        .iter()
+        .map(|lines| lines_to_single_string(lines))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(rendered.contains("Cannot use both --config and --session"));
+
+    codex_i18n::set_current(previous);
 }

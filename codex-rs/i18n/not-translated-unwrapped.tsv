@@ -17,7 +17,7 @@
 # 14 行与 269 行无法由文本定位（多行字面量、转义引号、空值键）—— 它们仍按值生效。
 # ⚠ 值以 `#` 开头的行**必须留空值键**（否则整行被当注释）：只能靠第 2 列站点匹配。
 forking the thread	codex-rs/tui/src/app/event_dispatch.rs:494	`refresh_in_memory_config_from_disk_best_effort` 的参数只进 tracing::warn!（config_persistence.rs:457-465 逐行读到），无渲染路径 ⇒ §12.3
-TUI disconnected while handling a dynamic tool call	codex-rs/tui/src/app/event_dispatch.rs:3418	经 dynamic_tools::failure_response 回给 app-server 的协议响应，不渲染到屏幕 ⇒ §12.11
+TUI disconnected while handling a dynamic tool call	codex-rs/tui/src/app/event_dispatch.rs:3432	经 dynamic_tools::failure_response 回给 app-server 的协议响应，不渲染到屏幕 ⇒ §12.11
 Git · {url}@{ref_name}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1690	仓库坐标标识符（Git 是产品名）⇒ §12.9
 Git · {url}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1679	同上 ⇒ §12.9
 npm · {package}@{version}	codex-rs/tui/src/chatwidget/plugin_catalog.rs:1696	同上 ⇒ §12.9
@@ -61,8 +61,8 @@ failed to set selected permission profile approval policy on app config	codex-rs
 failed to set auto-review approval policy on staged config	codex-rs/tui/src/app/config_persistence.rs:724	同上（log_message）⇒ §12.3
 failed to set auto-review permission profile on staged config	codex-rs/tui/src/app/config_persistence.rs:733	同上（log_message）⇒ §12.3
 failed to sync overridden Auto-review permission profile	codex-rs/tui/src/app/config_persistence.rs:1340	同上（log_message）⇒ §12.3
-failed to set approval policy on app config	codex-rs/tui/src/app/event_dispatch.rs:2437	同上（log_message）⇒ §12.3
-failed to set active permission profile on app config	codex-rs/tui/src/app/event_dispatch.rs:2460	同上（log_message）⇒ §12.3
+failed to set approval policy on app config	codex-rs/tui/src/app/event_dispatch.rs:2451	同上（log_message）⇒ §12.3
+failed to set active permission profile on app config	codex-rs/tui/src/app/event_dispatch.rs:2474	同上（log_message）⇒ §12.3
 Implement the plan.	codex-rs/tui/src/chatwidget/plan_implementation.rs:27	喂给模型的提示词（plan_implementation.rs:54 取作 user_text 提交）⇒ §12.2
 A previous agent produced the plan below to accomplish the user's task. 	codex-rs/tui/src/chatwidget/plan_implementation.rs:29	同上（PLAN_IMPLEMENTATION_CLEAR_CONTEXT_PREFIX，:77 拼进提示）⇒ §12.2
 Write a brief catch-up for a user returning to this Codex task. 	codex-rs/tui/src/app/recap.rs:57	喂模型的 prompt（RECAP_PROMPT_PREFIX，concat! 片段）⇒ §12.2
@@ -1111,7 +1111,7 @@ agent communication	codex-rs/core/src/agent_communication.rs:76	标签/标识符
 delegate turn input was not started: {submission:?}	codex-rs/core/src/codex_delegate.rs:230	内部 anyhow（delegate 会话未启动）⇒ §12.3
 previous-model compaction failed; retried with current model	codex-rs/core/src/compact_model_fallback.rs:62	`tracing::warn!` 日志行 ⇒ §12.3
 remote compaction v2 expected exactly one compaction output item, got {compaction_count} from {output_item_count} output items	codex-rs/core/src/compact_remote_v2.rs:478	内部不变式错误（压缩输出项数量）⇒ §12.3
-config persistence task panicked	codex-rs/core/src/config/edit.rs:1002	panic 消息（进程内诊断，不面向用户）⇒ §12.3
+config persistence task panicked	codex-rs/core/src/config/edit.rs:1010	panic 消息（进程内诊断，不面向用户）⇒ §12.3
 <permissions instructions>	codex-rs/core/src/event_mapping.rs:41	**XML 标记**（`<permissions instructions>`）⇒ §12.7
 visualize{	codex-rs/core/src/realtime_history/presentation.rs:15	展示拼装格式串（`visualize{{`）⇒ §12.7
 code-mode host operation completed	codex-rs/core/src/tools/code_mode/telemetry.rs:67	**遥测**事件名 ⇒ §3.6
@@ -1184,28 +1184,28 @@ marketplace name	codex-rs/cli/src/plugin_cmd.rs:1065	字段标签（`kind` 参�
 <invalid config>	codex-rs/cli/src/plugin_cmd.rs:1068	[fanout-reviewed] 哨兵值 `<invalid config>`；同值另一站点 :993（见该行理由）
 <invalid source>	codex-rs/cli/src/plugin_cmd.rs:1081	哨兵值 `<invalid source>`（路径占位符，非文案）
 under development	codex-rs/cli/src/main.rs:1187	features list 的 STAGE 列 token（列宽由 stage.len() 算出：:1980/:1986）；同族 experimental/stable/deprecated/removed 因短词被形状规则排除 ⇒ 按同一口径登记
-sandbox setup	codex-rs/cli/src/main.rs:1817	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+sandbox setup	codex-rs/cli/src/main.rs:1838	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
 debug models	codex-rs/cli/src/main.rs:1867	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-debug app-server	codex-rs/cli/src/main.rs:1875	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+debug app-server	codex-rs/cli/src/main.rs:1896	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
 debug prompt-input	codex-rs/cli/src/main.rs:1883	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-debug trace-reduce	codex-rs/cli/src/main.rs:1897	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-debug clear-memories	codex-rs/cli/src/main.rs:1905	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-execpolicy check	codex-rs/cli/src/main.rs:1915	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-features list	codex-rs/cli/src/main.rs:1965	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+debug trace-reduce	codex-rs/cli/src/main.rs:1918	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+debug clear-memories	codex-rs/cli/src/main.rs:1926	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+execpolicy check	codex-rs/cli/src/main.rs:1936	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
+features list	codex-rs/cli/src/main.rs:1986	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
 features enable	codex-rs/cli/src/main.rs:1998	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
 features disable	codex-rs/cli/src/main.rs:2006	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译
-app-server daemon bootstrap	codex-rs/cli/src/main.rs:2807	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server daemon start	codex-rs/cli/src/main.rs:2808	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server daemon restart	codex-rs/cli/src/main.rs:2809	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server daemon enable-remote-control	codex-rs/cli/src/main.rs:2811	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server daemon disable-remote-control	codex-rs/cli/src/main.rs:2814	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server daemon stop	codex-rs/cli/src/main.rs:2816	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon bootstrap	codex-rs/cli/src/main.rs:2828	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon start	codex-rs/cli/src/main.rs:2829	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon restart	codex-rs/cli/src/main.rs:2830	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon enable-remote-control	codex-rs/cli/src/main.rs:2832	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon disable-remote-control	codex-rs/cli/src/main.rs:2835	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon stop	codex-rs/cli/src/main.rs:2837	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
 app-server daemon version	codex-rs/cli/src/main.rs:2817	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）；同名值在测试里被断言（:5153/:5167）⇒ 不译才能让该断言在两种语言下都成立
-app-server daemon pid-update-loop	codex-rs/cli/src/main.rs:2818	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server daemon pid-update-loop	codex-rs/cli/src/main.rs:2839	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
 app-server proxy	codex-rs/cli/src/main.rs:2820	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）；同名值在测试里被断言（:5153/:5167）⇒ 不译才能让该断言在两种语言下都成立
-app-server generate-ts	codex-rs/cli/src/main.rs:2821	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server generate-json-schema	codex-rs/cli/src/main.rs:2822	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
-app-server generate-internal-json-schema	codex-rs/cli/src/main.rs:2824	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server generate-ts	codex-rs/cli/src/main.rs:2842	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server generate-json-schema	codex-rs/cli/src/main.rs:2843	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
+app-server generate-internal-json-schema	codex-rs/cli/src/main.rs:2845	命令名标识符：作为 `reject_remote_mode_for_subcommand(.., subcommand_name)` 的第 3 实参，被插进 `--remote` 拒绝模板（本文件 :2619 的 `codex {subcommand}`）⇒ 用户要照抄的命令名，不译（app_server_subcommand_name 的返回值）
 codex plugin marketplace	codex-rs/cli/src/marketplace_cmd.rs:37	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
 codex plugin marketplace add	codex-rs/cli/src/marketplace_cmd.rs:65	`bin_name` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）
 Examples:\n  codex plugin marketplace add ./path/to/marketplace\n  codex plugin marketplace add owner/repo --ref main\n  codex plugin marketplace add https://github.com/owner/repo --sparse plugins/foo	codex-rs/cli/src/marketplace_cmd.rs:66	`after_help` clap 属性（编译期常量，无法 tr；同 §12.56/§12.60 口径）

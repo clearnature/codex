@@ -57,9 +57,9 @@ Do not modify files, source, git state, permissions, configuration, or workspace
 Do not modify files, source, git state, permissions, configuration, or any other workspace state unless the user explicitly requests that mutation in this side conversation. Do not request escalated permissions or broader sandbox access unless the user explicitly requests a mutation that requires it. If the user explicitly requests a mutation, keep it minimal, local to the request, and avoid disrupting the main thread.	codex-rs/tui/src/app/side.rs	喂给模型的会话边界/系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string）⇒ §12.2
 	codex-rs/tui/src/app/side.rs:56	喂给模型的会话边界提示资产（SIDE_BOUNDARY_PROMPT，raw string 1435 字符，跨行无法写进 TSV）⇒ §12.2
 	codex-rs/tui/src/app/side.rs:70	侧会话系统提示资产（SIDE_DEVELOPER_INSTRUCTIONS，raw string 1613 字符）⇒ §12.2
-failed to set selected permission profile approval policy on app config	codex-rs/tui/src/app/config_persistence.rs:205	`try_set_approval_policy_on_config` 的第 4 个形参就叫 `log_message`，只进 `tracing::warn!`（config_persistence.rs:603）；用户可见的是第 3 个参数，已译 ⇒ §12.3
-failed to set auto-review approval policy on staged config	codex-rs/tui/src/app/config_persistence.rs:728	同上（log_message）⇒ §12.3
-failed to set auto-review permission profile on staged config	codex-rs/tui/src/app/config_persistence.rs:737	同上（log_message）⇒ §12.3
+failed to set selected permission profile approval policy on app config	codex-rs/tui/src/app/config_persistence.rs:204	`try_set_approval_policy_on_config` 的第 4 个形参就叫 `log_message`，只进 `tracing::warn!`（config_persistence.rs:603）；用户可见的是第 3 个参数，已译 ⇒ §12.3
+failed to set auto-review approval policy on staged config	codex-rs/tui/src/app/config_persistence.rs:724	同上（log_message）⇒ §12.3
+failed to set auto-review permission profile on staged config	codex-rs/tui/src/app/config_persistence.rs:733	同上（log_message）⇒ §12.3
 failed to sync overridden Auto-review permission profile	codex-rs/tui/src/app/config_persistence.rs:1340	同上（log_message）⇒ §12.3
 failed to set approval policy on app config	codex-rs/tui/src/app/event_dispatch.rs:2437	同上（log_message）⇒ §12.3
 failed to set active permission profile on app config	codex-rs/tui/src/app/event_dispatch.rs:2460	同上（log_message）⇒ §12.3
@@ -1488,7 +1488,7 @@ Review the current code changes (staged, unstaged, and untracked files).	codex-r
 Review the code changes against the base branch {branch:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:491	§12.2 同上
 Review the changes introduced by commit {sha:?}.	codex-rs/app-server/src/request_processors/turn_processor.rs:494	§12.2 同上
 review thread	codex-rs/app-server/src/request_processors/turn_processor.rs:1509	§12.3 日志标签：log_listener_attach_result 的 label 参数，只进 tracing
-Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1669	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）
+Use [$review-agent]({}) for this review.\n\n{target_prompt}	codex-rs/app-server/src/request_processors/turn_processor.rs:1670	§12.2 喂模型：detached review 的 prompt 模板（拼 target_prompt 给模型）
 	codex-rs/app-server/src/lib.rs:1267	§12.3 日志：info! 的 message 位（结构化字段 exit_reason/connection_count/forced）
 external agent config migration item failed	codex-rs/app-server/src/external_agent_migration/processor.rs:618	**日志消息**：tracing::warn!（import_id/item_type/error_type/failure_stage/cwd/source 字段单列），仅进日志/遥测，无 UI/协议渲染方 ⇒ §12.3 内部诊断
 	codex-rs/app-server/src/bin/notify_capture.rs:17	测试专用 bin `codex-app-server-test-notify-capture`（Cargo.toml [[bin]]），全仓唯一调用点是 `codex-rs/app-server/tests/suite/v2/initialize.rs:298` 作为 notify 钩子；错误经 anyhow 落该子进程 stderr，仅测试读取，无产品 UI 渲染方 ⇒ §12.3

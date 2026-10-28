@@ -1,0 +1,24 @@
+name: macos-i18n-verify
+
+# i18n 平台受限站点的个人版复核（docs/plan/i18n-platform-ci-checklist.md）。
+# 只用 GitHub 标准 runner（macos-15，个人 public 仓库免费），不使用上游的
+# 企业级组件（Bazel / 自托管 runner / v8 预编译产物）；实际校验逻辑全部在
+# scripts/i18n-macos-verify.sh，本机有 Mac 时可直接运行同一脚本。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: 平台受限站点复核（macos-15）
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run i18n platform verify script
+        run: scripts/i18n-macos-verify.sh

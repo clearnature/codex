@@ -22,12 +22,16 @@ static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_EN: LazyLock<
 static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH: LazyLock<
     Option<Vec<ConsequentialToolMessageTemplate>>,
 > = LazyLock::new(|| load_consequential_tool_message_templates(Lang::Zh));
+static CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH_HANT: LazyLock<
+    Option<Vec<ConsequentialToolMessageTemplate>>,
+> = LazyLock::new(|| load_consequential_tool_message_templates(Lang::ZhHant));
 
 fn consequential_tool_message_templates() -> Option<&'static Vec<ConsequentialToolMessageTemplate>>
 {
     match current() {
         Lang::En => CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_EN.as_ref(),
         Lang::Zh => CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH.as_ref(),
+        Lang::ZhHant => CONSEQUENTIAL_TOOL_MESSAGE_TEMPLATES_ZH_HANT.as_ref(),
     }
 }
 
@@ -95,6 +99,9 @@ pub(crate) fn render_mcp_tool_approval_template(
 fn consequential_tool_message_templates_asset(lang: Lang) -> &'static str {
     match lang {
         Lang::Zh => include_str!("../assets/consequential_tool_message_templates.zh.json"),
+        Lang::ZhHant => {
+            include_str!("../assets/consequential_tool_message_templates.zh-Hant.json")
+        }
         Lang::En => include_str!("../assets/consequential_tool_message_templates.json"),
     }
 }
@@ -354,6 +361,10 @@ mod tests {
         );
         assert_eq!(
             consequential_tool_message_templates_asset(Lang::Zh).is_empty(),
+            false
+        );
+        assert_eq!(
+            consequential_tool_message_templates_asset(Lang::ZhHant).is_empty(),
             false
         );
         assert_eq!(

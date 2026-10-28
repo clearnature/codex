@@ -22,7 +22,7 @@ struct LanguageEntry {
     search: &'static str,
 }
 
-const LANGUAGE_ENTRIES: [LanguageEntry; 2] = [
+const LANGUAGE_ENTRIES: [LanguageEntry; 3] = [
     LanguageEntry {
         lang: Lang::En,
         name: "English [en]",
@@ -33,12 +33,18 @@ const LANGUAGE_ENTRIES: [LanguageEntry; 2] = [
         name: "中文 (Chinese) [zh]",
         search: "chinese 中文 简体中文 zh zh-cn zh-hans cn",
     },
+    LanguageEntry {
+        lang: Lang::ZhHant,
+        name: "繁體中文 (Traditional Chinese) [zh-TW]",
+        search: "traditional 繁體中文 繁体中文 zh-tw zh-hant zh-hk tw",
+    },
 ];
 
 fn entry_for(lang: Lang) -> &'static LanguageEntry {
     match lang {
         Lang::En => &LANGUAGE_ENTRIES[0],
         Lang::Zh => &LANGUAGE_ENTRIES[1],
+        Lang::ZhHant => &LANGUAGE_ENTRIES[2],
     }
 }
 
@@ -52,6 +58,9 @@ pub(crate) fn parse_language_arg(raw: &str) -> Option<Lang> {
         "en" | "eng" | "english" | "en-us" => Some(Lang::En),
         "zh" | "cn" | "zh-cn" | "zh-hans" | "chinese" | "中文" | "简体" | "简体中文" => {
             Some(Lang::Zh)
+        }
+        "zh-tw" | "zh-hant" | "zh-hk" | "tw" | "繁體" | "繁体" | "繁體中文" | "繁体中文" => {
+            Some(Lang::ZhHant)
         }
         _ => None,
     }
@@ -218,6 +227,7 @@ impl ChatWidget {
     pub(crate) fn persist_interface_language(&mut self, lang: Lang) {
         let code = match lang {
             Lang::Zh => "zh-CN",
+            Lang::ZhHant => "zh-TW",
             Lang::En => "en",
         };
         let codex_home = self.local_settings.codex_home.clone();

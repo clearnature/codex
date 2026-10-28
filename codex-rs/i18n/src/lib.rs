@@ -22,6 +22,7 @@
 
 mod current;
 mod dict_zh;
+mod dict_zh_hant;
 mod interpolate;
 mod lang;
 mod resolution;
@@ -48,6 +49,7 @@ pub fn tr(lang: Lang, key: &'static str) -> &'static str {
     match lang {
         Lang::En => key,
         Lang::Zh => dict_zh::DICT_ZH.get(key).copied().unwrap_or(key),
+        Lang::ZhHant => dict_zh_hant::DICT_ZH_HANT.get(key).copied().unwrap_or(key),
     }
 }
 

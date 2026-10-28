@@ -49,6 +49,7 @@
 5. **句末标点跟随原文**：原文有句号就加。，没有就不加（例如提示片段 `" to interrupt"` 译「 中断」）。
 6. **中英混排不加空格**：如「启用{0}并记住此选择」，不写成「启用 {0} 并记住此选择」——与 qwen 一致。
    **已由工具强制**：`codex-rs/i18n-check` 的 `[spacing]` 检查会列出所有在 **CJK↔拉丁/数字内部边界**带空格的译文，并计入退出码（因此 `just i18n-check` 会直接失败）。**首尾空格不算违例**——它是布局的一部分（`" to move"` 追加在键位之后，译「 移动」保留前导空格）。2026-09-17 清洗：1027 条中 142 条违例已全部修正，当前为 0。
+7. **繁体中文 = 简体词典的构建期派生**：`dict_zh_hant.rs` 由 `scripts/i18n_gen_hant.py`（OpenCC `s2twp`，台湾词汇：設定/介面/伺服器）从 `dict_zh.rs` 生成，**勿手改**；`i18n-check` 的 `[zh-Hant]` 检查强制两词典键 strict parity——改简体词典后必须重跑生成器。参照系与 qwen zh-TW 一致；`/language` 与 `--lang`/`locale` 接受 `zh-TW`/`zh-Hant`/`繁體中文`。审批模板资产同理派生（`consequential_tool_message_templates.zh-Hant.json`）。
 
 ## 四、复核清单（新增/修改条目时）
 

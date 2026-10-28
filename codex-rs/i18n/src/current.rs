@@ -30,6 +30,9 @@ const EN: u8 = 0;
 /// Encoding of [`Lang::Zh`].
 const ZH: u8 = 1;
 
+/// Encoding of [`Lang::ZhHant`].
+const ZH_HANT: u8 = 2;
+
 /// The language for this process. English until a front end says otherwise.
 static CURRENT: AtomicU8 = AtomicU8::new(EN);
 
@@ -38,6 +41,7 @@ fn encode(lang: Lang) -> u8 {
     match lang {
         Lang::En => EN,
         Lang::Zh => ZH,
+        Lang::ZhHant => ZH_HANT,
     }
 }
 
@@ -47,6 +51,7 @@ fn encode(lang: Lang) -> u8 {
 fn decode(raw: u8) -> Lang {
     match raw {
         ZH => Lang::Zh,
+        ZH_HANT => Lang::ZhHant,
         _ => Lang::En,
     }
 }

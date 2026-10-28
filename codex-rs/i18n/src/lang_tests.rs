@@ -11,6 +11,20 @@ fn resolves_the_documented_spellings_to_chinese() {
 }
 
 #[test]
+fn resolves_the_documented_spellings_to_traditional_chinese() {
+    for raw in [
+        "zh-TW",
+        "zh-Hant",
+        "zh_HK",
+        "zh-hant",
+        "繁體中文",
+        "繁体中文",
+    ] {
+        assert_eq!(parse_lang(raw), Lang::ZhHant, "input: {raw:?}");
+    }
+}
+
+#[test]
 fn matching_is_case_insensitive_and_treats_underscores_as_dashes() {
     for raw in ["ZH", " Zh ", "zh_cn", "ZH_CN", "ZH-HANS"] {
         assert_eq!(parse_lang(raw), Lang::Zh, "input: {raw:?}");
@@ -32,8 +46,6 @@ fn falls_back_to_english_for_unknown_locales() {
         "POSIX",
         "en",
         "en-US",
-        "zh-Hant",
-        "zh-TW",
         "fr",
         "de-DE",
         "ja-JP",

@@ -10,12 +10,15 @@ pub enum Lang {
     En,
     /// Simplified Chinese.
     Zh,
+    /// Traditional Chinese (Taiwan vocabulary).
+    ZhHant,
 }
 
 /// Resolves a locale tag to a [`Lang`].
 ///
 /// Accepts the spellings users actually end up with in `LANG`, in configuration
-/// or on a command line: `zh`, `zh-CN`, `zh-hans`, `中文`, `cn`. Matching is
+/// or on a command line: `zh`, `zh-CN`, `zh-hans`, `中文`, `cn`, `zh-TW`,
+/// `zh-hant`, `繁體中文`. Matching is
 /// case-insensitive, `_` is treated as `-`, and the POSIX codeset and modifier
 /// suffixes are ignored, so `ZH_cn`, `zh_CN.UTF-8` and `zh-CN@euro` all resolve
 /// the same way as `zh-CN`. The suffixes have to be stripped here rather than by
@@ -30,6 +33,7 @@ pub fn parse_lang(raw: &str) -> Lang {
     let normalized = raw.trim().to_ascii_lowercase().replace('_', "-");
     let language = normalized.split(['.', '@']).next().unwrap_or(&normalized);
     match language {
+        "zh-tw" | "zh-hk" | "zh-mo" | "zh-hant" | "繁體中文" | "繁体中文" => Lang::ZhHant,
         "zh" | "cn" | "zh-cn" | "zh-hans" | "中文" => Lang::Zh,
         _ => Lang::En,
     }

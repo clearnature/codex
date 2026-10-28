@@ -250,6 +250,17 @@ fn run(root: &Path) -> Result<bool, String> {
     // The spacing rule is a *style* rule, not a drift rule, but it is the same
     // kind of invariant: a convention that is only written down decays. Making
     // it fail here means the next batch either follows it or the build says why.
+    // The Traditional Chinese dictionary is a generated derivative of the
+    // Simplified one (scripts/i18n_gen_hant.py). Strict key parity -- a missing
+    // or extra key means dict_zh.rs changed without regenerating the derived
+    // dictionary -- so it gates like real drift.
+    let hant_path = root.join("codex-rs/i18n/src/dict_zh_hant.rs");
+    let hant_pairs = read_dictionary_pairs(&hant_path)?;
+    let hant_keys: BTreeSet<String> = hant_pairs.iter().map(|(key, _)| key.clone()).collect();
+    let hant_missing: Vec<&String> = dictionary.difference(&hant_keys).collect();
+    let hant_extra: Vec<&String> = hant_keys.difference(&dictionary).collect();
+    let hant_parity_drift = !hant_missing.is_empty() || !hant_extra.is_empty();
+
     let spacing = spacing_violations(&pairs);
     println!(
         "[spacing] CJK/Latin boundary spaces (i18n-glossary checklist 6): {}",
@@ -347,13 +358,26 @@ fn run(root: &Path) -> Result<bool, String> {
         Vec::new()
     };
 
+    println!(
+        "[zh-Hant] key parity with dict_zh.rs (strict, scripts/i18n_gen_hant.py): missing {} / extra {}",
+        hant_missing.len(),
+        hant_extra.len()
+    );
+    for key in hant_missing.iter().take(5) {
+        println!("  missing in dict_zh_hant.rs: {key:?}");
+    }
+    for key in hant_extra.iter().take(5) {
+        println!("  extra in dict_zh_hant.rs: {key:?}");
+    }
+
     Ok(!missing.is_empty()
         || !unused.is_empty()
         || !spacing.is_empty()
         || !duplicates.is_empty()
         || !placeholders.is_empty()
         || !asset_drift.is_empty()
-        || !nested.is_empty())
+        || !nested.is_empty()
+        || hant_parity_drift)
 }
 
 /// Whether a source file can contribute keys the checker must reconcile.

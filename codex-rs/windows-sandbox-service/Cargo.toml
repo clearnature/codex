@@ -16,13 +16,8 @@ path = "src/main.rs"
 [lints]
 workspace = true
 
-# Temporary until #8415 adds the cleanup implementation that uses these dependencies.
-[package.metadata.cargo-shear]
-ignored = ["base64", "serde_json"]
-
 [dependencies]
 anyhow = { workspace = true }
-base64 = { workspace = true }
 codex-cloud-config = { workspace = true }
 codex-config = { workspace = true }
 codex-core = { workspace = true }
@@ -33,16 +28,20 @@ toml = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
+tempfile = { workspace = true }
 
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.58"
 features = [
     "ApplicationModel",
+    "Foundation_Collections",
+    "Management_Deployment",
+    "Storage",
     "Win32_System_WinRT",
 ]
 
 [target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.52"
+workspace = true
 features = [
     "Win32_Foundation",
     "Win32_NetworkManagement_NetManagement",
@@ -54,12 +53,14 @@ features = [
     "Win32_System_Environment",
     "Win32_System_EventLog",
     "Win32_System_IO",
+    "Win32_System_JobObjects",
     "Win32_System_Memory",
     "Win32_System_Pipes",
     "Win32_System_Registry",
     "Win32_System_RemoteDesktop",
     "Win32_System_Services",
     "Win32_System_SystemServices",
+    "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_UI_Shell",
 ]

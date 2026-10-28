@@ -1,9 +1,9 @@
+use crate::LinuxSandboxPidNamespace;
 #[cfg(target_os = "linux")]
 use crate::bwrap::WSL1_BWRAP_WARNING;
 #[cfg(target_os = "linux")]
 use crate::bwrap::is_wsl1;
 use crate::landlock::CODEX_LINUX_SANDBOX_ARG0;
-use crate::landlock::allow_network_for_proxy;
 use crate::landlock::create_linux_sandbox_command_args_for_permission_profile;
 use crate::policy_transforms::effective_permission_profile;
 use crate::policy_transforms::should_require_platform_sandbox;
@@ -23,6 +23,8 @@ use codex_protocol::models::PermissionProfile;
 use codex_protocol::permissions::FileSystemSandboxPolicy;
 use codex_protocol::permissions::NetworkSandboxPolicy;
 use codex_protocol::protocol::SandboxPolicy;
+use codex_protocol::sandbox::SandboxOverride;
+pub use codex_protocol::sandbox::SandboxType;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_path_uri::PathUri;
 use std::collections::HashMap;
@@ -37,27 +39,6 @@ const WINDOWS_SANDBOX_WRAPPER_SETUP_ENV_ALLOWLIST: &[&str] = &[
     // ShellExecuteExW needs SystemRoot to elevate the setup helper.
     "SYSTEMROOT",
 ];
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SandboxType {
-    None,
-    MacosSeatbelt,
-    LinuxSeccomp,
-    WindowsRestrictedToken,
-    WindowsMxc,
-}
-
-impl SandboxType {
-    pub fn as_metric_tag(self) -> &'static str {
-        match self {
-            SandboxType::None => "none",
-            SandboxType::MacosSeatbelt => "seatbelt",
-            SandboxType::LinuxSeccomp => "seccomp",
-            SandboxType::WindowsRestrictedToken => "windows_sandbox",
-            SandboxType::WindowsMxc => "windows_mxc",
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SandboxablePreference {
@@ -117,8 +98,10 @@ pub struct SandboxCommand {
 /// Build this only at the execution boundary: in exec-server, or in its logical equivalent within
 /// app-server. Orchestration and transport code should retain [`PathUri`] values and defer
 /// conversion to native paths until this request is created.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SandboxExecRequest {
+    /// Controller-selected override, retained for observations without altering the sandbox command.
+    pub sandbox_override: SandboxOverride,
     pub command: Vec<String>,
     pub cwd: PathUri,
     pub sandbox_policy_cwd: PathUri,
@@ -129,7 +112,6 @@ pub struct SandboxExecRequest {
     // TODO(anp): Reconcile these backend copies with the supplied sandbox context
     // (TurnEnvironment::sandbox_context for turns), preserving this launch snapshot.
     pub windows_sandbox_level: WindowsSandboxLevel,
-    pub windows_sandbox_private_desktop: bool,
     pub permission_profile: PermissionProfile,
     pub arg0: Option<String>,
 }
@@ -152,7 +134,6 @@ pub struct SandboxTransformRequest<'a> {
     // (TurnEnvironment::sandbox_context for turns) so selection shares its authority.
     pub use_legacy_landlock: bool,
     pub windows_sandbox_level: WindowsSandboxLevel,
-    pub windows_sandbox_private_desktop: bool,
 }
 
 /// Bundled arguments for a sandbox transformation whose result will be spawned
@@ -289,6 +270,7 @@ impl std::error::Error for SandboxTransformError {
 
 #[derive(Clone, Default)]
 pub struct SandboxManager {
+    linux_sandbox_pid_namespace: LinuxSandboxPidNamespace,
     #[cfg(target_os = "macos")]
     seatbelt_profile: MacosSeatbeltProfile,
     #[cfg(target_os = "macos")]
@@ -303,11 +285,18 @@ impl SandboxManager {
     /// Creates a manager that applies the narrower runtime profile required by filesystem helpers.
     pub fn for_file_system_helpers() -> Self {
         Self {
+            linux_sandbox_pid_namespace: LinuxSandboxPidNamespace::default(),
             #[cfg(target_os = "macos")]
             seatbelt_profile: MacosSeatbeltProfile::FileSystemHelper,
             #[cfg(target_os = "macos")]
             allowed_symlinked_codex_home: None,
         }
+    }
+
+    /// Applies a trusted executor startup policy, never a command or repository setting.
+    pub fn with_linux_sandbox_pid_namespace(mut self, mode: LinuxSandboxPidNamespace) -> Self {
+        self.linux_sandbox_pid_namespace = mode;
+        self
     }
 
     /// Allows otherwise-authorized writable roots beneath the opted-in user home
@@ -325,7 +314,7 @@ impl SandboxManager {
         &self,
         permission_profile: &PermissionProfile,
         pref: SandboxablePreference,
-        windows_sandbox_level: WindowsSandboxLevel,
+        windows_sandbox_type: SandboxType,
         has_managed_network_requirements: bool,
     ) -> SandboxType {
         #[cfg(windows)]
@@ -334,11 +323,10 @@ impl SandboxManager {
         if !self.should_sandbox(permission_profile, pref, has_managed_network_requirements) {
             return SandboxType::None;
         }
-        if cfg!(windows) && windows_sandbox_level == WindowsSandboxLevel::Mxc {
+        if cfg!(windows) && windows_sandbox_type == SandboxType::WindowsMxc {
             return SandboxType::WindowsMxc;
         }
-        get_platform_sandbox(windows_sandbox_level != WindowsSandboxLevel::Disabled)
-            .unwrap_or(SandboxType::None)
+        get_platform_sandbox(windows_sandbox_type != SandboxType::None).unwrap_or(SandboxType::None)
     }
 
     /// Returns whether the request needs a sandbox, independently of whether
@@ -379,7 +367,6 @@ impl SandboxManager {
             sandbox_exe,
             use_legacy_landlock,
             windows_sandbox_level,
-            windows_sandbox_private_desktop,
         } = request;
         #[cfg(target_os = "macos")]
         let managed_network = command.managed_network.as_ref();
@@ -401,11 +388,6 @@ impl SandboxManager {
         let (argv, arg0_override, pending_sandboxed_request) = match sandbox {
             SandboxType::None => (argv, None, None),
             SandboxType::WindowsMxc => {
-                if windows_sandbox_private_desktop {
-                    return Err(SandboxTransformError::WindowsMxcPreparation(
-                        "private desktop isolation is not supported by MXC".to_string(),
-                    ));
-                }
                 if !codex_mxc_sandbox::is_available() {
                     return Err(SandboxTransformError::WindowsMxcPreparation(
                         "native MXC is unavailable on this executor".to_string(),
@@ -496,14 +478,30 @@ impl SandboxManager {
                 let pending = pending_sandboxed_request?;
                 let exe =
                     sandbox_exe.ok_or(SandboxTransformError::MissingLinuxSandboxExecutable)?;
-                let allow_proxy_network = allow_network_for_proxy(enforce_managed_network);
+                if enforce_managed_network
+                    && command.managed_network.is_none()
+                    && let Some(network) = network
+                {
+                    let prepared = network
+                        .prepare_for_optional_environment(
+                            std::mem::take(&mut command.env),
+                            environment_id,
+                        )
+                        .map_err(|err| {
+                            SandboxTransformError::EnvironmentNetworkProxy(err.to_string())
+                        })?;
+                    command.env = prepared.env;
+                    command.managed_network = Some(prepared.sandbox_context);
+                }
+                let managed_network =
+                    enforce_managed_network.then(|| command.managed_network.unwrap_or_default());
                 #[cfg(target_os = "linux")]
                 ensure_linux_bubblewrap_is_supported(
                     &pending
                         .effective_permission_profile
                         .file_system_sandbox_policy(),
                     use_legacy_landlock,
-                    allow_proxy_network,
+                    managed_network.is_some(),
                     is_wsl1(),
                 )?;
                 let mut args = create_linux_sandbox_command_args_for_permission_profile(
@@ -512,8 +510,13 @@ impl SandboxManager {
                     &pending.effective_permission_profile,
                     pending.native_sandbox_policy_cwd.as_path(),
                     use_legacy_landlock,
-                    allow_proxy_network,
+                    managed_network.as_ref(),
                 );
+                // Keep default invocations compatible with older helpers. Only the
+                // startup opt-in requires a helper that understands PID inheritance.
+                if self.linux_sandbox_pid_namespace == LinuxSandboxPidNamespace::Inherit {
+                    args.insert(0, "--inherit-pid-namespace".to_string());
+                }
                 let mut full_command = Vec::with_capacity(1 + args.len());
                 full_command.push(os_string_to_command_component(exe.as_os_str().to_owned()));
                 full_command.append(&mut args);
@@ -533,20 +536,6 @@ impl SandboxManager {
                     ));
                 }
                 let pending = pending_sandboxed_request?;
-                if let Some(metrics) = codex_otel::global() {
-                    let _ = metrics.counter(
-                        "codex.windows_sandbox.private_desktop",
-                        /*inc*/ 1,
-                        &[(
-                            "enabled",
-                            if windows_sandbox_private_desktop {
-                                "true"
-                            } else {
-                                "false"
-                            },
-                        )],
-                    );
-                }
                 (argv, None, Some(pending))
             }
             #[cfg(not(target_os = "windows"))]
@@ -562,6 +551,7 @@ impl SandboxManager {
             });
 
         Ok(SandboxExecRequest {
+            sandbox_override: SandboxOverride::NoOverride,
             command: argv,
             cwd: command.cwd,
             sandbox_policy_cwd: sandbox_policy_cwd.clone(),
@@ -570,7 +560,6 @@ impl SandboxManager {
             network_environment_id: environment_id.map(str::to_string),
             sandbox,
             windows_sandbox_level,
-            windows_sandbox_private_desktop,
             permission_profile,
             arg0: arg0_override,
         })
@@ -597,15 +586,19 @@ impl SandboxManager {
     ) -> Result<SandboxExecRequest, SandboxTransformError> {
         let workspace_roots = request.workspace_roots;
         let proxy_settings_mode = request.windows_sandbox_proxy_settings_mode;
+        let sandbox_exe = request.transform.sandbox_exe.ok_or_else(|| {
+            SandboxTransformError::WindowsSandboxPreparation(
+                "missing Codex executable path".to_string(),
+            )
+        })?;
         let mut request = self.transform(request.transform)?;
-        if request.sandbox == SandboxType::WindowsRestrictedToken {
-            wrap_windows_sandbox_exec_request_for_direct_spawn(
-                &mut request,
-                workspace_roots,
-                codex_home,
-                proxy_settings_mode,
-            )?;
-        }
+        wrap_windows_sandbox_exec_request_for_direct_spawn(
+            &mut request,
+            workspace_roots,
+            codex_home,
+            sandbox_exe,
+            proxy_settings_mode,
+        )?;
         Ok(request)
     }
 }
@@ -615,6 +608,7 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
     request: &mut SandboxExecRequest,
     workspace_roots: &[AbsolutePathBuf],
     codex_home: &Path,
+    sandbox_exe: &Path,
     proxy_settings_mode: codex_windows_sandbox::WindowsSandboxProxySettingsMode,
 ) -> Result<(), SandboxTransformError> {
     // TODO(anp): Keep PathUri through the Windows sandbox wrapper boundary.
@@ -637,9 +631,12 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
             "sandbox command was empty".to_string(),
         ));
     };
-    let source = std::path::PathBuf::from(&program);
-    let helper = codex_windows_sandbox::resolve_exe_for_launch(source.as_path(), codex_home);
-    *program = helper.to_string_lossy().into_owned();
+    // transform() may have made the inner command a Codex helper. Only that
+    // helper needs materializing; an arbitrary workload such as cmd.exe does not.
+    if Path::new(program.as_str()) == sandbox_exe {
+        let helper = codex_windows_sandbox::resolve_exe_for_launch(sandbox_exe, codex_home);
+        *program = helper.to_string_lossy().into_owned();
+    }
 
     let inner_command = std::mem::take(&mut request.command);
     let proxy_enforced = request.network.is_some();
@@ -663,6 +660,7 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
             &request.permission_profile,
             &native_sandbox_policy_cwd,
             use_elevated,
+            &request.env,
         )
     } else {
         resolve_windows_restricted_token_filesystem_overrides(
@@ -694,10 +692,9 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
             inner_command,
             &native_cwd,
             workspace_roots,
-            &request.env,
+            &mut request.env,
             &request.permission_profile,
             request.windows_sandbox_level,
-            request.windows_sandbox_private_desktop,
             proxy_enforced,
             network_proxy_restricting_sid.as_deref(),
             proxy_settings_mode,
@@ -711,7 +708,11 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
         .map_err(|err| SandboxTransformError::WindowsSandboxPreparation(err.to_string()))?;
 
     request.command = Vec::with_capacity(1 + wrapper_args.len());
-    request.command.push(source.to_string_lossy().into_owned());
+    // This outer process interprets Codex wrapper arguments, so it must be the
+    // supplied Codex executable even when the inner command is another program.
+    request
+        .command
+        .push(sandbox_exe.to_string_lossy().into_owned());
     request.command.append(&mut wrapper_args);
     request.sandbox = SandboxType::None;
     request.arg0 = None;
@@ -721,14 +722,24 @@ fn wrap_windows_sandbox_exec_request_for_direct_spawn(
 
 #[cfg(target_os = "windows")]
 fn add_windows_sandbox_wrapper_setup_env(env: &mut HashMap<String, String>) {
-    add_windows_sandbox_wrapper_setup_env_from_vars(env, std::env::vars_os());
+    add_windows_sandbox_wrapper_setup_env_from_vars(
+        env,
+        std::env::vars_os(),
+        codex_windows_sandbox::registered_core_requested(),
+    );
 }
 
 #[cfg(target_os = "windows")]
 fn add_windows_sandbox_wrapper_setup_env_from_vars(
     env: &mut HashMap<String, String>,
     vars: impl IntoIterator<Item = (std::ffi::OsString, std::ffi::OsString)>,
+    registered_core: bool,
 ) {
+    // This outer helper must use the parent's runtime selection, not shell-policy overrides.
+    env.retain(|key, _| !key.eq_ignore_ascii_case("CODEX_WINDOWS_REGISTERED_CORE"));
+    if registered_core {
+        env.insert("CODEX_WINDOWS_REGISTERED_CORE".into(), "1".into());
+    }
     for (key, value) in vars {
         let key = key.to_string_lossy().into_owned();
         if !WINDOWS_SANDBOX_WRAPPER_SETUP_ENV_ALLOWLIST

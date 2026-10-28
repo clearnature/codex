@@ -4,8 +4,9 @@ name: blocking-ci
 # after pushes to main so the same check family stays grouped in the Actions UI.
 on:
   pull_request: {}
-  push:
-    branches: [main]
+  # Personal fork: pushing to main is an upstream-mirror sync, and this
+  # workflow family needs enterprise runners we do not have -- keep it to PRs.
+  # workflow_dispatch: {}  # re-enable locally if ever needed
 
 jobs:
   # Keep reusable workflow calls alphabetized. The `required` job below is the

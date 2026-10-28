@@ -3853,8 +3853,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "重启后是否保留新界面语言？",
     ),
     ("Session only", "仅本次会话"),
-    ("Apply until you quit Codex.", "生效至退出 Codex。"),
-    ("Write to config.toml", "写入 config.toml"),
+    ("Apply until you quit Codex.", "生效至退出Codex。"),
+    ("Write to config.toml", "写入config.toml"),
     (
         "Save the choice so it persists across restarts.",
         "保存该选择，重启后依然生效。",
@@ -3865,7 +3865,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     (
         "Interface language changed and saved to config.toml.",
-        "界面语言已切换，并已写入 config.toml。",
+        "界面语言已切换，并已写入config.toml。",
     ),
     (
         "Unrecognized language; pick one from the list.",
@@ -3873,7 +3873,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ),
     (
         "Failed to write config.toml: {0}",
-        "写入 config.toml 失败：{0}",
+        "写入config.toml失败：{0}",
     ),
     ("choose or hide the terminal pet", "选择或隐藏终端宠物"),
     ("list background terminals", "列出后台终端"),

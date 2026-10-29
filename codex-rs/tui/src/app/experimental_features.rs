@@ -4,6 +4,9 @@
 use super::config_persistence::overridden_write_message;
 use super::*;
 use crate::experimental_features::FeatureWriteResult;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use tokio::sync::oneshot;
 
 impl App {
@@ -36,22 +39,26 @@ impl App {
         .await
         {
             Ok(response) if response.status == WriteStatus::Ok => {
-                Box::new(history_cell::new_warning_event(format!(
-                    "{label} setting saved on the server for new threads. This thread is unchanged. Project or task settings may override it."
+                Box::new(history_cell::new_warning_event(tr_with(
+                    current(),
+                    "{0} setting saved on the server for new threads. This thread is unchanged. Project or task settings may override it.",
+                    &[label],
                 )))
             }
             Ok(response) => {
                 self.transcript_view.jump_to_latest();
-                Box::new(history_cell::new_error_event(format!(
-                    "{label} setting was saved but is overridden: {}",
-                    overridden_write_message(&response)
+                Box::new(history_cell::new_error_event(tr_with(
+                    current(),
+                    "{0} setting was saved but is overridden: {1}",
+                    &[label, overridden_write_message(&response)],
                 )))
             }
             Err(err) => {
                 self.transcript_view.jump_to_latest();
-                Box::new(history_cell::new_error_event(format!(
-                    "Failed to save {label} setting: {}",
-                    crate::config_update::format_config_error(&err)
+                Box::new(history_cell::new_error_event(tr_with(
+                    current(),
+                    "Failed to save {0} setting: {1}",
+                    &[label, &crate::config_update::format_config_error(&err)],
                 )))
             }
         };
@@ -87,8 +94,10 @@ impl App {
         response_tx: oneshot::Sender<Result<FeatureWriteResult, String>>,
     ) {
         let Ok(guard) = self.feature_write_lock.clone().try_lock_owned() else {
-            let error =
-                "An experimental feature save is still in progress. Retry after it finishes.";
+            let error = tr(
+                current(),
+                "An experimental feature save is still in progress. Retry after it finishes.",
+            );
             self.chat_widget.add_warning_message(error.to_string());
             let _ = response_tx.send(Err(error.to_string()));
             return;

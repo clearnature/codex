@@ -1,6 +1,8 @@
 //! App-level handlers for ambient terminal pet events.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 
 impl App {
     pub(super) fn disable_ambient_pet_before_shutdown(&mut self, tui: &mut tui::Tui) -> Result<()> {
@@ -114,8 +116,11 @@ impl App {
                 tui.frame_requester().schedule_frame();
             }
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to disable pets: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to disable pets: {0}",
+                    &[&err.to_string()],
+                ));
             }
         }
     }
@@ -158,14 +163,20 @@ impl App {
                             .set_tui_pet_loaded(Some(pet_id), ambient_pet);
                     }
                     Err(err) => {
-                        self.chat_widget
-                            .add_error_message(format!("Failed to save pet selection: {err}"));
+                        self.chat_widget.add_error_message(tr_with(
+                            current(),
+                            "Failed to save pet selection: {0}",
+                            &[&err.to_string()],
+                        ));
                     }
                 }
             }
             Err(err) => {
-                self.chat_widget
-                    .add_error_message(format!("Failed to load pet: {err}"));
+                self.chat_widget.add_error_message(tr_with(
+                    current(),
+                    "Failed to load pet: {0}",
+                    &[&err],
+                ));
             }
         }
         tui.frame_requester().schedule_frame();
@@ -175,15 +186,27 @@ impl App {
     pub(super) fn handle_configured_pet_loaded(
         &mut self,
         tui: &mut tui::Tui,
-        generation: crate::chatwidget::ConfiguredPetLoadGeneration,
+        _generation: crate::chatwidget::ConfiguredPetLoadGeneration,
         pet_id: String,
         result: Result<Option<crate::pets::AmbientPet>, String>,
     ) {
-        if self
-            .chat_widget
-            .finish_configured_pet_load(generation, pet_id, result)
-        {
-            tui.frame_requester().schedule_frame();
+        if self.local_settings.tui.pet.as_deref() != Some(pet_id.as_str()) {
+            return;
+        }
+
+        match result {
+            Ok(ambient_pet) => {
+                self.chat_widget
+                    .set_tui_pet_loaded(Some(pet_id), ambient_pet);
+                tui.frame_requester().schedule_frame();
+            }
+            Err(err) => {
+                self.chat_widget.add_warning_message(tr_with(
+                    current(),
+                    "Failed to load configured pet: {0}",
+                    &[&err],
+                ));
+            }
         }
     }
 }

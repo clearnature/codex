@@ -3678,6 +3678,17 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "不能同時使用--config與--session；請選擇一個持久化旗標。",
     ),
     ("Available languages: {0}", "可用語言：{0}"),
+    ("LLM output language: {0}", "LLM輸出語言：{0}"),
+    (
+        "LLM output language is not set; the model follows your input language.",
+        "未設定LLM輸出語言；模型將跟隨你的輸入語言。",
+    ),
+    ("LLM output language cleared.", "LLM輸出語言已清除。"),
+    (
+        "LLM output language set to {0}; applies to new sessions.",
+        "LLM輸出語言已設為{0}；對新會話生效。",
+    ),
+    ("Failed to update AGENTS.md: {0}", "更新AGENTS.md失敗：{0}"),
     (
         "Failed to write config.toml: {0}",
         "寫入config.toml失敗：{0}",

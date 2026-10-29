@@ -1100,6 +1100,10 @@ impl ChatWidget {
             SlashCommand::Pets if !trimmed.is_empty() => {
                 self.select_pet_by_id(args);
             }
+            SlashCommand::Language if args.trim().starts_with("output") => {
+                let rest = args.trim().strip_prefix("output").unwrap_or("").trim();
+                self.handle_output_language_command(rest);
+            }
             SlashCommand::Language => {
                 let request = crate::chatwidget::language::parse_language_request(&args);
                 if request.conflicting_flags {

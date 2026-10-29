@@ -12,6 +12,7 @@ use codex_i18n::current;
 use codex_i18n::set_current;
 use codex_i18n::tr;
 use codex_i18n::tr_with;
+use std::path::Path;
 
 const LANGUAGE_PICKER_VIEW_ID: &str = "language-picker";
 const LANGUAGE_SCOPE_VIEW_ID: &str = "language-scope-picker";
@@ -207,7 +208,138 @@ fn build_language_scope_params(lang: Lang) -> crate::bottom_pane::SelectionViewP
     }
 }
 
+/// The marker pair that bounds the managed output-language section inside
+/// the global AGENTS.md. Everything between them is owned by `/language
+/// output` and replaced wholesale; the rest of the file is untouched.
+const OUTPUT_LANGUAGE_MARKER_BEGIN: &str = "<!-- codex:output-language:begin -->";
+const OUTPUT_LANGUAGE_MARKER_END: &str = "<!-- codex:output-language:end -->";
+
+/// Sanitizes a language string for safe embedding in an HTML-comment marker.
+fn sanitize_output_language(language: &str) -> String {
+    language
+        .replace(['\r', '\n'], " ")
+        .replace("--!>", "")
+        .replace("--", "")
+}
+
+fn output_language_rule(language: &str) -> String {
+    let safe = sanitize_output_language(language);
+    format!(
+        "{OUTPUT_LANGUAGE_MARKER_BEGIN}\n<!-- output-language: {safe} -->\n\n## Output language\n\nAlways respond in **{safe}** regardless of the user's input language, unless the user explicitly asks for a different language for the rest of the conversation. Do not translate or rewrite code blocks, CLI commands, file paths, stack traces, logs, JSON keys, identifiers, or exact quoted text.\n{OUTPUT_LANGUAGE_MARKER_END}"
+    )
+}
+
+/// Replaces or appends the managed output-language section in the global
+/// AGENTS.md. `None` removes the section entirely.
+/// Test shim: the section management is otherwise exercised only through the
+/// command handler.
+#[cfg(test)]
+pub(crate) fn __test_write_output_language_section(codex_home: &Path, language: Option<&str>) {
+    let _ = write_output_language_section(codex_home, language);
+}
+
+fn write_output_language_section(codex_home: &Path, language: Option<&str>) -> std::io::Result<()> {
+    let agents_md = codex_home.join("AGENTS.md");
+    let existing = std::fs::read_to_string(&agents_md).unwrap_or_default();
+    // Cut the managed section out (begin-marker to end-marker, or to EOF when
+    // unterminated), keeping everything before and after it intact.
+    let stripped = match existing.find(OUTPUT_LANGUAGE_MARKER_BEGIN) {
+        Some(start) => {
+            let tail_start = match existing[start..].find(OUTPUT_LANGUAGE_MARKER_END) {
+                Some(end_rel) => start + end_rel + OUTPUT_LANGUAGE_MARKER_END.len(),
+                None => existing.len(),
+            };
+            let head = existing[..start].trim_end();
+            let tail = existing[tail_start..].trim_start_matches('\n');
+            match (head.is_empty(), tail.is_empty()) {
+                (true, _) => tail.to_string(),
+                (_, true) => head.to_string(),
+                (false, false) => format!("{head}\n\n{tail}"),
+            }
+        }
+        None => existing.trim_end().to_string(),
+    };
+    let merged = match language {
+        Some(lang) => {
+            let section = output_language_rule(lang);
+            if stripped.is_empty() {
+                format!("{section}\n")
+            } else {
+                format!("{stripped}\n\n{section}\n")
+            }
+        }
+        None if stripped.is_empty() => String::new(),
+        None => format!("{stripped}\n"),
+    };
+    std::fs::write(&agents_md, merged)
+}
+
+/// Reads the managed output language back out (for `/language output` status).
+fn read_output_language_section(codex_home: &Path) -> Option<String> {
+    let existing = std::fs::read_to_string(codex_home.join("AGENTS.md")).ok()?;
+    let start = existing.find(OUTPUT_LANGUAGE_MARKER_BEGIN)?;
+    let rest = &existing[start..];
+    let marker = "<!-- output-language: ";
+    let value_start = rest.find(marker)? + marker.len();
+    let value_end = rest[value_start..].find(" -->")? + value_start;
+    Some(rest[value_start..value_end].trim().to_string())
+}
+
 impl ChatWidget {
+    /// `/language output` -- show, set, or clear the LLM output language.
+    /// The rule lives in a managed section of the global AGENTS.md, so it is
+    /// carried to model context by the existing user-instructions channel and
+    /// applies to new sessions.
+    pub(crate) fn handle_output_language_command(&mut self, rest: &str) {
+        let codex_home = self.local_settings.codex_home.clone();
+        match rest {
+            "" => match read_output_language_section(&codex_home) {
+                Some(lang) => {
+                    self.add_info_message(
+                        tr(current(), "LLM output language: {0}").replace("{0}", &lang),
+                        None,
+                    );
+                }
+                None => {
+                    self.add_info_message(
+                        tr(
+                            current(),
+                            "LLM output language is not set; the model follows your input language.",
+                        )
+                        .to_string(),
+                        None,
+                    );
+                }
+            },
+            "none" | "clear" | "清除" => match write_output_language_section(&codex_home, None) {
+                Ok(()) => self.add_info_message(
+                    tr(current(), "LLM output language cleared.").to_string(),
+                    None,
+                ),
+                Err(err) => self.add_warning_message(tr_with(
+                    current(),
+                    "Failed to update AGENTS.md: {0}",
+                    &[&err.to_string()],
+                )),
+            },
+            language => match write_output_language_section(&codex_home, Some(language)) {
+                Ok(()) => {
+                    let message = tr(
+                        current(),
+                        "LLM output language set to {0}; applies to new sessions.",
+                    )
+                    .replace("{0}", language);
+                    self.add_info_message(message, None);
+                }
+                Err(err) => self.add_warning_message(tr_with(
+                    current(),
+                    "Failed to update AGENTS.md: {0}",
+                    &[&err.to_string()],
+                )),
+            },
+        }
+    }
+
     /// `/language` -- open the first-level language picker.
     pub(crate) fn open_language_picker(&mut self) {
         let params = build_language_picker_params();

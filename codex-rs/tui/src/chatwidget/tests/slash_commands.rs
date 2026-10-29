@@ -3897,3 +3897,29 @@ async fn slash_language_conflicting_flags_warn_and_open_picker() {
 
     codex_i18n::set_current(previous);
 }
+
+#[test]
+fn language_output_section_roundtrip_and_clear() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let codex_home = home.path().to_path_buf();
+
+    // Set → section exists with the rule body.
+    super::super::language::__test_write_output_language_section(&codex_home, Some("中文"));
+    let agents_md =
+        std::fs::read_to_string(codex_home.join("AGENTS.md")).expect("AGENTS.md created");
+    assert!(agents_md.contains("<!-- codex:output-language:begin -->"));
+    assert!(agents_md.contains("Always respond in **中文**"));
+
+    // Re-set with different language → replaces in place, no duplicates.
+    super::super::language::__test_write_output_language_section(&codex_home, Some("English"));
+    let agents_md =
+        std::fs::read_to_string(codex_home.join("AGENTS.md")).expect("AGENTS.md still present");
+    assert_eq!(agents_md.matches("codex:output-language:begin").count(), 1);
+    assert!(agents_md.contains("**English**"));
+
+    // Clear → section removed, surrounding content preserved.
+    super::super::language::__test_write_output_language_section(&codex_home, None);
+    let agents_md =
+        std::fs::read_to_string(codex_home.join("AGENTS.md")).expect("AGENTS.md still present");
+    assert!(!agents_md.contains("codex:output-language"));
+}

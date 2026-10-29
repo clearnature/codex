@@ -6122,6 +6122,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("(no steps provided)", "（未提供步骤）"),
     ("Searched the web", "已搜索网络"),
     ("Searching the web", "正在搜索网络"),
+    ("Browsing the web", "正在浏览网络"),
     ("⚠ {0} MCP startup issue", "⚠ {0} 个MCP启动问题"),
     ("⚠ {0} MCP startup issues", "⚠ {0} 个MCP启动问题"),
     ("⚠ {0} startup issue", "⚠ {0} 个启动问题"),
@@ -9433,6 +9434,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "解析来自{0}的远程插件变更响应失败：{1}",
     ),
     (
+        "failed to authenticate remote featured plugin request: {0}",
+        "远程特色插件请求鉴权失败：{0}",
+    ),
+    (
         "invalid chatgpt base url for remote featured plugin request: {0}",
         "远程特色插件的chatgpt基础URL无效：{0}",
     ),
@@ -11257,6 +11262,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "User verification is not available in this build.",
         "当前构建不支持用户验证。",
+    ),
+    (
+        "User verification is not available in this build or account.",
+        "当前构建或账户不支持用户验证。",
     ),
     (
         "failed to read app metadata: {0}",

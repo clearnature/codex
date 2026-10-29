@@ -5870,6 +5870,7 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("(no steps provided)", "（未提供步驟）"),
     ("Searched the web", "已搜尋網路"),
     ("Searching the web", "正在搜尋網路"),
+    ("Browsing the web", "正在瀏覽網路"),
     ("⚠ {0} MCP startup issue", "⚠ {0} 個MCP啟動問題"),
     ("⚠ {0} MCP startup issues", "⚠ {0} 個MCP啟動問題"),
     ("⚠ {0} startup issue", "⚠ {0} 個啟動問題"),
@@ -9057,6 +9058,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "解析來自{0}的遠端外掛變更響應失敗：{1}",
     ),
     (
+        "failed to authenticate remote featured plugin request: {0}",
+        "遠端特色外掛請求鑑權失敗：{0}",
+    ),
+    (
         "invalid chatgpt base url for remote featured plugin request: {0}",
         "遠端特色外掛的chatgpt基礎URL無效：{0}",
     ),
@@ -10865,6 +10870,10 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     (
         "User verification is not available in this build.",
         "當前構建不支援使用者驗證。",
+    ),
+    (
+        "User verification is not available in this build or account.",
+        "當前構建或賬戶不支援使用者驗證。",
     ),
     (
         "failed to read app metadata: {0}",

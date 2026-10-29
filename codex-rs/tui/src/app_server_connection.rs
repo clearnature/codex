@@ -16,9 +16,9 @@ use codex_utils_absolute_path::AbsolutePathBuf;
 
 pub(crate) async fn connect(target: &AppServerTarget) -> color_eyre::Result<AppServerClient> {
     match target {
-        AppServerTarget::Embedded => {
-            color_eyre::eyre::bail!("embedded sessions have no remote connection")
-        }
+        AppServerTarget::Embedded => Err(color_eyre::eyre::eyre!(
+            "embedded sessions have no remote connection"
+        )),
         #[cfg(windows)]
         AppServerTarget::LocalDaemon {
             endpoint: RemoteAppServerEndpoint::UnixSocket { socket_path },

@@ -137,7 +137,9 @@ fn render_navigation_hints(area: Rect, buf: &mut Buffer, keymap: &PagerKeymap) {
         ("jump_bottom", &keymap.jump_bottom),
     ];
     let hints = actions
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .zip([
             tr(current(), "to scroll"),
             tr(current(), "to page"),

@@ -324,12 +324,11 @@ mod plugins;
 use self::plugins::PluginInstallAuthFlowState;
 use self::plugins::PluginListFetchState;
 use self::plugins::PluginsCacheState;
-mod plan_implementation;
-use self::plan_implementation::plan_implementation_title;
 mod model_command;
 mod model_popup_state;
 mod model_popups;
 mod notifications;
+mod plan_implementation;
 pub(crate) mod quick_dials;
 mod session_model_selection;
 use self::notifications::Notification;
@@ -2100,9 +2099,6 @@ impl Drop for ChatWidget {
         self.stop_rate_limit_poller();
     }
 }
-
-const PLACEHOLDER: &str = "Ask Codex to do anything";
-const SIDE_PLACEHOLDER: &str = "Ask a follow-up question";
 
 // Extract the first bold (Markdown) element in the form **...** from `s`.
 // Returns the inner text if found; otherwise `None`.

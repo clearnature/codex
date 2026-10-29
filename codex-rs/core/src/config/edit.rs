@@ -10,7 +10,6 @@ use codex_config::types::ToolSuggestDisabledTool;
 use codex_features::FEATURES;
 use codex_i18n::current;
 use codex_i18n::tr_with;
-use codex_protocol::config_types::Personality;
 use codex_protocol::config_types::ServiceTier;
 use codex_protocol::config_types::TrustLevel;
 use codex_protocol::openai_models::ReasoningEffort;

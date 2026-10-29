@@ -14,7 +14,6 @@
 use codex_config::types::TuiKeymap;
 use codex_i18n::current;
 use codex_i18n::tr_with;
-use codex_terminal_detection::terminal_info;
 
 use super::ChatWidget;
 use crate::app_event::KeymapCaptureMode;

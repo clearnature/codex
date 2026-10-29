@@ -93,7 +93,6 @@ use codex_feedback::CodexFeedback;
 use codex_i18n::current;
 use codex_i18n::tr;
 use codex_i18n::tr_with;
-use codex_login::AuthManager;
 use codex_protocol::protocol::SessionSource;
 pub use codex_rollout::StateDbHandle;
 pub use codex_state::log_db::LogDbLayer;

@@ -21,7 +21,6 @@ use codex_git_utils::resolve_root_git_project_for_trust;
 use codex_i18n::current;
 use codex_i18n::tr;
 use codex_i18n::tr_with;
-use codex_protocol::config_types::WindowsSandboxLevel;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;

@@ -15,8 +15,6 @@ use bm25::Embedder;
 use bm25::EmbedderBuilder;
 use bm25::Language;
 use bm25::Scorer;
-use bm25::SearchEngine;
-use bm25::SearchEngineBuilder;
 use codex_features::Feature;
 use codex_i18n::current;
 use codex_i18n::tr_with;

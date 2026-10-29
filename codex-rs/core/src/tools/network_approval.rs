@@ -11,6 +11,9 @@ use crate::tools::approvals::ApprovalContext;
 use crate::tools::events::truncate_rejection_message;
 use crate::tools::sandboxing::ToolError;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_network_proxy::BlockedRequest;
 use codex_network_proxy::BlockedRequestObserver;
 use codex_network_proxy::EnvironmentNetworkPolicy;
@@ -53,8 +56,14 @@ use tracing::error;
 use tracing::warn;
 use uuid::Uuid;
 
-const ABANDONED_NETWORK_APPROVAL_MESSAGE: &str =
-    "network approval was cancelled before a decision was returned";
+// A `const` cannot call `tr`; the value is a call outcome, which the TUI shows
+// as the tool result (design §3.6).
+fn abandoned_network_approval_message() -> &'static str {
+    tr(
+        current(),
+        "network approval was cancelled before a decision was returned",
+    )
+}
 
 #[derive(Debug)]
 pub(crate) struct NetworkApprovalSpec {
@@ -188,7 +197,7 @@ fn network_approval_outcome_to_result(outcome: Option<String>) -> Result<(), Too
 fn abandoned_network_approval_outcome(cancellation_token: &CancellationToken) -> Option<String> {
     cancellation_token
         .is_cancelled()
-        .then(|| ABANDONED_NETWORK_APPROVAL_MESSAGE.to_string())
+        .then(|| abandoned_network_approval_message().to_string())
 }
 
 /// Whether an allowlist miss may be reviewed instead of hard-denied.
@@ -372,9 +381,14 @@ impl Drop for PendingHostApprovalOwner<'_> {
                     .and_then(NetworkRequestDisconnect::elapsed)
             {
                 let elapsed_ms = elapsed.as_millis();
-                self.service.record_call_outcome_if_absent(registration_id, format!(
-                    "Network request disconnected after {elapsed_ms} ms, before approval could complete"
-                ));
+                self.service.record_call_outcome_if_absent(
+                    registration_id,
+                    tr_with(
+                        current(),
+                        "Network request disconnected after {0} ms, before approval could complete",
+                        &[&elapsed_ms.to_string()],
+                    ),
+                );
             }
             self.cancel_execution_if_denied(self.decision_on_drop);
             self.publish_and_remove(self.decision_on_drop);

@@ -8,7 +8,6 @@ use super::*;
 use crate::terminal_hyperlinks::HyperlinkLine;
 use codex_i18n::current;
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::sync::Weak;
 
 /// 在桌面应用中打开会话后的提示。

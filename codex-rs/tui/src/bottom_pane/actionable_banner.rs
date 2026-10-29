@@ -14,7 +14,6 @@ use crate::render::renderable::Renderable;
 use crate::terminal_palette::best_color;
 use crate::terminal_palette::default_fg;
 use crate::wrapping::word_wrap_line_with_source;
-use crate::wrapping::word_wrap_lines;
 use codex_i18n::current;
 use codex_i18n::tr;
 use crossterm::event::KeyCode;

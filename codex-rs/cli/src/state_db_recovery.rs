@@ -190,7 +190,7 @@ mod tests {
         tokio::fs::write(failed_db_path.as_path(), b"logs").await?;
 
         let startup_error =
-            LocalStateDbStartupError::new(failed_db_path.clone(), anyhow::anyhow!("corrupt"));
+            LocalStateDbStartupError::new(failed_db_path.clone(), "corrupt".to_string());
         let backups = backup_files_for_fresh_start(&startup_error).await?;
 
         assert_eq!(
@@ -213,7 +213,7 @@ mod tests {
         tokio::fs::write(sqlite_home.as_path(), b"not-a-directory").await?;
         let sqlite = codex_state::SqliteConfig::new_for_testing(sqlite_home.as_path().abs());
         let startup_error =
-            LocalStateDbStartupError::new(sqlite.state_db_path(), anyhow::anyhow!("File exists"));
+            LocalStateDbStartupError::new(sqlite.state_db_path(), "File exists".to_string());
 
         assert!(is_auto_backup_recoverable(&startup_error));
         let backups = backup_files_for_fresh_start(&startup_error).await?;

@@ -3,7 +3,6 @@
 use crate::manifest::PluginManifest;
 use codex_i18n::current;
 use codex_i18n::tr_with;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
 use codex_utils_path_uri::PathUri;
 use thiserror::Error;
 

@@ -1,3 +1,6 @@
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::text::Span;
@@ -49,7 +52,9 @@ fn combined_description(
     description_layout: SelectionDescriptionLayout,
 ) -> Option<String> {
     match (&row.description, &row.disabled_reason) {
-        (Some(desc), Some(reason)) => Some(format!("{desc} (disabled: {reason})")),
+        (Some(desc), Some(reason)) => {
+            Some(tr_with(current(), "{0} (disabled: {1})", &[desc, reason]))
+        }
         (Some(desc), None) => Some(desc.clone()),
         (None, Some(reason))
             if matches!(
@@ -60,10 +65,12 @@ fn combined_description(
         {
             Some(reason.clone())
         }
-        (None, Some(reason)) => Some(format!("disabled: {reason}")),
+        (None, Some(reason)) => Some(tr_with(current(), "disabled: {0}", &[reason])),
         (None, None) => None,
     }
 }
+
+// (stacked_description removed: 165 renderer uses single-line description)
 
 fn build_name_spans(row: &GenericDisplayRow, name_limit: usize) -> Vec<Span<'static>> {
     let mut name_spans = Vec::with_capacity(row.name.len());
@@ -98,7 +105,7 @@ fn build_name_spans(row: &GenericDisplayRow, name_limit: usize) -> Vec<Span<'sta
         name_spans.push("…".into());
     }
     if row.disabled_reason.is_some() {
-        name_spans.push(" (disabled)".dim());
+        name_spans.push(tr(current(), " (disabled)").dim());
     }
     name_spans
 }

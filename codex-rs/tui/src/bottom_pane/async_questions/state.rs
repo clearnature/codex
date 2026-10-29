@@ -5,6 +5,8 @@ use super::*;
 use crate::history_cell::sanitize_user_text;
 use codex_context_fragments::AnsweredQuestion;
 use codex_context_fragments::ContextualUserFragment;
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use codex_utils_string::take_bytes_at_char_boundary;
 
 // Match the model-authored title budget used by AnsweredQuestion.
@@ -141,9 +143,19 @@ impl AsyncQuestions {
             .render()
             .into_text()
             .unwrap_or_default();
-        if reply.chars().count() > codex_protocol::user_input::MAX_USER_INPUT_TEXT_CHARS {
+        // The rendered answer carries framing around the raw draft; the cap
+        // applies to what the message will actually carry.
+        let raw_len = text.chars().count();
+        let framing_len = reply.chars().count().saturating_sub(raw_len);
+        let limit = codex_protocol::user_input::MAX_USER_INPUT_TEXT_CHARS - framing_len;
+        if reply.chars().count() > limit {
             self.composer.show_footer_flash(
-                "Answer too long; shorten it before sending".into(),
+                tr_with(
+                    current(),
+                    "Answer too long; limit {0} characters",
+                    &[&limit.to_string()],
+                )
+                .into(),
                 Duration::from_secs(5),
             );
         } else {

@@ -15,7 +15,7 @@ Buffer {
         "  Mention 07  [Skill] Description 07                                    ",
         "› Mention 08  [Skill] Description 08                                    ",
         "↓                                                                       ",
-        "  enter insert · esc close                                              ",
+        "  enter to insert or esc to close                                       ",
     ],
     styles: [
         x: 0, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
@@ -38,9 +38,8 @@ Buffer {
         x: 36, y: 8, fg: Reset, bg: Reset, underline: Reset, modifier: BOLD | REVERSED,
         x: 0, y: 9, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
         x: 2, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: BOLD,
-        x: 7, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: DIM,
-        x: 17, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: BOLD,
-        x: 20, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: DIM,
-        x: 26, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+        x: 7, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+        x: 21, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: BOLD,
+        x: 24, y: 10, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
     ]
 }

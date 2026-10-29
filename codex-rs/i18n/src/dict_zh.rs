@@ -6123,6 +6123,8 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
     ("Searched the web", "已搜索网络"),
     ("Searching the web", "正在搜索网络"),
     ("Browsing the web", "正在浏览网络"),
+    ("select", "选择"),
+    ("back", "返回"),
     ("⚠ {0} MCP startup issue", "⚠ {0} 个MCP启动问题"),
     ("⚠ {0} MCP startup issues", "⚠ {0} 个MCP启动问题"),
     ("⚠ {0} startup issue", "⚠ {0} 个启动问题"),

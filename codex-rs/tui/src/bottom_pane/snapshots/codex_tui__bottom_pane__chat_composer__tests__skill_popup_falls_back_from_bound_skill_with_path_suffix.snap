@@ -5,7 +5,7 @@ expression: terminal.backend()
 "                                                                                                    "
 "› left  [Skill] Example skill used in tests.                                                        "
 "                                                                                                    "
-"  enter insert · esc close                                                                          "
+"  enter to insert or esc to close                                                                   "
 "                                                                                                    "
 "› $left  $bound/path                                                                                "
 "                                                                                                    "

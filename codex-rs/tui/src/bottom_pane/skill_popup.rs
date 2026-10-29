@@ -3,7 +3,6 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::layout::Layout;
 use ratatui::layout::Rect;
-use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::widgets::Widget;
 use ratatui::widgets::WidgetRef;
@@ -16,6 +15,8 @@ use super::scroll_state::ScrollState;
 use super::selection_popup_common::GenericDisplayRow;
 use crate::key_hint;
 use crate::text_formatting::truncate_text;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_utils_fuzzy_match::fuzzy_match;
 
 #[derive(Clone, Debug)]
@@ -250,7 +251,7 @@ impl WidgetRef for SkillPopup {
             &rows,
             &self.state,
             MAX_POPUP_ROWS,
-            "no matches",
+            tr(current(), "no matches"),
         );
         if let Some(hint_area) = hint_area {
             let hint_area = Rect {
@@ -267,9 +268,9 @@ impl WidgetRef for SkillPopup {
 fn skill_popup_hint_line() -> Line<'static> {
     Line::from(vec![
         key_hint::plain(KeyCode::Enter).into(),
-        " insert · ".dim(),
+        tr(current(), " to insert or ").into(),
         key_hint::plain(KeyCode::Esc).into(),
-        " close".dim(),
+        tr(current(), " to close").into(),
     ])
 }
 

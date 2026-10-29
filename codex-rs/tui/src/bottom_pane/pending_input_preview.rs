@@ -10,6 +10,8 @@ use crate::key_hint;
 use crate::render::renderable::Renderable;
 use crate::wrapping::RtOptions;
 use crate::wrapping::adaptive_wrap_lines;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Widget that displays pending steers plus follow-up inputs held while a turn is in progress.
 ///
@@ -96,11 +98,14 @@ impl PendingInputPreview {
         let mut lines = vec![];
 
         if !self.pending_steers.is_empty() {
-            let mut header = vec!["Messages to be submitted after next tool call".into()];
+            let mut header =
+                vec![tr(current(), "Messages to be submitted after next tool call").into()];
             if let Some(interrupt_binding) = self.interrupt_binding {
-                header.push(" (press ".dim());
-                header.extend(interrupt_binding.spans());
-                header.push(" to interrupt and send immediately)".dim());
+                header.extend(vec![
+                    tr(current(), " (press ").dim(),
+                    interrupt_binding.into(),
+                    tr(current(), " to interrupt and send immediately)").dim(),
+                ]);
             }
             Self::push_section_header(&mut lines, width, Line::from(header));
 
@@ -125,7 +130,7 @@ impl PendingInputPreview {
             Self::push_section_header(
                 &mut lines,
                 width,
-                "Messages to be submitted at end of turn".into(),
+                tr(current(), "Messages to be submitted at end of turn").into(),
             );
 
             for steer in &self.rejected_steers {
@@ -146,7 +151,11 @@ impl PendingInputPreview {
             if !lines.is_empty() {
                 lines.push(HyperlinkLine::new(Line::from("")));
             }
-            Self::push_section_header(&mut lines, width, "Queued follow-up inputs".into());
+            Self::push_section_header(
+                &mut lines,
+                width,
+                tr(current(), "Queued follow-up inputs").into(),
+            );
 
             for message in &self.queued_messages {
                 let wrapped = wrap_preview_lines(
@@ -170,10 +179,14 @@ impl PendingInputPreview {
             && !has_questions
             && let Some(edit_binding) = self.edit_binding
         {
-            let mut hint = Line::from("    ");
-            hint.spans.extend(edit_binding.spans());
-            hint.spans.push(" edit last queued message".dim());
-            lines.push(HyperlinkLine::new(hint));
+            lines.push(HyperlinkLine::from(
+                Line::from(vec![
+                    "    ".into(),
+                    edit_binding.into(),
+                    tr(current(), " edit last queued message").into(),
+                ])
+                .dim(),
+            ));
         }
 
         Box::new(HyperlinkRows::from(lines))

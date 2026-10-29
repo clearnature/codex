@@ -10,7 +10,6 @@ use ratatui::text::Line;
 use ratatui::widgets::Block;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Widget;
-use ratatui::widgets::Wrap;
 
 use crate::app_event::AppEvent;
 use crate::app_event_sender::AppEventSender;
@@ -24,6 +23,8 @@ use crate::render::RectExt as _;
 use crate::render::renderable::ColumnRenderable;
 use crate::render::renderable::Renderable;
 use crate::style::user_message_style;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 use super::CancellationEvent;
 use super::bottom_pane_view::BottomPaneView;
@@ -81,20 +82,29 @@ impl MemoriesSettingsView {
             items: vec![
                 MemoriesMenuItem::Setting {
                     setting: MemoriesSetting::Use,
-                    name: "Use memories",
-                    description: "Use memories starting with the next thread",
+                    name: tr(current(), "Use memories"),
+                    description: tr(
+                        current(),
+                        "Use memories in the following threads. Applied at next thread.",
+                    ),
                     enabled: use_memories,
                 },
                 MemoriesMenuItem::Setting {
                     setting: MemoriesSetting::Generate,
-                    name: "Generate memories",
-                    description: "Generate memories from this thread and future threads",
+                    name: tr(current(), "Generate memories"),
+                    description: tr(
+                        current(),
+                        "Generate memories from the following threads. Current thread included.",
+                    ),
                     enabled: generate_memories,
                 },
                 MemoriesMenuItem::Action {
                     action: MemoriesAction::Reset,
-                    name: "Reset all memories",
-                    description: "Clear local memory files and summaries without changing existing threads",
+                    name: tr(current(), "Reset all memories"),
+                    description: tr(
+                        current(),
+                        "Clear local memory files and summaries. Existing threads stay intact.",
+                    ),
                 },
             ],
             state: ScrollState::new(),
@@ -102,10 +112,8 @@ impl MemoriesSettingsView {
             complete: false,
             app_event_tx,
             docs_link: Line::from(vec![
-                "Learn more: ".dim(),
-                MEMORIES_DOC_URL
-                    .fg(crate::style::accent_color())
-                    .underlined(),
+                tr(current(), "Learn more: ").dim(),
+                MEMORIES_DOC_URL.cyan().underlined(),
             ]),
             keymap,
         };
@@ -119,29 +127,27 @@ impl MemoriesSettingsView {
 
     fn settings_header(&self) -> ColumnRenderable<'_> {
         let mut header = ColumnRenderable::new();
-        header.push(Paragraph::new(Line::from("Memories".bold())).wrap(Wrap { trim: false }));
-        header.push(
-            Paragraph::new(Line::from(
-                "Choose how Codex uses and creates memories. Changes are saved to config.toml"
-                    .dim(),
-            ))
-            .wrap(Wrap { trim: false }),
-        );
+        header.push(Line::from("Memories".bold()));
+        header.push(Line::from(
+            tr(
+                current(),
+                "Choose how Codex uses and creates memories. Changes are saved to config.toml",
+            )
+            .dim(),
+        ));
         header
     }
 
     fn reset_confirmation_header(&self) -> ColumnRenderable<'_> {
         let mut header = ColumnRenderable::new();
-        header.push(
-            Paragraph::new(Line::from("Reset all memories?".bold())).wrap(Wrap { trim: false }),
-        );
-        header.push(
-            Paragraph::new(Line::from(
-                "This clears local memory files and rollout summaries for the current Codex home."
-                    .dim(),
-            ))
-            .wrap(Wrap { trim: false }),
-        );
+        header.push(Line::from(tr(current(), "Reset all memories?").bold()));
+        header.push(Line::from(
+            tr(
+                current(),
+                "This clears local memory files and rollout summaries for the current Codex home.",
+            )
+            .dim(),
+        ));
         header
     }
 
@@ -163,25 +169,30 @@ impl MemoriesSettingsView {
 
     fn build_rows(&self) -> Vec<GenericDisplayRow> {
         if let Some(state) = self.reset_confirmation.as_ref() {
-            return ["Reset all memories", "Go back"]
-                .into_iter()
-                .enumerate()
-                .map(|(idx, name)| GenericDisplayRow {
-                    selection_style: Some(super::picker_style::selection_style()),
-                    wrap_indent: Some(2),
-                    name: if state.selected_idx == Some(idx) {
-                        format!("› {name}")
-                    } else {
-                        format!("  {name}")
-                    },
-                    description: Some(match idx {
-                        0 => "Delete local memory files and rollout summaries".to_string(),
-                        1 => "Return to memory settings".to_string(),
-                        _ => unreachable!("reset confirmation only renders two rows"),
-                    }),
-                    ..Default::default()
-                })
-                .collect();
+            return [
+                tr(current(), "Reset all memories"),
+                tr(current(), "Go back"),
+            ]
+            .into_iter()
+            .enumerate()
+            .map(|(idx, name)| GenericDisplayRow {
+                name: if state.selected_idx == Some(idx) {
+                    format!("› {name}")
+                } else {
+                    format!("  {name}")
+                },
+                description: Some(match idx {
+                    0 => tr(
+                        current(),
+                        "Delete local memory files and rollout summaries.",
+                    )
+                    .to_string(),
+                    1 => tr(current(), "Return to memory settings.").to_string(),
+                    _ => unreachable!("reset confirmation only renders two rows"),
+                }),
+                ..Default::default()
+            })
+            .collect();
         }
 
         let selected_idx = self.state.selected_idx;
@@ -406,7 +417,7 @@ impl Renderable for MemoriesSettingsView {
                 &rows,
                 self.active_state(),
                 MAX_POPUP_ROWS,
-                "  No memory settings available",
+                tr(current(), "  No memory settings available"),
             );
         }
         if self.reset_confirmation.is_none() {
@@ -453,16 +464,17 @@ impl Renderable for MemoriesSettingsView {
 }
 
 fn memories_settings_hint_line(keymap: &ListKeymap) -> Line<'static> {
-    let mut spans = vec![key_hint::plain(KeyCode::Char(' ')).into(), " toggle".into()];
+    let mut spans = vec![
+        "Press ".into(),
+        key_hint::plain(KeyCode::Char(' ')).into(),
+        tr(current(), " to toggle").into(),
+    ];
     if let Some(accept) = keymap.primary_hint(ListAction::Accept) {
-        spans.push(" · ".into());
-        spans.extend(accept.spans());
-        spans.push(" save/select".into());
-    }
-    if let Some(cancel) = keymap.primary_hint(ListAction::Cancel) {
-        spans.push(" · ".into());
-        spans.extend(cancel.spans());
-        spans.push(" cancel".into());
+        spans.extend([
+            "; ".into(),
+            accept.into(),
+            tr(current(), " to save or select").into(),
+        ]);
     }
     Line::from(spans)
 }

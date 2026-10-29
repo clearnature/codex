@@ -19,6 +19,9 @@ use super::TIP_SEPARATOR;
 use crate::bottom_pane::request_user_input::render::render_rows_bottom_aligned;
 use crate::bottom_pane::request_user_input::render::truncate_line_word_boundary_with_ellipsis;
 use crate::keymap::KeymapContext;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl Renderable for AsyncQuestions {
     fn cursor_style(&self, area: Rect) -> crossterm::cursor::SetCursorStyle {
@@ -98,7 +101,7 @@ impl Renderable for AsyncQuestions {
                 &option_rows,
                 &options_state,
                 option_rows.len().max(1),
-                "No options",
+                tr(current(), "No options"),
             );
         }
 
@@ -189,7 +192,13 @@ impl AsyncQuestions {
                     if self.keymap.chat.interrupt_turn.contains(&binding)
                         || self.keymap.chat.edit_queued_message.contains(&binding)))
         {
-            tips.push(crate::footer_hint::shortcut(&key.display_label(), "submit"));
+            tips.push(Line::from(
+                Span::styled(
+                    tr_with(current(), "{0} submit", &[&key.display_label()]),
+                    crate::style::accent_style(),
+                )
+                .bold(),
+            ));
         }
         if let Some(key) = chat_hint("skip_question") {
             tips.push(crate::footer_hint::shortcut(&key.display_label(), "skip"));
@@ -197,16 +206,16 @@ impl AsyncQuestions {
         tips.extend(option_tip.map(Line::from));
         if let Some(key) = chat_hint("prompt_stack_back") {
             let label = if self.state.current_idx > 0 {
-                "prev question"
+                tr(current(), "prev question")
             } else {
-                "main prompt"
+                tr(current(), "main prompt")
             };
             tips.push(crate::footer_hint::shortcut(&key.display_label(), label));
         }
         let next = if self.state.current_idx + 1 < self.state.pending.len() {
-            Some("next question")
+            Some(tr(current(), "next question"))
         } else if self.has_queued_messages {
-            Some("queued messages")
+            Some(tr(current(), "queued messages"))
         } else {
             None
         };
@@ -232,10 +241,13 @@ impl AsyncQuestions {
     }
 
     pub(super) fn option_tip(&self) -> Span<'static> {
-        format!(
-            "option {}/{}",
-            self.selected_option_index().unwrap_or(0) + 1,
-            self.options_len()
+        tr_with(
+            current(),
+            "option {0}/{1}",
+            &[
+                &(self.selected_option_index().unwrap_or(0) + 1).to_string(),
+                &self.options_len().to_string(),
+            ],
         )
         .dim()
     }

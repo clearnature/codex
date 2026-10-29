@@ -9,7 +9,7 @@ expression: "normalize_snapshot_paths(render_bottom_popup(&app.chat_widget, 80))
 › status   [Skill]
   statsig  [Skill]
 
-  enter insert · esc close
+  enter to insert or esc to close
 
 › $stat
 

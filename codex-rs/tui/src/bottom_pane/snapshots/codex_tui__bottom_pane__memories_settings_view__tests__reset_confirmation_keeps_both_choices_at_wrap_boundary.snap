@@ -5,13 +5,12 @@ expression: "snapshots.join(\"\\n\\n\")"
 width=68
 
   Reset all memories?
-  This clears local memory files and rollout summaries for the
-  current Codex home.
+  This clears local memory files and rollout summaries for the cur
 
 
 › Reset all memories  Delete local memory files and rollout
-                      summaries
-  Go back             Return to memory settings
+                      summaries.
+  Go back             Return to memory settings.
 
 
 
@@ -20,12 +19,12 @@ width=68
 width=69
 
   Reset all memories?
-  This clears local memory files and rollout summaries for the
-  current Codex home.
+  This clears local memory files and rollout summaries for the curr
 
 
-› Reset all memories  Delete local memory files and rollout summaries
-  Go back             Return to memory settings
+› Reset all memories  Delete local memory files and rollout
+                      summaries.
+  Go back             Return to memory settings.
 
 
 
@@ -34,12 +33,11 @@ width=69
 width=70
 
   Reset all memories?
-  This clears local memory files and rollout summaries for the
-  current Codex home.
+  This clears local memory files and rollout summaries for the curre
 
 
-› Reset all memories  Delete local memory files and rollout summaries
-  Go back             Return to memory settings
+› Reset all memories  Delete local memory files and rollout summaries.
+  Go back             Return to memory settings.
 
 
 
@@ -48,12 +46,11 @@ width=70
 width=71
 
   Reset all memories?
-  This clears local memory files and rollout summaries for the
-  current Codex home.
+  This clears local memory files and rollout summaries for the curren
 
 
-› Reset all memories  Delete local memory files and rollout summaries
-  Go back             Return to memory settings
+› Reset all memories  Delete local memory files and rollout summaries.
+  Go back             Return to memory settings.
 
 
 
@@ -63,11 +60,10 @@ width=72
 
   Reset all memories?
   This clears local memory files and rollout summaries for the current
-  Codex home.
 
 
-› Reset all memories  Delete local memory files and rollout summaries
-  Go back             Return to memory settings
+› Reset all memories  Delete local memory files and rollout summaries.
+  Go back             Return to memory settings.
 
 
 

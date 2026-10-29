@@ -6,7 +6,7 @@ expression: terminal.backend()
 "› status         [Skill] Example skill used in tests.                                               "
 "  statsig        [Skill] Example skill used in tests.                                               "
 "↓                                                                                                   "
-"  enter insert · esc close                                                                          "
+"  enter to insert or esc to close                                                                   "
 "                                                                                                    "
 "› $stat                                                                                             "
 "                                                                                                    "

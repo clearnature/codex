@@ -1,6 +1,9 @@
 //! Own question-editor creation, restoration, and the collapsed entry point.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl BottomPane {
     pub(crate) fn push_async_questions(
@@ -76,17 +79,25 @@ impl BottomPane {
         let mut lines = vec![Line::from(vec![
             "  ? ".dim(),
             Span::styled(
-                format!("{count} question{}", if count == 1 { "" } else { "s" }),
+                if count == 1 {
+                    tr_with(current(), "{0} question", &[&count.to_string()])
+                } else {
+                    tr_with(current(), "{0} questions", &[&count.to_string()])
+                },
                 crate::style::accent_style(),
             )
             .bold(),
             countdown.dim(),
         ])];
         if let Some(binding) = self.pending_input_preview.edit_binding {
-            let mut hint = Line::from("    ");
-            hint.spans.extend(binding.spans());
-            hint.spans.push(" to answer".dim());
-            lines.push(hint);
+            lines.push(
+                Line::from(vec![
+                    "    ".into(),
+                    binding.into(),
+                    tr(current(), " to answer").into(),
+                ])
+                .dim(),
+            );
         }
         Some(lines)
     }

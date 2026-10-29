@@ -3320,7 +3320,7 @@ async fn open_agent_picker_prompts_when_subagents_disabled() -> Result<()> {
     app.set_agent_picker_thread_visibility(archived_thread_id, AgentPickerThreadVisibility::Hidden);
 
     Box::pin(app.open_agent_picker(&mut app_server)).await;
-    assert_snapshot!(render_bottom_popup(&app.chat_widget, /*width*/ 80), @r###"
+    assert_snapshot!(render_bottom_popup(&app.chat_widget, /*width*/ 80), @"
           Enable subagents?
     › As  Subagents are disabled in this TUI session.
 
@@ -3330,7 +3330,7 @@ async fn open_agent_picker_prompts_when_subagents_disabled() -> Result<()> {
           2. Not now      Keep subagents disabled
 
           enter select · esc back
-    "###);
+    ");
     Ok(())
 }
 

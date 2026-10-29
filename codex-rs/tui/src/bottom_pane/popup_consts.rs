@@ -7,6 +7,9 @@ use crate::key_hint;
 use crate::key_hint::ShortcutHint;
 use crate::keymap::ListAction;
 use crate::keymap::ListKeymap;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 
 /// Maximum number of rows any popup should attempt to display.
@@ -16,18 +19,21 @@ pub(crate) const MAX_POPUP_ROWS: usize = 8;
 /// Standard footer hint text used by popups.
 pub(crate) fn standard_popup_hint_line() -> Line<'static> {
     Line::from(vec![
-        "Press ".into(),
+        tr(current(), "Press ").into(),
         key_hint::plain(KeyCode::Enter).into(),
-        " to confirm or ".into(),
+        tr(current(), " to confirm or ").into(),
         key_hint::plain(KeyCode::Esc).into(),
-        " to go back".into(),
+        tr(current(), " to go back").into(),
     ])
 }
 
 /// Compact footer for shared pickers, using only the configured list actions.
 pub(crate) fn picker_hint_line_for_keymap(list_keymap: &ListKeymap) -> Line<'static> {
     let mut spans = Vec::new();
-    for (action, label) in [(ListAction::Accept, "select"), (ListAction::Cancel, "back")] {
+    for (action, label) in [
+        (ListAction::Accept, tr(current(), "select")),
+        (ListAction::Cancel, tr(current(), "back")),
+    ] {
         if let Some(hint) = list_keymap.primary_hint(action) {
             if !spans.is_empty() {
                 spans.push(" · ".dim());
@@ -45,16 +51,24 @@ pub(crate) fn accept_cancel_hint_line(
     cancel: Option<ShortcutHint>,
     cancel_label: &'static str,
 ) -> Line<'static> {
-    let mut spans = Vec::new();
-    if let Some(accept) = accept {
-        spans.push("Press ".dim());
-        spans.extend(accept.spans());
-        spans.push(format!(" {accept_label}").dim());
+    match (accept, cancel) {
+        (Some(accept), Some(cancel)) => Line::from(vec![
+            tr(current(), "Press ").into(),
+            accept.into(),
+            tr_with(current(), " {0} or ", &[accept_label]).into(),
+            cancel.into(),
+            format!(" {cancel_label}").into(),
+        ]),
+        (Some(accept), None) => Line::from(vec![
+            tr(current(), "Press ").into(),
+            accept.into(),
+            format!(" {accept_label}").into(),
+        ]),
+        (None, Some(cancel)) => Line::from(vec![
+            tr(current(), "Press ").into(),
+            cancel.into(),
+            format!(" {cancel_label}").into(),
+        ]),
+        (None, None) => Line::from(""),
     }
-    if let Some(cancel) = cancel {
-        spans.push(if spans.is_empty() { "Press " } else { " or " }.dim());
-        spans.extend(cancel.spans());
-        spans.push(format!(" {cancel_label}").dim());
-    }
-    spans.into()
 }

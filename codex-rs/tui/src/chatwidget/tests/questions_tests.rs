@@ -458,7 +458,7 @@ async fn selected_answers_preserve_long_labels_and_reject_oversized_submissions(
             chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
             assert_eq!(question_count(&chat), saved);
             let rendered = render_bottom_popup(&chat, /*width*/ 80);
-            insta::assert_snapshot!(rendered.lines().find(|line| line.contains("Answer too long")).unwrap(), @"  Answer too long; shorten it before sending");
+            insta::assert_snapshot!(rendered.lines().find(|line| line.contains("Answer too long")).unwrap(), @"  Answer too long; limit 524114 characters");
         } else {
             assert_answer(ops.try_recv().unwrap(), &format!("> What next?\n\n{label}"));
         }

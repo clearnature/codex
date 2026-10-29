@@ -6,6 +6,7 @@
 //! Its entry notice is shared across chats until the backend confirms ordinary usage has recovered.
 
 use super::ChatWidget;
+use super::QueuedUserMessage;
 use super::luna_reserve_return::ReserveReturnModel;
 use crate::app_command::AppCommand;
 use crate::backend_banners::BackendBanner;
@@ -223,7 +224,10 @@ impl ChatWidget {
             self.finalize_turn();
             self.input_queue
                 .queued_user_messages
-                .push_front(prompt.into());
+                .push_front(QueuedUserMessage {
+                    source: self.safety_buffering_source,
+                    ..QueuedUserMessage::from(prompt)
+                });
             self.input_queue
                 .queued_user_message_history_records
                 .push_front(super::UserMessageHistoryRecord::UserMessageText);
@@ -300,6 +304,7 @@ impl ChatWidget {
         // or discard the already-known limits shown by /status.
         self.rate_limit_snapshots_by_limit_id =
             std::mem::take(&mut previous.rate_limit_snapshots_by_limit_id);
+        self.usage_notice_state = std::mem::take(&mut previous.usage_notice_state);
         self.codex_rate_limit_reached_type = previous.codex_rate_limit_reached_type;
         self.codex_spend_control_reached = previous.codex_spend_control_reached;
         self.backend_banner_state.presented = None;
@@ -373,9 +378,11 @@ impl ChatWidget {
     }
 
     fn observe_backend_banner_view(&mut self) {
-        let (shown, dismissed) = self.bottom_pane.inline_banner_lifecycle();
-        self.backend_banner_state.shown |= shown;
-        self.backend_banner_state.dismissed |= dismissed;
+        if self.backend_banner_state.presented.is_some() {
+            let (shown, dismissed) = self.bottom_pane.inline_banner_lifecycle();
+            self.backend_banner_state.shown |= shown;
+            self.backend_banner_state.dismissed |= dismissed;
+        }
         self.backend_banner_state.dismissed |= self
             .backend_banner_state
             .picker_dismissed
@@ -413,7 +420,7 @@ impl ChatWidget {
         }
         let is_reserve = banner.is_some_and(|banner| banner.banner_type == LUNA_RESERVE_BANNER);
         let content = banner.map(|banner| {
-            let mut content = banner.actionable_banner();
+            let mut content = banner.actionable_banner(self.clock_format);
             if banner.banner_type == LUNA_RESERVE_BANNER
                 && self.current_model() != LUNA_RESERVE_MODEL
             {
@@ -440,6 +447,7 @@ impl ChatWidget {
         }
         self.bottom_pane
             .dismiss_view_by_id(LUNA_RESERVE_RECOVERY_VIEW_ID);
+        self.clear_security_setup_banner();
         match (is_reserve, content) {
             (true, Some(content)) => {
                 self.bottom_pane.set_inline_banner(/*banner*/ None);
@@ -509,6 +517,7 @@ impl ChatWidget {
     }
 
     pub(crate) fn clear_backend_banner(&mut self) {
+        self.clear_security_setup_banner();
         self.backend_banner_state = BackendBannerState::default();
         self.backend_banner_notice_model = None;
         self.bottom_pane

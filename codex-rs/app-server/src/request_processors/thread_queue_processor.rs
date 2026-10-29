@@ -1,3 +1,4 @@
+use crate::config_manager::ConfigManager;
 use std::sync::Arc;
 
 use crate::error_code::internal_error;
@@ -27,9 +28,6 @@ use codex_core::NotSubmittedReason;
 use codex_core::StartIfIdleSubmission;
 use codex_core::ThreadManager;
 use codex_core::TurnInput;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
@@ -41,22 +39,23 @@ use codex_thread_store::ThreadStore;
 use codex_thread_store::ThreadStoreError;
 
 use super::TurnRequestProcessor;
+use super::config_load_error;
+use super::thread_input::DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR;
 use super::thread_input::can_accept_direct_input;
 use super::thread_processor::THREAD_LIST_DEFAULT_LIMIT;
 use super::thread_processor::THREAD_LIST_MAX_LIMIT;
 use super::turn_processor::validate_user_input_image_urls;
+use codex_i18n::current;
+use codex_i18n::tr;
 
-fn direct_input_to_unloaded_subagent_error() -> &'static str {
-    tr(
-        current(),
-        "direct app-server input is not allowed for unloaded spawned sub-agents",
-    )
-}
+const DIRECT_INPUT_TO_UNLOADED_SUBAGENT_ERROR: &str =
+    "direct app-server input is not allowed for unloaded spawned sub-agents";
 
 pub(crate) struct ThreadQueueRequestProcessor {
     thread_manager: Arc<ThreadManager>,
     thread_store: Arc<dyn ThreadStore>,
     outgoing: Arc<OutgoingMessageSender>,
+    config_manager: ConfigManager,
     service: Option<Arc<QueuedItemService>>,
 }
 
@@ -65,12 +64,14 @@ impl ThreadQueueRequestProcessor {
         thread_manager: Arc<ThreadManager>,
         thread_store: Arc<dyn ThreadStore>,
         outgoing: Arc<OutgoingMessageSender>,
+        config_manager: ConfigManager,
         service: Option<Arc<QueuedItemService>>,
     ) -> Self {
         Self {
             thread_manager,
             thread_store,
             outgoing,
+            config_manager,
             service,
         }
     }
@@ -105,13 +106,7 @@ impl ThreadQueueRequestProcessor {
             .as_deref()
             .map(str::parse::<usize>)
             .transpose()
-            .map_err(|error| {
-                invalid_request(tr_with(
-                    current(),
-                    "invalid queue pagination cursor: {0}",
-                    &[&error.to_string()],
-                ))
-            })?
+            .map_err(|error| invalid_request(format!("invalid queue pagination cursor: {error}")))?
             .unwrap_or_default();
         let limit = params
             .limit
@@ -155,10 +150,9 @@ impl ThreadQueueRequestProcessor {
             .await
             .map_err(queue_error)?
             .ok_or_else(|| {
-                invalid_request(tr_with(
-                    current(),
-                    "queued submission not found: {0}",
-                    &[&params.queued_submission_id],
+                invalid_request(format!(
+                    "queued submission not found: {}",
+                    params.queued_submission_id
                 ))
             })?;
         Ok(ThreadQueueUpdateResponse {
@@ -198,12 +192,12 @@ impl ThreadQueueRequestProcessor {
     ) -> Result<ThreadQueueStartResponse, JSONRPCErrorError> {
         let (_, loaded_thread, source) = self.require_thread(&params.thread_id).await?;
         ensure_direct_input_allowed(loaded_thread.as_deref(), &source)?;
-        let thread = loaded_thread.ok_or_else(|| {
-            invalid_request(tr(
-                current(),
-                "resume the thread before starting a queued message",
-            ))
-        })?;
+        let thread = loaded_thread
+            .ok_or_else(|| invalid_request("resume the thread before starting a queued message"))?;
+        self.config_manager
+            .check_thread_model_provider(thread.config().await.as_ref())
+            .await
+            .map_err(|error| config_load_error(&error))?;
         let submission = self
             .service()?
             .start(
@@ -213,21 +207,24 @@ impl ThreadQueueRequestProcessor {
             )
             .await
             .map_err(queue_error)?;
-        let turn_id = match submission {
-            StartIfIdleSubmission::Started { turn_id } => turn_id,
+        let (turn_id, root_turn_id) = match submission {
+            StartIfIdleSubmission::Started {
+                turn_id,
+                root_turn_id,
+            } => (turn_id, root_turn_id),
+            StartIfIdleSubmission::NotSubmitted {
+                reason: NotSubmittedReason::ServerDraining,
+            } => return Err(crate::error_code::server_draining_error()),
             StartIfIdleSubmission::NotSubmitted {
                 reason: NotSubmittedReason::NotIdle | NotSubmittedReason::PendingTriggerTurn,
             } => {
-                return Err(invalid_request(tr(
-                    current(),
+                return Err(invalid_request(
                     "thread already has an active or pending turn",
-                )));
+                ));
             }
             StartIfIdleSubmission::NotSubmitted { reason } => {
-                return Err(internal_error(tr_with(
-                    current(),
-                    "Core declined to start queued user message: {0}",
-                    &[&format!("{reason:?}")],
+                return Err(internal_error(format!(
+                    "Core declined to start queued user message: {reason:?}"
                 )));
             }
         };
@@ -237,6 +234,7 @@ impl ThreadQueueRequestProcessor {
         Ok(ThreadQueueStartResponse {
             turn: Turn {
                 id: turn_id,
+                root_turn_id: Some(root_turn_id),
                 items: vec![],
                 items_view: TurnItemsView::NotLoaded,
                 error: None,
@@ -251,61 +249,47 @@ impl ThreadQueueRequestProcessor {
     fn service(&self) -> Result<&QueuedItemService, JSONRPCErrorError> {
         self.service
             .as_deref()
-            .ok_or_else(|| invalid_request(tr(current(), "user message queue is unavailable")))
+            .ok_or_else(|| invalid_request("user message queue is unavailable"))
     }
 
     async fn require_thread(
         &self,
         raw_thread_id: &str,
     ) -> Result<(ThreadId, Option<Arc<CodexThread>>, SessionSource), JSONRPCErrorError> {
-        let thread_id = ThreadId::from_string(raw_thread_id).map_err(|error| {
-            invalid_request(tr_with(
-                current(),
-                "invalid thread id: {0}",
-                &[&error.to_string()],
-            ))
-        })?;
-        let (loaded_thread, source) =
-            if let Ok(thread) = self.thread_manager.get_thread(thread_id).await {
-                let snapshot = thread.config_snapshot().await;
-                if snapshot.ephemeral {
-                    return Err(invalid_request(tr_with(
-                        current(),
-                        "ephemeral thread does not support queued submissions: {0}",
-                        &[&thread_id.to_string()],
-                    )));
-                }
-                (Some(thread), snapshot.session_source)
-            } else {
-                let stored = self
-                    .thread_store
-                    .read_thread(ReadThreadParams {
-                        thread_id,
-                        include_archived: true,
-                        include_history: false,
-                    })
-                    .await
-                    .map_err(|error| match error {
-                        ThreadStoreError::ThreadNotFound { .. } => invalid_request(tr_with(
-                            current(),
-                            "thread not found: {0}",
-                            &[&thread_id.to_string()],
-                        )),
-                        error => internal_error(tr_with(
-                            current(),
-                            "failed to read thread: {0}",
-                            &[&error.to_string()],
-                        )),
-                    })?;
-                if stored.archived_at.is_some() {
-                    return Err(invalid_request(tr_with(
-                        current(),
-                        "session {0} is archived. Run `codex unarchive {0}` to unarchive it first.",
-                        &[&thread_id.to_string()],
-                    )));
-                }
-                (None, stored.source)
-            };
+        let thread_id = ThreadId::from_string(raw_thread_id)
+            .map_err(|error| invalid_request(format!("invalid thread id: {error}")))?;
+        let (loaded_thread, source) = if let Ok(thread) =
+            self.thread_manager.get_thread(thread_id).await
+        {
+            let snapshot = thread.config_snapshot().await;
+            if snapshot.ephemeral {
+                return Err(invalid_request(format!(
+                    "ephemeral thread does not support queued submissions: {thread_id}"
+                )));
+            }
+            (Some(thread), snapshot.session_source)
+        } else {
+            let stored = self
+                .thread_store
+                .read_thread(ReadThreadParams {
+                    thread_id,
+                    include_archived: true,
+                    include_history: false,
+                })
+                .await
+                .map_err(|error| match error {
+                    ThreadStoreError::ThreadNotFound { .. } => {
+                        invalid_request(format!("thread not found: {thread_id}"))
+                    }
+                    error => internal_error(format!("failed to read thread: {error}")),
+                })?;
+            if stored.archived_at.is_some() {
+                return Err(invalid_request(format!(
+                    "session {thread_id} is archived. Run `codex unarchive {thread_id}` to unarchive it first."
+                )));
+            }
+            (None, stored.source)
+        };
 
         Ok((thread_id, loaded_thread, source))
     }
@@ -316,18 +300,15 @@ fn ensure_direct_input_allowed(
     source: &SessionSource,
 ) -> Result<(), JSONRPCErrorError> {
     match loaded_thread {
-        Some(thread) if !can_accept_direct_input(thread.multi_agent_version(), source) => {
-            Err(invalid_request(tr(
-                current(),
-                "direct app-server input is not allowed for multi-agent v2 sub-agents",
-            )))
-        }
+        Some(thread) if !can_accept_direct_input(thread.multi_agent_version(), source) => Err(
+            invalid_request(tr(current(), DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR)),
+        ),
         None if matches!(
             source,
             SessionSource::SubAgent(SubAgentSource::ThreadSpawn { .. })
         ) =>
         {
-            Err(invalid_request(direct_input_to_unloaded_subagent_error()))
+            Err(invalid_request(DIRECT_INPUT_TO_UNLOADED_SUBAGENT_ERROR))
         }
         _ => Ok(()),
     }
@@ -354,29 +335,20 @@ pub(super) fn queue_error(error: QueueServiceError) -> JSONRPCErrorError {
         QueueServiceError::Storage(ThreadStoreError::InvalidRequest { message }) => {
             invalid_request(message)
         }
-        error => internal_error(tr_with(
-            current(),
-            "queued submission operation failed: {0}",
-            &[&error.to_string()],
-        )),
+        error => internal_error(format!("queued submission operation failed: {error}")),
     }
 }
 
 fn api_queued_submission(value: QueuedItem) -> Result<QueuedSubmission, JSONRPCErrorError> {
     let TurnInput::UserInput { content, client_id } = value.input else {
-        return Err(internal_error(tr(
-            current(),
+        return Err(internal_error(
             "queued submission does not contain user input",
-        )));
+        ));
     };
     Ok(QueuedSubmission {
         id: value.id,
         input: content.into_iter().map(Into::into).collect(),
-        client_user_message_id: client_id.ok_or_else(|| {
-            internal_error(tr(
-                current(),
-                "queued submission is missing its client message id",
-            ))
-        })?,
+        client_user_message_id: client_id
+            .ok_or_else(|| internal_error("queued submission is missing its client message id"))?,
     })
 }

@@ -3,6 +3,9 @@ use codex_app_server_protocol::JSONRPCErrorError;
 use codex_core::CodexThread;
 use codex_i18n::current;
 use codex_i18n::tr;
+
+pub(super) const DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR: &str =
+    "direct app-server input is not allowed for multi-agent v2 sub-agents";
 use codex_protocol::protocol::MultiAgentVersion;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
@@ -29,7 +32,7 @@ pub(super) async fn ensure_direct_input_allowed(
     ) {
         return Err(invalid_request(tr(
             current(),
-            "direct app-server input is not allowed for multi-agent v2 sub-agents",
+            DIRECT_INPUT_TO_MULTI_AGENT_V2_SUBAGENT_ERROR,
         )));
     }
 

@@ -1,6 +1,7 @@
 //! Approval, denial, and review-status transcript cells.
 
 use super::*;
+use crate::style::accent_color;
 use codex_i18n::current;
 use codex_i18n::tr;
 
@@ -347,9 +348,9 @@ pub fn new_guardian_timed_out_action_request(summary: String) -> Box<dyn History
     Box::new(PrefixedWrappedHistoryCell::new(line, "✗ ".red(), "  "))
 }
 
-/// Cyan history cell line showing the current review status.
+/// Accented history cell line showing the current review status.
 pub(crate) fn new_review_status_line(message: String) -> PlainHistoryCell {
     PlainHistoryCell {
-        lines: vec![Line::from(message.cyan())],
+        lines: vec![Line::from(message.fg(accent_color()))],
     }
 }

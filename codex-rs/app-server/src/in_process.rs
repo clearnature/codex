@@ -67,6 +67,7 @@ use crate::plugin_config_reload::PluginStartupConfig;
 use crate::transport::CHANNEL_CAPACITY;
 use crate::transport::OutboundConnectionState;
 use crate::transport::route_outgoing_envelope;
+pub use bootstrap::EmbeddedNetworkPolicy;
 use codex_analytics::AppServerRpcTransport;
 use codex_app_server_protocol::AgentMessageDelivery;
 use codex_app_server_protocol::ClientNotification;
@@ -102,6 +103,9 @@ use tokio::time::timeout;
 use toml::Value as TomlValue;
 use tracing::warn;
 
+#[path = "in_process_bootstrap.rs"]
+mod bootstrap;
+
 const IN_PROCESS_CONNECTION_ID: ConnectionId = ConnectionId(0);
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 // Covers both bounded runtime drains plus the analytics client's 25-second best-effort flush.
@@ -117,6 +121,7 @@ fn server_notification_requires_delivery(notification: &ServerNotification) -> b
         ServerNotification::TurnCompleted(_)
             | ServerNotification::ThreadQueueChanged(_)
             | ServerNotification::ThreadSettingsUpdated(_)
+            | ServerNotification::ThreadAttachmentUpdated(_)
             | ServerNotification::ExternalAgentConfigImportCompleted(_)
             | ServerNotification::ItemCompleted(ItemCompletedNotification {
                 item: ThreadItem::AgentMessage {
@@ -146,6 +151,8 @@ pub struct InProcessStartArgs {
     pub strict_config: bool,
     /// Preloaded cloud config bundle provider.
     pub cloud_config_bundle: CloudConfigBundleLoader,
+    /// Policy shared with transports created by the embedder before startup.
+    pub embedded_network_policy: EmbeddedNetworkPolicy,
     /// Loader used to fetch typed thread config sources before a thread starts.
     pub thread_config_loader: Arc<dyn ThreadConfigLoader>,
     /// Feedback sink used by app-server/core telemetry and logs.
@@ -160,7 +167,7 @@ pub struct InProcessStartArgs {
     pub config_warnings: Vec<ConfigWarningNotification>,
     /// Session source stamped into thread/session metadata.
     pub session_source: SessionSource,
-    /// Whether auth loading should honor the `CODEX_API_KEY` environment variable.
+    /// Whether serving auth should honor `CODEX_API_KEY`; workspace policy still uses stored auth.
     pub enable_codex_api_key_env: bool,
     /// Initialize params used for initial handshake.
     pub initialize: InitializeParams,
@@ -191,6 +198,7 @@ enum InProcessClientMessage {
     Request {
         request: Box<ClientRequest>,
         response_tx: oneshot::Sender<PendingClientRequestResponse>,
+        cancellation: tokio_util::sync::CancellationToken,
     },
     Notification {
         notification: ClientNotification,
@@ -209,7 +217,7 @@ enum InProcessClientMessage {
 }
 
 enum ProcessorCommand {
-    Request(Box<ClientRequest>),
+    Request(Box<ClientRequest>, tokio_util::sync::CancellationToken),
     Notification(ClientNotification),
 }
 
@@ -221,9 +229,12 @@ pub struct InProcessClientSender {
 impl InProcessClientSender {
     pub async fn request(&self, request: ClientRequest) -> IoResult<PendingClientRequestResponse> {
         let (response_tx, response_rx) = oneshot::channel();
+        let cancellation = tokio_util::sync::CancellationToken::new();
+        let _cancel_on_drop = cancellation.clone().drop_guard();
         self.try_send_client_message(InProcessClientMessage::Request {
             request: Box::new(request),
             response_tx,
+            cancellation,
         })?;
         response_rx.await.map_err(|err| {
             IoError::new(
@@ -341,6 +352,9 @@ impl InProcessClientHandle {
     /// Shutdown is bounded by internal timeouts and may abort background tasks
     /// if graceful drain does not complete in time.
     pub async fn shutdown(self) -> IoResult<()> {
+        // Shutdown owns the only event receiver, so nobody can drain it anymore.
+        // Unblock notification delivery before waiting for space in the client queue.
+        drop(self.event_rx);
         let mut runtime_handle = self.runtime_handle;
         let (done_tx, done_rx) = oneshot::channel();
 
@@ -382,7 +396,7 @@ pub async fn start(mut args: InProcessStartArgs) -> IoResult<InProcessClientHand
         });
     }
     let initialize = args.initialize.clone();
-    let client = start_uninitialized(args).await?;
+    let client = Box::pin(start_uninitialized(args)).await?;
 
     let initialize_response = client
         .request(ClientRequest::Initialize {
@@ -425,14 +439,28 @@ async fn run_outbound_router(
     }
 }
 
-async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClientHandle> {
-    args.config.auth_config().validate()?;
+async fn start_uninitialized(mut args: InProcessStartArgs) -> IoResult<InProcessClientHandle> {
+    let config_manager = ConfigManager::new(
+        args.config.codex_home.to_path_buf(),
+        args.cli_overrides,
+        args.loader_overrides,
+        args.strict_config,
+        args.cloud_config_bundle,
+        args.arg0_paths.clone(),
+        args.thread_config_loader,
+    )
+    .with_embedded_network_policy(args.embedded_network_policy);
+    // Keep the caller's project context independent of any fallback policy config.
+    let startup_cwd =
+        (!args.config.config_layer_stack.is_projectless()).then(|| args.config.cwd.to_path_buf());
+    let auth_manager = bootstrap::configure(
+        &config_manager,
+        &mut args.config,
+        args.enable_codex_api_key_env,
+    )
+    .await?;
     let channel_capacity = args.channel_capacity.max(1);
     let installation_id = resolve_installation_id(&args.config.codex_home).await?;
-    let auth_manager =
-        AuthManager::shared_from_config(args.config.as_ref(), args.enable_codex_api_key_env)
-            .await
-            .map_err(IoError::other)?;
     let (client_tx, mut client_rx) = mpsc::channel::<InProcessClientMessage>(channel_capacity);
     let (event_tx, event_rx) = mpsc::channel::<InProcessServerEvent>(channel_capacity);
 
@@ -445,6 +473,18 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
             outgoing_tx,
             analytics_events_client.clone(),
         ));
+
+        let log_write_warning = crate::log_write_warning::LogWriteWarningReporter::new(
+            args.feedback.clone(),
+            &outgoing_message_sender,
+            &args.config,
+        );
+        if let Some(log_db) = &args.log_db {
+            log_db.set_failure_reporter(log_write_warning.clone());
+            if log_db.has_write_failure() {
+                log_write_warning.notify_failure();
+            }
+        }
 
         let (writer_tx, mut writer_rx) = mpsc::channel::<QueuedOutgoingMessage>(channel_capacity);
         let outbound_initialized = Arc::new(AtomicBool::new(false));
@@ -470,22 +510,15 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
         ));
 
         let processor_outgoing = Arc::clone(&outgoing_message_sender);
-        let config_manager = ConfigManager::new(
-            args.config.codex_home.to_path_buf(),
-            args.cli_overrides,
-            args.loader_overrides,
-            args.strict_config,
-            args.cloud_config_bundle,
-            args.arg0_paths.clone(),
-            args.thread_config_loader,
-        );
         let (processor_tx, mut processor_rx) = mpsc::channel::<ProcessorCommand>(channel_capacity);
         let mut processor_handle = tokio::spawn(async move {
             let processor = Arc::new(MessageProcessor::new(MessageProcessorArgs {
+                cloud_skill_provider: None,
                 outgoing: Arc::clone(&processor_outgoing),
                 analytics_events_client,
                 arg0_paths: args.arg0_paths,
                 config: args.config,
+                startup_cwd,
                 config_manager,
                 environment_manager: args.environment_manager,
                 feedback: args.feedback,
@@ -493,6 +526,9 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
                 state_db: args.state_db,
                 config_warnings: args.config_warnings,
                 session_source: args.session_source,
+                user_verification: Arc::new(crate::user_verification::Service::new(Arc::clone(
+                    &auth_manager,
+                ))),
                 auth_manager,
                 installation_id,
                 code_mode_session_provider: None,
@@ -501,14 +537,16 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
                 plugin_startup_tasks: Some(PluginStartupConfig::Current),
             }));
             let mut thread_created_rx = processor.thread_created_receiver();
-            let session = Arc::new(ConnectionSessionState::new());
+            let session = Arc::new(ConnectionSessionState::new(
+                crate::transport::ConnectionOrigin::InProcess,
+            ));
             let mut listen_for_threads = true;
 
             loop {
                 tokio::select! {
                     command = processor_rx.recv() => {
                         match command {
-                            Some(ProcessorCommand::Request(request)) => {
+                            Some(ProcessorCommand::Request(request, cancellation)) => {
                                 let was_initialized = session.initialized();
                                 processor
                                     .process_client_request(
@@ -516,6 +554,7 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
                                         *request,
                                         Arc::clone(&session),
                                         &outbound_initialized,
+                                        cancellation,
                                     )
                                     .await;
                                 let opted_out_notification_methods_snapshot =
@@ -587,7 +626,7 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
             tokio::select! {
                 message = client_rx.recv() => {
                     match message {
-                        Some(InProcessClientMessage::Request { request, response_tx }) => {
+                        Some(InProcessClientMessage::Request { request, response_tx, cancellation }) => {
                             let request = *request;
                             let request_id = request.id().clone();
                             match pending_request_responses.entry(request_id.clone()) {
@@ -604,7 +643,7 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
                                 }
                             }
 
-                            match processor_tx.try_send(ProcessorCommand::Request(Box::new(request))) {
+                            match processor_tx.try_send(ProcessorCommand::Request(Box::new(request), cancellation)) {
                                 Ok(()) => {}
                                 Err(mpsc::error::TrySendError::Full(_)) => {
                                     if let Some(response_tx) =
@@ -820,7 +859,12 @@ mod tests {
     use codex_app_server_protocol::ConfigRequirementsReadResponse;
     use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
     use codex_app_server_protocol::SessionSource as ApiSessionSource;
+    use codex_app_server_protocol::ThreadAttachmentAddParams;
+    use codex_app_server_protocol::ThreadAttachmentOperation;
+    use codex_app_server_protocol::ThreadAttachmentRemoveParams;
+    use codex_app_server_protocol::ThreadAttachmentUpdatedNotification;
     use codex_app_server_protocol::ThreadQueueChangedNotification;
+    use codex_app_server_protocol::ThreadSetNameParams;
     use codex_app_server_protocol::ThreadStartParams;
     use codex_app_server_protocol::ThreadStartResponse;
     use codex_app_server_protocol::Turn;
@@ -828,6 +872,7 @@ mod tests {
     use codex_app_server_protocol::TurnItemsView;
     use codex_app_server_protocol::TurnStatus;
     use codex_core::config::ConfigBuilder;
+    use futures::FutureExt;
     use pretty_assertions::assert_eq;
     use std::path::Path;
     use tempfile::TempDir;
@@ -864,6 +909,7 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
+            embedded_network_policy: Default::default(),
             thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
             feedback: CodexFeedback::new(),
             log_db: None,
@@ -1021,12 +1067,13 @@ mod tests {
     }
 
     #[test]
-    fn guaranteed_delivery_helpers_cover_terminal_server_notifications() {
+    fn guaranteed_delivery_helpers_cover_required_server_notifications() {
         assert!(server_notification_requires_delivery(
             &ServerNotification::TurnCompleted(TurnCompletedNotification {
                 thread_id: "thread-1".to_string(),
                 turn: Turn {
                     id: "turn-1".to_string(),
+                    root_turn_id: None,
                     items: Vec::new(),
                     items_view: TurnItemsView::NotLoaded,
                     status: TurnStatus::Completed,
@@ -1051,6 +1098,15 @@ mod tests {
             )
         ));
         assert!(server_notification_requires_delivery(
+            &ServerNotification::ThreadAttachmentUpdated(ThreadAttachmentUpdatedNotification {
+                thread_id: "thread-1".to_string(),
+                attachment_type: "pull_request".to_string(),
+                identity_key: r#"["github.com","openai","codex",123]"#.to_string(),
+                attachment_id: "attachment-1".to_string(),
+                operation: ThreadAttachmentOperation::Deleted,
+            })
+        ));
+        assert!(server_notification_requires_delivery(
             &ServerNotification::ItemCompleted(ItemCompletedNotification {
                 item: ThreadItem::AgentMessage {
                     id: "item-1".to_string(),
@@ -1065,5 +1121,110 @@ mod tests {
                 completed_at_ms: 0,
             })
         ));
+    }
+
+    #[tokio::test]
+    async fn in_process_shutdown_completes_with_full_request_and_event_queues() {
+        let capacity = DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
+        let mut client = start_test_client(SessionSource::Cli).await;
+        let response = client
+            .request(ClientRequest::ThreadStart {
+                request_id: RequestId::Integer(1),
+                params: ThreadStartParams::default(),
+            })
+            .await
+            .expect("thread/start transport should work")
+            .expect("thread/start should succeed");
+        let thread: ThreadStartResponse =
+            serde_json::from_value(response).expect("thread/start response should parse");
+        let thread_id = thread.thread.id;
+        // Persist the thread metadata so attachment requests can find it.
+        client
+            .request(ClientRequest::ThreadSetName {
+                request_id: RequestId::Integer(2),
+                params: ThreadSetNameParams {
+                    thread_id: thread_id.clone(),
+                    name: "Shutdown backpressure".to_string(),
+                },
+            })
+            .await
+            .expect("thread/name/set transport should work")
+            .expect("thread/name/set should succeed");
+
+        // Drain through the first attachment notification to establish a clean boundary,
+        // then leave capacity + 1 notifications unread. Reuse one identity to stay below
+        // the attachment limit. Each mutation responds before sending its notification.
+        for index in 0..(capacity + 2) {
+            let request_id = RequestId::Integer((index + 3) as i64);
+            let request = if index % 2 == 0 {
+                ClientRequest::ThreadAttachmentAdd {
+                    request_id,
+                    params: ThreadAttachmentAddParams {
+                        thread_id: thread_id.clone(),
+                        attachment_type: "pull_request".to_string(),
+                        identity_key: "one-attachment".to_string(),
+                        payload: serde_json::json!({}),
+                    },
+                }
+            } else {
+                ClientRequest::ThreadAttachmentRemove {
+                    request_id,
+                    params: ThreadAttachmentRemoveParams {
+                        thread_id: thread_id.clone(),
+                        attachment_type: "pull_request".to_string(),
+                        identity_key: "one-attachment".to_string(),
+                    },
+                }
+            };
+            client
+                .request(request)
+                .await
+                .expect("attachment request transport should work")
+                .expect("attachment mutation should succeed");
+            if index == 0 {
+                loop {
+                    let event = client
+                        .next_event()
+                        .await
+                        .expect("event stream should remain open");
+                    if let InProcessServerEvent::ServerNotification(notification) = event
+                        && matches!(
+                            *notification,
+                            ServerNotification::ThreadAttachmentUpdated(_)
+                        )
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        let sender = client.sender();
+        let mut queued_requests = Vec::with_capacity(capacity);
+        for index in 0..capacity {
+            let mut request = Box::pin(sender.request(ClientRequest::ConfigRequirementsRead {
+                request_id: RequestId::Integer((1000 + index) as i64),
+                params: None,
+            }));
+            if index == 0 {
+                // Verify a normal read stalls behind the unread notification before
+                // filling the remaining request slots.
+                assert!(timeout(Duration::from_secs(1), &mut request).await.is_err());
+            } else {
+                assert!(request.as_mut().now_or_never().is_none());
+            }
+            queued_requests.push(request);
+        }
+        assert_eq!(sender.client_tx.capacity(), 0);
+
+        // Only advance time after the real requests have filled both queues.
+        tokio::time::pause();
+        timeout(
+            SHUTDOWN_ACK_TIMEOUT + SHUTDOWN_TIMEOUT + Duration::from_secs(1),
+            client.shutdown(),
+        )
+        .await
+        .expect("shutdown must complete with full request and event queues")
+        .expect("shutdown should succeed");
     }
 }

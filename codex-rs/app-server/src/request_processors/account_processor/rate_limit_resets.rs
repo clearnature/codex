@@ -1,7 +1,4 @@
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 const RATE_LIMIT_RESET_REQUEST_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 10);
 const RATE_LIMIT_RESET_DETAILS_REQUEST_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 5);
@@ -50,13 +47,10 @@ impl AccountRequestProcessor {
         params: ConsumeAccountRateLimitResetCreditParams,
     ) -> Result<Option<ClientResponsePayload>, JSONRPCErrorError> {
         if params.idempotency_key.is_empty() {
-            return Err(invalid_request(tr(
-                current(),
-                "idempotencyKey must not be empty",
-            )));
+            return Err(invalid_request("idempotencyKey must not be empty"));
         }
         if params.credit_id.as_deref().is_some_and(str::is_empty) {
-            return Err(invalid_request(tr(current(), "creditId must not be empty")));
+            return Err(invalid_request("creditId must not be empty"));
         }
 
         let client = self.rate_limit_reset_backend_client().await?;
@@ -82,14 +76,8 @@ impl AccountRequestProcessor {
             }
         })
         .await
-        .map_err(|_| internal_error(tr(current(), "rate limit reset consume timed out")))?
-        .map_err(|err| {
-            internal_error(tr_with(
-                current(),
-                "failed to consume rate limit reset: {0}",
-                &[&err.to_string()],
-            ))
-        })?;
+        .map_err(|_| internal_error("rate limit reset consume timed out"))?
+        .map_err(|err| internal_error(format!("failed to consume rate limit reset: {err}")))?;
         let outcome = match response.code {
             BackendConsumeRateLimitResetCreditCode::Reset => {
                 ConsumeAccountRateLimitResetCreditOutcome::Reset
@@ -110,23 +98,23 @@ impl AccountRequestProcessor {
     }
 
     async fn rate_limit_reset_backend_client(&self) -> Result<BackendClient, JSONRPCErrorError> {
-        let Some(auth) = self.auth_manager.auth().await else {
-            return Err(invalid_request(tr(
-                current(),
+        let Some((auth, http_client_factory)) =
+            self.auth_manager.auth_with_http_client_factory().await
+        else {
+            return Err(invalid_request(
                 "codex account authentication required for rate limit reset credits",
-            )));
+            ));
         };
         if !auth.uses_codex_backend() {
-            return Err(invalid_request(tr(
-                current(),
+            return Err(invalid_request(
                 "chatgpt authentication required for rate limit reset credits",
-            )));
+            ));
         }
 
         Ok(BackendClient::from_auth(
             self.config.chatgpt_base_url.clone(),
             &auth,
-            self.config.http_client_factory(),
+            http_client_factory,
         ))
     }
 }

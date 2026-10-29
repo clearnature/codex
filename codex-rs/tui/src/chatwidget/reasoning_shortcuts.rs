@@ -10,19 +10,16 @@
 //! current model preset's default, and it walks only efforts advertised by the
 //! active model. Unsupported efforts anchor to the model default, or the first
 //! advertised effort when the default is absent, before stepping through the
-//! advertised order. Raising never silently crosses into Max or Ultra; those
-//! efforts require the explicit advanced-reasoning picker.
+//! advertised order. Raising into Ultra requires the explicit
+//! advanced-reasoning picker.
 
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::openai_models::ModelPreset;
 use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
 use crossterm::event::KeyEvent;
 
 use super::ChatWidget;
-use super::parent_owned_input_message;
+use super::PARENT_OWNED_INPUT_MESSAGE;
 use crate::app_event::AppEvent;
 use crate::key_hint::KeyBindingListExt;
 
@@ -35,18 +32,10 @@ pub(super) enum ReasoningShortcutDirection {
 
 impl ReasoningShortcutDirection {
     fn bound_message(self, effort: &ReasoningEffortConfig) -> String {
-        let label = ChatWidget::reasoning_effort_sentence_label(current(), effort);
+        let label = ChatWidget::reasoning_effort_sentence_label(effort);
         match self {
-            Self::Lower => tr_with(
-                current(),
-                "Reasoning is already at the lowest level ({0}).",
-                &[label.as_str()],
-            ),
-            Self::Raise => tr_with(
-                current(),
-                "Reasoning is already at the highest level ({0}).",
-                &[label.as_str()],
-            ),
+            Self::Lower => format!("Reasoning is already at the lowest level ({label})."),
+            Self::Raise => format!("Reasoning is already at the highest level ({label})."),
         }
     }
 }
@@ -85,17 +74,13 @@ impl ChatWidget {
         }
 
         if self.blocks_direct_input {
-            self.add_error_message(parent_owned_input_message().to_string());
+            self.add_error_message(PARENT_OWNED_INPUT_MESSAGE.to_string());
             return true;
         }
 
         if !self.is_session_configured() {
             self.add_info_message(
-                tr(
-                    current(),
-                    "Reasoning shortcuts are disabled until startup completes.",
-                )
-                .to_string(),
+                "Reasoning shortcuts are disabled until startup completes.".to_string(),
                 /*hint*/ None,
             );
             return true;
@@ -104,11 +89,7 @@ impl ChatWidget {
         let current_model = self.current_model().to_string();
         let Some(preset) = self.current_model_preset() else {
             self.add_info_message(
-                tr_with(
-                    current(),
-                    "Reasoning shortcuts are unavailable for {0}.",
-                    &[&current_model],
-                ),
+                format!("Reasoning shortcuts are unavailable for {current_model}."),
                 /*hint*/ None,
             );
             return true;
@@ -136,37 +117,17 @@ impl ChatWidget {
         };
 
         if direction == ReasoningShortcutDirection::Raise
-            && Self::is_advanced_reasoning_effort(&next_effort)
+            && next_effort == ReasoningEffortConfig::Ultra
         {
-            let advanced_efforts: Vec<ReasoningEffortConfig> = choices
-                .iter()
-                .filter(|effort| Self::is_advanced_reasoning_effort(effort))
-                .cloned()
-                .collect();
-            let advanced_label = advanced_efforts
-                .iter()
-                .map(|effort| Self::reasoning_effort_label(current(), effort))
-                .collect::<Vec<_>>()
-                .join(tr(current(), " and "));
             let model_path = if current_model.starts_with("codex-auto-") {
                 current_model
             } else {
-                tr_with(current(), "All models → {0}", &[&current_model])
+                format!("All models → {current_model}")
             };
-            let message = if advanced_efforts.len() > 1 {
-                tr_with(
-                    current(),
-                    "{0} are available under /model → {1} → More reasoning…",
-                    &[&advanced_label, &model_path],
-                )
-            } else {
-                tr_with(
-                    current(),
-                    "{0} is available under /model → {1} → More reasoning…",
-                    &[&advanced_label, &model_path],
-                )
-            };
-            self.add_info_message(message, /*hint*/ None);
+            self.add_info_message(
+                format!("Ultra is available under /model → {model_path} → More reasoning…"),
+                /*hint*/ None,
+            );
             return true;
         }
 

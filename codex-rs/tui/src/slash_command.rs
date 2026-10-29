@@ -15,14 +15,14 @@ pub enum SlashCommand {
     // DO NOT ALPHA-SORT! Enum order is presentation order in the popup, so
     // more frequently used commands should be listed first.
     Model,
+    Presets,
+    Daybreak,
     Ide,
     Permissions,
     Keymap,
     Vim,
     #[strum(serialize = "setup-default-sandbox")]
     ElevateSandbox,
-    #[strum(serialize = "sandbox-add-read-dir")]
-    SandboxReadRoot,
     Experimental,
     #[strum(to_string = "approve")]
     AutoReview,
@@ -41,8 +41,10 @@ pub enum SlashCommand {
     App,
     Init,
     Compact,
+    Config,
     Recap,
     Plan,
+    Voice,
     Goal,
     Agents,
     Side,
@@ -50,9 +52,12 @@ pub enum SlashCommand {
     Copy,
     Export,
     Raw,
+    Tui,
     Diff,
     Mention,
     Status,
+    Daemon,
+    Warnings,
     Cd,
     #[strum(to_string = "pwd", serialize = "cwd")]
     Pwd,
@@ -77,7 +82,6 @@ pub enum SlashCommand {
     #[strum(to_string = "stop", serialize = "clean")]
     Stop,
     Clear,
-    Personality,
     TestApproval,
     #[strum(serialize = "subagents")]
     MultiAgents,
@@ -92,111 +96,74 @@ impl SlashCommand {
     /// User-visible description shown in the popup.
     pub fn description(self) -> &'static str {
         match self {
-            SlashCommand::Feedback => tr(current(), "send logs to maintainers"),
-            SlashCommand::New => tr(current(), "start a new chat during a conversation"),
-            SlashCommand::Init => tr(
-                current(),
-                "create an AGENTS.md file with instructions for Codex",
-            ),
-            SlashCommand::Compact => tr(
-                current(),
-                "summarize conversation to prevent hitting the context limit",
-            ),
-            SlashCommand::Recap => tr(current(), "summarize the current conversation now"),
-            SlashCommand::Review => tr(current(), "review my current changes and find issues"),
-            SlashCommand::Rename => tr(current(), "rename the current thread"),
-            SlashCommand::Resume => tr(current(), "resume a saved chat"),
-            SlashCommand::Archive => tr(current(), "archive this session and exit"),
-            SlashCommand::Delete => tr(current(), "permanently delete this session and exit"),
-            SlashCommand::Clear => tr(current(), "clear the terminal and start a new chat"),
-            SlashCommand::Fork => tr(current(), "fork the current chat"),
-            SlashCommand::Worktree => tr(
-                current(),
-                "start or continue a conversation in a new worktree",
-            ),
-            SlashCommand::App => tr(current(), "continue this session in the Desktop app"),
-            SlashCommand::Quit | SlashCommand::Exit => tr(current(), "exit Codex"),
-            SlashCommand::Copy => tr(current(), "copy the last response or part of it"),
-            SlashCommand::Export => tr(current(), "export the conversation as markdown"),
-            SlashCommand::Raw => tr(
-                current(),
-                "toggle raw scrollback mode for copy-friendly terminal selection",
-            ),
-            SlashCommand::Diff => tr(current(), "show git diff (including untracked files)"),
-            SlashCommand::Mention => tr(current(), "mention a file"),
-            SlashCommand::Skills => tr(
-                current(),
-                "use skills to improve how Codex performs specific tasks",
-            ),
-            SlashCommand::Import => tr(
-                current(),
-                "import setup, this project, and recent chats from Claude Code",
-            ),
-            SlashCommand::Hooks => tr(current(), "view and manage lifecycle hooks"),
-            SlashCommand::Status => tr(
-                current(),
-                "show current session configuration and token usage",
-            ),
-            SlashCommand::Cd => tr(current(), "change the current working directory"),
-            SlashCommand::Pwd => tr(current(), "show the current working directory"),
-            SlashCommand::Usage => tr(current(), "view account usage or use a usage limit reset"),
-            SlashCommand::DebugConfig => tr(
-                current(),
-                "show config layers and requirement sources for debugging",
-            ),
-            SlashCommand::Title => tr(
-                current(),
-                "configure which items appear in the terminal title",
-            ),
-            SlashCommand::Statusline => {
-                tr(current(), "configure which items appear in the status line")
-            }
+            SlashCommand::Config => "configure Codex preferences",
+            SlashCommand::Feedback => "send logs to maintainers",
+            SlashCommand::New => "start a new chat during a conversation",
+            SlashCommand::Init => "create an AGENTS.md file with instructions for Codex",
+            SlashCommand::Compact => "summarize conversation to prevent hitting the context limit",
+            SlashCommand::Recap => "summarize the current conversation now",
+            SlashCommand::Review => "review my current changes and find issues",
+            SlashCommand::Rename => "rename the current thread",
+            SlashCommand::Resume => "resume a saved chat",
+            SlashCommand::Archive => "archive this session",
+            SlashCommand::Delete => "permanently delete this session",
+            SlashCommand::Clear => "clear the terminal and start a new chat",
+            SlashCommand::Fork => "fork the current chat",
+            SlashCommand::Worktree => "start or continue a conversation in a new worktree",
+            SlashCommand::App => "continue this session in the Desktop app",
+            SlashCommand::Quit | SlashCommand::Exit => "exit Codex",
+            SlashCommand::Copy => "copy the last response or part of it",
+            SlashCommand::Export => "export the conversation as markdown",
+            SlashCommand::Raw => "toggle raw scrollback mode for copy-friendly terminal selection",
+            SlashCommand::Tui => "choose the TUI mode for the next launch",
+            SlashCommand::Diff => "show git diff (including untracked files)",
+            SlashCommand::Mention => "mention a file",
+            SlashCommand::Skills => "use skills to improve how Codex performs specific tasks",
+            SlashCommand::Import => "import setup, this project, and recent chats from Claude Code",
+            SlashCommand::Hooks => "view and manage lifecycle hooks",
+            SlashCommand::Daemon => "Manage the local background server",
+            SlashCommand::Warnings => "view retained warnings and diagnostic details",
+            SlashCommand::Status => "show current session configuration and token usage",
+            SlashCommand::Cd => "change the current working directory",
+            SlashCommand::Pwd => "show the current working directory",
+            SlashCommand::Usage => "view account usage or use a usage limit reset",
+            SlashCommand::DebugConfig => "show config layers and requirement sources for debugging",
+            SlashCommand::Title => "configure which items appear in the terminal title",
+            SlashCommand::Statusline => "configure which items appear in the status line",
             SlashCommand::Theme => tr(current(), "choose a syntax highlighting theme"),
             SlashCommand::Language => tr(current(), "switch the interface language"),
-            SlashCommand::Pets => tr(current(), "choose or hide the terminal pet"),
-            SlashCommand::Ps => tr(current(), "list background terminals"),
-            SlashCommand::Stop => tr(current(), "stop all background terminals"),
-            SlashCommand::MemoryDrop => tr(current(), "DO NOT USE"),
-            SlashCommand::MemoryUpdate => tr(current(), "DO NOT USE"),
-            SlashCommand::Model => tr(current(), "choose what model and reasoning effort to use"),
-            SlashCommand::Ide => tr(
-                current(),
-                "include current selection, open files, and other context from your IDE",
-            ),
-            SlashCommand::Personality => tr(current(), "choose a communication style for Codex"),
-            SlashCommand::Plan => tr(current(), "switch to Plan mode"),
-            SlashCommand::Goal => tr(current(), "set or view the goal for a long-running task"),
-            SlashCommand::Agents => tr(
-                current(),
-                "view and switch between all active agent sessions",
-            ),
-            SlashCommand::MultiAgents => tr(current(), "switch between this session's subagents"),
-            SlashCommand::Side | SlashCommand::Btw => {
-                tr(current(), "start a side conversation in an ephemeral fork")
+            SlashCommand::Pets => "choose or hide the terminal pet",
+            SlashCommand::Ps => "list background terminals",
+            SlashCommand::Stop => "stop all background terminals",
+            SlashCommand::MemoryDrop => "DO NOT USE",
+            SlashCommand::MemoryUpdate => "DO NOT USE",
+            SlashCommand::Model => "choose what model and reasoning effort to use",
+            SlashCommand::Presets => "run or save reusable prompts and slash commands",
+            SlashCommand::Daybreak => "turn Daybreak on or off",
+            SlashCommand::Ide => {
+                "include current selection, open files, and other context from your IDE"
             }
-            SlashCommand::Permissions => tr(current(), "choose what Codex is allowed to do"),
-            SlashCommand::Keymap => tr(current(), "remap TUI shortcuts"),
-            SlashCommand::Vim => tr(current(), "toggle Vim mode for the composer"),
-            SlashCommand::ElevateSandbox => tr(current(), "set up elevated agent sandbox"),
-            SlashCommand::SandboxReadRoot => tr(
-                current(),
-                "let sandbox read a directory: /sandbox-add-read-dir <absolute_path>",
-            ),
-            SlashCommand::Experimental => tr(current(), "toggle experimental features"),
-            SlashCommand::AutoReview => tr(
-                current(),
-                "approve one retry of a recent auto-review denial",
-            ),
-            SlashCommand::Memories => tr(current(), "configure memory use and generation"),
-            SlashCommand::Mcp => tr(
-                current(),
-                "list configured MCP tools; use /mcp verbose for details",
-            ),
-            SlashCommand::Apps => tr(current(), "manage apps"),
-            SlashCommand::Plugins => tr(current(), "browse plugins"),
-            SlashCommand::Logout => tr(current(), "log out of Codex"),
-            SlashCommand::Rollout => tr(current(), "print the rollout file path"),
-            SlashCommand::TestApproval => tr(current(), "test approval request"),
+            SlashCommand::Plan => "switch to Plan mode",
+            SlashCommand::Voice => "start or stop voice; use /voice settings to choose a voice",
+            SlashCommand::Goal => "set or view the goal for a long-running task",
+            SlashCommand::Agents => "open the agent command center",
+            SlashCommand::MultiAgents => "switch between this session's subagents",
+            SlashCommand::Side | SlashCommand::Btw => {
+                "start a side conversation in an ephemeral fork"
+            }
+            SlashCommand::Permissions => "choose what Codex is allowed to do",
+            SlashCommand::Keymap => "remap TUI shortcuts",
+            SlashCommand::Vim => "toggle Vim mode for the composer",
+            SlashCommand::ElevateSandbox => "set up elevated agent sandbox",
+            SlashCommand::Experimental => "toggle experimental features",
+            SlashCommand::AutoReview => "approve one retry of a recent auto-review denial",
+            SlashCommand::Memories => "configure memory use and generation",
+            SlashCommand::Mcp => "list MCP tools; use /mcp verbose or /mcp login <name>",
+            SlashCommand::Apps => "manage apps",
+            SlashCommand::Plugins => "browse plugins",
+            SlashCommand::Logout => "log out of Codex",
+            SlashCommand::Rollout => "print the rollout file path",
+            SlashCommand::TestApproval => "test approval request",
         }
     }
 
@@ -211,12 +178,17 @@ impl SlashCommand {
         matches!(
             self,
             SlashCommand::Review
+                | SlashCommand::Model
+                | SlashCommand::Permissions
+                | SlashCommand::Title
+                | SlashCommand::Statusline
                 | SlashCommand::Rename
                 | SlashCommand::New
                 | SlashCommand::Clear
                 | SlashCommand::Fork
                 | SlashCommand::Plan
                 | SlashCommand::Goal
+                | SlashCommand::Voice
                 | SlashCommand::Ide
                 | SlashCommand::Keymap
                 | SlashCommand::Mcp
@@ -230,7 +202,6 @@ impl SlashCommand {
                 | SlashCommand::Side
                 | SlashCommand::Btw
                 | SlashCommand::Resume
-                | SlashCommand::SandboxReadRoot
         )
     }
 
@@ -245,9 +216,38 @@ impl SlashCommand {
                 | SlashCommand::Diff
                 | SlashCommand::Mention
                 | SlashCommand::Status
+                | SlashCommand::Daemon
+                | SlashCommand::Warnings
                 | SlashCommand::Pwd
                 | SlashCommand::Usage
                 | SlashCommand::Ide
+        )
+    }
+
+    /// Whether dispatch needs thread state to validate this command before consuming its draft.
+    /// The composer must defer busy-state rejection and draft clearing for these commands.
+    pub(crate) fn requires_dispatch_validation(self) -> bool {
+        matches!(self, SlashCommand::Review)
+    }
+
+    /// Commands that do not require a writable current thread. The server must still be connected.
+    pub(crate) fn available_when_thread_unavailable(self) -> bool {
+        matches!(
+            self,
+            SlashCommand::New
+                | SlashCommand::Clear
+                | SlashCommand::Resume
+                | SlashCommand::Agents
+                | SlashCommand::MultiAgents
+                | SlashCommand::Quit
+                | SlashCommand::Exit
+                | SlashCommand::Status
+                | SlashCommand::Warnings
+                | SlashCommand::DebugConfig
+                | SlashCommand::Pwd
+                | SlashCommand::Rollout
+                | SlashCommand::Copy
+                | SlashCommand::Raw
         )
     }
 
@@ -255,7 +255,6 @@ impl SlashCommand {
     pub fn available_during_task(self) -> bool {
         match self {
             SlashCommand::New
-            | SlashCommand::Archive
             | SlashCommand::Delete
             | SlashCommand::Fork
             | SlashCommand::Worktree
@@ -264,9 +263,9 @@ impl SlashCommand {
             | SlashCommand::Recap
             | SlashCommand::Export
             | SlashCommand::Keymap
+            | SlashCommand::Tui
             | SlashCommand::Vim
             | SlashCommand::ElevateSandbox
-            | SlashCommand::SandboxReadRoot
             | SlashCommand::Experimental
             | SlashCommand::Memories
             | SlashCommand::Import
@@ -278,9 +277,11 @@ impl SlashCommand {
             | SlashCommand::MemoryDrop
             | SlashCommand::MemoryUpdate => false,
             SlashCommand::Diff
+            | SlashCommand::Archive
             | SlashCommand::Resume
             | SlashCommand::Model
-            | SlashCommand::Personality
+            | SlashCommand::Presets
+            | SlashCommand::Daybreak
             | SlashCommand::Permissions
             | SlashCommand::Copy
             | SlashCommand::Raw
@@ -289,6 +290,8 @@ impl SlashCommand {
             | SlashCommand::Skills
             | SlashCommand::Hooks
             | SlashCommand::Status
+            | SlashCommand::Daemon
+            | SlashCommand::Warnings
             | SlashCommand::Pwd
             | SlashCommand::Usage
             | SlashCommand::DebugConfig
@@ -296,6 +299,7 @@ impl SlashCommand {
             | SlashCommand::Stop
             | SlashCommand::App
             | SlashCommand::Goal
+            | SlashCommand::Voice
             | SlashCommand::Mcp
             | SlashCommand::Apps
             | SlashCommand::Plugins
@@ -311,15 +315,18 @@ impl SlashCommand {
             SlashCommand::Rollout => true,
             SlashCommand::TestApproval => true,
             SlashCommand::Agents | SlashCommand::MultiAgents => true,
-            SlashCommand::Theme | SlashCommand::Pets | SlashCommand::Language => false,
+            SlashCommand::Config
+            | SlashCommand::Theme
+            | SlashCommand::Pets
+            | SlashCommand::Language => false,
         }
     }
 
     fn is_visible(self) -> bool {
         match self {
-            SlashCommand::SandboxReadRoot => cfg!(target_os = "windows"),
             SlashCommand::Copy => !cfg!(target_os = "android"),
             SlashCommand::App => cfg!(any(target_os = "macos", target_os = "windows")),
+            SlashCommand::Voice => true,
             SlashCommand::Rollout | SlashCommand::TestApproval => cfg!(debug_assertions),
             _ => true,
         }

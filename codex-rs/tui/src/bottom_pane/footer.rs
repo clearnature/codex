@@ -5,6 +5,9 @@
 //! `ChatComposer` (which selects a `FooterMode`) and by higher-level state machines like
 //! `ChatWidget` (which decides when quit/interrupt is allowed).
 //!
+//! The shortcut reference lives in `shortcut_overlay`; its responsive layout is shared by
+//! footer measurement and rendering so resizing does not clip a differently measured layout.
+//!
 //! Some footer content is time-based rather than event-based, such as the "press again to quit"
 //! hint. The owning widgets schedule redraws so time-based hints can expire even if the UI is
 //! otherwise idle.
@@ -41,25 +44,23 @@
 //! In short: `single_line_footer_layout` chooses *what* best fits, and the two
 //! render helpers choose whether to draw the chosen line or the default
 //! `FooterProps` mapping.
+use super::shortcut_overlay;
 use crate::key_hint;
 use crate::key_hint::KeyBinding;
 use crate::key_hint::ShortcutHint;
 use crate::render::line_utils::prefix_lines;
 use crate::status::format_tokens_compact;
+use crate::style::secondary_text_style;
 use crate::ui_consts::FOOTER_INDENT_COLS;
-use codex_i18n::Lang;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
+use ratatui::style::Styled;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Widget;
-use std::sync::OnceLock;
 
 /// The rendering inputs for the footer area under the composer.
 ///
@@ -72,7 +73,6 @@ use std::sync::OnceLock;
 pub(crate) struct FooterProps {
     pub(crate) mode: FooterMode,
     pub(crate) esc_backtrack_hint: bool,
-    pub(crate) use_shift_enter_hint: bool,
     pub(crate) is_task_running: bool,
     pub(crate) queue_submissions: bool,
     pub(crate) collaboration_modes_enabled: bool,
@@ -107,11 +107,6 @@ pub(crate) enum GoalStatusIndicator {
     Complete { usage: Option<String> },
 }
 
-// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`:
-// the text has to pass through `tr`, which a `const` cannot call.
-fn mode_cycle_hint() -> &'static str {
-    tr(current(), "shift+tab to cycle")
-}
 const FOOTER_CONTEXT_GAP_COLS: u16 = 1;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -123,9 +118,12 @@ pub(crate) struct FooterKeyHints {
     pub(crate) external_editor: Option<ShortcutHint>,
     pub(crate) edit_previous: Option<ShortcutHint>,
     pub(crate) show_transcript: Option<ShortcutHint>,
+    pub(crate) find_transcript: Option<ShortcutHint>,
+    pub(crate) focus_activity: Option<ShortcutHint>,
     pub(crate) history_search: Option<ShortcutHint>,
     pub(crate) reasoning_down: Option<ShortcutHint>,
     pub(crate) reasoning_up: Option<ShortcutHint>,
+    pub(crate) toggle_voice: Option<ShortcutHint>,
 }
 
 impl FooterKeyHints {
@@ -139,9 +137,12 @@ impl FooterKeyHints {
             external_editor: Some(key_hint::ctrl(KeyCode::Char('g')).into()),
             edit_previous: Some(key_hint::plain(KeyCode::Esc).into()),
             show_transcript: Some(key_hint::ctrl(KeyCode::Char('t')).into()),
+            find_transcript: Some(key_hint::plain(KeyCode::F(3)).into()),
+            focus_activity: Some(key_hint::plain(KeyCode::F(4)).into()),
             history_search: Some(key_hint::ctrl(KeyCode::Char('r')).into()),
             reasoning_down: Some(key_hint::alt(KeyCode::Char(',')).into()),
             reasoning_up: Some(key_hint::alt(KeyCode::Char('.')).into()),
+            toggle_voice: Some(key_hint::plain(KeyCode::F(8)).into()),
         }
     }
 }
@@ -149,20 +150,26 @@ impl FooterKeyHints {
 impl CollaborationModeIndicator {
     fn label(self, show_cycle_hint: bool) -> String {
         let suffix = if show_cycle_hint {
-            format!(" ({})", mode_cycle_hint())
+            format!(
+                " ({} to cycle)",
+                key_hint::shift(KeyCode::Tab).display_label()
+            )
         } else {
             String::new()
         };
         match self {
-            CollaborationModeIndicator::Plan => tr_with(current(), "Plan mode{0}", &[&suffix]),
+            CollaborationModeIndicator::Plan => format!("Plan mode{suffix}"),
         }
     }
 
-    fn styled_span(self, show_cycle_hint: bool) -> Span<'static> {
-        let label = self.label(show_cycle_hint);
-        match self {
-            CollaborationModeIndicator::Plan => Span::from(label).magenta(),
+    fn styled_line(self, show_cycle_hint: bool) -> Line<'static> {
+        let mut line = Line::from(self.label(/*show_cycle_hint*/ false).magenta());
+        if show_cycle_hint {
+            line.push_span(" (".set_style(secondary_text_style()));
+            line.extend(key_hint::shift(KeyCode::Tab).spans());
+            line.push_span(" to cycle)".set_style(secondary_text_style()));
         }
+        line
     }
 }
 
@@ -229,7 +236,11 @@ pub(crate) fn reset_mode_after_activity(current: FooterMode) -> FooterMode {
     }
 }
 
-pub(crate) fn footer_height(props: &FooterProps) -> u16 {
+pub(crate) fn footer_height(props: &FooterProps, width: u16) -> u16 {
+    if props.mode == FooterMode::ShortcutOverlay {
+        return shortcut_overlay::lines(props, width.saturating_sub(FOOTER_INDENT_COLS as u16)).len()
+            as u16;
+    }
     let show_shortcuts_hint = match props.mode {
         FooterMode::ComposerEmpty => true,
         FooterMode::ComposerHasDraft => false,
@@ -282,6 +293,10 @@ pub(crate) fn render_footer_from_props(
     show_shortcuts_hint: bool,
     show_queue_hint: bool,
 ) {
+    if props.mode == FooterMode::ShortcutOverlay {
+        shortcut_overlay::render(props, inset_footer_hint_area(area), buf);
+        return;
+    }
     Paragraph::new(prefix_lines(
         footer_from_props_lines(
             props,
@@ -320,58 +335,45 @@ fn left_side_line(
     state: LeftSideState,
     key_hints: FooterKeyHints,
 ) -> Line<'static> {
-    // The language is resolved once per invocation from `--lang`, `config.toml`
-    // and the environment, then published with `codex_i18n::set_current`; see
-    // H4 in `docs/plan/i18n-verification.md`. Reading it back here is the whole
-    // of this function's coupling to that global -- the rendering itself lives
-    // in `left_side_line_in`, which takes the language as an argument so it can
-    // be tested without publishing a process-wide value (which would race the
-    // snapshot tests sharing this binary).
-    left_side_line_in(current(), collaboration_mode_indicator, state, key_hints)
-}
-
-/// Renders the left-hand hint line in the given language.
-fn left_side_line_in(
-    lang: Lang,
-    collaboration_mode_indicator: Option<CollaborationModeIndicator>,
-    state: LeftSideState,
-    key_hints: FooterKeyHints,
-) -> Line<'static> {
     let mut line = Line::from("");
     match state.hint {
         SummaryHintKind::None => {}
         SummaryHintKind::Shortcuts => {
             if let Some(key) = key_hints.agents {
-                line.push_span(key);
-                line.push_span(tr(lang, " for agents").dim());
+                line.extend(key.spans());
+                line.push_span(" for agents".set_style(secondary_text_style()));
                 if key_hints.toggle_shortcuts.is_some() {
-                    line.push_span(" · ".dim());
+                    line.push_span(" · ".set_style(secondary_text_style()));
                 }
             }
             if let Some(key) = key_hints.toggle_shortcuts {
-                line.push_span(key);
-                line.push_span(tr(lang, " for shortcuts").dim());
+                line.extend(key.spans());
+                line.push_span(" for shortcuts".set_style(secondary_text_style()));
             }
         }
         SummaryHintKind::QueueMessage => {
             if let Some(key) = key_hints.queue {
-                line.push_span(key);
-                line.push_span(tr(lang, " to queue message").dim());
+                line.extend(key.spans());
+                line.push_span(" to queue message".set_style(secondary_text_style()));
             }
         }
         SummaryHintKind::QueueShort => {
             if let Some(key) = key_hints.queue {
-                line.push_span(key);
-                line.push_span(tr(lang, " to queue").dim());
+                line.extend(key.spans());
+                line.push_span(" to queue".set_style(secondary_text_style()));
             }
         }
     };
 
     if let Some(collaboration_mode_indicator) = collaboration_mode_indicator {
         if !matches!(state.hint, SummaryHintKind::None) {
-            line.push_span(" · ".dim());
+            line.push_span(" · ".set_style(secondary_text_style()));
         }
-        line.push_span(collaboration_mode_indicator.styled_span(state.show_cycle_hint));
+        line.extend(
+            collaboration_mode_indicator
+                .styled_line(state.show_cycle_hint)
+                .spans,
+        );
     }
 
     line
@@ -573,7 +575,7 @@ pub(crate) fn mode_indicator_line(
     indicator: Option<CollaborationModeIndicator>,
     show_cycle_hint: bool,
 ) -> Option<Line<'static>> {
-    indicator.map(|indicator| Line::from(vec![indicator.styled_span(show_cycle_hint)]))
+    indicator.map(|indicator| indicator.styled_line(show_cycle_hint))
 }
 
 pub(crate) fn goal_status_indicator_line(
@@ -583,28 +585,26 @@ pub(crate) fn goal_status_indicator_line(
     let label = match indicator {
         GoalStatusIndicator::Active { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Pursuing goal ({0})", &[usage])
+                format!("Pursuing goal ({usage})")
             } else {
-                tr(current(), "Pursuing goal").to_string()
+                "Pursuing goal".to_string()
             }
         }
-        GoalStatusIndicator::Paused => tr(current(), "Goal paused (/goal resume)").to_string(),
-        GoalStatusIndicator::Blocked => tr(current(), "Goal stalled (/goal resume)").to_string(),
-        GoalStatusIndicator::UsageLimited => {
-            tr(current(), "Goal hit usage limits (/goal resume)").to_string()
-        }
+        GoalStatusIndicator::Paused => "Goal paused (/goal resume)".to_string(),
+        GoalStatusIndicator::Blocked => "Goal stalled (/goal resume)".to_string(),
+        GoalStatusIndicator::UsageLimited => "Goal hit usage limits (/goal resume)".to_string(),
         GoalStatusIndicator::BudgetLimited { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Goal unmet ({0})", &[usage])
+                format!("Goal unmet ({usage})")
             } else {
-                tr(current(), "Goal abandoned").to_string()
+                "Goal abandoned".to_string()
             }
         }
         GoalStatusIndicator::Complete { usage } => {
             if let Some(usage) = usage {
-                tr_with(current(), "Goal achieved ({0})", &[usage])
+                format!("Goal achieved ({usage})")
             } else {
-                tr(current(), "Goal achieved").to_string()
+                "Goal achieved".to_string()
             }
         }
     };
@@ -620,8 +620,7 @@ pub(crate) fn status_line_right_indicator_line(
 ) -> Option<Line<'static>> {
     let primary_indicator = mode_indicator_line(collaboration_mode_indicator, show_cycle_hint)
         .or_else(|| goal_status_indicator_line(goal_status_indicator));
-    let ide_context_indicator =
-        ide_context_active.then(|| Line::from(vec![tr(current(), "IDE context").cyan()]));
+    let ide_context_indicator = ide_context_active.then(|| Line::from(vec!["IDE context".cyan()]));
     let mut line: Option<Line<'static>> = None;
 
     for indicator in [primary_indicator, ide_context_indicator]
@@ -629,7 +628,7 @@ pub(crate) fn status_line_right_indicator_line(
         .flatten()
     {
         if let Some(line) = line.as_mut() {
-            line.push_span(" · ".dim());
+            line.push_span(" · ".set_style(secondary_text_style()));
             for span in indicator.spans {
                 line.push_span(span);
             }
@@ -642,11 +641,28 @@ pub(crate) fn status_line_right_indicator_line(
 }
 
 pub(crate) fn side_conversation_context_line(label: &str) -> Line<'static> {
-    if let Some(rest) = label.strip_prefix("Side ") {
-        Line::from(vec!["Side".magenta().bold(), format!(" {rest}").magenta()])
+    let mut line = Line::default();
+    let rest = if let Some(rest) = label.strip_prefix("Side ") {
+        line.extend(["Side".magenta().bold(), " ".into()]);
+        rest
     } else {
-        Line::from(vec![Span::from(label.to_string()).magenta()])
+        label
+    };
+    for (index, part) in rest.split(" · ").enumerate() {
+        if index > 0 {
+            line.push_span(" · ".set_style(secondary_text_style()));
+        }
+        if let Some((keys, action)) = [" to switch", " to close", " for side"]
+            .into_iter()
+            .find_map(|action| part.strip_suffix(action).map(|keys| (keys, action)))
+        {
+            line.extend(key_hint::key_label_spans(keys));
+            line.push_span(action.set_style(secondary_text_style()));
+        } else {
+            line.push_span(part.to_owned().magenta());
+        }
     }
+    line
 }
 
 fn right_aligned_x(area: Rect, content_width: u16) -> Option<u16> {
@@ -765,7 +781,9 @@ fn footer_from_props_lines(
         FooterMode::QuitShortcutReminder => {
             vec![quit_shortcut_reminder_line(props.quit_shortcut_key)]
         }
-        FooterMode::HistorySearch => vec![Line::from(tr(current(), "reverse-i-search: ")).dim()],
+        FooterMode::HistorySearch => {
+            vec![Line::from("reverse-i-search: ").set_style(secondary_text_style())]
+        }
         FooterMode::ComposerEmpty => {
             let state = LeftSideState {
                 hint: if show_shortcuts_hint {
@@ -781,18 +799,7 @@ fn footer_from_props_lines(
                 key_hints,
             )]
         }
-        FooterMode::ShortcutOverlay => {
-            let state = ShortcutsState {
-                use_shift_enter_hint: props.use_shift_enter_hint,
-                esc_backtrack_hint: props.esc_backtrack_hint,
-                is_task_running: props.is_task_running,
-                queue_submissions: props.queue_submissions,
-                is_wsl: props.is_wsl,
-                collaboration_modes_enabled: props.collaboration_modes_enabled,
-                key_hints,
-            };
-            shortcut_overlay_lines(state)
-        }
+        FooterMode::ShortcutOverlay => shortcut_overlay::lines(props, u16::MAX),
         FooterMode::EscHint => vec![esc_hint_line(props.esc_backtrack_hint)],
         FooterMode::ComposerHasDraft => {
             let state = LeftSideState {
@@ -832,10 +839,12 @@ pub(crate) fn passive_footer_status_line(props: &FooterProps) -> Option<Line<'st
 
     if let Some(active_agent_label) = props.active_agent_label.as_ref() {
         if let Some(existing) = line.as_mut() {
-            existing.spans.push(" · ".dim());
-            existing.spans.push(active_agent_label.clone().dim());
+            existing.spans.push(" · ".set_style(secondary_text_style()));
+            existing
+                .spans
+                .push(active_agent_label.clone().set_style(secondary_text_style()));
         } else {
-            line = Some(Line::from(active_agent_label.clone()).dim());
+            line = Some(Line::from(active_agent_label.clone()).set_style(secondary_text_style()));
         }
     }
 
@@ -843,11 +852,9 @@ pub(crate) fn passive_footer_status_line(props: &FooterProps) -> Option<Line<'st
         && let Some(key) = props.key_hints.agents
         && let Some(line) = line.as_mut()
     {
-        line.extend(vec![
-            " · ".dim(),
-            key.into(),
-            tr(current(), " for agents").dim(),
-        ]);
+        line.push_span(" · ".set_style(secondary_text_style()));
+        line.extend(key.spans());
+        line.push_span(" for agents".set_style(secondary_text_style()));
     }
 
     line
@@ -906,456 +913,62 @@ pub(crate) fn footer_hint_items_width(items: &[(String, String)]) -> u16 {
 pub(crate) fn footer_hint_items_line(items: &[(String, String)]) -> Line<'static> {
     let mut spans = Vec::with_capacity(items.len() * 4);
     for (idx, (key, label)) in items.iter().enumerate() {
-        spans.push(" ".into());
-        spans.push(key.clone().bold());
-        spans.push(format!(" {label}").into());
-        if idx + 1 != items.len() {
-            spans.push("   ".into());
+        if idx > 0 {
+            spans.push(" · ".set_style(secondary_text_style()));
+        }
+        spans.extend(key_hint::key_label_spans(key));
+        if idx == 0
+            && key == "voice"
+            && let Some(label) = label.strip_prefix("● ")
+        {
+            spans.push(" ●".red());
+            spans.push(format!(" {label}").set_style(secondary_text_style()));
+        } else {
+            spans.push(format!(" {label}").set_style(secondary_text_style()));
         }
     }
     Line::from(spans)
 }
 
-#[derive(Clone, Copy, Debug)]
-struct ShortcutsState {
-    use_shift_enter_hint: bool,
-    esc_backtrack_hint: bool,
-    is_task_running: bool,
-    queue_submissions: bool,
-    is_wsl: bool,
-    collaboration_modes_enabled: bool,
-    key_hints: FooterKeyHints,
-}
-
 fn quit_shortcut_reminder_line(key: KeyBinding) -> Line<'static> {
-    Line::from(vec![key.into(), tr(current(), " again to quit").into()]).dim()
+    let mut line = Line::from(key.spans());
+    line.push_span(" again to quit".set_style(secondary_text_style()));
+    line
 }
 
 fn esc_hint_line(esc_backtrack_hint: bool) -> Line<'static> {
     let esc = key_hint::plain(KeyCode::Esc);
     if esc_backtrack_hint {
-        Line::from(vec![
-            esc.into(),
-            tr(current(), " again to edit previous message").into(),
-        ])
-        .dim()
+        let mut line = Line::from(esc.spans());
+        line.push_span(" again to edit previous message".set_style(secondary_text_style()));
+        line
     } else {
-        Line::from(vec![
-            esc.into(),
-            " ".into(),
-            esc.into(),
-            tr(current(), " to edit previous message").into(),
-        ])
-        .dim()
+        let mut line = Line::from(esc.spans());
+        line.push_span(" ".set_style(secondary_text_style()));
+        line.extend(esc.spans());
+        line.push_span(" to edit previous message".set_style(secondary_text_style()));
+        line
     }
-}
-
-fn shortcut_overlay_lines(state: ShortcutsState) -> Vec<Line<'static>> {
-    let mut commands = Line::from("");
-    let mut shell_commands = Line::from("");
-    let mut newline = Line::from("");
-    let mut queue_message_tab = Line::from("");
-    let mut file_paths = Line::from("");
-    let mut paste_image = Line::from("");
-    let mut external_editor = Line::from("");
-    let mut edit_previous = Line::from("");
-    let mut history_search = Line::from("");
-    let mut quit = Line::from("");
-    let mut show_transcript = Line::from("");
-    let mut change_mode = Line::from("");
-    let mut reasoning_down = Line::from("");
-    let mut reasoning_up = Line::from("");
-
-    for descriptor in shortcuts() {
-        if let Some(text) = descriptor.overlay_entry(state) {
-            match descriptor.id {
-                ShortcutId::Commands => commands = text,
-                ShortcutId::ShellCommands => shell_commands = text,
-                ShortcutId::InsertNewline => newline = text,
-                ShortcutId::QueueMessageTab => queue_message_tab = text,
-                ShortcutId::FilePaths => file_paths = text,
-                ShortcutId::PasteImage => paste_image = text,
-                ShortcutId::ExternalEditor => external_editor = text,
-                ShortcutId::EditPrevious => edit_previous = text,
-                ShortcutId::HistorySearch => history_search = text,
-                ShortcutId::Quit => quit = text,
-                ShortcutId::ShowTranscript => show_transcript = text,
-                ShortcutId::ChangeMode => change_mode = text,
-                ShortcutId::ReasoningDown => reasoning_down = text,
-                ShortcutId::ReasoningUp => reasoning_up = text,
-            }
-        }
-    }
-
-    let mut ordered = vec![
-        commands,
-        shell_commands,
-        newline,
-        queue_message_tab,
-        file_paths,
-        paste_image,
-        external_editor,
-        edit_previous,
-        history_search,
-        quit,
-        reasoning_down,
-        reasoning_up,
-    ];
-    if change_mode.width() > 0 {
-        ordered.push(change_mode);
-    }
-    ordered.push(show_transcript);
-    let mut lines = build_columns(ordered);
-    if let Some(key) = state.key_hints.agents {
-        lines.push(Line::from(vec![
-            key.into(),
-            tr(current(), " for agents (empty prompt)").into(),
-        ]));
-    }
-    lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        tr(current(), "customize shortcuts with ").into(),
-        "/keymap".cyan(),
-    ]));
-    lines
-}
-
-fn build_columns(entries: Vec<Line<'static>>) -> Vec<Line<'static>> {
-    if entries.is_empty() {
-        return Vec::new();
-    }
-
-    const COLUMNS: usize = 2;
-    const COLUMN_PADDING: [usize; COLUMNS] = [4, 4];
-    const COLUMN_GAP: usize = 4;
-
-    let rows = entries.len().div_ceil(COLUMNS);
-    let target_len = rows * COLUMNS;
-    let mut entries = entries;
-    if entries.len() < target_len {
-        entries.extend(std::iter::repeat_n(
-            Line::from(""),
-            target_len - entries.len(),
-        ));
-    }
-
-    let mut column_widths = [0usize; COLUMNS];
-
-    for (idx, entry) in entries.iter().enumerate() {
-        let column = idx % COLUMNS;
-        column_widths[column] = column_widths[column].max(entry.width());
-    }
-
-    for (idx, width) in column_widths.iter_mut().enumerate() {
-        *width += COLUMN_PADDING[idx];
-    }
-
-    entries
-        .chunks(COLUMNS)
-        .map(|chunk| {
-            let mut line = Line::from("");
-            for (col, entry) in chunk.iter().enumerate() {
-                line.extend(entry.spans.clone());
-                if col < COLUMNS - 1 {
-                    let target_width = column_widths[col];
-                    let padding = target_width.saturating_sub(entry.width()) + COLUMN_GAP;
-                    line.push_span(Span::from(" ".repeat(padding)));
-                }
-            }
-            line.dim()
-        })
-        .collect()
 }
 
 pub(crate) fn context_window_line(percent: Option<i64>, used_tokens: Option<i64>) -> Line<'static> {
     if let Some(percent) = percent {
-        let percent = percent.clamp(0, 100).to_string();
-        // A template rather than a fixed string: the value is substituted
-        // *after* the lookup, so a translation may put it wherever its grammar
-        // wants it as long as it keeps `{0}`.
+        let percent = percent.clamp(0, 100);
         return Line::from(vec![
-            Span::from(tr_with(current(), "{0}% context left", &[percent.as_str()])).dim(),
+            Span::from(format!("{percent}% context left")).set_style(secondary_text_style()),
         ]);
     }
 
     if let Some(tokens) = used_tokens {
         let used_fmt = format_tokens_compact(tokens);
         return Line::from(vec![
-            Span::from(tr_with(current(), "{0} used", &[used_fmt.as_str()])).dim(),
+            Span::from(format!("{used_fmt} used")).set_style(secondary_text_style()),
         ]);
     }
 
-    Line::from(vec![tr(current(), "100% context left").dim()])
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ShortcutId {
-    Commands,
-    ShellCommands,
-    InsertNewline,
-    QueueMessageTab,
-    FilePaths,
-    PasteImage,
-    ExternalEditor,
-    EditPrevious,
-    HistorySearch,
-    Quit,
-    ShowTranscript,
-    ChangeMode,
-    ReasoningDown,
-    ReasoningUp,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct ShortcutBinding {
-    key: KeyBinding,
-    condition: DisplayCondition,
-}
-
-impl ShortcutBinding {
-    fn matches(&self, state: ShortcutsState) -> bool {
-        self.condition.matches(state)
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum DisplayCondition {
-    Always,
-    WhenShiftEnterHint,
-    WhenNotShiftEnterHint,
-    WhenUnderWSL,
-    WhenCollaborationModesEnabled,
-}
-
-impl DisplayCondition {
-    fn matches(self, state: ShortcutsState) -> bool {
-        match self {
-            DisplayCondition::Always => true,
-            DisplayCondition::WhenShiftEnterHint => state.use_shift_enter_hint,
-            DisplayCondition::WhenNotShiftEnterHint => !state.use_shift_enter_hint,
-            DisplayCondition::WhenUnderWSL => state.is_wsl,
-            DisplayCondition::WhenCollaborationModesEnabled => state.collaboration_modes_enabled,
-        }
-    }
-}
-
-struct ShortcutDescriptor {
-    id: ShortcutId,
-    bindings: Vec<ShortcutBinding>,
-    prefix: &'static str,
-    label: &'static str,
-}
-
-impl ShortcutDescriptor {
-    fn binding_for(&self, state: ShortcutsState) -> Option<&ShortcutBinding> {
-        self.bindings.iter().find(|binding| binding.matches(state))
-    }
-
-    fn overlay_entry(&self, state: ShortcutsState) -> Option<Line<'static>> {
-        let key = match self.id {
-            ShortcutId::InsertNewline => state.key_hints.insert_newline,
-            ShortcutId::QueueMessageTab => state.key_hints.queue,
-            ShortcutId::ExternalEditor => state.key_hints.external_editor,
-            ShortcutId::EditPrevious => state.key_hints.edit_previous,
-            ShortcutId::ShowTranscript => state.key_hints.show_transcript,
-            ShortcutId::HistorySearch => state.key_hints.history_search,
-            ShortcutId::ReasoningDown => state.key_hints.reasoning_down,
-            ShortcutId::ReasoningUp => state.key_hints.reasoning_up,
-            ShortcutId::Commands
-            | ShortcutId::ShellCommands
-            | ShortcutId::FilePaths
-            | ShortcutId::PasteImage
-            | ShortcutId::Quit
-            | ShortcutId::ChangeMode => self
-                .binding_for(state)
-                .map(|binding| ShortcutHint::Single(binding.key)),
-        }?;
-        let mut line = Line::from(vec![self.prefix.into(), key.into()]);
-        match self.id {
-            ShortcutId::QueueMessageTab => {
-                if state.is_task_running || state.queue_submissions {
-                    line.push_span(tr(current(), " to queue message"));
-                } else {
-                    line.push_span(tr(current(), " to submit message"));
-                }
-            }
-            ShortcutId::EditPrevious => {
-                if state.esc_backtrack_hint {
-                    line.push_span(tr(current(), " again to edit previous message"));
-                } else {
-                    line.extend(vec![
-                        " ".into(),
-                        key.into(),
-                        tr(current(), " to edit previous message").into(),
-                    ]);
-                }
-            }
-            ShortcutId::Quit => {
-                if state.is_task_running {
-                    line.push_span(tr(current(), " to interrupt"));
-                } else {
-                    line.push_span(tr(current(), " to exit"));
-                }
-            }
-            // Every descriptor without a special case above renders its label
-            // through `tr`, so adding a translation for a label is a dictionary
-            // change and nothing else. The label itself stays the English
-            // original, which is what makes it a usable key.
-            _ => line.push_span(tr(current(), self.label)),
-        };
-        Some(line)
-    }
-}
-
-// Built lazily rather than as a `const`, per §3.6 of `docs/plan/i18n-design.md`:
-// the labels have to pass through `tr`, which a `const` initializer cannot call.
-static SHORTCUTS: OnceLock<Vec<ShortcutDescriptor>> = OnceLock::new();
-
-fn shortcuts() -> &'static [ShortcutDescriptor] {
-    SHORTCUTS.get_or_init(|| {
-        vec![
-            ShortcutDescriptor {
-                id: ShortcutId::Commands,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::plain(KeyCode::Char('/')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " for commands"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ShellCommands,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::plain(KeyCode::Char('!')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " for shell commands"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::InsertNewline,
-                bindings: vec![
-                    ShortcutBinding {
-                        key: key_hint::shift(KeyCode::Enter),
-                        condition: DisplayCondition::WhenShiftEnterHint,
-                    },
-                    ShortcutBinding {
-                        key: key_hint::ctrl(KeyCode::Char('j')),
-                        condition: DisplayCondition::WhenNotShiftEnterHint,
-                    },
-                ],
-                prefix: "",
-                label: tr(current(), " for newline"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::QueueMessageTab,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::plain(KeyCode::Tab),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " to queue message"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::FilePaths,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::plain(KeyCode::Char('@')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " for file paths"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::PasteImage,
-                // Show Ctrl+Alt+V when running under WSL (terminals often intercept plain
-                // Ctrl+V); otherwise fall back to Ctrl+V.
-                bindings: vec![
-                    ShortcutBinding {
-                        key: key_hint::ctrl_alt(KeyCode::Char('v')),
-                        condition: DisplayCondition::WhenUnderWSL,
-                    },
-                    ShortcutBinding {
-                        key: key_hint::ctrl(KeyCode::Char('v')),
-                        condition: DisplayCondition::Always,
-                    },
-                ],
-                prefix: "",
-                label: tr(current(), " to paste images"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ExternalEditor,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::ctrl(KeyCode::Char('g')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " to edit in external editor"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::EditPrevious,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::plain(KeyCode::Esc),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: "",
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::HistorySearch,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::ctrl(KeyCode::Char('r')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " search history"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::Quit,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::ctrl(KeyCode::Char('c')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " to exit"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ShowTranscript,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::ctrl(KeyCode::Char('t')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " to view transcript"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ChangeMode,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::shift(KeyCode::Tab),
-                    condition: DisplayCondition::WhenCollaborationModesEnabled,
-                }],
-                prefix: "",
-                label: tr(current(), " to change mode"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ReasoningDown,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::alt(KeyCode::Char(',')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " reasoning down"),
-            },
-            ShortcutDescriptor {
-                id: ShortcutId::ReasoningUp,
-                bindings: vec![ShortcutBinding {
-                    key: key_hint::alt(KeyCode::Char('.')),
-                    condition: DisplayCondition::Always,
-                }],
-                prefix: "",
-                label: tr(current(), " reasoning up"),
-            },
-        ]
-    })
+    Line::from(vec![
+        Span::from("100% context left").set_style(secondary_text_style()),
+    ])
 }
 
 #[cfg(test)]
@@ -1369,68 +982,47 @@ mod tests {
     use ratatui::backend::Backend;
     use ratatui::backend::TestBackend;
 
+    #[test]
+    fn voice_live_microphone_indicator_is_red() {
+        let line = footer_hint_items_line(&[("voice".into(), "● listen".into())]);
+        assert_eq!(line.spans[1].style.fg, Some(ratatui::style::Color::Red));
+    }
+
+    #[test]
+    fn voice_footer_rendering_preserves_text_and_styles() {
+        let items = [
+            ("voice".into(), "● listen".into()),
+            ("ctrl+m".into(), "mute".into()),
+        ];
+        let mut terminal =
+            Terminal::new(TestBackend::new(/*width*/ 40, /*height*/ 1)).expect("create terminal");
+        terminal
+            .draw(|frame| render_footer_hint_items(frame.area(), frame.buffer_mut(), &items))
+            .expect("render voice footer");
+        let backend = terminal.backend();
+        let mut previous_style = None;
+        let style_runs = (0..40)
+            .filter_map(|x| {
+                let cell = backend.buffer().cell((x, 0))?;
+                let style = cell.style();
+                if previous_style == Some(style) {
+                    None
+                } else {
+                    previous_style = Some(style);
+                    Some((x, style))
+                }
+            })
+            .collect::<Vec<_>>();
+        insta::assert_debug_snapshot!(
+            "voice_footer_rendered_styles",
+            (backend.to_string(), style_runs)
+        );
+    }
+
     fn snapshot_footer(name: &str, props: FooterProps) {
         snapshot_footer_with_mode_indicator(
             name, /*width*/ 80, &props, /*collaboration_mode_indicator*/ None,
         );
-    }
-
-    /// The render path in the language it is given, which is the point where
-    /// "the resolved language reaches rendered output" stops being an inference
-    /// from the wiring. The language is passed in rather than published, so this
-    /// cannot race the snapshot tests that share the binary.
-    #[test]
-    fn the_rendered_hints_follow_the_language_they_are_given() {
-        let queue_message = || {
-            left_side_line_in(
-                Lang::Zh,
-                /*collaboration_mode_indicator*/ None,
-                LeftSideState {
-                    hint: SummaryHintKind::QueueMessage,
-                    show_cycle_hint: false,
-                },
-                FooterKeyHints::default_bindings(),
-            )
-            .to_string()
-        };
-        let chinese = queue_message();
-        assert!(
-            chinese.contains("排队发送消息"),
-            "expected the translated hint, got {chinese:?}"
-        );
-
-        let english = left_side_line_in(
-            Lang::En,
-            /*collaboration_mode_indicator*/ None,
-            LeftSideState {
-                hint: SummaryHintKind::QueueMessage,
-                show_cycle_hint: false,
-            },
-            FooterKeyHints::default_bindings(),
-        )
-        .to_string();
-        assert!(
-            english.contains(" to queue message"),
-            "expected the English original, got {english:?}"
-        );
-        assert!(
-            !english.contains('排'),
-            "English must not render translated text: {english:?}"
-        );
-
-        // A translated key is still rendered from its English original under
-        // `En`, which is the property the 877 snapshots rest on.
-        let shortcuts = left_side_line_in(
-            Lang::En,
-            /*collaboration_mode_indicator*/ None,
-            LeftSideState {
-                hint: SummaryHintKind::Shortcuts,
-                show_cycle_hint: false,
-            },
-            FooterKeyHints::default_bindings(),
-        )
-        .to_string();
-        assert!(shortcuts.contains(" for shortcuts"), "got {shortcuts:?}");
     }
 
     fn snapshot_footer_with_context(
@@ -1641,7 +1233,7 @@ mod tests {
         collaboration_mode_indicator: Option<CollaborationModeIndicator>,
         context_line: Line<'static>,
     ) {
-        let height = footer_height(props).max(1);
+        let height = footer_height(props, width).max(/*other*/ 1);
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         draw_footer_frame(
             &mut terminal,
@@ -1660,7 +1252,7 @@ mod tests {
         collaboration_mode_indicator: Option<CollaborationModeIndicator>,
         context_line: Line<'static>,
     ) -> String {
-        let height = footer_height(props).max(1);
+        let height = footer_height(props, width).max(/*other*/ 1);
         let mut terminal = Terminal::new(VT100Backend::new(width, height)).expect("terminal");
         draw_footer_frame(
             &mut terminal,
@@ -1680,7 +1272,7 @@ mod tests {
         collaboration_mode_indicator: Option<CollaborationModeIndicator>,
         ide_context_active: bool,
     ) {
-        let height = footer_height(props).max(1);
+        let height = footer_height(props, width).max(/*other*/ 1);
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         draw_footer_frame(
             &mut terminal,
@@ -1700,7 +1292,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ComposerEmpty,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1718,7 +1309,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ShortcutOverlay,
                 esc_backtrack_hint: true,
-                use_shift_enter_hint: true,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1739,7 +1329,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ShortcutOverlay,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: true,
@@ -1757,7 +1346,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ShortcutOverlay,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: true,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1775,26 +1363,7 @@ mod tests {
             FooterProps {
                 mode: FooterMode::QuitShortcutReminder,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: false,
-                queue_submissions: false,
-                collaboration_modes_enabled: false,
-                is_wsl: false,
-                quit_shortcut_key: key_hint::ctrl(KeyCode::Char('c')),
-                status_line_value: None,
-                status_line_enabled: false,
-                key_hints: FooterKeyHints::default_bindings(),
-                active_agent_label: None,
-            },
-        );
-
-        snapshot_footer(
-            "footer_ctrl_c_quit_running",
-            FooterProps {
-                mode: FooterMode::QuitShortcutReminder,
-                esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
-                is_task_running: true,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
                 is_wsl: false,
@@ -1811,7 +1380,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::EscHint,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1829,7 +1397,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::EscHint,
                 esc_backtrack_hint: true,
-                use_shift_enter_hint: false,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1847,7 +1414,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ComposerEmpty,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: true,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1867,7 +1433,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ComposerEmpty,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: false,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1887,7 +1452,6 @@ mod tests {
             FooterProps {
                 mode: FooterMode::ComposerHasDraft,
                 esc_backtrack_hint: false,
-                use_shift_enter_hint: false,
                 is_task_running: true,
                 queue_submissions: false,
                 collaboration_modes_enabled: false,
@@ -1903,7 +1467,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -1924,7 +1487,7 @@ mod tests {
 
         snapshot_footer_with_mode_indicator(
             "footer_mode_indicator_narrow_overlap_hides",
-            /*width*/ 50,
+            /*width*/ 40,
             &props,
             Some(CollaborationModeIndicator::Plan),
         );
@@ -1932,7 +1495,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: true,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -1954,7 +1516,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -1971,7 +1532,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerHasDraft,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: true,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -1988,7 +1548,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerHasDraft,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -2005,7 +1564,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -2036,7 +1594,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -2059,7 +1616,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -2083,7 +1639,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -2108,7 +1663,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -2125,7 +1679,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: false,
@@ -2145,7 +1698,6 @@ mod tests {
         let props = FooterProps {
             mode: FooterMode::ComposerEmpty,
             esc_backtrack_hint: false,
-            use_shift_enter_hint: false,
             is_task_running: false,
             queue_submissions: false,
             collaboration_modes_enabled: true,
@@ -2172,52 +1724,12 @@ mod tests {
             "mode indicator should remain visible"
         );
         assert!(
-            !collapsed.contains("shift+tab to cycle"),
+            !collapsed.contains("⇧tab to cycle"),
             "compact mode indicator should be used when space is tight"
         );
         assert!(
             screen.contains('…'),
             "status line should be truncated with ellipsis to keep mode indicator"
         );
-    }
-
-    #[test]
-    fn paste_image_shortcut_prefers_ctrl_alt_v_under_wsl() {
-        let descriptor = shortcuts()
-            .iter()
-            .find(|descriptor| descriptor.id == ShortcutId::PasteImage)
-            .expect("paste image shortcut");
-
-        let is_wsl = {
-            #[cfg(target_os = "linux")]
-            {
-                crate::clipboard_paste::is_probably_wsl()
-            }
-            #[cfg(not(target_os = "linux"))]
-            {
-                false
-            }
-        };
-
-        let expected_key = if is_wsl {
-            key_hint::ctrl_alt(KeyCode::Char('v'))
-        } else {
-            key_hint::ctrl(KeyCode::Char('v'))
-        };
-
-        let actual_key = descriptor
-            .binding_for(ShortcutsState {
-                use_shift_enter_hint: false,
-                esc_backtrack_hint: false,
-                is_task_running: false,
-                queue_submissions: false,
-                is_wsl,
-                collaboration_modes_enabled: false,
-                key_hints: FooterKeyHints::default_bindings(),
-            })
-            .expect("shortcut binding")
-            .key;
-
-        assert_eq!(actual_key, expected_key);
     }
 }

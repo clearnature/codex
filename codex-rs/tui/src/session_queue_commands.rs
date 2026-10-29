@@ -11,9 +11,6 @@ use codex_app_server_protocol::ThreadQueueAddParams;
 use codex_app_server_protocol::ThreadQueueAddResponse;
 use codex_app_server_protocol::UserInput;
 use codex_app_server_protocol::experimental_required_message;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use codex_utils_home_dir::find_codex_home;
 use color_eyre::Report;
@@ -32,7 +29,12 @@ pub async fn run_session_queue_command(
     message: String,
     options: SessionArchiveCommandOptions,
 ) -> Result<String> {
-    let codex_home = find_codex_home().wrap_err(tr(current(), "failed to find Codex home"))?;
+    if options.cli.no_daemon && options.explicit_remote_endpoint.is_none() {
+        return Err(eyre!(
+            "--no-daemon cannot be used with codex queue. Queuing must discover the shared server to avoid writing through a separate server."
+        ));
+    }
+    let codex_home = find_codex_home().wrap_err("failed to find Codex home")?;
     let explicit_remote = options.explicit_remote_endpoint.is_some();
     let mut app_server =
         start_app_server_for_session_command(options, codex_home.to_path_buf()).await?;
@@ -42,10 +44,9 @@ pub async fn run_session_queue_command(
             .await
             .is_some()
     {
-        return Err(eyre!(tr(
-            current(),
-            "cannot queue through an embedded app server while a local app-server daemon is running; remove configuration overrides or use --remote",
-        )));
+        return Err(eyre!(
+            "cannot queue through an embedded app server while a local app-server daemon is running; remove configuration overrides or use --remote"
+        ));
     }
     let implicit_local_daemon = !explicit_remote && !app_server.uses_embedded_app_server();
     let client_message_id = Uuid::now_v7().to_string();
@@ -63,23 +64,20 @@ pub async fn run_session_queue_command(
             if (implicit_local_daemon || explicit_remote) && is_unsupported_queue_error(&error) =>
         {
             let server = if explicit_remote {
-                tr(current(), "remote app server")
+                "remote app server"
             } else {
-                tr(current(), "local app-server daemon")
+                "local app-server daemon"
             };
-            return Err(error.wrap_err(tr_with(
-                current(),
-                "the {0} does not support thread/queue/add; update or restart the {0}",
-                &[server],
+            return Err(error.wrap_err(format!(
+                "the {server} does not support thread/queue/add; update or restart the {server}"
             )));
         }
         result => result?,
     };
 
-    Ok(tr_with(
-        current(),
-        "Queued message {0} for thread {1}.",
-        &[&response.queued_submission.id, &thread_id.to_string()],
+    Ok(format!(
+        "Queued message {} for thread {}.",
+        response.queued_submission.id, thread_id
     ))
 }
 
@@ -106,20 +104,9 @@ pub(super) async fn run_session_queue_action_with_app_server(
             /*model_provider*/ None,
         )
         .await?
-        .ok_or_else(|| {
-            eyre!(tr_with(
-                current(),
-                "No active session found matching '{0}'.",
-                &[target],
-            ))
-        })?;
-        ThreadId::from_string(&thread.id).wrap_err_with(|| {
-            tr_with(
-                current(),
-                "app server returned invalid session id `{0}`",
-                &[&thread.id.to_string()],
-            )
-        })?
+        .ok_or_else(|| eyre!("No active session found matching '{target}'."))?;
+        ThreadId::from_string(&thread.id)
+            .wrap_err_with(|| format!("app server returned invalid session id `{}`", thread.id))?
     };
     let request_id = app_server.next_request_id();
     let response = app_server
@@ -136,7 +123,7 @@ pub(super) async fn run_session_queue_action_with_app_server(
             },
         })
         .await
-        .wrap_err(tr(current(), "failed to queue session message"))?;
+        .wrap_err("failed to queue session message")?;
     Ok((thread_id, response))
 }
 

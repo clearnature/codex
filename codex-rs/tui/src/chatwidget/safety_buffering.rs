@@ -257,7 +257,7 @@ impl ChatWidget {
             footer_note: Some(Line::from(safety_buffering_footer()).dim()),
             footer_hint: Some(Line::default()),
             items,
-            ..Default::default()
+            ..SelectionViewParams::picker()
         });
     }
 
@@ -325,7 +325,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
             ],
-            ..Default::default()
+            ..SelectionViewParams::confirmation()
         });
     }
 }

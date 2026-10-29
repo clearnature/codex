@@ -3,12 +3,8 @@
 //! The wire result can contain multi-megabyte image, audio, or resource bodies. Validate each
 //! block once with the MCP model, then retain only what history rendering actually displays.
 
-use crate::exec_cell::TOOL_CALL_MAX_LINES;
-use crate::text_formatting::format_and_truncate_tool_result;
+use crate::text_formatting::format_json_compact;
 use base64::Engine;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::mcp::CallToolResult;
 use image::DynamicImage;
 use image::ImageReader;
@@ -35,6 +31,7 @@ pub(super) struct McpToolResult {
 #[derive(Debug)]
 pub(super) struct McpContentBlock {
     display: McpContentDisplay,
+    pub(super) is_image: bool,
     /// Code mode uses a top-level `text` field even on malformed or non-text blocks.
     original_text: Option<String>,
 }
@@ -61,6 +58,7 @@ impl McpToolResult {
                 // Deserialize by reference so malformed blocks remain available for the exact
                 // JSON fallback. Successful blocks no longer retain their wire representation.
                 let parsed = ContentBlock::deserialize(&block);
+                let is_image = matches!(&parsed, Ok(ContentBlock::Image(_)));
                 let original_text = match (&parsed, kind) {
                     (Ok(ContentBlock::Text(_)), _) | (_, McpResultKind::Standard) => None,
                     (_, McpResultKind::NodeRepl) => block
@@ -71,33 +69,34 @@ impl McpToolResult {
                 let display = match parsed {
                     Ok(ContentBlock::Text(text)) => McpContentDisplay::Text(text.text),
                     Ok(ContentBlock::Image(image)) => {
-                        // Keep the marker's existing full-decode validity check, and stop
-                        // decoding after the first valid image, just as the old search did.
+                        // Computer activity previews require a valid image. Stop decoding once
+                        // one has been found; the result text only retains a readable marker.
                         if !has_image {
                             has_image = decode_mcp_image(&image.data).is_some();
                         }
-                        McpContentDisplay::Summary(tr(current(), "<image content>").into())
+                        McpContentDisplay::Summary("Returned image".into())
                     }
                     Ok(ContentBlock::Audio(_)) => {
-                        McpContentDisplay::Summary(tr(current(), "<audio content>").into())
+                        McpContentDisplay::Summary("<audio content>".into())
                     }
                     Ok(ContentBlock::Resource(resource)) => {
                         let summary = match resource.resource {
                             ResourceContents::TextResourceContents { uri, .. }
                             | ResourceContents::BlobResourceContents { uri, .. } => {
-                                tr_with(current(), "embedded resource: {0}", &[uri.as_str()]).into()
+                                format!("embedded resource: {uri}").into()
                             }
-                            _ => tr(current(), "<unknown embedded resource>").into(),
+                            _ => "<unknown embedded resource>".into(),
                         };
                         McpContentDisplay::Summary(summary)
                     }
-                    Ok(ContentBlock::ResourceLink(link)) => McpContentDisplay::Summary(
-                        tr_with(current(), "link: {0}", &[link.uri.as_str()]).into(),
-                    ),
+                    Ok(ContentBlock::ResourceLink(link)) => {
+                        McpContentDisplay::Summary(format!("link: {}", link.uri).into())
+                    }
                     Ok(_) | Err(_) => McpContentDisplay::Json(block.to_string()),
                 };
                 McpContentBlock {
                     display,
+                    is_image,
                     original_text,
                 }
             })
@@ -112,6 +111,19 @@ impl McpToolResult {
 }
 
 impl McpContentBlock {
+    /// Returns all retained text, with honest markers for media and embedded resource bodies.
+    pub(super) fn render_full(&self) -> &str {
+        if let Some(text) = &self.original_text {
+            return text.trim_end_matches('\n');
+        }
+        match &self.display {
+            McpContentDisplay::Text(text) | McpContentDisplay::Json(text) => {
+                text.trim_end_matches('\n')
+            }
+            McpContentDisplay::Summary(summary) => summary,
+        }
+    }
+
     /// Returns the untruncated top-level text used by node_repl and cua_repl's compact and
     /// transcript views.
     ///
@@ -127,19 +139,21 @@ impl McpContentBlock {
         }
     }
 
-    /// Applies width-dependent formatting to full text or fallback JSON without reparsing the MCP
-    /// block. Media and resource summaries retain their existing untruncated display form.
-    pub(super) fn render(&self, width: usize) -> String {
+    /// Formats the complete text or fallback JSON. The caller applies a single preview limit
+    /// across all blocks, while transcript and raw output retain the full result.
+    pub(super) fn render(&self) -> Cow<'_, str> {
         match &self.display {
             McpContentDisplay::Text(text) | McpContentDisplay::Json(text) => {
-                format_and_truncate_tool_result(text, TOOL_CALL_MAX_LINES, width)
+                format_json_compact(text)
+                    .map(Cow::Owned)
+                    .unwrap_or(Cow::Borrowed(text))
             }
-            McpContentDisplay::Summary(summary) => summary.to_string(),
+            McpContentDisplay::Summary(summary) => Cow::Borrowed(summary),
         }
     }
 }
 
-/// Fully decodes an MCP image before exposing the separate image-output marker.
+/// Fully decodes an MCP image before exposing an image preview in computer activity.
 ///
 /// A header-only check would accept images whose decoder rejects their pixel data. Preserve the
 /// existing behavior for invalid base64, unknown formats, corrupt images, and data URLs.

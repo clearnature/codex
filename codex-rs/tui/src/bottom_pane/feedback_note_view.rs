@@ -1,8 +1,7 @@
 //! Collects a feedback note with audience-specific disclosure and independent log consent.
 //! The editor and submission controls remain visible when the disclosure must scroll.
+//! Unbracketed paste bursts insert newlines; Enter submits after the burst ends.
 
-use codex_i18n::current;
-use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -17,11 +16,13 @@ use ratatui::widgets::StatefulWidgetRef;
 use ratatui::widgets::Widget;
 use std::cell::Cell;
 use std::cell::RefCell;
+use std::time::Instant;
 
 use crate::app_event::AppEvent;
 use crate::app_event::FeedbackCategory;
 use crate::app_event_sender::AppEventSender;
 use crate::key_hint;
+use crate::key_hint::has_ctrl_or_alt;
 use crate::render::renderable::Renderable;
 use crate::terminal_hyperlinks::mark_underlined_hyperlink;
 use crate::wrapping::RtOptions;
@@ -30,6 +31,7 @@ use crate::wrapping::word_wrap_lines;
 use super::CancellationEvent;
 use super::bottom_pane_view::BottomPaneView;
 use super::feedback_view::FeedbackAudience;
+use super::paste_burst::PasteBurst;
 use super::popup_consts::accept_cancel_hint_line;
 use super::textarea::TextArea;
 use super::textarea::TextAreaState;
@@ -54,6 +56,7 @@ pub(crate) struct FeedbackNoteView {
     // UI state
     textarea: TextArea,
     textarea_state: RefCell<TextAreaState>,
+    paste_burst: PasteBurst,
     intro_scroll: Cell<usize>,
     intro_page_height: Cell<usize>,
     complete: bool,
@@ -75,6 +78,7 @@ impl FeedbackNoteView {
             feedback_audience,
             textarea: TextArea::new(),
             textarea_state: RefCell::new(TextAreaState::default()),
+            paste_burst: PasteBurst::default(),
             intro_scroll: Cell::new(0),
             intro_page_height: Cell::new(1),
             complete: false,
@@ -92,10 +96,8 @@ impl FeedbackNoteView {
         });
         self.complete = true;
     }
-}
 
-impl BottomPaneView for FeedbackNoteView {
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event_at(&mut self, key_event: KeyEvent, now: Instant) {
         match key_event {
             KeyEvent {
                 code: KeyCode::PageUp,
@@ -124,21 +126,51 @@ impl BottomPaneView for FeedbackNoteView {
             }
             KeyEvent {
                 code: KeyCode::Enter,
-                modifiers: KeyModifiers::NONE,
+                modifiers,
                 ..
             } => {
-                self.submit();
+                if self.paste_burst.direct_insert_newline_should_insert(now) {
+                    self.paste_burst.extend_window(now);
+                    self.textarea.insert_str("\n");
+                } else if modifiers == KeyModifiers::NONE {
+                    self.submit();
+                } else {
+                    self.textarea.input(key_event);
+                }
             }
             KeyEvent {
-                code: KeyCode::Enter,
+                code: KeyCode::Char(_),
+                modifiers,
                 ..
-            } => {
+            } if !has_ctrl_or_alt(modifiers) => {
+                let paste_like_burst = self.paste_burst.on_plain_char_no_hold(now).is_some();
                 self.textarea.input(key_event);
+                if paste_like_burst {
+                    self.paste_burst.extend_window(now);
+                }
+            }
+            KeyEvent {
+                code: KeyCode::Tab,
+                modifiers,
+                ..
+            } if !has_ctrl_or_alt(modifiers) => {
+                let in_paste_burst = self.paste_burst.direct_insert_newline_should_insert(now);
+                self.textarea.input(key_event);
+                if in_paste_burst {
+                    self.paste_burst.extend_window(now);
+                }
             }
             other => {
                 self.textarea.input(other);
+                self.paste_burst.clear_after_explicit_paste();
             }
         }
+    }
+}
+
+impl BottomPaneView for FeedbackNoteView {
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        self.handle_key_event_at(key_event, Instant::now());
     }
 
     fn on_ctrl_c(&mut self) -> CancellationEvent {
@@ -155,6 +187,7 @@ impl BottomPaneView for FeedbackNoteView {
             return false;
         }
         self.textarea.insert_str(&pasted);
+        self.paste_burst.clear_after_explicit_paste();
         true
     }
 }
@@ -187,6 +220,8 @@ impl Renderable for FeedbackNoteView {
         if area.height == 0 || area.width == 0 {
             return;
         }
+
+        buf.set_style(area, crate::style::user_message_style());
 
         // Four rows leave room for one intro line; show the disclosure before submission.
         let intro_content = if area.height == 4 {
@@ -256,6 +291,7 @@ impl Renderable for FeedbackNoteView {
                         height: 1,
                     };
                     Clear.render(blank_rect, buf);
+                    buf.set_style(blank_rect, crate::style::user_message_style());
                 }
                 let textarea_rect = Rect {
                     x: input_area.x.saturating_add(2),
@@ -281,12 +317,13 @@ impl Renderable for FeedbackNoteView {
                 height: 1,
             };
             Clear.render(blank_area, buf);
+            buf.set_style(blank_area, crate::style::user_message_style());
             if max_scroll > 0 {
                 Paragraph::new(Line::from(vec![
                     key_hint::plain(KeyCode::PageUp).into(),
                     "/".into(),
                     key_hint::plain(KeyCode::PageDown).into(),
-                    tr(current(), " scroll disclosure").into(),
+                    " scroll disclosure".into(),
                 ]))
                 .render(blank_area, buf);
             }
@@ -296,9 +333,9 @@ impl Renderable for FeedbackNoteView {
         if hint_y < area.y.saturating_add(area.height) {
             Paragraph::new(accept_cancel_hint_line(
                 Some(key_hint::plain(KeyCode::Enter).into()),
-                tr(current(), "to submit"),
+                "to submit",
                 Some(key_hint::plain(KeyCode::Esc).into()),
-                tr(current(), "to cancel"),
+                "to cancel",
             ))
             .render(
                 Rect {
@@ -345,22 +382,19 @@ impl FeedbackNoteView {
         match self.feedback_audience {
             FeedbackAudience::OpenAiEmployee => {
                 lines.push(
-                    tr(
-                        current(),
-                        "Your data may be used to improve our models and products",
-                    )
-                    .bold()
-                    .into(),
+                    "Your data may be used to improve our models and products"
+                        .bold()
+                        .into(),
                 );
                 lines.push(Line::from(vec![
-                    tr(current(), "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ").dim(),
-                    "here".cyan().underlined(),
+                    "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ".dim(),
+                    "here".fg(crate::style::accent_color()).underlined(),
                     ". Please avoid sharing tented information under NDA, or privileged, HR-related, or sensitive personal information.".dim(),
                 ]));
             }
             FeedbackAudience::External => lines.push(Line::from(vec![
-                tr(current(), "Your feedback can be used to improve ChatGPT. ").dim(),
-                tr(current(), "Learn more").cyan().underlined(),
+                "Your feedback can be used to improve ChatGPT. ".dim(),
+                "Learn more".fg(crate::style::accent_color()).underlined(),
                 ".".dim(),
             ])),
         }
@@ -374,50 +408,30 @@ impl FeedbackNoteView {
 }
 
 fn gutter() -> Span<'static> {
-    "▌ ".cyan()
+    "▌ ".fg(crate::style::accent_color())
 }
 
 fn feedback_title_and_placeholder(category: FeedbackCategory) -> (String, String) {
     match category {
         FeedbackCategory::BadResult => (
-            tr(current(), "Tell us more (bad result)").to_string(),
-            tr(
-                current(),
-                "(optional) Write a short description to help us further",
-            )
-            .to_string(),
+            "Tell us more (bad result)".to_string(),
+            "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::GoodResult => (
-            tr(current(), "Tell us more (good result)").to_string(),
-            tr(
-                current(),
-                "(optional) Write a short description to help us further",
-            )
-            .to_string(),
+            "Tell us more (good result)".to_string(),
+            "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::Bug => (
-            tr(current(), "Tell us more (bug)").to_string(),
-            tr(
-                current(),
-                "(optional) Write a short description to help us further",
-            )
-            .to_string(),
+            "Tell us more (bug)".to_string(),
+            "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::SafetyCheck => (
-            tr(current(), "Tell us more (safety check)").to_string(),
-            tr(
-                current(),
-                "(optional) Share what was refused and why it should have been allowed",
-            )
-            .to_string(),
+            "Tell us more (safety check)".to_string(),
+            "(optional) Share what was refused and why it should have been allowed".to_string(),
         ),
         FeedbackCategory::Other => (
-            tr(current(), "Tell us more (other)").to_string(),
-            tr(
-                current(),
-                "(optional) Write a short description to help us further",
-            )
-            .to_string(),
+            "Tell us more (other)".to_string(),
+            "(optional) Write a short description to help us further".to_string(),
         ),
     }
 }

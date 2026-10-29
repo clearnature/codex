@@ -1,18 +1,15 @@
-//! Binds the existing synchronous reviewer to one approval action.
+//! Captures one approval action for the extension-owned synchronous reviewer.
+//! Tool-call provenance is separate from the item's display identity.
 
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::SynchronousApprovalReviewer;
-use codex_i18n::current;
-use codex_i18n::tr;
 use codex_protocol::protocol::ReviewDecision;
 use std::sync::Arc;
+use tokio_util::sync::CancellationToken;
 
 use super::ApprovalRequestReasons;
 use super::GuardianApprovalRequest;
 use super::GuardianReviewContext;
 use super::GuardianReviewOptions;
 use super::approval_request::guardian_approval_request_to_json;
-use super::review::run_synchronous_review;
 use crate::session::session::Session;
 
 /// Carries the original action even when the legacy synchronous renderer cannot handle its paths.
@@ -21,14 +18,29 @@ use crate::session::session::Session;
 pub(crate) struct ReviewAction {
     pub(crate) action: Result<serde_json::Value, String>,
     pub(crate) category: codex_protocol::openai_models::GuardianScope,
+    /// Actual host invocation, absent when the approval has no originating tool call.
+    pub(crate) tool_call_id: Option<String>,
     pub(crate) request: Result<GuardianApprovalRequest, String>,
 }
 
 impl From<GuardianApprovalRequest> for ReviewAction {
     fn from(request: GuardianApprovalRequest) -> Self {
+        let tool_call_id = match &request {
+            // Stdin's display target is the launch; freshness belongs to this write.
+            GuardianApprovalRequest::WriteStdin { approval_id, .. } => Some(approval_id.clone()),
+            GuardianApprovalRequest::ExecCommand { .. }
+            | GuardianApprovalRequest::ApplyPatch { .. }
+            | GuardianApprovalRequest::NetworkAccess { .. }
+            | GuardianApprovalRequest::McpToolCall { .. }
+            | GuardianApprovalRequest::RequestPermissions { .. } => {
+                super::approval_request::guardian_request_target_item_id(&request)
+                    .map(str::to_owned)
+            }
+        };
         Self {
             action: guardian_approval_request_to_json(&request).map_err(|error| error.to_string()),
             category: request.guardian_scope(),
+            tool_call_id,
             request: Ok(request),
         }
     }
@@ -42,10 +54,14 @@ impl ReviewAction {
         let category = action.guardian_scope();
         let original = serde_json::to_value(&action).map_err(|error| error.to_string());
         match action.into_guardian_request(exec_command_cwd_convention) {
-            Ok(request) => Self::from(request),
+            Ok(request) => Self {
+                category,
+                ..Self::from(request)
+            },
             Err(error) => Self {
                 action: original,
                 category,
+                tool_call_id: None,
                 request: Err(error.to_string()),
             },
         }
@@ -60,21 +76,20 @@ impl ReviewAction {
     ) -> Result<&GuardianApprovalRequest, ReviewDecision> {
         let request = self.request.as_ref().map_err(|error| {
             tracing::error!(%error, "failed to build automatic approval action");
-            ReviewDecision::denied(tr(
-                current(),
-                "automatic approval review could not prepare the action",
-            ))
+            ReviewDecision::denied("automatic approval review could not prepare the action")
         })?;
-        if let GuardianApprovalRequest::WriteStdin { environment_id, .. } = request
+        if let Some(environment_id) = request.target_environment_id()
             && !context
                 .environments()
                 .turn_environments()
-                .any(|environment| environment.selection.environment_id == *environment_id)
+                .any(|environment| environment.selection.environment_id == environment_id)
         {
-            return Err(ReviewDecision::denied(tr(
-                current(),
-                "automatic approval review cannot access the terminal's environment; select it before retrying",
-            )));
+            let message = if matches!(request, GuardianApprovalRequest::WriteStdin { .. }) {
+                "automatic approval review cannot access the terminal's environment; select it before retrying"
+            } else {
+                "automatic approval review cannot access the request's environment"
+            };
+            return Err(ReviewDecision::denied(message));
         }
         Ok(request)
     }
@@ -83,18 +98,9 @@ impl ReviewAction {
 #[derive(Clone)]
 pub(super) struct ReviewRuntime {
     pub(super) session: Arc<Session>,
+    pub(super) history_reset: CancellationToken,
     pub(super) context: GuardianReviewContext,
-    pub(super) review_id: String,
     pub(super) request: ReviewAction,
     pub(super) reasons: ApprovalRequestReasons,
     pub(super) options: GuardianReviewOptions,
-}
-
-impl SynchronousApprovalReviewer for ReviewRuntime {
-    fn review(
-        &self,
-        reason: codex_protocol::approvals::GuardianReviewReason,
-    ) -> ExtensionFuture<'_, ReviewDecision> {
-        Box::pin(run_synchronous_review(self.clone(), reason))
-    }
 }

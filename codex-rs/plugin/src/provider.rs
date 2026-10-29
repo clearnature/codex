@@ -1,10 +1,10 @@
+//! Authority-bound plugin descriptors and resource locations.
+
 use crate::manifest::PluginManifest;
 use codex_i18n::current;
 use codex_i18n::tr_with;
 use codex_protocol::capabilities::SelectedCapabilityRoot;
 use codex_utils_path_uri::PathUri;
-use std::error::Error as StdError;
-use std::future::Future;
 use thiserror::Error;
 
 /// A plugin resource paired with the environment that owns its filesystem.
@@ -104,22 +104,6 @@ fn environment_resource(
         environment_id: environment_id.to_string(),
         path,
     })
-}
-
-/// Resolves source-owned package roots into inert plugin descriptors.
-///
-/// Implementations must perform all filesystem access through the authority
-/// named by the selected root. `None` means the root contains no plugin
-/// manifest and may be handled as another standalone capability.
-pub trait PluginProvider: Send + Sync {
-    /// Source-specific resolution failure.
-    type Error: StdError + Send + Sync + 'static;
-
-    /// Resolves one selected root without activating any of its components.
-    fn resolve(
-        &self,
-        root: &SelectedCapabilityRoot,
-    ) -> impl Future<Output = Result<Option<ResolvedPlugin>, Self::Error>> + Send;
 }
 
 #[cfg(test)]

@@ -1,9 +1,7 @@
 //! Completed request-user-input transcript rendering.
 
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
+use crate::style::accent_color;
 
 /// Renders a completed (or interrupted) request_user_input exchange in history.
 #[derive(Debug)]
@@ -15,6 +13,10 @@ pub(crate) struct RequestUserInputResultCell {
 
 impl HistoryCell for RequestUserInputResultCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
+        visible_lines(self.display_hyperlink_lines(width))
+    }
+
+    fn display_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
         let width = width.max(1) as usize;
         let total = self.questions.len();
         let answered = self
@@ -29,19 +31,12 @@ impl HistoryCell for RequestUserInputResultCell {
         let unanswered = total.saturating_sub(answered);
 
         let mut header = vec!["•".dim(), " ".into(), "Questions".bold()];
-        header.push(
-            tr_with(
-                current(),
-                " {0}/{1} answered",
-                &[&answered.to_string(), &total.to_string()],
-            )
-            .dim(),
-        );
+        header.push(format!(" {answered}/{total} answered").dim());
         if self.interrupted {
-            header.push(tr(current(), " (interrupted)").cyan());
+            header.push(" (interrupted)".fg(accent_color()));
         }
 
-        let mut lines: Vec<Line<'static>> = vec![header.into()];
+        let mut lines = vec![HyperlinkLine::new(header.into())];
 
         for question in &self.questions {
             let answer = self.answers.get(&question.id);
@@ -57,7 +52,24 @@ impl HistoryCell for RequestUserInputResultCell {
                 Style::default(),
             );
             if answer_missing && let Some(last) = question_lines.last_mut() {
-                last.spans.push(tr(current(), " (unanswered)").dim());
+                let suffix = " (unanswered)";
+                last.line.spans.push(suffix.dim());
+                if let Some(source) = &mut last.source {
+                    // The suffix is deliberately appended after wrapping, matching the existing UI.
+                    let mut logical = source.styled_range(0..source.range.end);
+                    logical.spans.push(suffix.dim());
+                    let logical =
+                        crate::terminal_hyperlinks::LogicalLineSource::from_line(&logical);
+                    source.range.end = logical.text.len();
+                    for line in &mut question_lines {
+                        if let Some(source) = &mut line.source {
+                            source.text = std::sync::Arc::clone(&logical.text);
+                            source.styles = std::sync::Arc::clone(&logical.styles);
+                            source.line_style = logical.line_style;
+                            source.span_style = Style::default();
+                        }
+                    }
+                }
             }
             lines.extend(question_lines);
 
@@ -68,9 +80,9 @@ impl HistoryCell for RequestUserInputResultCell {
                 lines.extend(wrap_with_prefix(
                     "••••••",
                     width,
-                    tr(current(), "    answer: ").dim(),
+                    "    answer: ".dim(),
                     "            ".dim(),
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(accent_color()),
                 ));
                 continue;
             }
@@ -81,23 +93,23 @@ impl HistoryCell for RequestUserInputResultCell {
                 lines.extend(wrap_with_prefix(
                     &option,
                     width,
-                    tr(current(), "    answer: ").dim(),
+                    "    answer: ".dim(),
                     "            ".dim(),
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(accent_color()),
                 ));
             }
             if let Some(note) = note {
                 let (label, continuation, style) = if question.options.is_some() {
                     (
-                        tr(current(), "    note: ").dim(),
+                        "    note: ".dim(),
                         "          ".dim(),
-                        Style::default().fg(Color::Cyan),
+                        Style::default().fg(accent_color()),
                     )
                 } else {
                     (
-                        tr(current(), "    answer: ").dim(),
+                        "    answer: ".dim(),
                         "            ".dim(),
-                        Style::default().fg(Color::Cyan),
+                        Style::default().fg(accent_color()),
                     )
                 };
                 lines.extend(wrap_with_prefix(&note, width, label, continuation, style));
@@ -105,21 +117,21 @@ impl HistoryCell for RequestUserInputResultCell {
         }
 
         if self.interrupted && unanswered > 0 {
-            let summary = tr_with(
-                current(),
-                "interrupted with {0} unanswered",
-                &[&unanswered.to_string()],
-            );
+            let summary = format!("interrupted with {unanswered} unanswered");
             lines.extend(wrap_with_prefix(
                 &summary,
                 width,
-                "  ↳ ".cyan().dim(),
+                "  ↳ ".fg(accent_color()),
                 "    ".dim(),
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::DIM),
+                Style::default().fg(accent_color()),
             ));
         }
 
         lines
+    }
+
+    fn transcript_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
+        self.display_hyperlink_lines(width)
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
@@ -133,11 +145,7 @@ impl HistoryCell for RequestUserInputResultCell {
                     .is_some_and(|answer| !answer.answers.is_empty())
             })
             .count();
-        let mut lines = vec![Line::from(tr_with(
-            current(),
-            "Questions {0}/{1} answered",
-            &[&answered.to_string(), &total.to_string()],
-        ))];
+        let mut lines = vec![Line::from(format!("Questions {answered}/{total} answered"))];
         if self.interrupted {
             lines.push(Line::from("(interrupted)"));
         }
@@ -149,20 +157,16 @@ impl HistoryCell for RequestUserInputResultCell {
                 .filter(|answer| !answer.answers.is_empty())
             {
                 if question.is_secret {
-                    lines.push(Line::from(tr(current(), "answer: ******")));
+                    lines.push(Line::from("answer: ******"));
                 } else {
                     let (options, note) = split_request_user_input_answer(answer);
                     lines.extend(
-                        options.into_iter().map(|option| {
-                            Line::from(tr_with(current(), "answer: {0}", &[&option]))
-                        }),
+                        options
+                            .into_iter()
+                            .map(|option| Line::from(format!("answer: {option}"))),
                     );
                     if let Some(note) = note {
-                        lines.push(Line::from(tr_with(
-                            current(),
-                            "note: {0}",
-                            &[&note.to_string()],
-                        )));
+                        lines.push(Line::from(format!("note: {note}")));
                     }
                 }
             } else {
@@ -173,22 +177,22 @@ impl HistoryCell for RequestUserInputResultCell {
     }
 }
 
-/// Wrap a plain string with textwrap and prefix each line, while applying a style to the content.
+/// Retain the first-line label as text, keeping continuation alignment display-only.
 fn wrap_with_prefix(
     text: &str,
     width: usize,
     initial_prefix: Span<'static>,
     subsequent_prefix: Span<'static>,
     style: Style,
-) -> Vec<Line<'static>> {
-    let line = Line::from(vec![Span::from(text.to_string()).set_style(style)]);
+) -> Vec<HyperlinkLine> {
+    let label = initial_prefix.content.trim_start_matches(' ').to_owned();
+    let line = HyperlinkLine::new(Line::from(Span::from(text.to_string()).set_style(style)));
     let opts = RtOptions::new(width.max(1))
         .initial_indent(Line::from(vec![initial_prefix]))
         .subsequent_indent(Line::from(vec![subsequent_prefix]));
-    let wrapped = adaptive_wrap_line(&line, opts);
-    let mut out = Vec::new();
-    push_owned_lines(&wrapped, &mut out);
-    out
+    let mut wrapped = crate::terminal_hyperlinks::adaptive_wrap_hyperlink_lines(&[line], opts);
+    crate::terminal_hyperlinks::retain_initial_prefix(&mut wrapped, &label);
+    wrapped
 }
 
 /// Split a request_user_input answer into option labels and an optional freeform note.
@@ -207,3 +211,7 @@ fn split_request_user_input_answer(
     }
     (options, note)
 }
+
+#[cfg(test)]
+#[path = "request_user_input_tests.rs"]
+mod tests;

@@ -1,10 +1,9 @@
-//! Compact startup diagnostics with full details retained in the transcript.
+//! Startup diagnostics retained in the transcript and counted in the warning footer.
 //! Affected sources are unique; sign-in servers are a subset of MCP servers.
 
 use super::*;
 use codex_app_server_protocol::McpServerStartupFailureReason;
-use codex_i18n::current;
-use codex_i18n::tr_with;
+use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Default)]
@@ -12,9 +11,10 @@ pub(crate) struct StartupWarningsCell {
     pub(crate) messages: Vec<String>,
     pub(crate) other_sources: BTreeSet<String>,
     pub(crate) mcp_servers: BTreeSet<String>,
+    pub(crate) mcp_details: BTreeMap<String, Vec<String>>,
     pub(crate) sign_in_servers: BTreeSet<String>,
+    /// Whether diagnostics arrived before a session was attached.
     pub(crate) pending_header: bool,
-    pub(crate) transcript_hint: Option<String>,
 }
 
 impl StartupWarningsCell {
@@ -37,6 +37,10 @@ impl StartupWarningsCell {
             None => BTreeSet::new(),
         };
         Self {
+            mcp_details: mcp_servers
+                .iter()
+                .map(|server| (server.clone(), messages.clone()))
+                .collect(),
             messages,
             mcp_servers,
             sign_in_servers,
@@ -46,55 +50,49 @@ impl StartupWarningsCell {
 }
 
 impl HistoryCell for StartupWarningsCell {
-    #[allow(clippy::disallowed_methods)]
-    fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
-        if self.pending_header || self.messages.is_empty() || width == 0 {
-            return Vec::new();
-        }
-        let mcp_count = self.mcp_servers.len();
-        let count = mcp_count + self.other_sources.len();
-        let sign_in_count = self.sign_in_servers.len();
-        // The English line inflects `startup issue{plural}` and takes an "MCP "
-        // source marker; Chinese has no plural, so the four English shapes are four
-        // dictionary keys while the two Chinese values collapse to two. Word order
-        // and the `(a; b)` / " · … for details" scaffolding are layout: only the
-        // leaf phrases go through the dictionary, so the English rendering stays
-        // byte-identical to `app/tests/startup_warnings_tests.rs` snapshots.
-        let mut summary = if mcp_count == count {
-            if count == 1 {
-                tr_with(current(), "⚠ {0} MCP startup issue", &[&count.to_string()])
-            } else {
-                tr_with(current(), "⚠ {0} MCP startup issues", &[&count.to_string()])
-            }
-        } else if count == 1 {
-            tr_with(current(), "⚠ {0} startup issue", &[&count.to_string()])
-        } else {
-            tr_with(current(), "⚠ {0} startup issues", &[&count.to_string()])
-        };
-        let mut breakdown = Vec::new();
-        if mcp_count > 0 && mcp_count < count {
-            breakdown.push(tr_with(current(), "{0} MCP", &[&mcp_count.to_string()]));
-        }
-        if sign_in_count > 0 {
-            let sign_in_arg = sign_in_count.to_string();
-            breakdown.push(if sign_in_count == 1 {
-                tr_with(current(), "{0} needs sign-in", &[&sign_in_arg])
-            } else {
-                tr_with(current(), "{0} need sign-in", &[&sign_in_arg])
-            });
-        }
-        if !breakdown.is_empty() {
-            summary.push_str(&format!(" ({})", breakdown.join("; ")));
-        }
-        if let Some(hint) = &self.transcript_hint {
-            summary.push_str(&tr_with(current(), " · {0} for details", &[hint.as_str()]));
-        }
-        vec![
-            crate::line_truncation::truncate_line_with_ellipsis_if_overflow(
-                Line::from(summary.yellow().dim()),
-                width as usize,
-            ),
-        ]
+    fn warning_entries(&self) -> Vec<WarningEntry> {
+        self.other_sources
+            .iter()
+            .map(|message| WarningEntry {
+                id: WarningId::Message(message.clone()),
+                source: "Startup".into(),
+                details: message.clone(),
+            })
+            .chain(self.mcp_servers.iter().map(|server| WarningEntry {
+                id: WarningId::McpServer(server.clone()),
+                source: format!("MCP · {server}"),
+                details: {
+                    let mut details = self.mcp_details.get(server).map_or_else(
+                        || format!("MCP startup incomplete: {server}"),
+                        |messages| messages.join("\n\n"),
+                    );
+                    if self.sign_in_servers.contains(server) {
+                        details.push_str("\n\nSign-in required.");
+                    }
+                    details
+                },
+            }))
+            .collect()
+    }
+
+    fn live_raw_lines(&self) -> Vec<Line<'static>> {
+        Vec::new()
+    }
+
+    fn display_lines(&self, _width: u16) -> Vec<Line<'static>> {
+        Vec::new()
+    }
+
+    fn warning_keys(&self) -> Vec<WarningKey<'_>> {
+        self.other_sources
+            .iter()
+            .map(|message| WarningKey::Message(message))
+            .chain(
+                self.mcp_servers
+                    .iter()
+                    .map(|server| WarningKey::McpServer(server)),
+            )
+            .collect()
     }
 
     fn transcript_lines(&self, width: u16) -> Vec<Line<'static>> {

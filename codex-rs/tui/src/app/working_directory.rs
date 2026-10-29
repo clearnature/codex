@@ -1,17 +1,13 @@
 //! Local directory transitions and managed worktrees with fresh or preserved conversation history.
 //! Managed transitions and widget attachment run separately at the top of the event loop.
 
+use super::managed_worktree_creation::check_background_terminals;
 use super::session_lifecycle::ThreadAttachPresentation;
 use super::*;
 use crate::app_event::ManagedWorktreeTransition;
 use crate::app_server_session::ForkGoalContinuation::DeferUntilNextTurn;
 use crate::history_cell::McpInventoryLoadingCell as LoadingCell;
 use crate::terminal_visualization_instructions::with_terminal_visualization_instructions;
-use codex_app_server_protocol::ThreadBackgroundTerminalsListParams;
-use codex_app_server_protocol::ThreadBackgroundTerminalsListResponse as ListResponse;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 enum DestinationConfig {
     Load,
@@ -26,6 +22,7 @@ pub(super) struct ManagedWorktreeAttach {
     keymap: RuntimeKeymap,
     cwd: AbsolutePathBuf,
     name_error: Option<String>,
+    selected_profile: Option<PermissionProfileSelection>,
 }
 
 /// A /cd request awaiting a fresh event-loop iteration.
@@ -48,17 +45,16 @@ impl App {
                 .chat_widget
                 .can_change_working_directory(pending.source_thread_id)
         {
-            return self.working_directory_error(tr(
-                current(),
+            return self.working_directory_error(
                 "Changing directories requires an idle primary session without queued input.",
-            ));
+            );
         }
         if crate::uses_remote_workspace_or_environment(
             &self.app_server_target,
             self.environment_manager.as_ref(),
         ) {
             return self.working_directory_error(
-                tr(current(), "Changing directories is not supported for remote workspaces or remote execution environments."),
+                "Changing directories is not supported for remote workspaces or remote execution environments.",
             );
         }
         self.change_working_directory(tui, app_server, pending.destination)
@@ -83,10 +79,9 @@ impl App {
             || (mode == crate::app_event::ManagedWorktreeMode::Fork
                 && self.chat_widget.has_misalignment_policy_violation())
         {
-            self.chat_widget.add_error_message(tr_with(
-                current(),
-                "Cannot continue into the new worktree while the session is offline or blocked by a policy warning. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                &[&checkout.root.display().to_string()],
+            self.chat_widget.add_error_message(format!(
+                "Cannot continue into the new worktree while the session is offline or blocked by a policy warning. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                checkout.root.display()
             ));
             return Ok(());
         }
@@ -96,10 +91,9 @@ impl App {
                 .chat_widget
                 .can_change_working_directory(source_thread_id)
         {
-            self.chat_widget.add_error_message(tr_with(
-                current(),
-                "The source conversation changed while creating the worktree. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                &[&checkout.root.display().to_string()],
+            self.chat_widget.add_error_message(format!(
+                "The source conversation changed while creating the worktree. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                checkout.root.display()
             ));
             return Ok(());
         }
@@ -123,11 +117,10 @@ impl App {
         )
         .await;
         if self.pending_managed_worktree_attach.is_none() {
-            return Err(color_eyre::eyre::eyre!(tr_with(
-                current(),
-                "Could not start a session in the managed worktree. A checkout was retained at {0}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
-                &[&checkout_root.display().to_string()],
-            )));
+            return Err(color_eyre::eyre::eyre!(
+                "Could not start a session in the managed worktree. A checkout was retained at {}; remove it with `git worktree remove <checkout-path>` from the source repository if it is no longer needed.",
+                checkout_root.display()
+            ));
         }
         Ok(())
     }
@@ -162,17 +155,15 @@ impl App {
         destination_config: DestinationConfig,
     ) {
         if self.config.ephemeral || !cwd.as_path().is_dir() {
-            return self
-                .working_directory_error(tr(current(), "This task cannot be safely replaced."));
+            return self.working_directory_error("This task cannot be safely replaced.");
         }
         let Some(thread_id) = self.chat_widget.thread_id() else {
             return;
         };
         if self.pending_server_profiles.contains_key(&thread_id) {
-            return self.working_directory_error(tr(
-                current(),
+            return self.working_directory_error(
                 "Wait for permissions to update before changing directories.",
-            ));
+            );
         }
         if self.app_server_target.thread_params_mode()
             == crate::app_server_session::ThreadParamsMode::Remote
@@ -183,14 +174,26 @@ impl App {
                 .active_permission_profile()
                 .is_some_and(|profile| !profile.id.starts_with(':'))
         {
-            return self.working_directory_error(tr(
-                current(),
+            return self.working_directory_error(
                 "Changing directories with a named profile is not supported.",
-            ));
+            );
+        }
+        let selected_profile = self
+            .agents_overview
+            .requested_permission_profiles
+            .get(&thread_id)
+            .cloned();
+        if selected_profile
+            .as_ref()
+            .is_some_and(|profile| !profile.profile_id.starts_with(':'))
+        {
+            return self.working_directory_error(
+                "Changing directories with an unconfirmed named profile is not supported.",
+            );
         }
         let cells = &self.transcript_cells;
         if cells.iter().any(|cell| cell.as_any().is::<LoadingCell>()) {
-            return self.working_directory_error(tr(current(), "MCP inventory is still loading."));
+            return self.working_directory_error("MCP inventory is still loading.");
         }
         let agents = self.agent_navigation.ordered_threads();
         let closed_agents: HashSet<_> = agents
@@ -206,109 +209,18 @@ impl App {
                     .is_ok_and(|store| store.active_turn_id().is_none())
         });
         if active || agents.iter().any(|(t, a)| *t != thread_id && a.is_running) {
-            return self.working_directory_error(tr(
-                current(),
-                "Cannot change: another agent is running.",
-            ));
+            return self.working_directory_error("Cannot change: another agent is running.");
         }
         let open_agents: Vec<_> = agents
             .iter()
             .filter_map(|(id, agent)| (!agent.is_closed).then_some(*id))
             .collect();
-        let mut config = match destination_config {
-            DestinationConfig::Prepared(config) => *config,
-            DestinationConfig::Load => match self.rebuild_config_for_cwd(cwd.to_path_buf()).await {
-                Ok(config) => config,
-                Err(err) => {
-                    return self.working_directory_error(tr_with(
-                        current(),
-                        "Cannot load {0}: {1}",
-                        &[&format!("{cwd:?}"), &err.to_string()],
-                    ));
-                }
-            },
-        };
-        if config.active_project.trust_level.is_none() {
-            return self.working_directory_error(tr(
-                current(),
-                "This directory is not trusted; run Codex there.",
-            ));
-        }
-        if let Some((_, checkout, crate::app_event::ManagedWorktreeMode::Fork, _)) =
-            managed_worktree.as_ref()
-            && with_terminal_visualization_instructions(
-                &self.config,
-                self.config.developer_instructions.clone(),
-            ) != with_terminal_visualization_instructions(
-                &config,
-                config.developer_instructions.clone(),
-            )
-        {
-            return self.working_directory_error(tr_with(
-                current(),
-                "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {0}; remove it with `git worktree remove <checkout-path>` from the source repository.",
-                &[&checkout.root.display().to_string()],
-            ));
-        }
-        if let Some(profile) = self.runtime_permission_profile_override.as_ref()
-            && profile.active_permission_profile.is_some()
-            && (!profile.matches_config(&config)
-                || config.permissions.profile_workspace_roots()
-                    != self.config.permissions.profile_workspace_roots())
-        {
-            return self.working_directory_error(tr(
-                current(),
-                "Permission profile has different settings.",
-            ));
-        }
-        if let Some(profile) = self.runtime_permission_profile_override.as_ref()
-            && profile.turn_override == RuntimePermissionProfileTurnOverride::Preserve
-            && profile.active_permission_profile.is_none()
-            && !crate::app_server_session::permission_profile_is_safely_represented_by_sandbox_mode(
-                &profile.permission_profile,
-                cwd.as_path(),
-            )
-        {
-            return self.working_directory_error(tr(
-                current(),
-                "Permission profile cannot be preserved by /cd.",
-            ));
-        }
-        self.apply_runtime_policy_overrides(&mut config, RuntimePolicyOverrideScope::All);
-        if self.runtime_permission_profile_override.is_some() {
-            let reviewer = self.config.approvals_reviewer;
-            let reviewers = &config.config_layer_stack.requirements().approvals_reviewer;
-            if let Err(error) = reviewers.can_set(&reviewer) {
-                return self.working_directory_error(tr_with(
-                    current(),
-                    "Approvals reviewer: {0}",
-                    &[&error.to_string()],
-                ));
-            }
-            config.approvals_reviewer = reviewer;
-        }
-        let actual = config.permissions.approval_policy.value();
-        let approval = self
-            .runtime_approval_policy_override
-            .map(RuntimeApprovalPolicyOverride::policy);
-        let profile = self.runtime_permission_profile_override.as_ref();
-        if approval.is_some_and(|p| actual != p.to_core())
-            || profile.is_some_and(|profile| !profile.matches_config(&config))
-        {
-            return;
-        }
-        let local_settings = crate::local_settings::LocalSettings::from(&config);
-        let keymap = match RuntimeKeymap::from_config(&local_settings.tui.keymap) {
-            Ok(keymap) => keymap,
-            Err(error) => return self.chat_widget.add_error_message(error),
-        };
-        config.service_tier = self.chat_widget.configured_service_tier();
         let is_new_worktree = matches!(
             managed_worktree.as_ref().map(|(_, _, mode, _)| mode),
             Some(crate::app_event::ManagedWorktreeMode::New)
         );
         let rollout = self.chat_widget.rollout_path();
-        let has_rollout = rollout.as_deref().is_some_and(rollout_path_is_resumable);
+        let mut has_rollout = rollout.as_deref().is_some_and(rollout_path_is_resumable);
         let channels = &self.thread_event_channels;
         if !has_rollout
             && !is_new_worktree
@@ -328,8 +240,7 @@ impl App {
                     })
                 }))
         {
-            return self
-                .working_directory_error(tr(current(), "Conversation history is not saved."));
+            return self.working_directory_error("Conversation history is not saved.");
         }
         let mut ids: HashSet<_> = channels
             .keys()
@@ -337,24 +248,155 @@ impl App {
             .filter(|id| !closed_agents.contains(id))
             .collect();
         ids.extend(open_agents);
-        let descendants = ids.iter().copied().filter(|id| *id != thread_id);
-        for tracked_id in std::iter::once(thread_id).chain(descendants) {
-            let request = ClientRequest::ThreadBackgroundTerminalsList {
-                request_id: app_server.next_request_id(),
-                params: ThreadBackgroundTerminalsListParams {
-                    thread_id: tracked_id.to_string(),
-                    cursor: None,
-                    limit: Some(1),
-                },
-            };
-            let handle = app_server.request_handle();
-            let result = handle.request_typed::<ListResponse>(request).await;
-            if !matches!(result, Ok(response) if response.data.is_empty()) {
-                return self.working_directory_error(tr(
-                    current(),
-                    "Active background terminals block /cd.",
-                ));
+        let mut tracked_ids: Vec<_> = std::iter::once(thread_id)
+            .chain(ids.iter().copied().filter(|id| *id != thread_id))
+            .collect();
+        let mut config = match destination_config {
+            DestinationConfig::Prepared(config) => *config,
+            DestinationConfig::Load => match self.rebuild_config_for_cwd(cwd.to_path_buf()).await {
+                Ok(config) => config,
+                Err(err) => {
+                    return self.working_directory_error(format!("Cannot load {cwd:?}: {err}"));
+                }
+            },
+        };
+        if config.active_project.trust_level.is_none() {
+            if let Some(message) = check_background_terminals(
+                app_server,
+                &self.app_server_target,
+                tracked_ids.iter().copied(),
+            )
+            .await
+            {
+                return self.working_directory_error(message);
             }
+            if self
+                .confirm_directory_trust(
+                    tui,
+                    app_server,
+                    &mut config,
+                    cwd.as_path(),
+                    crate::onboarding::DirectoryTrustOptions {
+                        cancel: Some(crate::onboarding::TrustCancelAction::CurrentTask),
+                        ..Default::default()
+                    },
+                    /*startup_draft*/ None,
+                )
+                .await
+                .is_err()
+            {
+                return;
+            }
+        }
+        if let Some((_, checkout, crate::app_event::ManagedWorktreeMode::Fork, _)) =
+            managed_worktree.as_ref()
+            && with_terminal_visualization_instructions(
+                &self.config,
+                self.config.developer_instructions.clone(),
+            ) != with_terminal_visualization_instructions(
+                &config,
+                config.developer_instructions.clone(),
+            )
+        {
+            return self.working_directory_error(format!(
+                "Cannot fork into this worktree because developer instructions differ. Start a new conversation instead. An unused checkout was created at {}; remove it with `git worktree remove <checkout-path>` from the source repository.",
+                checkout.root.display()
+            ));
+        }
+        if !has_rollout
+            || is_new_worktree
+            || (self.runtime_permission_profile_override.is_none()
+                && self
+                    .config
+                    .permissions
+                    .active_permission_profile()
+                    .is_some_and(|profile| {
+                        profile.id == codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE
+                    }))
+        {
+            match crate::config_update::read_effective_config_if_supported(
+                app_server.request_handle(),
+                cwd.as_path(),
+            )
+            .await
+            {
+                Ok(Some(defaults)) => {
+                    crate::projectless::apply_defaults(
+                        &mut config,
+                        &self.harness_overrides,
+                        app_server,
+                        &self.environment_manager,
+                        &defaults,
+                    );
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    return self
+                        .working_directory_error(format!("Cannot read defaults: {error:#}"));
+                }
+            }
+        }
+        let scope = if config.active_project.is_untrusted() {
+            RuntimePolicyOverrideScope::ExplicitOnly
+        } else {
+            RuntimePolicyOverrideScope::All
+        };
+        let profile = self
+            .runtime_permission_profile_override
+            .as_ref()
+            .filter(|_| selected_profile.is_none())
+            .filter(|profile| {
+                scope == RuntimePolicyOverrideScope::All
+                    || profile.turn_override == RuntimePermissionProfileTurnOverride::LegacySandbox
+            })
+            .cloned();
+        if let Some(profile) = profile.as_ref()
+            && profile
+                .active_permission_profile
+                .as_ref()
+                .is_some_and(|active| !active.id.starts_with(':'))
+            && (!profile.matches_config(&config)
+                || config.permissions.profile_workspace_roots()
+                    != self.config.permissions.profile_workspace_roots())
+        {
+            return self.working_directory_error("Permission profile has different settings.");
+        }
+        if let Some(profile) = profile.as_ref()
+            && profile.turn_override == RuntimePermissionProfileTurnOverride::Preserve
+            && profile.active_permission_profile.is_none()
+            && !crate::app_server_session::permission_profile_is_safely_represented_by_sandbox_mode(
+                &profile.permission_profile,
+                cwd.as_path(),
+            )
+        {
+            return self.working_directory_error("Permission profile cannot be preserved by /cd.");
+        }
+        if selected_profile.is_none()
+            && let Err(error) = self.apply_runtime_policy_overrides(&mut config, scope)
+        {
+            return self.working_directory_error(format!("{error:#}"));
+        }
+        let actual = config.permissions.approval_policy.value();
+        let approval = self
+            .runtime_approval_policy_override
+            .filter(|_| selected_profile.is_none())
+            .filter(|value| {
+                scope == RuntimePolicyOverrideScope::All
+                    || matches!(value, RuntimeApprovalPolicyOverride::Explicit(_))
+            })
+            .map(RuntimeApprovalPolicyOverride::policy);
+        if approval.is_some_and(|p| actual != p.to_core())
+            || profile.is_some_and(|profile| !profile.matches_config(&config))
+        {
+            return;
+        }
+        let local_settings = self.local_settings.reloaded(&config);
+        let keymap = match RuntimeKeymap::from_config(&local_settings.tui.keymap) {
+            Ok(keymap) => keymap,
+            Err(error) => return self.chat_widget.add_error_message(error),
+        };
+        if !is_new_worktree {
+            config.service_tier = self.chat_widget.configured_service_tier();
         }
         if is_new_worktree {
             apply_managed_new_thread_defaults(
@@ -364,6 +406,46 @@ impl App {
                 &self.harness_overrides,
             );
         }
+        // Config reads and folder consent can overlap work from another client.
+        if !self
+            .backfill_loaded_subagent_threads(app_server)
+            .await
+            .completed
+        {
+            return self.working_directory_error("Cannot check agent status.");
+        }
+        ids.extend(
+            self.agent_navigation
+                .ordered_threads()
+                .iter()
+                .filter_map(|(id, agent)| (!agent.is_closed).then_some(*id)),
+        );
+        tracked_ids = std::iter::once(thread_id)
+            .chain(ids.iter().copied().filter(|id| *id != thread_id))
+            .collect();
+        for id in &tracked_ids {
+            match app_server.thread_read(*id, /*include_turns*/ false).await {
+                Ok(thread)
+                    if matches!(
+                        thread.status,
+                        codex_app_server_protocol::ThreadStatus::Active { .. }
+                    ) =>
+                {
+                    return self.working_directory_error("Cannot change: a task is running.");
+                }
+                Ok(_) => {}
+                Err(error) => {
+                    return self
+                        .working_directory_error(format!("Cannot check task status: {error}"));
+                }
+            }
+        }
+        if let Some(message) =
+            check_background_terminals(app_server, &self.app_server_target, tracked_ids).await
+        {
+            return self.working_directory_error(message);
+        }
+        has_rollout |= rollout.as_deref().is_some_and(rollout_path_is_resumable);
         let preserve_history = has_rollout && !is_new_worktree;
         let transitioned = if preserve_history {
             app_server
@@ -374,7 +456,7 @@ impl App {
                     /*last_turn_id*/ None,
                     /*before_turn_id*/ None,
                     DeferUntilNextTurn,
-                    /*selected_profile*/ None,
+                    selected_profile.as_ref(),
                 )
                 .await
         } else {
@@ -384,27 +466,36 @@ impl App {
                     &config,
                     /*session_start_source*/ None,
                     /*remote_cwd_override*/ None,
-                    /*selected_profile*/ None,
+                    selected_profile.as_ref(),
                 )
                 .await
         };
         let mut transitioned = match transitioned {
             Ok(value) => value,
-            Err(e) => {
-                return self.working_directory_error(tr_with(
-                    current(),
-                    "Failed to change: {0}",
-                    &[&e.to_string()],
-                ));
-            }
+            Err(e) => return self.working_directory_error(format!("Failed to change: {e}")),
         };
         let session = &transitioned.session;
+        let permissions_match = if let Some(selected) = &selected_profile {
+            session
+                .active_permission_profile
+                .as_ref()
+                .is_some_and(|active| active.id == selected.profile_id)
+                && selected
+                    .approval_policy
+                    .is_none_or(|policy| session.approval_policy == policy)
+                && selected
+                    .approvals_reviewer
+                    .is_none_or(|reviewer| session.approvals_reviewer == reviewer)
+        } else {
+            session.approval_policy.to_core() == config.permissions.approval_policy.value()
+                && session.approvals_reviewer == config.approvals_reviewer
+                && session.active_permission_profile
+                    == config.permissions.active_permission_profile()
+        };
         if session.thread_id == thread_id
             || crate::session_resume::cwds_differ(session.cwd.as_path(), cwd.as_path())
             || session.runtime_workspace_roots != config.workspace_roots
-            || session.approval_policy.to_core() != config.permissions.approval_policy.value()
-            || session.approvals_reviewer != config.approvals_reviewer
-            || session.active_permission_profile != config.permissions.active_permission_profile()
+            || !permissions_match
         {
             if session.thread_id != thread_id {
                 let _ = app_server.thread_unsubscribe(session.thread_id).await;
@@ -412,10 +503,7 @@ impl App {
                     let _ = app_server.thread_archive(session.thread_id).await;
                 }
             }
-            return self.working_directory_error(tr(
-                current(),
-                "Requested directory or permissions not applied.",
-            ));
+            return self.working_directory_error("Requested directory or permissions not applied.");
         }
         if let Some((manager, checkout, _, _)) = managed_worktree.as_ref()
             && let Err(error) =
@@ -426,10 +514,8 @@ impl App {
             if preserve_history {
                 let _ = app_server.thread_archive(replacement_id).await;
             }
-            return self.working_directory_error(tr_with(
-                current(),
-                "Cannot register managed worktree ownership: {0}",
-                &[&error.to_string()],
+            return self.working_directory_error(format!(
+                "Cannot register managed worktree ownership: {error}"
             ));
         }
         let name_error = if let Some(name) = managed_worktree
@@ -444,11 +530,7 @@ impl App {
                     transitioned.session.thread_name = Some(name.clone());
                     None
                 }
-                Err(error) => Some(tr_with(
-                    current(),
-                    "Failed to name the worktree session: {0}",
-                    &[&error.to_string()],
-                )),
+                Err(error) => Some(format!("Failed to name the worktree session: {error}")),
             }
         } else {
             None
@@ -459,11 +541,7 @@ impl App {
             if preserve_history {
                 let _ = app_server.thread_archive(replacement_id).await;
             }
-            return self.working_directory_error(tr_with(
-                current(),
-                "Cannot change directories: {0}",
-                &[&error.to_string()],
-            ));
+            return self.working_directory_error(format!("Cannot change directories: {error}"));
         }
         for tracked_id in ids.into_iter().filter(|id| *id != thread_id) {
             if let Err(error) = app_server.thread_unsubscribe(tracked_id).await {
@@ -477,6 +555,7 @@ impl App {
             keymap,
             cwd,
             name_error,
+            selected_profile,
         };
         if managed_worktree.is_some() {
             // Let the large synchronous ChatWidget constructor run on a fresh event-loop stack.
@@ -501,8 +580,10 @@ impl App {
             keymap,
             cwd,
             name_error,
+            selected_profile,
         } = attach;
         self.local_settings = local_settings;
+        self.refresh_server_version_overview_notice(CODEX_CLI_VERSION);
         self.config = *config;
         self.file_search
             .update_search_dir(self.config.cwd.to_path_buf());
@@ -514,11 +595,29 @@ impl App {
         let attach_widget = App::replace_chat_widget_with_app_server_thread;
         let (lineage, message) = (ThreadAttachPresentation::SessionLineage, None);
         if let Err(error) = attach_widget(self, tui, started, lineage, message).await {
-            return self.working_directory_error(tr_with(
-                current(),
-                "Could not restore session: {0}",
-                &[&error.to_string()],
+            return self.working_directory_error(format!("Could not restore session: {error}"));
+        }
+        if selected_profile.is_some() {
+            self.adopt_inherited_server_selection();
+        }
+        if matches!(
+            self.runtime_approval_policy_override,
+            Some(RuntimeApprovalPolicyOverride::Restored(_))
+        ) {
+            self.runtime_approval_policy_override = Some(RuntimeApprovalPolicyOverride::Restored(
+                self.config.permissions.approval_policy.value().into(),
             ));
+        }
+        if self
+            .runtime_permission_profile_override
+            .as_ref()
+            .is_some_and(|profile| {
+                profile.turn_override == RuntimePermissionProfileTurnOverride::Preserve
+            })
+        {
+            self.runtime_permission_profile_override = Some(
+                RuntimePermissionProfileOverride::from_restored_config(&self.config),
+            );
         }
         if let Some(error) = name_error {
             self.chat_widget.add_error_message(error);
@@ -531,11 +630,7 @@ impl App {
         if let Some(message) = project_config_warning(&self.config) {
             self.chat_widget.add_warning_message(message);
         }
-        let message = tr_with(
-            current(),
-            "Working directory changed to: {0}",
-            &[&cwd.display().to_string()],
-        );
+        let message = format!("Working directory changed to: {}", cwd.display());
         self.chat_widget.add_info_message(message, /*hint*/ None);
         if !self.config.bypass_hook_trust {
             let load_review = crate::startup_hooks_review::load_startup_hooks_review_entry;

@@ -742,8 +742,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "For difficult problems when quality matters more than speed · higher usage",
         "適合質量優先於速度的難題 · 用量較高",
     ),
-    ("Fresh thread with this plan.", "用此計劃新建執行緒。"),
-    ("Fresh thread. Context: {0}.", "新建執行緒。上下文：{0}。"),
+    ("Fresh thread with this plan", "用此計劃新建執行緒。"),
+    (
+        "Start a fresh thread (current context: {0})",
+        "新建執行緒（當前上下文：{0}）",
+    ),
     (
         "Future messages will include your current IDE selection and open tabs.",
         "後續訊息會包含你當前的IDE選中內容與開啟的標籤頁。",

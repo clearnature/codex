@@ -132,8 +132,12 @@ impl ChatWidget {
             "status line setup confirmed with items: {items:#?}, use_theme_colors: {use_theme_colors}"
         );
         let ids = items.iter().map(ToString::to_string).collect::<Vec<_>>();
+        self.config_panel_tui.status_line = Some(ids.clone());
+        self.config_panel_tui.status_line_use_colors = use_theme_colors;
         self.local_settings.tui.status_line = Some(ids);
         self.local_settings.tui.status_line_use_colors = use_theme_colors;
+        self.status_surface_overrides.status_line = None;
+        self.status_surface_overrides.status_line_use_colors = None;
         self.refresh_status_line();
     }
 
@@ -174,7 +178,9 @@ impl ChatWidget {
         tracing::info!("terminal title setup confirmed with items: {items:#?}");
         let ids = items.iter().map(ToString::to_string).collect::<Vec<_>>();
         self.terminal_title_setup_original_items = None;
+        self.config_panel_tui.terminal_title = Some(ids.clone());
         self.local_settings.tui.terminal_title = Some(ids);
+        self.status_surface_overrides.terminal_title = None;
         self.refresh_terminal_title();
     }
 
@@ -370,6 +376,7 @@ impl ChatWidget {
                     .map(|value| (item, value))
             }),
         );
+        preview_data.thread_id = self.thread_id;
 
         if self.rate_limit_snapshots_by_limit_id.contains_key("codex") {
             for item in [

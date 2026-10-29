@@ -3,25 +3,8 @@
 use super::*;
 use crate::line_truncation::line_width;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
+use crate::style::accent_color;
 use crate::width::display_width;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
-
-pub(crate) const SESSION_HEADER_MAX_INNER_WIDTH: usize = 56; // Just an eyeballed value
-
-pub(crate) fn card_inner_width(width: u16, max_inner_width: usize) -> Option<usize> {
-    if width < 4 {
-        return None;
-    }
-    let inner_width = std::cmp::min(width.saturating_sub(4) as usize, max_inner_width);
-    Some(inner_width)
-}
-
-/// Render `lines` inside a border sized to the widest span in the content.
-pub(crate) fn with_border(lines: Vec<Line<'static>>) -> Vec<Line<'static>> {
-    with_border_internal(lines, /*forced_inner_width*/ None)
-}
 
 /// Render `lines` inside a border whose inner width is at least `inner_width`.
 ///
@@ -32,17 +15,8 @@ pub(crate) fn with_border_with_inner_width(
     lines: Vec<Line<'static>>,
     inner_width: usize,
 ) -> Vec<Line<'static>> {
-    with_border_internal(lines, Some(inner_width))
-}
-
-fn with_border_internal(
-    lines: Vec<Line<'static>>,
-    forced_inner_width: Option<usize>,
-) -> Vec<Line<'static>> {
     let max_line_width = lines.iter().map(line_width).max().unwrap_or(0);
-    let content_width = forced_inner_width
-        .unwrap_or(max_line_width)
-        .max(max_line_width);
+    let content_width = inner_width.max(max_line_width);
 
     let mut out = Vec::with_capacity(lines.len() + 2);
     let border_inner_width = content_width + 2;
@@ -66,6 +40,15 @@ fn with_border_internal(
     out
 }
 
+/// Brand title shared by the session header and the status card; each owns its own indentation.
+pub(crate) fn codex_title(version: &str) -> Vec<Span<'static>> {
+    vec![
+        ">_ ".fg(accent_color()),
+        "OpenAI Codex".bold(),
+        format!(" (v{version})").dim(),
+    ]
+}
+
 #[derive(Debug)]
 struct TooltipHistoryCell {
     tip: String,
@@ -83,33 +66,100 @@ impl TooltipHistoryCell {
 
 impl HistoryCell for TooltipHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
+        visible_lines(self.display_hyperlink_lines(width))
+    }
+
+    fn display_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
         let indent = "  ";
         let indent_width = display_width(indent);
         let wrap_width = usize::from(width.max(1))
             .saturating_sub(indent_width)
             .max(1);
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        append_markdown(
-            &tr_with(current(), "**Tip:** {0}", &[self.tip.as_str()]),
-            Some(wrap_width),
-            Some(self.cwd.as_path()),
-            &mut lines,
-        );
+        let lines = crate::tooltips::render_tooltip_lines(&self.tip, wrap_width, &self.cwd);
 
-        prefix_lines(lines, indent.into(), indent.into())
+        prefix_hyperlink_lines(lines, indent.into(), indent.into())
+    }
+
+    fn transcript_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
+        self.display_hyperlink_lines(width)
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from(tr_with(current(), "Tip: {0}", &[&self.tip]))]
+        vec![Line::from(format!("Tip: {}", self.tip))]
+    }
+}
+
+/// Startup metadata, including prior-session summaries and available usage resets.
+#[derive(Debug)]
+pub(crate) struct SessionNoticeCell(pub(crate) PlainHistoryCell);
+
+impl HistoryCell for SessionNoticeCell {
+    fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
+        self.0.display_lines(width)
+    }
+
+    fn raw_lines(&self) -> Vec<Line<'static>> {
+        self.0.raw_lines()
+    }
+}
+
+/// Fork lineage that stays with the session header when older history is prepended.
+#[derive(Debug)]
+pub(crate) struct ForkedThreadHistoryCell(pub(crate) PlainHistoryCell);
+
+impl HistoryCell for ForkedThreadHistoryCell {
+    fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
+        self.0.display_lines(width)
+    }
+
+    fn raw_lines(&self) -> Vec<Line<'static>> {
+        self.0.raw_lines()
     }
 }
 
 #[derive(Debug)]
 pub struct SessionInfoCell(CompositeHistoryCell);
 
+/// Fullscreen transcript presentation omits tips; scrollback retains the original cells.
+pub(crate) fn fullscreen_session_lines(
+    cell: &dyn HistoryCell,
+    width: u16,
+    detailed: bool,
+    mode: HistoryRenderMode,
+) -> Vec<HyperlinkLine> {
+    if let Some(info) = cell.as_any().downcast_ref::<SessionInfoCell>() {
+        let mut lines = Vec::new();
+        for part in &info.0.parts {
+            if part.as_any().is::<TooltipHistoryCell>() {
+                continue;
+            }
+            let part_lines = fullscreen_session_lines(part.as_ref(), width, detailed, mode);
+            if !part_lines.is_empty() {
+                if !lines.is_empty() {
+                    lines.push(HyperlinkLine::from(""));
+                }
+                lines.extend(part_lines);
+            }
+        }
+        lines
+    } else if detailed || mode == HistoryRenderMode::Rich {
+        cell.retained_hyperlink_lines(width, detailed)
+    } else {
+        cell.display_hyperlink_lines_for_mode(width, mode)
+    }
+}
+
 impl HistoryCell for SessionInfoCell {
+    fn compact_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
+        self.0.compact_hyperlink_lines(width)
+    }
+
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         self.0.display_lines(width)
+    }
+
+    fn display_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
+        self.0.display_hyperlink_lines(width)
     }
 
     fn desired_height(&self, width: u16) -> u16 {
@@ -120,9 +170,20 @@ impl HistoryCell for SessionInfoCell {
         self.0.transcript_lines(width)
     }
 
+    fn transcript_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
+        self.0.transcript_hyperlink_lines(width)
+    }
+
     fn raw_lines(&self) -> Vec<Line<'static>> {
         self.0.raw_lines()
     }
+}
+
+/// Session-level cells that stay ahead of every loaded transcript page.
+pub(crate) fn is_session_history_prefix_cell(cell: &dyn HistoryCell) -> bool {
+    cell.as_any().is::<SessionInfoCell>()
+        || cell.as_any().is::<SessionHeaderHistoryCell>()
+        || cell.as_any().is::<ForkedThreadHistoryCell>()
 }
 
 #[expect(
@@ -133,17 +194,16 @@ pub(crate) fn new_session_info(
     config: &Config,
     local_settings: &crate::local_settings::LocalSettings,
     requested_model: &str,
+    model_display_name: &str,
     session: &ThreadSessionState,
     is_first_event: bool,
     tooltip_override: Option<String>,
     auth_plan: Option<PlanType>,
-    show_fast_status: bool,
 ) -> SessionInfoCell {
-    // Header box rendered as history (so it appears at the very top)
+    // Header rendered as history (so it appears at the very top).
     let header = SessionHeaderHistoryCell::new(
-        session.model.clone(),
+        model_display_name.to_string(),
         session.reasoning_effort.clone(),
-        show_fast_status,
         config.cwd.to_path_buf(),
         CODEX_CLI_VERSION,
     )
@@ -156,45 +216,34 @@ pub(crate) fn new_session_info(
     if is_first_event {
         // Help lines below the header (new copy and list)
         let help_lines: Vec<Line<'static>> = vec![
-            tr(
-                current(),
-                "  To get started, describe a task or try one of these commands:",
-            )
-            .dim()
-            .into(),
+            "  To get started, describe a task or try one of these commands:"
+                .dim()
+                .into(),
             Line::from(""),
             Line::from(vec![
                 "  ".into(),
                 "/init".into(),
-                tr(
-                    current(),
-                    " - create an AGENTS.md file with instructions for Codex",
-                )
-                .dim(),
+                " - create an AGENTS.md file with instructions for Codex".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/status".into(),
-                tr(current(), " - show current session configuration").dim(),
+                " - show current session configuration".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                tr(current(), " - choose what Codex is allowed to do").dim(),
+                " - choose what Codex is allowed to do".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/model".into(),
-                tr(
-                    current(),
-                    " - choose what model and reasoning effort to use",
-                )
-                .dim(),
+                " - choose what model and reasoning effort to use".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/review".into(),
-                tr(current(), " - review any changes and find issues").dim(),
+                " - review any changes and find issues".dim(),
             ]),
         ];
 
@@ -202,16 +251,16 @@ pub(crate) fn new_session_info(
     } else {
         if local_settings.tui.show_tooltips
             && let Some(tooltips) = tooltip_override
-                .or_else(|| tooltips::get_tooltip(auth_plan, show_fast_status))
+                .or_else(|| tooltips::get_tooltip(auth_plan, &local_settings.tui.keymap))
                 .map(|tip| TooltipHistoryCell::new(tip, &config.cwd))
         {
             parts.push(Box::new(tooltips));
         }
         if requested_model != session.model.as_str() {
             let lines = vec![
-                tr(current(), "model changed:").magenta().bold().into(),
-                tr_with(current(), "requested: {0}", &[requested_model]).into(),
-                tr_with(current(), "used: {0}", &[&session.model]).into(),
+                "model changed:".magenta().bold().into(),
+                format!("requested: {requested_model}").into(),
+                format!("used: {}", session.model).into(),
             ];
             parts.push(Box::new(PlainHistoryCell { lines }));
         }
@@ -241,13 +290,12 @@ pub(crate) fn has_yolo_permissions(
                 }
         )
 }
+/// Session banner with a model label already resolved for presentation by its caller.
 #[derive(Debug)]
 pub(crate) struct SessionHeaderHistoryCell {
     version: &'static str,
     model: String,
-    model_style: Style,
     reasoning_effort: Option<ReasoningEffortConfig>,
-    show_fast_status: bool,
     directory: PathBuf,
     yolo_mode: bool,
 }
@@ -256,34 +304,13 @@ impl SessionHeaderHistoryCell {
     pub(crate) fn new(
         model: String,
         reasoning_effort: Option<ReasoningEffortConfig>,
-        show_fast_status: bool,
-        directory: PathBuf,
-        version: &'static str,
-    ) -> Self {
-        Self::new_with_style(
-            model,
-            Style::default(),
-            reasoning_effort,
-            show_fast_status,
-            directory,
-            version,
-        )
-    }
-
-    pub(crate) fn new_with_style(
-        model: String,
-        model_style: Style,
-        reasoning_effort: Option<ReasoningEffortConfig>,
-        show_fast_status: bool,
         directory: PathBuf,
         version: &'static str,
     ) -> Self {
         Self {
             version,
-            model: crate::model_catalog::model_display_name(&model).to_string(),
-            model_style,
+            model,
             reasoning_effort,
-            show_fast_status,
             directory,
             yolo_mode: false,
         }
@@ -330,107 +357,52 @@ impl SessionHeaderHistoryCell {
 
 impl HistoryCell for SessionHeaderHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
-        let Some(inner_width) = card_inner_width(width, SESSION_HEADER_MAX_INNER_WIDTH) else {
-            return Vec::new();
-        };
-
-        let make_row = |spans: Vec<Span<'static>>| Line::from(spans);
-
-        // Title line rendered inside the box: ">_ OpenAI Codex (vX)"
-        let title_spans: Vec<Span<'static>> = vec![
-            Span::from(">_ ").dim(),
-            Span::from(tr(current(), "OpenAI Codex")).bold(),
-            Span::from(" ").dim(),
-            Span::from(format!("(v{})", self.version)).dim(),
-        ];
-
-        const CHANGE_MODEL_HINT_COMMAND: &str = "/model";
-        let change_model_hint_explanation = tr(current(), " to change");
-        let dir_label = tr(current(), "directory:");
-        let permissions_label = tr(current(), "permissions:");
-        let label_width = if self.yolo_mode {
-            dir_label.len().max(permissions_label.len())
-        } else {
-            dir_label.len()
-        };
-
-        let model_label = format!(
-            "{model_label:<label_width$}",
-            model_label = "model:",
-            label_width = label_width
-        );
-        let reasoning_label = self.reasoning_label();
-        let model_spans: Vec<Span<'static>> = {
-            let mut spans = vec![
-                Span::from(format!("{model_label} ")).dim(),
-                Span::styled(self.model.clone(), self.model_style),
-            ];
-            if let Some(reasoning) = reasoning_label {
-                spans.push(Span::from(" "));
-                spans.push(Span::from(reasoning.to_owned()));
-            }
-            if self.show_fast_status {
-                spans.push("   ".into());
-                spans.push(Span::styled("fast", self.model_style.magenta()));
-            }
-            spans.push("   ".dim());
-            spans.push(CHANGE_MODEL_HINT_COMMAND.cyan());
-            spans.push(change_model_hint_explanation.dim());
-            spans
-        };
-
-        let dir_label = format!("{dir_label:<label_width$}");
-        let dir_prefix = format!("{dir_label} ");
-        let dir_prefix_width = display_width(dir_prefix.as_str());
-        let dir_max_width = inner_width.saturating_sub(dir_prefix_width);
-        let dir = self.format_directory(Some(dir_max_width));
-        let dir_spans = vec![Span::from(dir_prefix).dim(), Span::from(dir)];
-
+        let width = usize::from(width);
+        let mut title = vec!["  ".into()];
+        title.extend(codex_title(self.version));
         let mut lines = vec![
-            make_row(title_spans),
-            make_row(Vec::new()),
-            make_row(model_spans),
-            make_row(dir_spans),
+            Line::default(),
+            Line::from(title),
+            Line::from(vec![
+                "     ".into(),
+                self.format_directory(Some(width.saturating_sub(/*rhs*/ 5)))
+                    .dim(),
+            ]),
         ];
-
         if self.yolo_mode {
-            let permissions_label = format!("{permissions_label:<label_width$}");
-            lines.push(make_row(vec![
-                Span::from(format!("{permissions_label} ")).dim(),
-                tr(current(), "YOLO mode").magenta().bold(),
+            lines.push(Line::from(vec![
+                "  permissions: ".dim(),
+                "YOLO mode".magenta().bold(),
             ]));
         }
-
-        let lines = lines
+        lines
             .into_iter()
-            .map(|line| truncate_line_with_ellipsis_if_overflow(line, inner_width))
-            .collect();
-        with_border(lines)
+            .map(|line| truncate_line_with_ellipsis_if_overflow(line, width))
+            .collect()
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(tr_with(current(), "OpenAI Codex (v{0})", &[self.version])),
-            Line::from(tr_with(
-                current(),
-                "model: {0}{1}",
-                &[
-                    self.model.as_str(),
-                    self.reasoning_label()
-                        .map(|reasoning| format!(" {reasoning}"))
-                        .unwrap_or_default()
-                        .as_str(),
-                ],
+            Line::from(format!("OpenAI Codex (v{})", self.version)),
+            Line::from(format!(
+                "model: {}{}",
+                self.model,
+                self.reasoning_label()
+                    .map(|reasoning| format!(" {reasoning}"))
+                    .unwrap_or_default()
             )),
-            Line::from(tr_with(
-                current(),
-                "directory: {0}",
-                &[&self.format_directory(/*max_width*/ None)],
+            Line::from(format!(
+                "directory: {}",
+                self.format_directory(/*max_width*/ None)
             )),
         ];
         if self.yolo_mode {
-            lines.push(Line::from(tr(current(), "permissions: YOLO mode")));
+            lines.push(Line::from("permissions: YOLO mode"));
         }
         lines
     }
 }
+
+#[cfg(test)]
+#[path = "session_transcript_tests.rs"]
+mod transcript_tests;

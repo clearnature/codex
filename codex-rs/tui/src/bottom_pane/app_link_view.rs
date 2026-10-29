@@ -2,9 +2,6 @@
 use crate::app_command::AppCommand as Op;
 use codex_app_server_protocol::McpServerElicitationAction;
 use codex_app_server_protocol::RequestId as AppServerRequestId;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::ThreadId;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -164,11 +161,7 @@ impl AppLinkViewParams {
             app_id,
             title,
             description: None,
-            instructions: tr(
-                current(),
-                "Sign in to this app in your browser, then return here.",
-            )
-            .to_string(),
+            instructions: "Sign in to this app in your browser, then return here.".to_string(),
             url: url.to_string(),
             is_installed: true,
             is_enabled: true,
@@ -192,13 +185,10 @@ impl AppLinkViewParams {
     ) -> Self {
         Self {
             app_id: elicitation_id.to_string(),
-            title: tr(current(), "Action required").to_string(),
-            description: Some(tr_with(current(), "Server: {0}", &[server_name])),
-            instructions: tr(
-                current(),
-                "Complete the requested action in your browser, then return here.",
-            )
-            .to_string(),
+            title: "Action required".to_string(),
+            description: Some(format!("Server: {server_name}")),
+            instructions: "Complete the requested action in your browser, then return here."
+                .to_string(),
             url: url.to_string(),
             is_installed: true,
             is_enabled: true,
@@ -213,7 +203,7 @@ impl AppLinkViewParams {
     }
 }
 
-fn validate_external_url(url: &str, require_chatgpt_host: bool) -> Option<Url> {
+pub(super) fn validate_external_url(url: &str, require_chatgpt_host: bool) -> Option<Url> {
     let parsed = Url::parse(url).ok()?;
     if parsed.scheme() != "https" || parsed.host_str().is_none() {
         return None;
@@ -302,16 +292,14 @@ impl AppLinkView {
     fn action_labels(&self) -> Vec<&'static str> {
         if self.is_auth_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec![tr(current(), "Open sign-in URL"), "Back"],
-                AppLinkScreen::InstallConfirmation => {
-                    vec![tr(current(), "I already signed in"), "Back"]
-                }
+                AppLinkScreen::Link => vec!["Open sign-in URL", "Back"],
+                AppLinkScreen::InstallConfirmation => vec!["I already signed in", "Back"],
             };
         }
         if self.is_external_action_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec![tr(current(), "Open link"), "Back"],
-                AppLinkScreen::InstallConfirmation => vec![tr(current(), "I finished"), "Back"],
+                AppLinkScreen::Link => vec!["Open link", "Back"],
+                AppLinkScreen::InstallConfirmation => vec!["I finished", "Back"],
             };
         }
 
@@ -319,21 +307,19 @@ impl AppLinkView {
             AppLinkScreen::Link => {
                 if self.is_installed {
                     vec![
-                        tr(current(), "Manage on ChatGPT"),
+                        "Manage on ChatGPT",
                         if self.is_enabled {
-                            tr(current(), "Disable app")
+                            "Disable app"
                         } else {
-                            tr(current(), "Enable app")
+                            "Enable app"
                         },
                         "Back",
                     ]
                 } else {
-                    vec![tr(current(), "Install on ChatGPT"), "Back"]
+                    vec!["Install on ChatGPT", "Back"]
                 }
             }
-            AppLinkScreen::InstallConfirmation => {
-                vec![tr(current(), "I already Installed it"), "Back"]
-            }
+            AppLinkScreen::InstallConfirmation => vec!["I already Installed it", "Back"],
         }
     }
 
@@ -522,10 +508,7 @@ impl AppLinkView {
         }
         let is_browser_action_suggestion = self.is_browser_action_suggestion();
         if self.is_installed && !is_browser_action_suggestion {
-            for line in wrap(
-                tr(current(), "Use $ to insert this app into the prompt."),
-                usable_width,
-            ) {
+            for line in wrap("Use $ to insert this app into the prompt.", usable_width) {
                 lines.push(Line::from(line.into_owned()));
             }
             lines.push(Line::from(""));
@@ -546,20 +529,14 @@ impl AppLinkView {
             }
             if !is_browser_action_suggestion {
                 for line in wrap(
-                    tr(
-                        current(),
-                        "Newly installed apps can take a few minutes to appear in /apps.",
-                    ),
+                    "Newly installed apps can take a few minutes to appear in /apps.",
                     usable_width,
                 ) {
                     lines.push(Line::from(line.into_owned()));
                 }
                 if !self.is_installed {
                     for line in wrap(
-                        tr(
-                            current(),
-                            "After installed, use $ to insert this app into the prompt.",
-                        ),
+                        "After installed, use $ to insert this app into the prompt.",
                         usable_width,
                     ) {
                         lines.push(Line::from(line.into_owned()));
@@ -586,14 +563,14 @@ impl AppLinkView {
         lines.push(Line::from(
             if is_auth_suggestion {
                 if is_codex_apps_auth {
-                    tr(current(), "Finish App Sign In")
+                    "Finish App Sign In"
                 } else {
-                    tr(current(), "Finish Authentication")
+                    "Finish Authentication"
                 }
             } else if is_external_action_suggestion {
-                tr(current(), "Finish in Browser")
+                "Finish in Browser"
             } else {
-                tr(current(), "Finish App Setup")
+                "Finish App Setup"
             }
             .bold(),
         ));
@@ -602,60 +579,39 @@ impl AppLinkView {
         if is_auth_suggestion {
             for line in wrap(
                 if is_codex_apps_auth {
-                    tr(
-                        current(),
-                        "Sign in to the app on ChatGPT in the browser window that just opened.",
-                    )
+                    "Sign in to the app on ChatGPT in the browser window that just opened."
                 } else {
-                    tr(
-                        current(),
-                        "Complete authentication in the browser window that just opened.",
-                    )
+                    "Complete authentication in the browser window that just opened."
                 },
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
             for line in wrap(
-                tr(
-                    current(),
-                    "Then return here and select \"I already signed in\".",
-                ),
+                "Then return here and select \"I already signed in\".",
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
         } else if is_external_action_suggestion {
             for line in wrap(
-                tr(
-                    current(),
-                    "Complete the requested action in the browser window that just opened.",
-                ),
+                "Complete the requested action in the browser window that just opened.",
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
-            for line in wrap(
-                tr(current(), "Then return here and select \"I finished\"."),
-                usable_width,
-            ) {
+            for line in wrap("Then return here and select \"I finished\".", usable_width) {
                 lines.push(Line::from(line.into_owned()));
             }
         } else {
             for line in wrap(
-                tr(
-                    current(),
-                    "Complete app setup on ChatGPT in the browser window that just opened.",
-                ),
+                "Complete app setup on ChatGPT in the browser window that just opened.",
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
             }
             for line in wrap(
-                tr(
-                    current(),
-                    "Sign in there if needed, then return here and select \"I already Installed it\".",
-                ),
+                "Sign in there if needed, then return here and select \"I already Installed it\".",
                 usable_width,
             ) {
                 lines.push(Line::from(line.into_owned()));
@@ -665,15 +621,20 @@ impl AppLinkView {
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
             if is_auth_suggestion {
-                tr(current(), "Sign-in URL:")
+                "Sign-in URL:"
             } else if is_external_action_suggestion {
                 "Link:"
             } else {
-                tr(current(), "Setup URL:")
+                "Setup URL:"
             }
             .dim(),
         ]));
-        let url_line = Line::from(vec![self.url.clone().cyan().underlined()]);
+        let url_line = Line::from(vec![
+            self.url
+                .clone()
+                .fg(crate::style::accent_color())
+                .underlined(),
+        ]);
         lines.extend(adaptive_wrap_lines(
             vec![url_line],
             RtOptions::new(usable_width),
@@ -693,6 +654,7 @@ impl AppLinkView {
                     ' '
                 };
                 GenericDisplayRow {
+                    selection_style: Some(crate::bottom_pane::selection_style()),
                     name: format!("{prefix} {}. {label}", index + 1),
                     ..Default::default()
                 }
@@ -713,27 +675,25 @@ impl AppLinkView {
     }
 
     fn hint_line(&self) -> Line<'static> {
-        let mut spans = vec!["Use ".into(), key_hint::plain(KeyCode::Tab).into()];
+        let mut spans = vec![key_hint::plain(KeyCode::Tab).into()];
         if let Some(move_up) = self.list_keymap.primary_hint(ListAction::MoveUp) {
-            spans.extend([" / ".into(), move_up.into()]);
+            spans.push(" / ".into());
+            spans.extend(move_up.spans());
         }
         if let Some(move_down) = self.list_keymap.primary_hint(ListAction::MoveDown) {
-            spans.extend([" ".into(), move_down.into()]);
+            spans.push(" ".into());
+            spans.extend(move_down.spans());
         }
-        spans.push(tr(current(), " to move").into());
+        spans.push(" move".into());
         if let Some(accept) = self.list_keymap.primary_hint(ListAction::Accept) {
-            spans.extend([
-                ", ".into(),
-                accept.into(),
-                tr(current(), " to select").into(),
-            ]);
+            spans.push(" · ".into());
+            spans.extend(accept.spans());
+            spans.push(" select".into());
         }
         if let Some(cancel) = self.list_keymap.primary_hint(ListAction::Cancel) {
-            spans.extend([
-                ", ".into(),
-                cancel.into(),
-                tr(current(), " to close").into(),
-            ]);
+            spans.push(" · ".into());
+            spans.extend(cancel.spans());
+            spans.push(" close".into());
         }
         Line::from(spans)
     }
@@ -853,6 +813,22 @@ impl BottomPaneView for AppLinkView {
     fn terminal_title_requires_action(&self) -> bool {
         self.is_tool_suggestion()
     }
+
+    fn program_status_blocked_kind(
+        &self,
+    ) -> Option<crate::terminal_program_status::ProgramStatusKind> {
+        use crate::terminal_program_status::ProgramStatusKind;
+        if !self.is_tool_suggestion() {
+            return None;
+        }
+        Some(match self.suggestion_type {
+            Some(AppLinkSuggestionType::Auth) => ProgramStatusKind::Auth,
+            Some(AppLinkSuggestionType::Install | AppLinkSuggestionType::Enable) => {
+                ProgramStatusKind::Permission
+            }
+            Some(AppLinkSuggestionType::ExternalAction) | None => ProgramStatusKind::Question,
+        })
+    }
 }
 
 impl crate::render::renderable::Renderable for AppLinkView {
@@ -863,8 +839,11 @@ impl crate::render::renderable::Renderable for AppLinkView {
             .wrap(Wrap { trim: false })
             .line_count(content_width)
             .max(1) as u16;
-        let action_rows_height = self.action_rows_height(content_width);
-        content_rows + action_rows_height + 3
+        let action_rows_height = self.action_rows_height(width);
+        let hint_rows = Paragraph::new(self.hint_line())
+            .wrap(Wrap { trim: false })
+            .line_count(width.saturating_sub(/*rhs*/ 2)) as u16;
+        content_rows + action_rows_height + hint_rows + 2
     }
 
     fn render(&self, area: Rect, buf: &mut Buffer) {
@@ -876,11 +855,15 @@ impl crate::render::renderable::Renderable for AppLinkView {
             .style(user_message_style())
             .render(area, buf);
 
-        let actions_height = self.action_rows_height(area.width.saturating_sub(4));
+        let actions_height = self.action_rows_height(area.width);
+        let hint = Paragraph::new(self.hint_line())
+            .dim()
+            .wrap(Wrap { trim: false });
+        let hint_height = hint.line_count(area.width.saturating_sub(/*rhs*/ 2)) as u16;
         let [content_area, actions_area, hint_area] = Layout::vertical([
             Constraint::Fill(1),
             Constraint::Length(actions_height),
-            Constraint::Length(1),
+            Constraint::Length(hint_height),
         ])
         .areas(area);
 
@@ -893,12 +876,6 @@ impl crate::render::renderable::Renderable for AppLinkView {
         crate::terminal_hyperlinks::mark_url_hyperlink(buf, inner, &self.url);
 
         if actions_area.height > 0 {
-            let actions_area = Rect {
-                x: actions_area.x.saturating_add(2),
-                y: actions_area.y,
-                width: actions_area.width.saturating_sub(2),
-                height: actions_area.height,
-            };
             let action_rows = self.action_rows();
             let action_state = self.action_state();
             render_rows(
@@ -907,7 +884,7 @@ impl crate::render::renderable::Renderable for AppLinkView {
                 &action_rows,
                 &action_state,
                 action_rows.len().max(1),
-                tr(current(), "No actions"),
+                "No actions",
             );
         }
 
@@ -918,7 +895,7 @@ impl crate::render::renderable::Renderable for AppLinkView {
                 width: hint_area.width.saturating_sub(2),
                 height: hint_area.height,
             };
-            self.hint_line().dim().render(hint_area, buf);
+            hint.render(hint_area, buf);
         }
     }
 }
@@ -1014,13 +991,10 @@ mod tests {
             params,
             AppLinkViewParams {
                 app_id: "payment-123".to_string(),
-                title: tr(current(), "Action required").to_string(),
+                title: "Action required".to_string(),
                 description: Some("Server: payments".to_string()),
-                instructions: tr(
-                    current(),
-                    "Complete the requested action in your browser, then return here."
-                )
-                .to_string(),
+                instructions: "Complete the requested action in your browser, then return here."
+                    .to_string(),
                 url: "https://payments.example/checkout/123".to_string(),
                 is_installed: true,
                 is_enabled: true,
@@ -1121,11 +1095,7 @@ mod tests {
 
         assert_eq!(
             view.action_labels(),
-            vec![
-                tr(current(), "Manage on ChatGPT"),
-                tr(current(), "Disable app"),
-                "Back"
-            ]
+            vec!["Manage on ChatGPT", "Disable app", "Back"]
         );
     }
 
@@ -1276,11 +1246,7 @@ mod tests {
 
         assert_eq!(
             view.action_labels(),
-            vec![
-                tr(current(), "Manage on ChatGPT"),
-                tr(current(), "Enable app"),
-                "Back"
-            ]
+            vec!["Manage on ChatGPT", "Enable app", "Back"]
         );
     }
 
@@ -1708,11 +1674,7 @@ mod tests {
                 app_id: "connector_google_calendar".to_string(),
                 title: "Google Calendar".to_string(),
                 description: None,
-                instructions: tr(
-                    current(),
-                    "Sign in to this app in your browser, then return here.",
-                )
-                .to_string(),
+                instructions: "Sign in to this app in your browser, then return here.".to_string(),
                 url: "https://chatgpt.com/apps/google-calendar/connector_google_calendar"
                     .to_string(),
                 is_installed: true,

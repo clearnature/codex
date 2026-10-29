@@ -25,6 +25,8 @@ pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> 
             }
             ThreadStoreError::ThreadNotFound { .. }
             | ThreadStoreError::InvalidRequest { .. }
+            | ThreadStoreError::Retryable { .. }
+            | ThreadStoreError::OutcomeUnknown { .. }
             | ThreadStoreError::Internal { .. } => {}
         }
     }
@@ -84,3 +86,7 @@ fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<Co
         &[&hint, &io_err.to_string()],
     )))
 }
+
+#[cfg(test)]
+#[path = "session_rollout_init_error_tests.rs"]
+mod tests;

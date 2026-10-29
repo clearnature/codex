@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
+use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -42,8 +43,6 @@ use crate::transport::RemoteControlStartConfig;
 use crate::transport::TransportEvent;
 use crate::transport::acquire_app_server_startup_lock;
 use crate::transport::app_server_startup_lock_path;
-use crate::transport::auth::policy_from_settings;
-use crate::transport::prepare_control_socket_path;
 use crate::transport::route_outgoing_envelope;
 use crate::transport::start_control_socket_acceptor;
 use crate::transport::start_remote_control;
@@ -55,6 +54,8 @@ use codex_app_server_protocol::JSONRPCMessage;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::TextPosition as AppTextPosition;
 use codex_app_server_protocol::TextRange as AppTextRange;
+use codex_app_server_transport::WebSocketCompression;
+use codex_app_server_transport::daemon_recovery_file_path;
 use codex_config::ConfigLayerSource;
 use codex_config::ConfigLoadError;
 use codex_config::TextRange as CoreTextRange;
@@ -62,15 +63,14 @@ use codex_core::ExecPolicyError;
 use codex_core::check_execpolicy_for_warnings;
 use codex_core::config::find_codex_home;
 use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerRuntimePaths;
+use codex_exec_server::ExecServerRuntimeOptions;
 use codex_features::Feature;
 use codex_feedback::CodexFeedback;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::protocol::SessionSource;
 use codex_rollout::state_db as rollout_state_db;
 use codex_state::log_db;
+use codex_websocket_auth::WebsocketAuthSettings;
+use codex_websocket_auth::policy_from_settings;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
@@ -80,13 +80,12 @@ use tracing::info;
 use tracing::warn;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::Layer;
+use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::Registry;
 use tracing_subscriber::util::SubscriberInitExt;
 
-fn sqlite_recovery_config_warning_summary() -> &'static str {
-    tr(current(), "Codex rebuilt its local database.")
-}
+const SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY: &str = "Codex rebuilt its local database";
 
 fn is_unsupported_untrusted_approval_policy_error(err: &std::io::Error) -> bool {
     err.get_ref().is_some_and(
@@ -106,11 +105,16 @@ mod code_mode_host;
 mod codex_home_metrics;
 mod command_exec;
 mod config_layer;
+mod startup_config;
+pub use startup_config::StartupConfigArgs;
+pub use startup_config::print_startup_config;
+
 mod config_manager;
 mod config_manager_service;
 mod connection_cleanup;
 mod connection_rpc_gate;
 mod current_time;
+mod daemon_thread_recovery;
 mod dynamic_tools;
 mod effective_plugin_change;
 mod error_code;
@@ -120,10 +124,15 @@ mod external_auth;
 mod filters;
 mod fs_watch;
 mod fuzzy_file_search;
+mod gateway_oauth_notifications;
 mod image_url;
 pub mod in_process;
+mod log_write_warning;
+#[cfg(unix)]
+mod managed_daemon;
 mod mcp_refresh;
 mod message_processor;
+mod model_catalog;
 mod models;
 mod models_refresh_worker;
 mod notification_media;
@@ -134,9 +143,11 @@ mod request_processors;
 mod request_serialization;
 mod server_request_error;
 mod skills_watcher;
+mod thread_sample;
 mod thread_state;
 mod thread_status;
 mod transport;
+mod turn_admission;
 mod turn_cost_worker;
 mod user_verification;
 mod user_verification_response;
@@ -148,10 +159,8 @@ pub use crate::error_code::INVALID_PARAMS_ERROR_CODE;
 pub use crate::transport::AppServerTransport;
 pub use crate::transport::RemoteControlStartupMode;
 pub use crate::transport::app_server_control_socket_path;
-pub use crate::transport::auth::AppServerWebsocketAuthArgs;
-pub use crate::transport::auth::AppServerWebsocketAuthSettings;
-pub use crate::transport::auth::WebsocketAuthCliMode;
 pub use crate::transport::take_remote_control_disabled_env;
+pub use crate::transport::verified_local_daemon_socket;
 
 const LOG_FORMAT_ENV_VAR: &str = "LOG_FORMAT";
 const OTEL_SERVICE_NAME: &str = "codex-app-server";
@@ -165,6 +174,10 @@ enum LogFormat {
 }
 
 type StderrLogLayer = Box<dyn Layer<Registry> + Send + Sync + 'static>;
+
+fn stderr_span_events() -> FmtSpan {
+    FmtSpan::NEW | FmtSpan::CLOSE
+}
 
 /// Control-plane messages from the processor/transport side to the outbound router task.
 ///
@@ -252,6 +265,7 @@ impl ShutdownState {
         signal: ShutdownSignal,
         connection_count: usize,
         running_turn_count: usize,
+        turn_admission: &turn_admission::TurnAdmission,
     ) {
         if self.requested {
             if matches!(signal, ShutdownSignal::Forceable) {
@@ -260,20 +274,26 @@ impl ShutdownState {
             return;
         }
 
+        turn_admission.begin_drain();
         self.requested = true;
         self.last_logged_running_turn_count = None;
         info!(
-            "received shutdown signal; entering graceful restart drain (connections={}, runningAssistantTurns={}, requests still accepted until no assistant turns are running)",
+            "received shutdown signal; entering graceful restart drain (connections={}, runningAssistantTurns={}, new client turns rejected)",
             connection_count, running_turn_count,
         );
     }
 
-    fn update(&mut self, running_turn_count: usize, connection_count: usize) -> ShutdownAction {
+    fn update(
+        &mut self,
+        running_turn_count: usize,
+        active_admissions: usize,
+        connection_count: usize,
+    ) -> ShutdownAction {
         if !self.requested {
             return ShutdownAction::Noop;
         }
 
-        if self.forced || running_turn_count == 0 {
+        if self.forced || (running_turn_count == 0 && active_admissions == 0) {
             if self.forced {
                 info!(
                     "received second shutdown signal; forcing restart with {running_turn_count} running assistant turn(s) and {connection_count} connection(s)"
@@ -288,7 +308,7 @@ impl ShutdownState {
 
         if self.last_logged_running_turn_count != Some(running_turn_count) {
             info!(
-                "shutdown signal restart: waiting for {running_turn_count} running assistant turn(s) to finish"
+                "shutdown signal restart: waiting for {running_turn_count} running assistant turn(s) and {active_admissions} admitted request(s) to finish"
             );
             self.last_logged_running_turn_count = Some(running_turn_count);
         }
@@ -350,7 +370,7 @@ fn exec_policy_warning_location(err: &ExecPolicyError) -> (Option<String>, Optio
 fn exec_policy_config_warning(err: &ExecPolicyError) -> ConfigWarningNotification {
     let (path, range) = exec_policy_warning_location(err);
     ConfigWarningNotification {
-        summary: tr(current(), "Error parsing rules; custom rules not applied.").to_string(),
+        summary: "Error parsing rules; custom rules not applied.".to_string(),
         details: Some(err.to_string()),
         path,
         range,
@@ -390,9 +410,9 @@ fn project_config_warning(config: &Config) -> Option<ConfigWarningNotification> 
         return None;
     }
 
-    let mut message = tr(
-        current(),
-        "Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.\n",
+    let mut message = concat!(
+        "Project-local config, hooks, and exec policies are disabled in the following folders ",
+        "until the project is trusted, but skills still load.\n",
     )
     .to_string();
     for (index, (folder, reason)) in disabled_folders.iter().enumerate() {
@@ -438,10 +458,19 @@ pub async fn run_main(
         default_analytics_enabled,
         AppServerTransport::Stdio,
         SessionSource::VSCode,
-        AppServerWebsocketAuthSettings::default(),
+        WebsocketAuthSettings::default(),
         AppServerRuntimeOptions::default(),
     )
     .await
+    .map(|_| ())
+}
+
+/// Reports whether shutdown finished or the managed daemon must exit without waiting for I/O.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppServerExit {
+    Graceful,
+    /// Executables should exit before dropping their runtime; libraries must not exit their host.
+    Forced,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -452,19 +481,24 @@ pub enum PluginStartupTasks {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppServerRuntimeOptions {
+    /// Optional host-owned frozen cloud skill catalog and resources, loaded once at startup.
+    pub cloud_skills_snapshot: Option<std::path::PathBuf>,
     pub code_mode_host_transport: CodeModeHostTransport,
     pub plugin_startup_tasks: PluginStartupTasks,
     pub remote_control_startup_mode: RemoteControlStartupMode,
     pub install_shutdown_signal_handler: bool,
+    pub managed_daemon: bool,
 }
 
 impl Default for AppServerRuntimeOptions {
     fn default() -> Self {
         Self {
+            cloud_skills_snapshot: None,
             code_mode_host_transport: CodeModeHostTransport::Local,
             plugin_startup_tasks: PluginStartupTasks::Start,
             remote_control_startup_mode: RemoteControlStartupMode::ResolvePersisted,
             install_shutdown_signal_handler: true,
+            managed_daemon: false,
         }
     }
 }
@@ -478,9 +512,27 @@ pub async fn run_main_with_transport_options(
     default_analytics_enabled: bool,
     transport: AppServerTransport,
     session_source: SessionSource,
-    auth: AppServerWebsocketAuthSettings,
+    auth: WebsocketAuthSettings,
     runtime_options: AppServerRuntimeOptions,
-) -> IoResult<()> {
+) -> IoResult<AppServerExit> {
+    let cloud_skill_provider = match runtime_options.cloud_skills_snapshot {
+        Some(path) => {
+            let provider = tokio::task::spawn_blocking(move || {
+                codex_skills_extension::FrozenCloudSkillProvider::from_file(&path)
+            })
+            .await
+            .map_err(std::io::Error::other)?
+            .map_err(|err| std::io::Error::new(ErrorKind::InvalidInput, err))?;
+            Some(Arc::new(provider) as Arc<dyn codex_skills_extension::SkillProvider>)
+        }
+        None => None,
+    };
+    #[cfg(target_os = "windows")]
+    let _registered_core = codex_windows_sandbox::registered_core_requested();
+    let managed_daemon = matches!(&transport, AppServerTransport::UnixSocket { .. })
+        && runtime_options.managed_daemon;
+    #[cfg(unix)]
+    let nofile_limit_result = managed_daemon.then(managed_daemon::raise_nofile_limit);
     let loader_overrides = loader_overrides_with_test_user_config_file(
         loader_overrides,
         test_user_config_file_from_env(),
@@ -496,11 +548,12 @@ pub async fn run_main_with_transport_options(
     let cli_kv_overrides = cli_config_overrides.parse_overrides().map_err(|e| {
         std::io::Error::new(
             ErrorKind::InvalidInput,
-            tr_with(current(), "error parsing -c overrides: {0}", &[e.as_str()]),
+            format!("error parsing -c overrides: {e}"),
         )
     })?;
     let codex_home = find_codex_home()?;
-    let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
+    let startup_cwd = std::env::current_dir().ok();
+    let local_runtime_paths = ExecServerRuntimeOptions::from_optional_paths(
         arg0_paths.codex_self_exe.clone(),
         arg0_paths.codex_linux_sandbox_exe.clone(),
     )?;
@@ -514,36 +567,12 @@ pub async fn run_main_with_transport_options(
         arg0_paths.clone(),
         Arc::new(NoopThreadConfigLoader),
     );
-    match config_manager
-        .load_latest_config(/*fallback_cwd*/ None)
-        .await
-    {
-        Ok(config) => {
-            let auth_manager =
-                AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false)
-                    .await
-                    .map_err(std::io::Error::other)?;
-            config_manager.replace_cloud_config_bundle_loader(
-                auth_manager,
-                config.chatgpt_base_url.clone(),
-                config.http_client_factory(),
-            );
-        }
-        Err(err) if is_unsupported_untrusted_approval_policy_error(&err) => {
-            return Err(err);
-        }
-        Err(err) => {
-            warn!(error = %err, "Failed to preload config for cloud config bundle");
-            // If this fails, we cannot install cloud/thread config loaders, so non-strict
-            // startup continues without managed cloud config.
-        }
-    };
+    let startup = config_manager
+        .load_cloud_startup_config(startup_cwd.clone())
+        .await?;
     let mut config_warnings = Vec::new();
     let mut plugin_startup_config = PluginStartupConfig::Current;
-    let config = match config_manager
-        .load_latest_config(/*fallback_cwd*/ None)
-        .await
-    {
+    let config = match startup.config {
         Ok(config) => config,
         Err(err) if is_unsupported_untrusted_approval_policy_error(&err) => {
             return Err(err);
@@ -553,25 +582,32 @@ pub async fn run_main_with_transport_options(
                 return Err(err);
             }
 
-            let message = config_warning_from_error(
-                tr(current(), "Invalid configuration; using defaults."),
-                &err,
-            );
+            let message = config_warning_from_error("Invalid configuration; using defaults.", &err);
             config_warnings.push(message);
             plugin_startup_config = PluginStartupConfig::Defaults;
             config_manager.load_default_config().await.map_err(|e| {
                 std::io::Error::new(
                     ErrorKind::InvalidData,
-                    tr_with(
-                        current(),
-                        "error loading default config after config error: {0}",
-                        &[&format!("{e}")],
-                    ),
+                    format!("error loading default config after config error: {e}"),
                 )
             })?
         }
     };
+    config.validate_windows_mxc_requirement()?;
     config.auth_config().validate()?;
+    let auth_manager =
+        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false)
+            .await
+            .map_err(std::io::Error::other)?;
+    config_manager.replace_cloud_config_bundle_loader(
+        auth_manager.clone(),
+        config.chatgpt_base_url.clone(),
+        config.http_client_factory(),
+    );
+    config_manager
+        .sync_default_client_residency_requirement()
+        .await;
+
     #[cfg(target_os = "macos")]
     let local_runtime_paths = local_runtime_paths.with_allowed_symlinked_codex_home(
         codex_config::allowed_symlinked_codex_home(&config.config_layer_stack, &config.codex_home),
@@ -583,10 +619,7 @@ pub async fn run_main_with_transport_options(
                 if !config.features.enabled(Feature::CodeModeHost) {
                     return Err(std::io::Error::new(
                         ErrorKind::InvalidInput,
-                        tr(
-                            current(),
-                            "remote code-mode host requires the code_mode_host feature to be enabled",
-                        ),
+                        "remote code-mode host requires the code_mode_host feature to be enabled",
                     ));
                 }
                 Some(Arc::new(
@@ -597,13 +630,19 @@ pub async fn run_main_with_transport_options(
                 ))
             }
         };
+    // Executor credentials belong to the selected environment, not the current account.
+    // Each request and connection still acquires a revocable application-policy permit.
+    let environment_http_client_factory = config
+        .http_client_factory()
+        .with_network_policy(config.application_network_policy.clone());
     let environment_manager = if ignore_user_config {
-        EnvironmentManager::from_env(Some(local_runtime_paths), config.http_client_factory()).await
+        EnvironmentManager::from_env(Some(local_runtime_paths), environment_http_client_factory)
+            .await
     } else {
         EnvironmentManager::from_codex_home(
             codex_home.clone(),
             Some(local_runtime_paths),
-            config.http_client_factory(),
+            environment_http_client_factory,
         )
         .await
     }
@@ -619,20 +658,15 @@ pub async fn run_main_with_transport_options(
     .map_err(|e| {
         std::io::Error::new(
             ErrorKind::InvalidData,
-            tr_with(
-                current(),
-                "error loading otel config: {0}",
-                &[&format!("{e}")],
-            ),
+            format!("error loading otel config: {e}"),
         )
     })?;
     codex_core::otel_init::record_process_start(otel.as_ref(), OTEL_SERVICE_NAME);
     codex_core::otel_init::install_sqlite_telemetry(otel.as_ref(), OTEL_SERVICE_NAME);
     let unix_socket_startup_lock = match &transport {
-        AppServerTransport::UnixSocket { socket_path } => {
+        AppServerTransport::UnixSocket { .. } => {
             let startup_lock_path = app_server_startup_lock_path(&codex_home)?;
             let startup_lock = acquire_app_server_startup_lock(startup_lock_path).await?;
-            prepare_control_socket_path(socket_path.as_path()).await?;
             Some(startup_lock)
         }
         _ => None,
@@ -640,20 +674,16 @@ pub async fn run_main_with_transport_options(
     let state_db_init = match init_sqlite_state_db_with_fresh_start_on_corruption(&config).await {
         Ok(state_db_init) => state_db_init,
         Err(err) => {
-            return Err(std::io::Error::other(tr_with(
-                current(),
-                "failed to initialize sqlite state runtime under {1}: {0}",
-                &[
-                    &err.to_string(),
-                    &config.sqlite_config().home().display().to_string(),
-                ],
+            return Err(std::io::Error::other(format!(
+                "failed to initialize sqlite state runtime under {}: {err}",
+                config.sqlite_config().home().display()
             )));
         }
     };
     let state_db = state_db_init.state_db;
     if let Some(recovery_notice) = state_db_init.recovery_notice {
         config_warnings.push(ConfigWarningNotification {
-            summary: sqlite_recovery_config_warning_summary().to_string(),
+            summary: SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY.to_string(),
             details: Some(recovery_notice.details),
             path: None,
             range: None,
@@ -675,9 +705,10 @@ pub async fn run_main_with_transport_options(
             range: None,
         });
     }
-    if let Some(warning) =
-        codex_core::config::system_bwrap_warning(config.permissions.permission_profile())
-    {
+    if let Some(warning) = codex_core::config::system_bwrap_warning(
+        &config.permissions.effective_permission_profile(),
+        &config.cwd,
+    ) {
         config_warnings.push(ConfigWarningNotification {
             summary: warning,
             details: None,
@@ -686,28 +717,44 @@ pub async fn run_main_with_transport_options(
         });
     }
 
+    let analytics_events_client =
+        analytics_events_client_from_config(Arc::clone(&auth_manager), &config);
+    let outgoing_message_sender = Arc::new(OutgoingMessageSender::new(
+        outgoing_tx,
+        analytics_events_client.clone(),
+    ));
     let feedback = CodexFeedback::new();
 
     // Install a simple subscriber so `tracing` output is visible. Users can
     // control the log level with `RUST_LOG` and switch to JSON logs with
     // `LOG_FORMAT=json`.
+    // SQLx enters the caller's span for each command. Skip enter/exit records
+    // that can block its worker on stderr while holding a write transaction.
+    // Preserve span boundaries, busy/idle timings, and explicit events.
     let stderr_fmt: StderrLogLayer = match log_format_from_env() {
         LogFormat::Json => tracing_subscriber::fmt::layer()
             .json()
-            .with_writer(std::io::stderr)
-            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+            .with_writer(codex_app_server_daemon::stderr_writer)
+            .with_span_events(stderr_span_events())
             .with_filter(EnvFilter::from_default_env())
             .boxed(),
         LogFormat::Default => tracing_subscriber::fmt::layer()
-            .with_writer(std::io::stderr)
-            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+            .with_writer(codex_app_server_daemon::stderr_writer)
+            .with_span_events(stderr_span_events())
             .with_filter(EnvFilter::from_default_env())
             .boxed(),
     };
 
+    let log_write_warning = log_write_warning::LogWriteWarningReporter::new(
+        feedback.clone(),
+        &outgoing_message_sender,
+        &config,
+    );
     let feedback_layer = feedback.logger_layer();
     let feedback_metadata_layer = feedback.metadata_layer();
-    let log_db = state_db.clone().map(log_db::start);
+    let log_db = state_db
+        .clone()
+        .map(|state_db| log_db::start(state_db, log_write_warning.clone()));
     let log_db_layer = log_db
         .clone()
         .map(|layer| layer.with_filter(log_db::default_filter()));
@@ -719,6 +766,10 @@ pub async fn run_main_with_transport_options(
         .with(log_db_layer)
         .with(otel_layers)
         .try_init();
+    #[cfg(unix)]
+    if let Some(Err(err)) = nofile_limit_result {
+        warn!(%err, "failed to raise managed app-server file descriptor limit");
+    }
     for warning in &config_warnings {
         match &warning.details {
             Some(details) => error!("{} {}", warning.summary, details),
@@ -744,10 +795,7 @@ pub async fn run_main_with_transport_options(
     {
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
-            tr(
-                current(),
-                "remote control is disabled by managed requirements",
-            ),
+            "remote control is disabled by managed requirements",
         ));
     }
     let installation_id = resolve_installation_id(&config.codex_home).await?;
@@ -756,6 +804,14 @@ pub async fn run_main_with_transport_options(
     let remote_control_shutdown_token = transport_shutdown_token.child_token();
     let mut transport_accept_handles = Vec::<JoinHandle<()>>::new();
 
+    let websocket_compression = if config
+        .features
+        .enabled(Feature::AppServerWebSocketCompression)
+    {
+        WebSocketCompression::Zstd
+    } else {
+        WebSocketCompression::Plain
+    };
     let single_client_mode = matches!(&transport, AppServerTransport::Stdio);
     let graceful_signal_restart_enabled =
         runtime_options.install_shutdown_signal_handler && !single_client_mode;
@@ -765,12 +821,13 @@ pub async fn run_main_with_transport_options(
         AppServerTransport::Stdio => {
             let (stdio_client_name_tx, stdio_client_name_rx) = oneshot::channel::<String>();
             app_server_client_name_rx = Some(stdio_client_name_rx);
-            start_stdio_connection(
+            let handle = start_stdio_connection(
                 transport_event_tx.clone(),
-                &mut transport_accept_handles,
                 stdio_client_name_tx,
+                runtime_options.install_shutdown_signal_handler,
             )
             .await?;
+            transport_accept_handles.push(handle);
         }
         AppServerTransport::UnixSocket { socket_path } => {
             let accept_handle = start_control_socket_acceptor(
@@ -785,6 +842,7 @@ pub async fn run_main_with_transport_options(
                 } else {
                     DaemonShutdownAccess::Disabled
                 },
+                websocket_compression,
             )
             .await?;
             transport_accept_handles.push(accept_handle);
@@ -795,6 +853,7 @@ pub async fn run_main_with_transport_options(
                 transport_event_tx.clone(),
                 transport_shutdown_token.clone(),
                 policy_from_settings(&auth)?,
+                websocket_compression,
             )
             .await?;
             transport_accept_handles.push(accept_handle);
@@ -802,11 +861,6 @@ pub async fn run_main_with_transport_options(
         AppServerTransport::Off => {}
     }
     drop(unix_socket_startup_lock);
-
-    let auth_manager =
-        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false)
-            .await
-            .map_err(std::io::Error::other)?;
 
     let remote_control_enabled = remote_control_policy == RemoteControlPolicy::Allowed
         && remote_control_explicitly_requested
@@ -822,20 +876,11 @@ pub async fn run_main_with_transport_options(
         return Err(std::io::Error::new(
             ErrorKind::InvalidInput,
             if remote_control_policy == RemoteControlPolicy::DisabledByRequirements {
-                tr(
-                    current(),
-                    "no transport configured; remote control disabled by managed requirements",
-                )
+                "no transport configured; remote control disabled by managed requirements"
             } else if remote_control_explicitly_requested && state_db.is_none() {
-                tr(
-                    current(),
-                    "no transport configured; remote control disabled because sqlite state db is unavailable",
-                )
+                "no transport configured; remote control disabled because sqlite state db is unavailable"
             } else {
-                tr(
-                    current(),
-                    "no transport configured; use --listen or enable remote control",
-                )
+                "no transport configured; use --listen or enable remote control"
             },
         ));
     }
@@ -873,15 +918,9 @@ pub async fn run_main_with_transport_options(
             return Err(std::io::Error::new(
                 ErrorKind::InvalidInput,
                 if remote_control_policy == RemoteControlPolicy::DisabledByRequirements {
-                    tr(
-                        current(),
-                        "no transport configured; remote control disabled by managed requirements",
-                    )
+                    "no transport configured; remote control disabled by managed requirements"
                 } else {
-                    tr(
-                        current(),
-                        "no transport configured; use --listen or enable remote control",
-                    )
+                    "no transport configured; use --listen or enable remote control"
                 },
             ));
         }
@@ -957,21 +996,24 @@ pub async fn run_main_with_transport_options(
         info!("outbound router task exited (channel closed)");
     });
 
+    let recovery_file = daemon_recovery_file_path(&config.codex_home);
+    let daemon_settings_file = managed_daemon.then(|| {
+        config
+            .codex_home
+            .as_path()
+            .join("app-server-daemon/settings.json")
+    });
     let processor_handle = tokio::spawn({
         let auth_manager = Arc::clone(&auth_manager);
-        let analytics_events_client =
-            analytics_events_client_from_config(Arc::clone(&auth_manager), &config);
-        let outgoing_message_sender = Arc::new(OutgoingMessageSender::new(
-            outgoing_tx,
-            analytics_events_client.clone(),
-        ));
         let initialize_notification_sender = outgoing_message_sender.clone();
         let outbound_control_tx = outbound_control_tx;
-        let processor = Arc::new(MessageProcessor::new(MessageProcessorArgs {
+        let mut processor = MessageProcessor::new(MessageProcessorArgs {
+            cloud_skill_provider,
             outgoing: outgoing_message_sender,
             analytics_events_client,
             arg0_paths,
             config: Arc::new(config),
+            startup_cwd,
             config_manager,
             environment_manager,
             feedback: feedback.clone(),
@@ -979,6 +1021,9 @@ pub async fn run_main_with_transport_options(
             state_db: state_db.clone(),
             config_warnings,
             session_source,
+            user_verification: Arc::new(crate::user_verification::Service::new(Arc::clone(
+                &auth_manager,
+            ))),
             auth_manager,
             installation_id,
             code_mode_session_provider,
@@ -989,35 +1034,90 @@ pub async fn run_main_with_transport_options(
                 PluginStartupTasks::Start
             )
             .then_some(plugin_startup_config),
-        }));
+        });
+        processor.remote_control_processor.daemon_settings_file = daemon_settings_file;
+        let processor = Arc::new(processor);
         let mut thread_created_rx = processor.thread_created_receiver();
         let mut running_turn_count_rx = processor.subscribe_running_assistant_turn_count();
+        let mut active_admissions_rx = processor.turn_admission.subscribe_active();
         let mut connections = HashMap::<ConnectionId, ConnectionState>::new();
         let mut connection_cleanup_tasks = ConnectionCleanupTasks::new();
+        let mut thread_listener_tasks = tokio::task::JoinSet::new();
         let mut remote_control_status_rx = remote_control_handle.status_receiver();
         let mut remote_control_status = remote_control_status_rx.borrow().clone();
         let transport_shutdown_token = transport_shutdown_token.clone();
         async move {
+            let recovery_task = if managed_daemon {
+                match daemon_thread_recovery::start_recovery(
+                    recovery_file.clone(),
+                    Arc::clone(&processor),
+                )
+                .await
+                {
+                    Ok(task) => Some(task),
+                    Err(err) => {
+                        warn!("failed to consume daemon recovery snapshot: {err}");
+                        None
+                    }
+                }
+            } else {
+                None
+            };
             let mut listen_for_threads = true;
+            // Keep force signals and daemon control events responsive while saving.
+            let mut snapshot = Box::pin(async {
+                let processor = Arc::clone(&processor);
+                let recovery_file = recovery_file.clone();
+                // Run independently: snapshot locks can require the event loop to make progress.
+                let task = tokio::spawn(async move {
+                    let saved = processor.daemon_recovery_snapshot().await;
+                    if let Err(err) = daemon_thread_recovery::snapshot(recovery_file, saved).await {
+                        warn!("failed to save threads during daemon shutdown: {err}");
+                    }
+                });
+                let _ = tokio_util::task::AbortOnDropHandle::new(task).await;
+            });
+            let mut snapshot_finished = !managed_daemon;
+            let mut clients_disconnected = false;
             let mut shutdown_state = ShutdownState::default();
+            let mut shutdown_signal_future = Box::pin(shutdown_signal());
             let exit_reason = loop {
-                let running_turn_count = {
-                    let running_turn_count = running_turn_count_rx.borrow();
-                    *running_turn_count
-                };
-                if matches!(
-                    shutdown_state.update(running_turn_count, connections.len()),
+                // Sample submissions first: one can publish a running turn before
+                // releasing its permit, and shutdown must observe that new turn.
+                let active_admissions = *active_admissions_rx.borrow_and_update();
+                let running_turn_count = *running_turn_count_rx.borrow_and_update();
+                let ready_to_exit = matches!(
+                    shutdown_state.update(running_turn_count, active_admissions, connections.len()),
                     ShutdownAction::Finish
-                ) {
-                    transport_shutdown_token.cancel();
-                    let _ = outbound_control_tx
-                        .send(OutboundControlEvent::DisconnectAll)
-                        .await;
-                    break "shutdown_requested";
+                );
+                if ready_to_exit {
+                    if let Some(task) = &recovery_task {
+                        task.abort();
+                    }
+                    let finished = snapshot_finished || shutdown_state.forced();
+                    if finished {
+                        transport_shutdown_token.cancel();
+                    }
+                    if managed_daemon && shutdown_state.forced() {
+                        break "forced_shutdown_requested";
+                    }
+                    if !clients_disconnected {
+                        let _ = outbound_control_tx
+                            .send(OutboundControlEvent::DisconnectAll)
+                            .await;
+                        clients_disconnected = true;
+                    }
+                    if finished {
+                        break "shutdown_requested";
+                    }
                 }
 
                 tokio::select! {
-                    shutdown_signal_result = shutdown_signal(), if graceful_signal_restart_enabled && !shutdown_state.forced() => {
+                    _ = &mut snapshot, if shutdown_state.requested() && active_admissions == 0 && !snapshot_finished => {
+                        snapshot_finished = true;
+                    }
+                    shutdown_signal_result = &mut shutdown_signal_future, if graceful_signal_restart_enabled && !shutdown_state.forced() => {
+                        shutdown_signal_future.set(shutdown_signal());
                         let signal = match shutdown_signal_result {
                             Ok(signal) => signal,
                             Err(err) => {
@@ -1026,24 +1126,36 @@ pub async fn run_main_with_transport_options(
                             }
                         };
                         let running_turn_count = *running_turn_count_rx.borrow();
-                        shutdown_state.on_signal(signal, connections.len(), running_turn_count);
+                        shutdown_state.on_signal(signal, connections.len(), running_turn_count, &processor.turn_admission);
                     }
                     changed = running_turn_count_rx.changed(), if shutdown_state.requested() => {
                         if changed.is_err() {
                             warn!("running-turn watcher closed during graceful restart drain");
                         }
                     }
+                    changed = active_admissions_rx.changed(), if shutdown_state.requested() => {
+                        if changed.is_err() {
+                            warn!("turn admission watcher closed during graceful restart drain");
+                        }
+                    }
                     event = transport_event_rx.recv() => {
                         let Some(event) = event else {
                             break "transport_channel_closed";
                         };
+                        if ready_to_exit && !matches!(event, TransportEvent::DaemonShutdown) {
+                            if let TransportEvent::ConnectionOpened { disconnect_sender: Some(token), .. } = event {
+                                token.cancel();
+                            }
+                            continue;
+                        }
                         match event {
                             TransportEvent::DaemonShutdown => {
-                                shutdown_state.on_signal(ShutdownSignal::Forceable, connections.len(), *running_turn_count_rx.borrow());
+                                shutdown_state.on_signal(ShutdownSignal::Forceable, connections.len(), *running_turn_count_rx.borrow(), &processor.turn_admission);
                             }
                             TransportEvent::ConnectionOpened {
                                 connection_id,
                                 origin,
+                                auth,
                                 writer,
                                 disconnect_sender,
                             } => {
@@ -1074,6 +1186,7 @@ pub async fn run_main_with_transport_options(
                                     connection_id,
                                     ConnectionState::new(
                                         origin,
+                                        auth,
                                         outbound_initialized,
                                         outbound_experimental_api_enabled,
                                         outbound_opted_out_notification_methods,
@@ -1106,12 +1219,15 @@ pub async fn run_main_with_transport_options(
                                 }
                             }
                             TransportEvent::IncomingMessage { connection_id, message } => {
+                                let Some(connection_state) = connections.get_mut(&connection_id) else {
+                                    warn!("dropping message from unknown connection: {connection_id:?}");
+                                    continue;
+                                };
+                                if connection_state.session.rpc_gate.is_closed() {
+                                    continue;
+                                }
                                 match message {
                                     JSONRPCMessage::Request(request) => {
-                                        let Some(connection_state) = connections.get_mut(&connection_id) else {
-                                            warn!("dropping request from unknown connection: {connection_id:?}");
-                                            continue;
-                                        };
                                         let was_initialized =
                                             connection_state.session.initialized();
                                         processor
@@ -1173,24 +1289,12 @@ pub async fn run_main_with_transport_options(
                                         }
                                     }
                                     JSONRPCMessage::Response(response) => {
-                                        if !connections.contains_key(&connection_id) {
-                                            warn!("dropping response from unknown connection: {connection_id:?}");
-                                            continue;
-                                        }
                                         processor.process_response(connection_id, response).await;
                                     }
                                     JSONRPCMessage::Notification(notification) => {
-                                        if !connections.contains_key(&connection_id) {
-                                            warn!("dropping notification from unknown connection: {connection_id:?}");
-                                            continue;
-                                        }
                                         processor.process_notification(notification).await;
                                     }
                                     JSONRPCMessage::Error(err) => {
-                                        if !connections.contains_key(&connection_id) {
-                                            warn!("dropping error from unknown connection: {connection_id:?}");
-                                            continue;
-                                        }
                                         processor.process_error(connection_id, err).await;
                                     }
                                 }
@@ -1198,6 +1302,11 @@ pub async fn run_main_with_transport_options(
                         }
                     }
                     _ = connection_cleanup_tasks.reap_next() => {}
+                    result = thread_listener_tasks.join_next(), if !thread_listener_tasks.is_empty() => {
+                        if let Some(Err(err)) = result {
+                            warn!("thread listener attachment failed: {err}");
+                        }
+                    }
                     changed = remote_control_status_rx.changed() => {
                         if changed.is_err() {
                             continue;
@@ -1212,7 +1321,7 @@ pub async fn run_main_with_transport_options(
                             .send_server_notification(notification)
                             .await;
                     }
-                    created = thread_created_rx.recv(), if listen_for_threads => {
+                    created = thread_created_rx.recv(), if listen_for_threads && !ready_to_exit => {
                         match created {
                             Ok(thread_id) => {
                                 let mut initialized_connection_ids = Vec::new();
@@ -1221,12 +1330,16 @@ pub async fn run_main_with_transport_options(
                                         initialized_connection_ids.push(*connection_id);
                                     }
                                 }
-                                processor
-                                    .try_attach_thread_listener(
-                                        thread_id,
-                                        initialized_connection_ids,
-                                    )
-                                    .await;
+                                let processor = Arc::clone(&processor);
+                                // Attachment can wait on snapshot locks; keep force shutdown responsive.
+                                thread_listener_tasks.spawn(async move {
+                                    processor
+                                        .try_attach_thread_listener(
+                                            thread_id,
+                                            initialized_connection_ids,
+                                        )
+                                        .await;
+                                });
                             }
                             Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
                                 // TODO(jif) handle lag.
@@ -1243,6 +1356,11 @@ pub async fn run_main_with_transport_options(
                 }
             };
 
+            if let Some(task) = recovery_task {
+                task.abort();
+            }
+            drop(snapshot);
+            drop(thread_listener_tasks);
             if !shutdown_state.forced() {
                 futures::future::join_all(connections.iter().map(
                     |(&connection_id, connection_state)| {
@@ -1262,12 +1380,19 @@ pub async fn run_main_with_transport_options(
                 shutdown_forced = shutdown_state.forced(),
                 "processor task exited"
             );
+            if managed_daemon && shutdown_state.forced() {
+                AppServerExit::Forced
+            } else {
+                AppServerExit::Graceful
+            }
         }
     });
 
     drop(transport_event_tx);
 
-    let _ = processor_handle.await;
+    if matches!(processor_handle.await, Ok(AppServerExit::Forced)) {
+        return Ok(AppServerExit::Forced);
+    }
     let _ = outbound_handle.await;
 
     transport_shutdown_token.cancel();
@@ -1276,7 +1401,7 @@ pub async fn run_main_with_transport_options(
         let _ = handle.await;
     }
 
-    Ok(())
+    Ok(AppServerExit::Graceful)
 }
 
 struct SqliteRecoveryNotice {
@@ -1296,82 +1421,71 @@ struct StateDbInitResult {
 async fn init_sqlite_state_db_with_fresh_start_on_corruption(
     config: &Config,
 ) -> anyhow::Result<StateDbInitResult> {
-    let mut attempted_backups = HashSet::new();
-    let mut recovered_databases = Vec::new();
-    loop {
-        let err = match rollout_state_db::try_init(config).await {
-            Ok(state_db) => {
-                let recovery_notice = sqlite_recovery_notice(&recovered_databases);
-                if recovery_notice.is_some() {
-                    emit_state_db_backup_warning(sqlite_recovery_config_warning_summary());
-                    for recovered_database in &recovered_databases {
-                        emit_state_db_backup_warning(&tr_with(
-                            current(),
-                            "Database path: {0}",
-                            &[&recovered_database.database_path],
-                        ));
-                        emit_state_db_backup_warning(&tr_with(
-                            current(),
-                            "Backup folder: {0}",
-                            &[&recovered_database.backup_folder],
-                        ));
-                    }
-                }
-                return Ok(StateDbInitResult {
-                    state_db: Some(state_db),
-                    recovery_notice,
-                });
+    let (result, backups) = codex_state::collect_runtime_db_backups(async {
+        let mut attempted_backups = HashSet::new();
+        loop {
+            let err = match rollout_state_db::try_init(config).await {
+                Ok(state_db) => return Ok(state_db),
+                Err(err) => err,
+            };
+            let database_path = codex_state::runtime_db_path_for_corruption_error(&err)
+                .unwrap_or_else(|| config.sqlite_config().state_db_path());
+            if !codex_state::is_sqlite_corruption_error(&err)
+                && !sqlite_home_is_blocking_file(database_path.as_path())
+            {
+                return Err(err);
             }
-            Err(err) => err,
-        };
-        let database_path = codex_state::runtime_db_path_for_corruption_error(&err)
-            .unwrap_or_else(|| config.sqlite_config().state_db_path());
-        if !codex_state::is_sqlite_corruption_error(&err)
-            && !sqlite_home_is_blocking_file(database_path.as_path())
-        {
-            return Err(err);
-        }
 
-        if !attempted_backups.insert(database_path.clone()) {
-            return Err(anyhow::anyhow!(tr_with(
-                current(),
-                "failed to initialize sqlite state runtime after moving damaged database file into a backup folder: {0}",
-                &[&format!("{err}")],
-            )));
-        }
+            if !attempted_backups.insert(database_path.clone()) {
+                return Err(anyhow::anyhow!(
+                    "failed to initialize sqlite state runtime after moving damaged database file into a backup folder: {err}"
+                ));
+            }
 
-        let original_error = err.to_string();
-        emit_state_db_backup_warning(&tr_with(
-            current(),
-            "Codex local database at {0} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
-            &[&database_path.display().to_string()],
-        ));
-        let backups = codex_state::backup_runtime_db_for_fresh_start(database_path.as_path())
-            .await
-            .map_err(|backup_err| {
-                anyhow::anyhow!(tr_with(
-                    current(), "failed to move damaged sqlite state database files into a backup folder: {0}; original error: {1}", &[&backup_err.to_string(), &original_error],
-                ))
-            })?;
-        for backup in &backups {
-            emit_state_db_backup_warning(&tr_with(
-                current(),
-                "Moved damaged Codex local database file {0} to {1}",
-                &[
-                    &backup.original_path.display().to_string(),
-                    &backup.backup_path.display().to_string(),
-                ],
+            let original_error = err.to_string();
+            emit_state_db_backup_warning(&format!(
+                "Codex local database at {} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
+                database_path.display()
             ));
+            let backups = codex_state::backup_runtime_db_for_fresh_start(database_path.as_path())
+                .await
+                .map_err(|backup_err| {
+                    anyhow::anyhow!(
+                        "failed to move damaged sqlite state database files into a backup folder: {backup_err}; original error: {original_error}"
+                    )
+                })?;
+            for backup in &backups {
+                emit_state_db_backup_warning(&format!(
+                    "Moved damaged Codex local database file {} to {}",
+                    backup.original_path.display(),
+                    backup.backup_path.display()
+                ));
+            }
         }
-        if let Some(first_backup) = backups.first()
-            && let Some(backup_folder) = first_backup.backup_path.parent()
+    })
+    .await;
+    let state_db = result?;
+    let mut recovered_databases = Vec::new();
+    let mut backup_folders = HashSet::new();
+    for backup in backups {
+        if let Some(folder) = backup.backup_path.parent()
+            && backup_folders.insert(folder.to_path_buf())
         {
             recovered_databases.push(RecoveredSqliteDatabase {
-                database_path: first_backup.original_path.display().to_string(),
-                backup_folder: backup_folder.display().to_string(),
+                database_path: backup.original_path.display().to_string(),
+                backup_folder: folder.display().to_string(),
             });
         }
     }
+    let recovery_notice = sqlite_recovery_notice(&recovered_databases);
+    if let Some(notice) = &recovery_notice {
+        emit_state_db_backup_warning(SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY);
+        emit_state_db_backup_warning(&notice.details);
+    }
+    Ok(StateDbInitResult {
+        state_db: Some(state_db),
+        recovery_notice,
+    })
 }
 
 fn sqlite_home_is_blocking_file(database_path: &Path) -> bool {
@@ -1391,27 +1505,25 @@ fn sqlite_recovery_notice(
     let details = recovered_databases
         .iter()
         .map(|recovered_database| {
-            tr_with(
-                current(),
-                "Database path: {0}\nBackup folder: {1}",
-                &[
-                    &recovered_database.database_path,
-                    &recovered_database.backup_folder,
-                ],
+            format!(
+                "Database path: {}\nBackup folder: {}",
+                recovered_database.database_path, recovered_database.backup_folder
             )
         })
         .collect::<Vec<_>>()
         .join("\n\n");
-    Some(SqliteRecoveryNotice { details })
+    Some(SqliteRecoveryNotice {
+        details: format!(
+            "Damaged local databases were rebuilt. Saved conversations remain in rollout files and can restore the thread list and history. Some database-only metadata may be unavailable. The original database files were preserved at the backup locations below.\n\n{details}"
+        ),
+    })
 }
 
 fn emit_state_db_backup_warning(message: &str) {
     warn!("{message}");
     if !tracing::dispatcher::has_been_set() {
-        #[allow(clippy::print_stderr)]
-        {
-            eprintln!("{message}");
-        }
+        let _ =
+            codex_app_server_daemon::stderr_writer().write_all(format!("{message}\n").as_bytes());
     }
 }
 
@@ -1436,11 +1548,7 @@ fn loader_overrides_with_test_user_config_file(
         let path = AbsolutePathBuf::from_absolute_path(path).map_err(|err| {
             std::io::Error::new(
                 ErrorKind::InvalidInput,
-                tr_with(
-                    current(),
-                    "invalid test user config path: {0}",
-                    &[&format!("{err}")],
-                ),
+                format!("invalid test user config path: {err}"),
             )
         })?;
         warn!(
@@ -1466,47 +1574,5 @@ fn analytics_rpc_transport(transport: &AppServerTransport) -> AppServerRpcTransp
 }
 
 #[cfg(test)]
-mod tests {
-    use super::LogFormat;
-    #[cfg(debug_assertions)]
-    use super::loader_overrides_with_test_user_config_file;
-    #[cfg(debug_assertions)]
-    use codex_config::LoaderOverrides;
-    #[cfg(debug_assertions)]
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn log_format_from_env_value_matches_json_values_case_insensitively() {
-        assert_eq!(LogFormat::from_env_value(Some("json")), LogFormat::Json);
-        assert_eq!(LogFormat::from_env_value(Some("JSON")), LogFormat::Json);
-        assert_eq!(LogFormat::from_env_value(Some("  Json  ")), LogFormat::Json);
-    }
-
-    #[test]
-    fn log_format_from_env_value_defaults_for_non_json_values() {
-        assert_eq!(
-            LogFormat::from_env_value(/*value*/ None),
-            LogFormat::Default
-        );
-        assert_eq!(LogFormat::from_env_value(Some("")), LogFormat::Default);
-        assert_eq!(LogFormat::from_env_value(Some("text")), LogFormat::Default);
-        assert_eq!(LogFormat::from_env_value(Some("jsonl")), LogFormat::Default);
-    }
-
-    #[cfg(debug_assertions)]
-    #[test]
-    fn debug_test_user_config_file_overrides_loader_path() {
-        let path = std::env::temp_dir().join("codex-app-server-test-config.toml");
-        let loader_overrides = loader_overrides_with_test_user_config_file(
-            LoaderOverrides::default(),
-            Some(path.clone()),
-        )
-        .expect("test config path should be valid");
-
-        assert_eq!(
-            loader_overrides.user_config_path,
-            Some(AbsolutePathBuf::from_absolute_path(path).expect("absolute test path"))
-        );
-    }
-}
+#[path = "lib_tests.rs"]
+mod tests;

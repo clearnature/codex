@@ -1,11 +1,9 @@
+use crate::clock_format::ClockFormat;
 use chrono::DateTime;
 use chrono::Local;
 use chrono::Utc;
 use codex_app_server_protocol::RateLimitResetCreditStatus;
 use codex_app_server_protocol::RateLimitResetCreditsSummary;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) struct ResetCreditOption {
@@ -17,6 +15,7 @@ pub(super) struct ResetCreditOption {
 
 pub(super) fn reset_credit_options(
     summary: &RateLimitResetCreditsSummary,
+    clock_format: ClockFormat,
 ) -> Vec<ResetCreditOption> {
     let available_count = summary.available_count.max(0);
     let detail_limit = usize::try_from(available_count).unwrap_or(usize::MAX);
@@ -36,13 +35,11 @@ pub(super) fn reset_credit_options(
             let expiration = match credit.expires_at {
                 Some(expires_at) => DateTime::<Utc>::from_timestamp(expires_at, 0)
                     .map(|expires_at| {
-                        tr_with(
-                            current(),
-                            "Expires {0}",
-                            &[&expires_at
-                                .with_timezone(&Local)
-                                .format("%H:%M on %-d %b %Y")
-                                .to_string()],
+                        let expires_at = expires_at.with_timezone(&Local);
+                        format!(
+                            "Expires {} on {}",
+                            expires_at.format(clock_format.time_format()),
+                            expires_at.format("%-d %b %Y")
                         )
                     })
                     .unwrap_or_else(|| "Expiration unavailable".to_string()),
@@ -53,17 +50,17 @@ pub(super) fn reset_credit_options(
                 .as_deref()
                 .map(str::trim)
                 .filter(|title| !title.is_empty())
-                .unwrap_or(tr(current(), "Full reset"));
+                .unwrap_or("Full reset");
             let reset_description = credit
                 .description
                 .as_deref()
                 .map(str::trim)
                 .filter(|description| !description.is_empty())
-                .unwrap_or(tr(current(), "Reset your current usage limits."));
+                .unwrap_or("Reset your current usage limits");
             ResetCreditOption {
                 credit_id: Some(credit.id.clone()),
                 name: reset_title.to_string(),
-                detail: Some(format!("{expiration}.")),
+                detail: Some(expiration),
                 description: reset_description.to_string(),
             }
         })
@@ -72,9 +69,9 @@ pub(super) fn reset_credit_options(
     if options.is_empty() {
         options.push(ResetCreditOption {
             credit_id: None,
-            name: tr(current(), "Full reset").to_string(),
+            name: "Full reset".to_string(),
             detail: None,
-            description: tr(current(), "Reset your current usage limits.").to_string(),
+            description: "Reset your current usage limits".to_string(),
         });
     }
 

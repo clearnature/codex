@@ -262,12 +262,7 @@ pub async fn download_and_install_remote_plugin_bundle(
     codex_home: PathBuf,
     bundle: ValidatedRemotePluginBundle,
 ) -> Result<PluginInstallResult, RemotePluginBundleInstallError> {
-    let bundle_bytes = download_remote_plugin_bundle_with_limit(
-        config,
-        &bundle.bundle_download_url,
-        /*max_bytes*/ REMOTE_PLUGIN_BUNDLE_MAX_DOWNLOAD_BYTES,
-    )
-    .await?;
+    let bundle_bytes = download_remote_plugin_bundle(config, &bundle).await?;
     tokio::task::spawn_blocking(move || {
         install_remote_plugin_bundle(codex_home, bundle, bundle_bytes)
     })
@@ -286,12 +281,7 @@ pub(crate) async fn download_and_extract_remote_plugin_bundle_to_path(
     bundle: ValidatedRemotePluginBundle,
     destination: AbsolutePathBuf,
 ) -> Result<AbsolutePathBuf, RemotePluginBundleInstallError> {
-    let bundle_bytes = download_remote_plugin_bundle_with_limit(
-        config,
-        &bundle.bundle_download_url,
-        /*max_bytes*/ REMOTE_PLUGIN_BUNDLE_MAX_DOWNLOAD_BYTES,
-    )
-    .await?;
+    let bundle_bytes = download_remote_plugin_bundle(config, &bundle).await?;
     tokio::task::spawn_blocking(move || {
         extract_remote_plugin_bundle_to_path(bundle, bundle_bytes, destination)
     })
@@ -303,6 +293,18 @@ pub(crate) async fn download_and_extract_remote_plugin_bundle_to_path(
             &[&err.to_string()],
         ))
     })?
+}
+
+pub(crate) async fn download_remote_plugin_bundle(
+    config: &RemotePluginServiceConfig,
+    bundle: &ValidatedRemotePluginBundle,
+) -> Result<Vec<u8>, RemotePluginBundleInstallError> {
+    download_remote_plugin_bundle_with_limit(
+        config,
+        &bundle.bundle_download_url,
+        /*max_bytes*/ REMOTE_PLUGIN_BUNDLE_MAX_DOWNLOAD_BYTES,
+    )
+    .await
 }
 
 async fn download_remote_plugin_bundle_with_limit(
@@ -419,7 +421,7 @@ fn enforce_download_size_limit(
     Ok(())
 }
 
-fn install_remote_plugin_bundle(
+pub(crate) fn install_remote_plugin_bundle(
     codex_home: PathBuf,
     bundle: ValidatedRemotePluginBundle,
     bundle_bytes: Vec<u8>,

@@ -1,7 +1,8 @@
 //! Reviews terminal input against retained launch permissions and current policy.
 //! Permission snapshots stay host-owned; neither an earlier approval nor a policy
 //! change alters the sandbox of an already-running process. Native launches keep
-//! their configured Windows sandbox level; executor launches use executor defaults.
+//! their configured Windows sandbox selection; executor launches use executor defaults.
+//! Runtime-internal grants alone do not require review; agent grants and policy drift do.
 
 use super::ProcessEntry;
 use super::UnifiedExecContext;
@@ -11,17 +12,15 @@ use crate::session::turn_context::TurnContext;
 use crate::session::turn_context::TurnEnvironment;
 use crate::tools::sandboxing::ApprovalAction;
 use crate::tools::sandboxing::ToolError;
+use crate::windows_sandbox::windows_sandbox_level_for_legacy_checks;
 use codex_features::Feature;
-use codex_file_system::ExecPermissionProfile;
 use codex_file_system::FileSystemSandboxContext;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_network_proxy::EnvironmentNetworkPolicy;
 use codex_protocol::models::AdditionalPermissionProfile;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::models::SandboxPermissions;
 use codex_protocol::permissions::NetworkSandboxPolicy;
+use codex_protocol::protocol::AskForApproval;
 use codex_sandboxing::policy_transforms::effective_permission_profile;
 use codex_sandboxing::policy_transforms::merge_permission_profiles;
 
@@ -35,6 +34,7 @@ pub(crate) struct TerminalPermissions {
     policy: TerminalPolicy,
     sandbox_source: TerminalSandboxSource,
     launch_permissions: SandboxPermissions,
+    filesystem_escalated: bool,
     additional_permissions: Option<AdditionalPermissionProfile>,
     internal_permissions: Option<AdditionalPermissionProfile>,
 }
@@ -56,10 +56,16 @@ impl TerminalPolicy {
         additional_permissions: Option<AdditionalPermissionProfile>,
     ) -> Self {
         let mut sandbox = environment.sandbox_context(additional_permissions);
-        if matches!(sandbox_source, TerminalSandboxSource::Native) {
+        if matches!(sandbox_source, TerminalSandboxSource::Native)
+            && windows_sandbox_level_for_legacy_checks(
+                environment.config().windows_sandbox_type,
+                environment.config().windows_sandbox_level,
+            ) == codex_protocol::config_types::WindowsSandboxLevel::Disabled
+        {
             // The filesystem helper applies executor defaults, but native process
             // launches honor Disabled. Preserve it so later enablement is detected.
-            sandbox.windows_sandbox_level = environment.config().windows_sandbox_level;
+            sandbox.windows_sandbox_selection =
+                codex_protocol::config_types::WindowsSandboxLevel::Disabled.into();
         }
         Self {
             sandbox,
@@ -72,7 +78,7 @@ impl TerminalPolicy {
     fn file_system_context(&self) -> FileSystemSandboxContext {
         let mut context = self.sandbox.clone();
         // Network changes require review, not rejection for denied-read drift.
-        if let ExecPermissionProfile::Managed { network, .. } = &mut context.permissions {
+        if let PermissionProfile::Managed { network, .. } = &mut context.permissions {
             *network = NetworkSandboxPolicy::Restricted;
         }
         context
@@ -96,12 +102,17 @@ impl TerminalPermissions {
                 merge_permission_profiles(additional_permissions, internal_permissions),
             ),
             sandbox_source,
-            // A bypass is a property of the successful attempt, not a difference
-            // between settings: a full-access environment can still bypass a proxy.
+            // Retain the successful attempt's authority independently from its baseline.
             launch_permissions,
+            filesystem_escalated: false,
             additional_permissions: additional_permissions.cloned(),
             internal_permissions: internal_permissions.cloned(),
         }
+    }
+
+    pub(crate) fn with_filesystem_escalation(mut self) -> Self {
+        self.filesystem_escalated = true;
+        self
     }
 
     /// Compares launch policy with current policy including retained grants,
@@ -112,16 +123,6 @@ impl TerminalPermissions {
         baseline: &PermissionProfile,
     ) -> Result<SandboxPermissions, &'static str> {
         let bypassed = self.launch_permissions.requires_escalated_permissions();
-        if current.environment_network.is_some()
-            && (bypassed || self.policy.environment_network != current.environment_network)
-        {
-            // NOTE: the parameter is named `current`, so the i18n helpers are
-            // qualified here to avoid resolving `current` to the policy.
-            return Err(codex_i18n::tr(
-                codex_i18n::current(),
-                "this terminal cannot enforce the current environment-owned network restrictions; start a new terminal",
-            ));
-        }
         // Approval cannot retrofit denied reads onto a running process. Unless
         // its sandbox still matches, start a new terminal under the current policy.
         if baseline
@@ -129,21 +130,23 @@ impl TerminalPermissions {
             .has_denied_read_restrictions()
             && (bypassed || self.policy.file_system_context() != current.file_system_context())
         {
-            return Err(codex_i18n::tr(
-                codex_i18n::current(),
+            return Err(
                 "this terminal cannot enforce the current denied-read restrictions; start a new terminal",
-            ));
+            );
         }
-        // Once the retained settings match, only the baseline permissions can differ.
-        Ok(if bypassed || &self.policy != current {
-            SandboxPermissions::RequireEscalated
-        } else if self.policy.sandbox.permissions
-            == effective_permission_profile(baseline, /*additional_permissions*/ None).into()
-        {
-            SandboxPermissions::UseDefault
-        } else {
-            SandboxPermissions::WithAdditionalPermissions
-        })
+        // Runtime-internal grants are part of an ordinary launch, so only permissions
+        // beyond the baseline plus those grants need a fresh stdin approval.
+        Ok(
+            if bypassed || self.filesystem_escalated || &self.policy != current {
+                SandboxPermissions::RequireEscalated
+            } else if self.policy.sandbox.permissions
+                == effective_permission_profile(baseline, self.internal_permissions.as_ref())
+            {
+                SandboxPermissions::UseDefault
+            } else {
+                SandboxPermissions::WithAdditionalPermissions
+            },
+        )
     }
 
     fn approval_reason(
@@ -151,48 +154,33 @@ impl TerminalPermissions {
         sandbox_permissions: SandboxPermissions,
     ) -> Result<String, serde_json::Error> {
         let authority = if self.launch_permissions.requires_escalated_permissions() {
-            tr(
-                current(),
-                "This terminal was launched outside the sandbox, bypassing any managed network proxy.",
-            )
-        } else if self.policy.sandbox.permissions == ExecPermissionProfile::Disabled {
-            tr(
-                current(),
-                "This terminal runs without a filesystem sandbox.",
-            )
+            "This terminal was launched outside the sandbox, bypassing any managed network proxy."
+        } else if self.filesystem_escalated {
+            "This terminal has approved broader filesystem access; denied reads are still enforced."
+        } else if self.policy.sandbox.permissions == PermissionProfile::Disabled {
+            "This terminal runs without a filesystem sandbox."
         } else {
             match sandbox_permissions {
-                SandboxPermissions::UseDefault => {
-                    tr(current(), "This terminal uses the current permissions.")
-                }
+                SandboxPermissions::UseDefault => "This terminal uses the current permissions.",
                 SandboxPermissions::WithAdditionalPermissions => {
-                    tr(current(), "This terminal retains additional permissions.")
+                    "This terminal retains additional permissions."
                 }
-                SandboxPermissions::RequireEscalated => tr(
-                    current(),
-                    "This terminal retains sandbox or network settings that differ from the current permissions.",
-                ),
+                SandboxPermissions::RequireEscalated => {
+                    "This terminal retains sandbox or network settings that differ from the current permissions."
+                }
             }
         };
-        let mut reason = tr_with(
-            current(),
-            "Send input to an existing terminal. {0}",
-            &[authority],
-        );
+        let mut reason = format!("Send input to an existing terminal. {authority}");
         if self.internal_permissions.is_some() {
-            reason.push_str(tr(
-                current(),
-                " It also has an internal plugin metrics write grant.",
-            ));
+            reason.push_str(" It also has an internal filesystem grant.");
         }
-        reason.push_str(tr(current(), " The cwd is its launch directory; the terminal's current directory and state may have changed."));
+        reason.push_str(" The cwd is its launch directory; the terminal's current directory and state may have changed.");
         if let Some(grants) = &self.additional_permissions {
             // Stable reason text also reaches clients that strip the experimental
             // additionalPermissions field. Internal paths never enter this text.
-            reason.push_str(&tr_with(
-                current(),
-                " Retained grants: {0}.",
-                &[&serde_json::to_string(grants)?],
+            reason.push_str(&format!(
+                " Retained grants: {}.",
+                serde_json::to_string(grants)?
             ));
         }
         Ok(reason)
@@ -221,13 +209,12 @@ impl ProcessEntry {
             .turn_environments()
             .find(|environment| environment.selection.environment_id == self.environment_id)
             .ok_or_else(|| {
-                approval_error(tr(
-                    current(),
+                approval_error(
                     "cannot access the terminal's original environment; select it before retrying",
-                ))
+                )
             })?;
         let permissions = &self.permissions;
-        let current_policy = TerminalPolicy::capture(
+        let current = TerminalPolicy::capture(
             environment,
             &context.step_context.turn,
             permissions.sandbox_source,
@@ -237,21 +224,53 @@ impl ProcessEntry {
             ),
         );
         let sandbox_permissions = permissions
-            .review_requirement(&current_policy, environment.permission_profile())
+            .review_requirement(&current, environment.permission_profile())
             .map_err(approval_error)?;
         if sandbox_permissions == SandboxPermissions::UseDefault && !strict_auto_review {
             return Ok(None);
         }
         // Manual approvals shell-quote the input, which cannot preserve NUL bytes.
         if input.contains('\0') {
-            return Err(approval_error(tr(
-                current(),
+            return Err(approval_error(
                 "terminal input contains a NUL byte and cannot be reviewed safely",
-            )));
+            ));
         }
         let reason = permissions
             .approval_reason(sandbox_permissions)
             .map_err(approval_error)?;
+        // A scoped grant can authorize retained authority without permitting new
+        // sandbox escalations. Still review every input, and only recognize grants
+        // that remain active for this terminal's environment with the same policy.
+        let additional_permissions_preapproved = matches!(
+            context.step_context.turn.approval_policy(),
+            AskForApproval::Granular(policy) if !policy.sandbox_approval
+        ) && sandbox_permissions
+            == SandboxPermissions::WithAdditionalPermissions
+            && permissions
+                .additional_permissions
+                .as_ref()
+                .zip(
+                    context
+                        .step_context
+                        .turn
+                        .granted_permissions(&self.environment_id),
+                )
+                .is_some_and(|(retained, current_grants)| {
+                    // Root containment does not prove filesystem coverage: child
+                    // restrictions, protected metadata, and symlinks can differ.
+                    // Require the original filesystem grants, including their order.
+                    retained.file_system == current_grants.file_system
+                        && (retained
+                            .network
+                            .as_ref()
+                            .and_then(|network| network.enabled)
+                            != Some(true)
+                            || current_grants
+                                .network
+                                .as_ref()
+                                .and_then(|network| network.enabled)
+                                == Some(true))
+                });
         let action = ApprovalAction::WriteStdin {
             id: self.call_id.clone(),
             approval_id: context.call_id.clone(),
@@ -262,6 +281,7 @@ impl ProcessEntry {
             tty: self.tty,
             sandbox_permissions,
             additional_permissions: permissions.additional_permissions.clone(),
+            additional_permissions_preapproved,
         };
         Ok(Some((action, reason)))
     }

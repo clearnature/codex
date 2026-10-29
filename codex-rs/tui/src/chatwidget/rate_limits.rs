@@ -1,9 +1,6 @@
 //! Rate-limit warning, prompt, and notice surfaces, plus quota-aware account refresh cadence.
 
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 pub(super) const WORKSPACE_NUDGE_VIEW_ID: &str = "workspace-usage-nudge";
 use crate::bottom_pane::ActionableBanner;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
@@ -21,11 +18,7 @@ pub(super) const RATE_LIMIT_SWITCH_PROMPT_VIEW_ID: &str = "rate-limit-switch-pro
 
 const RATE_LIMIT_WARNING_THRESHOLDS: [f64; 4] = [50.0, 75.0, 90.0, 95.0];
 const PRIMARY_LIMIT_FALLBACK_LABEL: &str = "usage";
-// A function rather than a `const`, per §3.6 of `docs/plan/i18n-design.md`:
-// the text has to pass through `tr`, which a `const` cannot call.
-fn secondary_limit_fallback_label() -> &'static str {
-    tr(current(), "secondary usage")
-}
+const SECONDARY_LIMIT_FALLBACK_LABEL: &str = "secondary usage";
 
 #[derive(Default)]
 pub(super) struct RateLimitWarningState {
@@ -57,10 +50,11 @@ impl RateLimitWarningState {
                 && secondary_used_percent >= RATE_LIMIT_WARNING_THRESHOLDS[self.secondary_index]
             {
                 let threshold = RATE_LIMIT_WARNING_THRESHOLDS[self.secondary_index];
-                if threshold != 50.0
-                    || (matches!(plan_type, Some(PlanType::Plus | PlanType::Team))
-                        && secondary_window_minutes
-                            .is_some_and(|minutes| is_approximate_window(minutes, 5 * 60)))
+                if threshold
+                    >= f64::from(usage_notice::warning_threshold(
+                        plan_type,
+                        secondary_window_minutes,
+                    ))
                 {
                     highest_secondary = Some(threshold);
                 }
@@ -70,7 +64,9 @@ impl RateLimitWarningState {
                 let limit_label =
                     limit_label_for_window(secondary_window_minutes, /*is_secondary*/ true);
                 let remaining_percent = 100.0 - threshold;
-                warnings.push(tr_with(current(), "Heads up, you have less than {0}% of your {1} limit left. Run /status for a breakdown.", &[&format!("{remaining_percent:.0}"), &limit_label]));
+                warnings.push(format!(
+                    "Heads up, you have less than {remaining_percent:.0}% of your {limit_label} limit left. Run /status for a breakdown."
+                ));
             }
         }
 
@@ -80,10 +76,11 @@ impl RateLimitWarningState {
                 && primary_used_percent >= RATE_LIMIT_WARNING_THRESHOLDS[self.primary_index]
             {
                 let threshold = RATE_LIMIT_WARNING_THRESHOLDS[self.primary_index];
-                if threshold != 50.0
-                    || (matches!(plan_type, Some(PlanType::Plus | PlanType::Team))
-                        && primary_window_minutes
-                            .is_some_and(|minutes| is_approximate_window(minutes, 5 * 60)))
+                if threshold
+                    >= f64::from(usage_notice::warning_threshold(
+                        plan_type,
+                        primary_window_minutes,
+                    ))
                 {
                     highest_primary = Some(threshold);
                 }
@@ -93,7 +90,9 @@ impl RateLimitWarningState {
                 let limit_label =
                     limit_label_for_window(primary_window_minutes, /*is_secondary*/ false);
                 let remaining_percent = 100.0 - threshold;
-                warnings.push(tr_with(current(), "Heads up, you have less than {0}% of your {1} limit left. Run /status for a breakdown.", &[&format!("{remaining_percent:.0}"), &limit_label]));
+                warnings.push(format!(
+                    "Heads up, you have less than {remaining_percent:.0}% of your {limit_label} limit left. Run /status for a breakdown."
+                ));
             }
         }
 
@@ -134,13 +133,13 @@ pub(crate) fn get_limits_duration(windows_minutes: i64) -> Option<String> {
 
 pub(crate) fn fallback_limit_label(is_secondary: bool) -> &'static str {
     if is_secondary {
-        secondary_limit_fallback_label()
+        SECONDARY_LIMIT_FALLBACK_LABEL
     } else {
         PRIMARY_LIMIT_FALLBACK_LABEL
     }
 }
 
-fn is_approximate_window(minutes: i64, expected_minutes: i64) -> bool {
+pub(super) fn is_approximate_window(minutes: i64, expected_minutes: i64) -> bool {
     let minutes = minutes as f64;
     let expected_minutes = expected_minutes as f64;
     minutes >= expected_minutes * 0.95 && minutes <= expected_minutes * 1.05
@@ -179,7 +178,7 @@ pub(super) fn is_app_server_cyber_policy_error(info: &AppServerCodexErrorInfo) -
 }
 
 #[derive(Clone, Copy)]
-enum RateLimitSnapshotSource {
+pub(super) enum RateLimitSnapshotSource {
     AccountUsage,
     RollingUpdate,
 }
@@ -255,11 +254,21 @@ impl ChatWidget {
         snapshot: Option<RateLimitSnapshot>,
         source: RateLimitSnapshotSource,
     ) {
+        let usage_notice_blocked = self.codex_rate_limit_reached_type.is_some()
+            || self.codex_spend_control_reached == Some(true);
         if let Some(mut snapshot) = snapshot {
             let limit_id = snapshot
                 .limit_id
                 .clone()
                 .unwrap_or_else(|| "codex".to_string());
+            let is_codex_limit = limit_id.eq_ignore_ascii_case("codex");
+            if is_codex_limit
+                && self
+                    .usage_notice_state
+                    .update(&snapshot, source, self.plan_type)
+            {
+                self.request_redraw();
+            }
             if matches!(source, RateLimitSnapshotSource::RollingUpdate)
                 && snapshot.credits.is_none()
             {
@@ -275,7 +284,6 @@ impl ChatWidget {
             }
             self.plan_type = snapshot.plan_type.or(self.plan_type);
 
-            let is_codex_limit = limit_id.eq_ignore_ascii_case("codex");
             if is_codex_limit
                 && (matches!(source, RateLimitSnapshotSource::AccountUsage)
                     || snapshot.spend_control_reached.is_some())
@@ -370,15 +378,19 @@ impl ChatWidget {
                     .limit_name
                     .clone()
                     .unwrap_or_else(|| limit_id.clone());
-                let display =
-                    rate_limit_snapshot_display_for_limit(&snapshot, limit_label, Local::now());
+                let display = rate_limit_snapshot_display_for_limit(
+                    &snapshot,
+                    limit_label,
+                    Local::now(),
+                    self.clock_format,
+                );
                 self.rate_limit_snapshots_by_limit_id
                     .insert(limit_id, display);
             }
 
             if !warnings.is_empty() {
                 for warning in warnings {
-                    self.add_to_history(history_cell::new_warning_event(warning));
+                    self.add_to_history(history_cell::new_usage_warning_event(warning));
                 }
                 self.request_redraw();
             }
@@ -386,6 +398,12 @@ impl ChatWidget {
             self.rate_limit_snapshots_by_limit_id.clear();
             self.codex_rate_limit_reached_type = None;
             self.codex_spend_control_reached = None;
+        }
+        if usage_notice_blocked
+            != (self.codex_rate_limit_reached_type.is_some()
+                || self.codex_spend_control_reached == Some(true))
+        {
+            self.request_redraw();
         }
         self.refresh_status_line();
     }
@@ -453,13 +471,11 @@ impl ChatWidget {
                 /*approvals_reviewer*/ None,
                 /*permission_profile*/ None,
                 /*active_permission_profile*/ None,
-                /*windows_sandbox_level*/ None,
                 Some(switch_model_for_events.clone()),
                 Some(Some(default_effort.clone())),
                 /*summary*/ None,
                 /*service_tier*/ None,
                 /*collaboration_mode*/ None,
-                /*personality*/ None,
             )));
             tx.send(AppEvent::UpdateModel(switch_model_for_events.clone()));
             tx.send(AppEvent::UpdateReasoningEffort(Some(
@@ -473,14 +489,14 @@ impl ChatWidget {
             tx.send(AppEvent::PersistRateLimitSwitchPromptHidden);
         })];
         let description = if preset.description.is_empty() {
-            Some(tr(current(), "Uses fewer credits for upcoming turns.").to_string())
+            Some("Uses fewer credits for upcoming turns".to_string())
         } else {
             Some(preset.description)
         };
 
         let items = vec![
             SelectionItem {
-                name: tr_with(current(), "Switch to {0}", &[&switch_model]),
+                name: format!("Switch to {switch_model}"),
                 description,
                 selected_description: None,
                 is_current: false,
@@ -489,7 +505,7 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: tr(current(), "Keep current model").to_string(),
+                name: "Keep current model".to_string(),
                 description: None,
                 selected_description: None,
                 is_current: false,
@@ -498,13 +514,9 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: tr(current(), "Keep current model (never show again)").to_string(),
+                name: "Keep current model (never show again)".to_string(),
                 description: Some(
-                    tr(
-                        current(),
-                        "Hide future rate limit reminders about switching models.",
-                    )
-                    .to_string(),
+                    "Hide future rate limit reminders about switching models".to_string(),
                 ),
                 selected_description: None,
                 is_current: false,
@@ -516,15 +528,11 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_SWITCH_PROMPT_VIEW_ID),
-            title: Some(tr(current(), "Approaching rate limits").to_string()),
-            subtitle: Some(tr_with(
-                current(),
-                "Switch to {0} for lower credit usage?",
-                &[&switch_model],
-            )),
+            title: Some("Approaching rate limits".to_string()),
+            subtitle: Some(format!("Switch to {switch_model} for lower credit usage?")),
             footer_hint: Some(standard_popup_hint_line()),
             items,
-            ..Default::default()
+            ..SelectionViewParams::picker()
         });
     }
 
@@ -538,18 +546,12 @@ impl ChatWidget {
 
         let (title, prompt) = match credit_type {
             AddCreditsNudgeCreditType::Credits => (
-                tr(current(), "You've reached your workspace credit limit"),
-                tr(
-                    current(),
-                    "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
-                ),
+                "You've reached your workspace credit limit",
+                "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
             ),
             AddCreditsNudgeCreditType::UsageLimit => (
-                tr(current(), "Usage limit reached"),
-                tr(
-                    current(),
-                    "Request a limit increase from your owner to continue using codex. Request increase?",
-                ),
+                "Usage limit reached",
+                "Request a limit increase from your owner to continue using codex. Request increase?",
             ),
         };
         let send_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
@@ -557,16 +559,15 @@ impl ChatWidget {
         })];
         let items = vec![
             SelectionItem {
-                name: tr(current(), "Yes").to_string(),
+                name: "Yes".to_string(),
                 display_shortcut: Some(key_hint::plain(KeyCode::Char('y')).into()),
                 actions: send_actions,
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: tr(current(), "No").to_string(),
+                name: "No (default)".to_string(),
                 display_shortcut: Some(key_hint::plain(KeyCode::Char('n')).into()),
-                is_default: true,
                 dismiss_on_select: true,
                 ..Default::default()
             },
@@ -613,30 +614,25 @@ impl ChatWidget {
         self.add_credits_nudge_email_in_flight = None;
         let message = match (credit_type, result) {
             (AddCreditsNudgeCreditType::Credits, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                tr(current(), "Workspace owner notified.")
+                "Workspace owner notified."
             }
             (
                 AddCreditsNudgeCreditType::Credits,
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive),
-            ) => tr(current(), "Workspace owner was already notified recently."),
-            (AddCreditsNudgeCreditType::Credits, Err(_)) => tr(
-                current(),
-                "Could not notify your workspace owner. Please try again.",
-            ),
+            ) => "Workspace owner was already notified recently.",
+            (AddCreditsNudgeCreditType::Credits, Err(_)) => {
+                "Could not notify your workspace owner. Please try again."
+            }
             (AddCreditsNudgeCreditType::UsageLimit, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                tr(current(), "Limit increase requested.")
+                "Limit increase requested."
             }
             (
                 AddCreditsNudgeCreditType::UsageLimit,
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive),
-            ) => tr(
-                current(),
-                "A limit increase was already requested recently.",
-            ),
-            (AddCreditsNudgeCreditType::UsageLimit, Err(_)) => tr(
-                current(),
-                "Could not request a limit increase. Please try again.",
-            ),
+            ) => "A limit increase was already requested recently.",
+            (AddCreditsNudgeCreditType::UsageLimit, Err(_)) => {
+                "Could not request a limit increase. Please try again."
+            }
         };
         self.add_to_history(history_cell::new_info_event(
             message.to_string(),

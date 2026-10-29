@@ -13,12 +13,10 @@ use crate::model_catalog::LUNA_RESERVE_MODEL;
 use crate::status::format_credit_micros;
 use crate::status::format_estimated_usd_micros;
 use crate::status::format_tokens_compact;
+use crate::terminal_program_status::ProgramStatus;
 use codex_app_server_protocol::AskForApproval;
 use codex_config::ConfigLayerSource;
 use codex_config::os_host_name;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::config_types::ServiceTier;
 use codex_protocol::models::PermissionProfile;
@@ -27,7 +25,7 @@ use codex_utils_sandbox_summary::summarize_permission_profile;
 use super::status_state::TerminalTitleStatusKind;
 
 /// Items shown in the terminal title when the user has not configured a
-/// custom selection. Unnamed threads omit the name until generation starts.
+/// custom selection. Unnamed threads omit the name until one is available.
 pub(super) const DEFAULT_TERMINAL_TITLE_ITEMS: [&str; 3] =
     ["activity", "thread-name", "project-name"];
 
@@ -42,13 +40,8 @@ pub(super) const TERMINAL_TITLE_SPINNER_INTERVAL: Duration = Duration::from_mill
 const TERMINAL_TITLE_ACTION_REQUIRED_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Prefix shown in the terminal title when the agent is blocked on user input.
-fn terminal_title_action_required_prefix() -> &'static str {
-    tr(current(), "[ ! ] Action Required")
-}
-
-fn terminal_title_action_required_prefix_hidden() -> &'static str {
-    tr(current(), "[ . ] Action Required")
-}
+const TERMINAL_TITLE_ACTION_REQUIRED_PREFIX: &str = "[ ! ] Action Required";
+const TERMINAL_TITLE_ACTION_REQUIRED_PREFIX_HIDDEN: &str = "[ . ] Action Required";
 
 #[derive(Debug)]
 /// Parsed status-surface configuration for one refresh pass.
@@ -133,14 +126,13 @@ impl ChatWidget {
                 .is_ok()
         {
             let label = if invalid_items.len() == 1 {
-                tr(current(), "item")
+                "item"
             } else {
-                tr(current(), "items")
+                "items"
             };
-            let message = tr_with(
-                current(),
-                "Ignored invalid status line {0}: {1}.",
-                &[label, &proper_join(invalid_items)],
+            let message = format!(
+                "Ignored invalid status line {label}: {}.",
+                proper_join(invalid_items)
             );
             self.on_warning(message);
         }
@@ -155,14 +147,13 @@ impl ChatWidget {
                 .is_ok()
         {
             let label = if invalid_items.len() == 1 {
-                tr(current(), "item")
+                "item"
             } else {
-                tr(current(), "items")
+                "items"
             };
-            let message = tr_with(
-                current(),
-                "Ignored invalid terminal title {0}: {1}.",
-                &[label, &proper_join(invalid_items)],
+            let message = format!(
+                "Ignored invalid terminal title {label}: {}.",
+                proper_join(invalid_items)
             );
             self.on_warning(message);
         }
@@ -228,6 +219,7 @@ impl ChatWidget {
         self.set_status_line(status_line_from_segments(
             segments,
             self.local_settings.tui.status_line_use_colors,
+            self.thread_id,
         ));
         let hyperlink_url = selections
             .status_line_items
@@ -259,6 +251,9 @@ impl ChatWidget {
     /// Animated titles record their next refresh for the foreground loop, independently
     /// of full TUI redraws.
     fn refresh_terminal_title_from_selections(&mut self, selections: &StatusSurfaceSelections) {
+        if self.app_event_tx.voice_only.load(Ordering::Relaxed) {
+            return;
+        }
         self.last_terminal_title_requires_action =
             self.terminal_title_shows_action_required_with_selections(selections);
         let now = Instant::now();
@@ -327,6 +322,42 @@ impl ChatWidget {
         self.bottom_pane.terminal_title_requires_action()
     }
 
+    /// Reports the displayed thread's actual state independently of terminal
+    /// title/notification settings. Replays never produce an unseen result.
+    pub(crate) fn desired_program_status(&self) -> ProgramStatus {
+        if let Some(kind) = self.bottom_pane.program_status_blocked_kind() {
+            ProgramStatus::Blocked(kind)
+        } else if self.bottom_pane.is_task_running()
+            || self.is_user_turn_pending_or_running()
+            || !self.unified_exec_processes.is_empty()
+            || (self.status_state.program_status_after_turn == ProgramStatus::Done
+                && self
+                    .current_goal_status
+                    .as_ref()
+                    .is_some_and(GoalStatusState::is_active))
+        {
+            ProgramStatus::Working
+        } else {
+            self.status_state.program_status_after_turn
+        }
+    }
+
+    pub(crate) fn acknowledge_program_status(&mut self) {
+        if matches!(
+            self.desired_program_status(),
+            ProgramStatus::Done | ProgramStatus::Error
+        ) {
+            self.status_state.program_status_after_turn = ProgramStatus::Idle;
+            self.request_redraw();
+        }
+    }
+
+    pub(super) fn iterm_session_detail(&self, status: ProgramStatus) -> Option<&str> {
+        (status == ProgramStatus::Working && self.bottom_pane.is_task_running())
+            .then_some(self.status_state.current_status.header.as_str())
+            .filter(|detail| *detail != "Working")
+    }
+
     pub(super) fn terminal_title_shows_action_required(&self) -> bool {
         self.terminal_title_requires_action() && self.terminal_title_uses_activity()
     }
@@ -337,7 +368,12 @@ impl ChatWidget {
         now: Instant,
     ) -> Option<String> {
         if self.terminal_title_shows_action_required_with_selections(selections) {
-            return Some(self.action_required_terminal_title_text(selections, now));
+            let title = self.action_required_terminal_title_text(selections, now);
+            return Some(if self.realtime_microphone_is_listening() {
+                format!("● {title}")
+            } else {
+                title
+            });
         }
 
         let mut previous = None;
@@ -372,16 +408,16 @@ impl ChatWidget {
     }
 
     fn action_required_terminal_title_prefix_at(&self, now: Instant) -> &'static str {
-        if !self.local_settings.tui.animations {
-            return terminal_title_action_required_prefix();
+        if !(self.local_settings.tui.animations && self.local_settings.tui.effects.title) {
+            return TERMINAL_TITLE_ACTION_REQUIRED_PREFIX;
         }
 
         let elapsed = now.saturating_duration_since(self.terminal_title_animation_origin);
         let phase = (elapsed.as_millis() / TERMINAL_TITLE_ACTION_REQUIRED_INTERVAL.as_millis()) % 2;
         if phase == 0 {
-            terminal_title_action_required_prefix()
+            TERMINAL_TITLE_ACTION_REQUIRED_PREFIX
         } else {
-            terminal_title_action_required_prefix_hidden()
+            TERMINAL_TITLE_ACTION_REQUIRED_PREFIX_HIDDEN
         }
     }
 
@@ -400,26 +436,7 @@ impl ChatWidget {
         selections: &StatusSurfaceSelections,
     ) -> Option<Duration> {
         if self.local_settings.tui.animations
-            && self.status_state.thread_title_generation_pending
-            && (selections.status_line_items.iter().any(|item| {
-                matches!(
-                    item,
-                    StatusLineItem::ThreadName
-                        | StatusLineItem::ThreadTitle
-                        | StatusLineItem::SessionId
-                )
-            }) || selections.terminal_title_items.iter().any(|item| {
-                matches!(
-                    item,
-                    TerminalTitleItem::ThreadName
-                        | TerminalTitleItem::Thread
-                        | TerminalTitleItem::SessionId
-                )
-            }))
-        {
-            return Some(TERMINAL_TITLE_SPINNER_INTERVAL);
-        }
-        if self.local_settings.tui.animations
+            && self.local_settings.tui.effects.title
             && self.terminal_title_shows_action_required_with_selections(selections)
         {
             return Some(TERMINAL_TITLE_ACTION_REQUIRED_INTERVAL);
@@ -708,7 +725,7 @@ impl ChatWidget {
     /// Returning `None` means "omit this item for now", not "configuration error". Callers rely on
     /// this to keep partially available status lines readable while waiting for session, token, or
     /// git metadata.
-    pub(super) fn status_line_value(&mut self, item: StatusLineItem) -> Option<String> {
+    pub(super) fn status_line_value_for_item(&mut self, item: StatusLineItem) -> Option<String> {
         match item {
             StatusLineItem::ModelName => Some(self.model_display_name().to_string()),
             StatusLineItem::ModelWithReasoning => Some(self.model_with_reasoning_display_name()),
@@ -733,7 +750,7 @@ impl ChatWidget {
                 .and_then(|summary| summary.branch_change_stats.as_ref())
                 .map(|stats| {
                     if stats.additions == 0 && stats.deletions == 0 {
-                        tr(current(), "No changes").to_string()
+                        "No changes".to_string()
                     } else {
                         format!("+{} -{}", stats.additions, stats.deletions)
                     }
@@ -750,15 +767,12 @@ impl ChatWidget {
                     Some(format!("{} used", format_tokens_compact(total)))
                 }
             }
-            StatusLineItem::ContextRemaining => {
-                self.status_line_context_remaining_percent()
-                    .map(|remaining| {
-                        tr_with(current(), "Context {0}% left", &[&remaining.to_string()])
-                    })
-            }
+            StatusLineItem::ContextRemaining => self
+                .status_line_context_remaining_percent()
+                .map(|remaining| format!("Context {remaining}% left")),
             StatusLineItem::ContextUsed => self
                 .status_line_context_used_percent()
-                .map(|used| tr_with(current(), "Context {0}% used", &[&used.to_string()])),
+                .map(|used| format!("Context {used}% used")),
             StatusLineItem::FiveHourLimit => {
                 let (window, is_secondary) = self
                     .rate_limit_snapshots_by_limit_id
@@ -778,7 +792,7 @@ impl ChatWidget {
             StatusLineItem::CodexVersion => Some(CODEX_CLI_VERSION.to_string()),
             StatusLineItem::ContextWindowSize => self
                 .status_line_context_window_size()
-                .map(|cws| tr_with(current(), "{0} window", &[&format_tokens_compact(cws)])),
+                .map(|cws| format!("{} window", format_tokens_compact(cws))),
             StatusLineItem::TotalInputTokens => (!self.token_usage_pending).then(|| {
                 format!(
                     "{} in",
@@ -794,9 +808,7 @@ impl ChatWidget {
             StatusLineItem::ThreadCredits => self
                 .estimated_thread_usage()
                 .map(|usage| usage.estimated_usage_credits_micros)
-                .map(|credits| {
-                    tr_with(current(), "{0} credits", &[&format_credit_micros(credits)])
-                }),
+                .map(|credits| format!("{} credits", format_credit_micros(credits))),
             StatusLineItem::EstimatedThreadCost => self
                 .estimated_thread_usage()
                 .and_then(|usage| usage.estimated_usage_usd_micros)
@@ -814,14 +826,19 @@ impl ChatWidget {
                 .is_none_or(|preset| preset.supports_fast_mode())
                 .then(|| {
                     if self.current_service_tier() == Some(ServiceTier::Fast.request_value()) {
-                        tr(current(), "Fast on").to_string()
+                        "Fast on".to_string()
                     } else {
-                        tr(current(), "Fast off").to_string()
+                        "Fast off".to_string()
                     }
                 }),
-            StatusLineItem::RawOutput => self
-                .raw_output_mode()
-                .then(|| tr(current(), "raw output").to_string()),
+            StatusLineItem::Daybreak => Some(
+                if self.daybreak_enabled && !self.side_conversation_active() {
+                    "Daybreak on".to_string()
+                } else {
+                    "Daybreak off".to_string()
+                },
+            ),
+            StatusLineItem::RawOutput => self.raw_output_mode().then(|| "raw output".to_string()),
             StatusLineItem::ThreadName => {
                 self.thread_name.as_deref().and_then(normalize_thread_name)
             }
@@ -874,6 +891,7 @@ impl ChatWidget {
             StatusSurfacePreviewItem::EstimatedThreadCost => StatusLineItem::EstimatedThreadCost,
             StatusSurfacePreviewItem::SessionId => StatusLineItem::SessionId,
             StatusSurfacePreviewItem::FastMode => StatusLineItem::FastMode,
+            StatusSurfacePreviewItem::Daybreak => StatusLineItem::Daybreak,
             StatusSurfacePreviewItem::RawOutput => StatusLineItem::RawOutput,
             StatusSurfacePreviewItem::WorkspaceHeadline => StatusLineItem::WorkspaceHeadline,
             StatusSurfacePreviewItem::Model => StatusLineItem::ModelName,
@@ -906,10 +924,8 @@ impl ChatWidget {
                 } else {
                     StatusLineItem::ThreadTitle
                 };
-                let value = self
-                    .status_line_value(item)
-                    .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 48));
-                self.with_thread_title_progress(value, now)
+                self.status_line_value_for_item(item)
+                    .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 48))
             }
             TerminalTitleItem::GitBranch => self.status_line_branch.as_ref().map(|branch| {
                 Self::truncate_terminal_title_part(branch.clone(), /*max_chars*/ 32)
@@ -944,15 +960,15 @@ impl ChatWidget {
             TerminalTitleItem::EstimatedThreadCost => self
                 .status_line_value_for_item(StatusLineItem::EstimatedThreadCost)
                 .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 32)),
-            TerminalTitleItem::SessionId => {
-                let value = self
-                    .status_line_value(StatusLineItem::SessionId)
-                    .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 32));
-                self.with_thread_title_progress(value, now)
-            }
+            TerminalTitleItem::SessionId => self
+                .status_line_value_for_item(StatusLineItem::SessionId)
+                .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 32)),
             TerminalTitleItem::FastMode => self
                 .status_line_value_for_item(StatusLineItem::FastMode)
                 .map(|value| Self::truncate_terminal_title_part(value, /*max_chars*/ 32)),
+            TerminalTitleItem::Daybreak => {
+                self.status_line_value_for_item(StatusLineItem::Daybreak)
+            }
             TerminalTitleItem::Model => Some(Self::truncate_terminal_title_part(
                 self.model_display_name().to_string(),
                 /*max_chars*/ 32,
@@ -1018,15 +1034,18 @@ impl ChatWidget {
     }
 
     pub(super) fn terminal_title_spinner_text_at(&self, now: Instant) -> Option<String> {
-        if !self.local_settings.tui.animations {
-            return None;
+        let spinner = (self.local_settings.tui.animations
+            && self.local_settings.tui.effects.progress
+            && self.terminal_title_has_active_progress())
+        .then(|| self.terminal_title_spinner_frame_at(now));
+        if self.realtime_microphone_is_listening() {
+            return Some(match spinner {
+                Some(frame) => format!("● {frame}"),
+                None => "●".to_string(),
+            });
         }
 
-        if !self.terminal_title_has_active_progress() {
-            return None;
-        }
-
-        Some(self.terminal_title_spinner_frame_at(now).to_string())
+        spinner.map(str::to_string)
     }
 
     pub(super) fn terminal_title_spinner_frame_at(&self, now: Instant) -> &'static str {
@@ -1058,12 +1077,15 @@ impl ChatWidget {
 
     pub(super) fn should_animate_terminal_title_spinner(&self) -> bool {
         self.local_settings.tui.animations
+            && self.local_settings.tui.effects.progress
             && self.terminal_title_uses_activity()
             && self.terminal_title_has_active_progress()
     }
 
     pub(super) fn should_animate_terminal_title_action_required(&self) -> bool {
-        self.local_settings.tui.animations && self.terminal_title_shows_action_required()
+        self.local_settings.tui.animations
+            && self.local_settings.tui.effects.title
+            && self.terminal_title_shows_action_required()
     }
 
     fn should_animate_terminal_title_spinner_with_selections(
@@ -1071,6 +1093,7 @@ impl ChatWidget {
         selections: &StatusSurfaceSelections,
     ) -> bool {
         self.local_settings.tui.animations
+            && self.local_settings.tui.effects.progress
             && selections
                 .terminal_title_items
                 .contains(&TerminalTitleItem::Spinner)
@@ -1083,11 +1106,7 @@ impl ChatWidget {
         if total == 0 {
             return None;
         }
-        Some(tr_with(
-            current(),
-            "Tasks {0}/{1}",
-            &[&completed.to_string(), &total.to_string()],
-        ))
+        Some(format!("Tasks {completed}/{total}"))
     }
 
     /// Truncates a title segment by grapheme cluster and appends `...` when needed.
@@ -1213,32 +1232,34 @@ fn permissions_display(config: &Config) -> String {
     }
 
     let permission_profile = config.permissions.effective_permission_profile();
-    let workspace_roots = config.effective_workspace_roots();
-    let summary =
-        summarize_permission_profile(&permission_profile, &config.cwd, workspace_roots.as_slice());
+    let summary = summarize_permission_profile(
+        &permission_profile,
+        &PathUri::from_abs_path(&config.cwd),
+        &config.effective_workspace_roots(),
+    );
     if let Some(details) = summary.strip_prefix("read-only")
         && !details.contains("(network access enabled)")
     {
-        return tr(current(), "Read Only").to_string();
+        return "Read Only".to_string();
     }
     if let Some(details) = summary.strip_prefix("workspace-write")
         && !details.contains("(network access enabled)")
     {
-        return tr(current(), "Workspace").to_string();
+        return "Workspace".to_string();
     }
     if permission_profile == PermissionProfile::Disabled {
-        return tr(current(), "Full Access").to_string();
+        return "Full Access".to_string();
     }
 
-    tr(current(), "Custom permissions").to_string()
+    "Custom permissions".to_string()
 }
 
 fn approval_mode_display(config: &Config) -> String {
     let approval_policy = AskForApproval::from(config.permissions.approval_policy.value());
     if approval_policy == AskForApproval::OnRequest {
         return match config.approvals_reviewer {
-            ApprovalsReviewer::AutoReview => tr(current(), "Approve for me").to_string(),
-            ApprovalsReviewer::User => tr(current(), "Ask for approval").to_string(),
+            ApprovalsReviewer::AutoReview => "Approve for me".to_string(),
+            ApprovalsReviewer::User => "Ask for approval".to_string(),
         };
     }
 

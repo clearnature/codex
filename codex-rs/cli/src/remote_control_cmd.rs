@@ -1,6 +1,3 @@
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::io::Write;
 use std::time::Duration;
 
@@ -8,7 +5,6 @@ use anyhow::Context;
 use clap::Args;
 use codex_app_server::AppServerRuntimeOptions;
 use codex_app_server::AppServerTransport;
-use codex_app_server::AppServerWebsocketAuthSettings;
 use codex_app_server_daemon::LifecycleCommand as AppServerLifecycleCommand;
 use codex_app_server_daemon::LifecycleOutput as AppServerLifecycleOutput;
 use codex_app_server_daemon::LifecycleStatus as AppServerLifecycleStatus;
@@ -19,9 +15,12 @@ use codex_app_server_protocol::RemoteControlConnectionStatus;
 use codex_app_server_protocol::RemoteControlPairingStartResponse;
 use codex_arg0::Arg0DispatchPaths;
 use codex_config::LoaderOverrides;
+use codex_core::config::ConfigBuilder;
+use codex_features::Feature;
 use codex_protocol::protocol::SessionSource;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_cli::CliConfigOverrides;
+use codex_websocket_auth::WebsocketAuthSettings;
 use serde::Serialize;
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
@@ -37,8 +36,12 @@ pub(crate) struct RemoteControlCommand {
     #[arg(long = "json", global = true)]
     json: bool,
 
+    /// Run an embedded app-server in the foreground until Ctrl-C.
+    #[arg(long = "no-daemon")]
+    pub(super) no_daemon: bool,
+
     #[command(subcommand)]
-    subcommand: Option<RemoteControlSubcommand>,
+    pub(super) subcommand: Option<RemoteControlSubcommand>,
 }
 
 impl RemoteControlCommand {
@@ -53,7 +56,7 @@ impl RemoteControlCommand {
 }
 
 #[derive(Debug, Clone, Copy, clap::Subcommand)]
-enum RemoteControlSubcommand {
+pub(super) enum RemoteControlSubcommand {
     /// Start the app-server daemon with remote control enabled.
     Start,
 
@@ -69,33 +72,67 @@ pub(crate) async fn run(
     arg0_paths: Arg0DispatchPaths,
     root_config_overrides: CliConfigOverrides,
 ) -> anyhow::Result<()> {
-    match command.subcommand {
-        None => {
+    if command.no_daemon && command.subcommand.is_some() {
+        anyhow::bail!("`--no-daemon` cannot be used with a remote-control subcommand");
+    }
+
+    if command.subcommand.is_none() {
+        if command.no_daemon || command.json || !daemon_eligible(&root_config_overrides).await? {
+            run_foreground_remote_control(command.json, arg0_paths, root_config_overrides).await?;
+        } else {
             print_remote_control_progress(
                 command.json,
-                tr(
-                    current(),
-                    "Starting app-server with remote control enabled...",
-                ),
+                "Starting app-server daemon with remote control enabled...",
             )?;
-            run_foreground_remote_control(command.json, arg0_paths, root_config_overrides).await?;
+            let daemon = match codex_app_server_daemon::start_with_features(&Default::default())
+                .await
+            {
+                Ok(daemon) => daemon,
+                #[cfg(windows)]
+                Err(error) if error.is::<codex_app_server_daemon::DetachedLaunchRestricted>() => {
+                    return run_foreground_remote_control(
+                        command.json,
+                        arg0_paths,
+                        root_config_overrides,
+                    )
+                    .await;
+                }
+                Err(error) => return Err(error),
+            };
+            if daemon.backend.is_none() {
+                return run_foreground_remote_control(
+                    command.json,
+                    arg0_paths,
+                    root_config_overrides,
+                )
+                .await;
+            }
+            let remote_control = codex_app_server_daemon::enable_remote_control_on_socket(
+                &daemon.socket_path,
+                FOREGROUND_SOCKET_CONNECT_TIMEOUT,
+                FOREGROUND_SOCKET_CONNECT_RETRY_DELAY,
+            )
+            .await?;
+            let output = AppServerRemoteControlReadyOutput {
+                daemon: AppServerRemoteControlStartOutput::Start(daemon),
+                remote_control,
+            };
+            print_remote_control_start_output(&output, command.json)?;
         }
+        return Ok(());
+    }
+
+    match command.subcommand {
         Some(RemoteControlSubcommand::Start) => {
             print_remote_control_progress(
                 command.json,
-                tr(
-                    current(),
-                    "Starting app-server daemon with remote control enabled...",
-                ),
+                "Starting app-server daemon with remote control enabled...",
             )?;
             let output = codex_app_server_daemon::ensure_remote_control_ready().await?;
             print_remote_control_start_output(&output, command.json)?;
         }
         Some(RemoteControlSubcommand::Stop) => {
-            print_remote_control_progress(
-                command.json,
-                tr(current(), "Stopping remote control..."),
-            )?;
+            print_remote_control_progress(command.json, "Stopping remote control...")?;
             let output = codex_app_server_daemon::run(AppServerLifecycleCommand::Stop).await?;
             print_remote_control_stop_output(&output, command.json)?;
         }
@@ -103,8 +140,29 @@ pub(crate) async fn run(
             let output = codex_app_server_daemon::start_remote_control_pairing().await?;
             print_remote_control_pairing_output(&output, command.json)?;
         }
+        None => unreachable!("bare remote-control returned before explicit subcommand dispatch"),
     }
     Ok(())
+}
+
+async fn daemon_eligible(root_config_overrides: &CliConfigOverrides) -> anyhow::Result<bool> {
+    if !root_config_overrides.raw_overrides.is_empty()
+        || codex_login::is_workload_identity_selected()
+        || std::env::var_os(codex_exec_server::CODEX_EXEC_SERVER_URL_ENV_VAR).is_some()
+    {
+        return Ok(false);
+    }
+
+    #[cfg(windows)]
+    if codex_app_server_daemon::is_elevated()? {
+        return Ok(false);
+    }
+
+    let Ok(config) = ConfigBuilder::default().build().await else {
+        return Ok(false);
+    };
+    Ok(config.features.enabled(Feature::DaemonAutoStart)
+        && !codex_tui::uses_wsl_drvfs(&config.codex_home))
 }
 
 fn print_remote_control_progress(json: bool, message: &str) -> anyhow::Result<()> {
@@ -113,10 +171,9 @@ fn print_remote_control_progress(json: bool, message: &str) -> anyhow::Result<()
     }
 
     println!("{message}");
-    std::io::stdout().flush().context(tr(
-        current(),
-        "failed to flush remote-control progress message",
-    ))?;
+    std::io::stdout()
+        .flush()
+        .context("failed to flush remote-control progress message")?;
     Ok(())
 }
 
@@ -125,19 +182,23 @@ async fn run_foreground_remote_control(
     arg0_paths: Arg0DispatchPaths,
     root_config_overrides: CliConfigOverrides,
 ) -> anyhow::Result<()> {
+    print_remote_control_progress(json, "Starting app-server with remote control enabled...")?;
+    #[cfg(not(windows))]
     let socket_dir = tempfile::Builder::new()
         .prefix("codex-rc-")
         .tempdir_in("/tmp")
         .or_else(|_| tempfile::tempdir())
-        .context(tr(
-            current(),
-            "failed to create private app-server socket directory",
-        ))?;
+        .context("failed to create private app-server socket directory")?;
+    #[cfg(not(windows))]
     let socket_path = socket_dir.path().join("rc.sock");
-    let socket_path = AbsolutePathBuf::from_absolute_path(&socket_path).context(tr(
-        current(),
-        "private app-server socket path was not absolute",
-    ))?;
+    // Let the transport create this parent with a protected DACL instead of
+    // inheriting the broader ACL from a directory created under `%TEMP%`.
+    #[cfg(windows)]
+    let socket_path = std::env::temp_dir()
+        .join("codex-remote-control")
+        .join(format!("rc-{}.sock", std::process::id()));
+    let socket_path = AbsolutePathBuf::from_absolute_path(&socket_path)
+        .context("private app-server socket path was not absolute")?;
     let transport = AppServerTransport::UnixSocket {
         socket_path: socket_path.clone(),
     };
@@ -147,7 +208,7 @@ async fn run_foreground_remote_control(
         ..Default::default()
     };
     let (stop_rx, stop_signal_task) = foreground_stop_signal();
-    let mut app_server_task = tokio::spawn(codex_app_server::run_main_with_transport_options(
+    let app_server = codex_app_server::run_main_with_transport_options(
         arg0_paths,
         root_config_overrides,
         LoaderOverrides::default(),
@@ -155,9 +216,10 @@ async fn run_foreground_remote_control(
         /*default_analytics_enabled*/ false,
         transport,
         SessionSource::VSCode,
-        AppServerWebsocketAuthSettings::default(),
+        WebsocketAuthSettings::default(),
         runtime_options,
-    ));
+    );
+    let mut app_server_task = tokio::spawn(async move { app_server.await.map(|_| ()) });
 
     let summary = match wait_for_foreground_remote_control_start(
         &mut app_server_task,
@@ -204,14 +266,7 @@ fn foreground_stop_signal() -> (watch::Receiver<bool>, JoinHandle<()>) {
     let (stop_tx, stop_rx) = watch::channel(false);
     let task = tokio::spawn(async move {
         if let Err(err) = tokio::signal::ctrl_c().await {
-            eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "failed to listen for Ctrl-C: {0}",
-                    &[&err.to_string()]
-                )
-            );
+            eprintln!("failed to listen for Ctrl-C: {err}");
         }
         let _ = stop_tx.send(true);
     });
@@ -253,8 +308,8 @@ async fn wait_for_foreground_app_server(
     tokio::select! {
         app_server_result = &mut app_server_task => {
             app_server_result
-                .context(tr(current(), "foreground app-server task failed to join"))?
-                .context(tr(current(), "foreground app-server exited with an error"))?;
+                .context("foreground app-server task failed to join")?
+                .context("foreground app-server exited with an error")?;
         }
         _ = wait_for_stop_signal(&mut stop_rx) => {
             abort_foreground_app_server(app_server_task).await;
@@ -276,19 +331,12 @@ fn foreground_app_server_exited_before_ready(
 ) -> anyhow::Error {
     match result {
         Ok(Ok(())) => {
-            anyhow::anyhow!(tr(
-                current(),
-                "foreground app-server exited before remote control became ready"
-            ))
+            anyhow::anyhow!("foreground app-server exited before remote control became ready")
         }
-        Ok(Err(error)) => anyhow::Error::new(error).context(tr(
-            current(),
-            "foreground app-server exited before remote control became ready",
-        )),
-        Err(error) => anyhow::Error::new(error).context(tr(
-            current(),
-            "foreground app-server task failed before remote control became ready",
-        )),
+        Ok(Err(error)) => anyhow::Error::new(error)
+            .context("foreground app-server exited before remote control became ready"),
+        Err(error) => anyhow::Error::new(error)
+            .context("foreground app-server task failed before remote control became ready"),
     }
 }
 
@@ -402,15 +450,13 @@ fn remote_control_start_human_message(
 ) -> anyhow::Result<String> {
     ensure_remote_control_startable(output)?;
     match output.status {
-        RemoteControlConnectionStatus::Connected => Ok(tr_with(
-            current(),
-            "This machine is available for remote control as {0}.",
-            &[output.server_name.as_str()],
+        RemoteControlConnectionStatus::Connected => Ok(format!(
+            "This machine is available for remote control as {}.",
+            output.server_name
         )),
-        RemoteControlConnectionStatus::Connecting => Ok(tr_with(
-            current(),
-            "Remote control is enabled on {0} and still connecting.",
-            &[output.server_name.as_str()],
+        RemoteControlConnectionStatus::Connecting => Ok(format!(
+            "Remote control is enabled on {} and still connecting.",
+            output.server_name
         )),
         RemoteControlConnectionStatus::Errored | RemoteControlConnectionStatus::Disabled => {
             unreachable!("errored and disabled statuses are rejected before formatting")
@@ -426,18 +472,13 @@ fn ensure_remote_control_startable(
             Ok(())
         }
         RemoteControlConnectionStatus::Errored => {
-            anyhow::bail!(tr_with(
-                current(),
-                "Remote control is enabled on {0} but the connection is errored.",
-                &[output.server_name.as_str()]
-            ));
+            anyhow::bail!(
+                "Remote control is enabled on {} but the connection is errored.",
+                output.server_name
+            );
         }
         RemoteControlConnectionStatus::Disabled => {
-            anyhow::bail!(tr_with(
-                current(),
-                "Remote control is disabled on {0}.",
-                &[output.server_name.as_str()]
-            ));
+            anyhow::bail!("Remote control is disabled on {}.", output.server_name);
         }
     }
 }
@@ -455,7 +496,7 @@ fn remote_control_start_human_lines(
     let mut lines = vec![remote_control_start_human_message(summary)?];
     match mode {
         RemoteControlHumanOutputMode::Foreground => {
-            lines.push(tr(current(), "Press Ctrl-C to stop.").to_string());
+            lines.push("Press Ctrl-C to stop.".to_string());
         }
         RemoteControlHumanOutputMode::Daemon => {}
     }
@@ -465,7 +506,7 @@ fn remote_control_start_human_lines(
 fn daemon_app_server_human_lines(output: &AppServerRemoteControlStartOutput) -> Vec<String> {
     let (managed_codex_path, managed_codex_version) = daemon_app_server_identity(output);
     vec![
-        tr(current(), "Daemon used app-server:").to_string(),
+        "Daemon used app-server:".to_string(),
         format!("  path: {}", managed_codex_path.display()),
         format!("  version: {}", managed_codex_version.unwrap_or("unknown")),
     ]
@@ -515,31 +556,26 @@ fn format_remote_control_pairing_output(
         return Ok(serde_json::to_string(output)?);
     }
 
-    let manual_pairing_code = output.manual_pairing_code.as_deref().context(tr(
-        current(),
-        "remote-control pairing response did not include a manual pairing code",
-    ))?;
-    Ok(tr_with(
-        current(),
-        "Pairing code: {0}",
-        &[manual_pairing_code],
-    ))
+    let manual_pairing_code = output
+        .manual_pairing_code
+        .as_deref()
+        .context("remote-control pairing response did not include a manual pairing code")?;
+    Ok(format!("Pairing code: {manual_pairing_code}"))
 }
 
 fn remote_control_stop_human_message(output: &AppServerLifecycleOutput) -> String {
     match output.status {
-        AppServerLifecycleStatus::Stopped => tr(current(), "Remote control stopped.").to_string(),
-        AppServerLifecycleStatus::NotRunning => {
-            tr(current(), "Remote control is not running.").to_string()
-        }
+        AppServerLifecycleStatus::Stopped => "Remote control stopped.".to_string(),
+        AppServerLifecycleStatus::NotRunning => "Remote control is not running.".to_string(),
         AppServerLifecycleStatus::Started
         | AppServerLifecycleStatus::Restarted
         | AppServerLifecycleStatus::AlreadyRunning
-        | AppServerLifecycleStatus::Running => tr_with(
-            current(),
-            "Remote control stop completed with status {0}.",
-            &[&format!("{:?}", output.status)],
-        ),
+        | AppServerLifecycleStatus::Running => {
+            format!(
+                "Remote control stop completed with status {:?}.",
+                output.status
+            )
+        }
     }
 }
 

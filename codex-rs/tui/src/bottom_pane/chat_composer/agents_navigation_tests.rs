@@ -1,8 +1,59 @@
 use super::tests::new_test_composer;
 use super::tests::snapshot_composer_state_with_width;
+use super::tests::type_chars_humanlike;
 use super::*;
 use assert_matches::assert_matches;
 use pretty_assertions::assert_eq;
+
+#[test]
+fn parent_owned_thread_allows_local_commands() {
+    for (command, expected) in [
+        ("/agents", SlashCommand::Agents),
+        ("/subagents", SlashCommand::MultiAgents),
+        ("/side", SlashCommand::Side),
+        ("/btw", SlashCommand::Btw),
+        ("/diff ", SlashCommand::Diff),
+        ("/daemon", SlashCommand::Daemon),
+        ("/warnings", SlashCommand::Warnings),
+    ] {
+        let (mut composer, _rx) = new_test_composer();
+        composer.set_parent_owned_thread();
+        composer.set_text_content(command.to_string(), Vec::new(), Vec::new());
+
+        assert_eq!(
+            composer.handle_submission(/*should_queue*/ false).0,
+            InputResult::Command(expected)
+        );
+    }
+
+    for (command, args) in [
+        (SlashCommand::Title, "model"),
+        (SlashCommand::Statusline, "model --no-colors"),
+    ] {
+        let (mut composer, _rx) = new_test_composer();
+        composer.set_parent_owned_thread();
+        let name = command.command();
+        composer.set_text_content(format!("/{name} {args}"), Vec::new(), Vec::new());
+
+        assert_eq!(
+            composer.handle_key_event(KeyCode::Enter.into()).0,
+            InputResult::CommandWithArgs(command, args.into(), Vec::new())
+        );
+    }
+}
+
+#[test]
+fn parent_owned_thread_allows_safe_command_selected_from_prefix() {
+    let (mut composer, _rx) = new_test_composer();
+    composer.set_parent_owned_thread();
+    type_chars_humanlike(&mut composer, &['/', 'a', 'g']);
+
+    let result = composer
+        .handle_key_event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+        .0;
+
+    assert_eq!(result, InputResult::Command(SlashCommand::Agents));
+}
 
 #[test]
 fn left_navigates_only_from_an_empty_prompt() {

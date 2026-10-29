@@ -18,6 +18,8 @@ use axum::extract::State;
 use axum::routing::get;
 use codex_app_server_protocol::AppsInstalledParams;
 use codex_app_server_protocol::AppsInstalledResponse;
+use codex_app_server_protocol::AppsListParams;
+use codex_app_server_protocol::AppsListResponse;
 use codex_app_server_protocol::InstalledApp;
 use codex_app_server_protocol::JSONRPCError;
 use codex_app_server_protocol::RequestId;
@@ -36,7 +38,7 @@ use rmcp::model::CallToolResult;
 use rmcp::model::ContentBlock;
 use rmcp::model::ListToolsResult;
 use rmcp::model::ServerCapabilities;
-use rmcp::model::ServerInfo;
+use rmcp::model::ServerConfig;
 use rmcp::model::Tool;
 use rmcp::transport::StreamableHttpServerConfig;
 use rmcp::transport::StreamableHttpService;
@@ -100,6 +102,94 @@ async fn installed_apps_force_refresh_only_refreshes_tools_snapshot() -> Result<
     assert_eq!(cached_empty, empty);
     assert_eq!(fixture.list_tools_calls(), 2);
     assert_eq!(fixture.directory_calls(), 0);
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn installed_apps_threadless_refresh_updates_existing_thread_tools() -> Result<()> {
+    let fixture = InstalledAppsFixture::start().await?;
+    fixture.set_tools(vec![connector_tool("alpha", "Alpha")?]);
+    let responses_server = responses::start_mock_server().await;
+    let codex_home = configured_codex_home(fixture.base_url())?;
+    write_chatgpt_auth(
+        codex_home.path(),
+        ChatGptAuthFixture::new("chatgpt-token")
+            .account_id("account-123")
+            .chatgpt_user_id("user-123")
+            .chatgpt_account_id("account-123")
+            .plan_type("sci_plus"),
+        AuthCredentialsStoreMode::File,
+    )?;
+    MockResponsesConfig::new(&responses_server.uri())
+        .with_root_config(&format!(
+            "chatgpt_base_url = {:?}\nmcp_oauth_credentials_store = \"file\"",
+            fixture.base_url(),
+        ))
+        .enable_feature(Feature::Apps)
+        .disable_feature(Feature::CodeMode)
+        .disable_feature(Feature::CodeModeOnly)
+        .disable_feature(Feature::ToolSearch)
+        .write(codex_home.path())?;
+    let mut app_server = start_app_server(codex_home.path()).await?;
+    let ThreadStartResponse { thread, .. } = app_server
+        .start_thread(ThreadStartParams::default())
+        .await?;
+
+    for (index, (connector_id, connector_name)) in [("alpha", "Alpha"), ("beta", "Beta")]
+        .into_iter()
+        .enumerate()
+    {
+        if index > 0 {
+            fixture.set_tools(vec![connector_tool(connector_id, connector_name)?]);
+            send_installed_request(&mut app_server, /*force_refresh*/ true).await?;
+        }
+        let response_id = format!("response-{connector_id}");
+        let response = responses::mount_sse_once(
+            &responses_server,
+            responses::sse(vec![
+                responses::ev_response_created(&response_id),
+                responses::ev_assistant_message("message", "done"),
+                responses::ev_completed(&response_id),
+            ]),
+        )
+        .await;
+        app_server
+            .start_turn_and_wait_for_completion(TurnStartParams {
+                thread_id: thread.id.clone(),
+                input: vec![UserInput::Text {
+                    text: "Show the available apps".to_string(),
+                    text_elements: Vec::new(),
+                }],
+                ..Default::default()
+            })
+            .await?;
+
+        let body = response.single_request().body_json();
+        for candidate in ["alpha", "beta"] {
+            assert_eq!(
+                responses::namespace_child_tool(
+                    &body,
+                    &format!("mcp__codex_apps__{candidate}"),
+                    &format!("connector_{candidate}"),
+                )
+                .is_some(),
+                candidate == connector_id,
+                "the existing thread should expose the refreshed Apps catalog: {body}",
+            );
+        }
+        assert_eq!(fixture.list_tools_calls(), index + 1);
+    }
+    let request_id = app_server
+        .send_apps_list_request(AppsListParams {
+            limit: None,
+            cursor: None,
+            thread_id: None,
+            force_refetch: true,
+        })
+        .await?;
+    let _: AppsListResponse =
+        timeout(DEFAULT_TIMEOUT, app_server.read_response(request_id)).await??;
+    assert_eq!(fixture.directory_calls(), 2);
     Ok(())
 }
 
@@ -393,8 +483,8 @@ struct InstalledAppsMcpServer {
 }
 
 impl ServerHandler for InstalledAppsMcpServer {
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
     }
 
     async fn call_tool(
@@ -491,6 +581,10 @@ impl InstalledAppsFixture {
             StreamableHttpServerConfig::default(),
         );
         let router = Router::new()
+            .route(
+                "/api/codex/config/bundle",
+                get(|| async { Json(json!({})) }),
+            )
             .route("/connectors/directory/list", get(list_directory_apps))
             .route(
                 "/connectors/directory/list_workspace",

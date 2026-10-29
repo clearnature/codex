@@ -2,10 +2,9 @@
 //!
 //! The CLI commands are thin app-server clients: resolve a user-provided UUID or exact session
 //! name, then call the corresponding app-server RPC.
+//! Explicit remote session commands, including queue, leave authentication and execution to
+//! the selected server without initializing the caller's credentials or runtime.
 
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::io::IsTerminal;
 use std::io::Write;
 use std::path::Path;
@@ -14,6 +13,7 @@ use std::sync::Arc;
 
 use crate::Cli;
 use crate::app_server_session::AppServerSession;
+use crate::app_server_session::ThreadParamsMode;
 use crate::legacy_core::config::ConfigBuilder;
 use crate::legacy_core::config::ConfigOverrides;
 use crate::legacy_core::config::load_config_toml_with_layer_stack;
@@ -28,7 +28,7 @@ use codex_config::CloudConfigBundleLoader;
 use codex_config::ConfigLoadOptions;
 use codex_config::LoaderOverrides;
 use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerRuntimePaths;
+use codex_exec_server::ExecServerRuntimeOptions;
 use codex_protocol::ThreadId;
 use codex_utils_cli::CliConfigOverrides;
 use codex_utils_home_dir::find_codex_home;
@@ -64,21 +64,13 @@ fn success_message(
     session_name: Option<&str>,
 ) -> String {
     let action = match action {
-        SessionArchiveAction::Archive => tr(current(), "Archived"),
-        SessionArchiveAction::Delete(_) => tr(current(), "Deleted"),
-        SessionArchiveAction::Unarchive => tr(current(), "Unarchived"),
+        SessionArchiveAction::Archive => "Archived",
+        SessionArchiveAction::Delete(_) => "Deleted",
+        SessionArchiveAction::Unarchive => "Unarchived",
     };
     match session_name {
-        Some(name) => tr_with(
-            current(),
-            "{0} session {1} ({2}).",
-            &[action, name, &session_id.to_string()],
-        ),
-        None => tr_with(
-            current(),
-            "{0} session {1}.",
-            &[action, &session_id.to_string()],
-        ),
+        Some(name) => format!("{action} session {name} ({session_id})."),
+        None => format!("{action} session {session_id}."),
     }
 }
 
@@ -92,7 +84,7 @@ pub async fn run_session_archive_command(
     target: String,
     options: SessionArchiveCommandOptions,
 ) -> Result<String> {
-    let codex_home = find_codex_home().wrap_err(tr(current(), "failed to find Codex home"))?;
+    let codex_home = find_codex_home().wrap_err("failed to find Codex home")?;
     let mut app_server =
         start_app_server_for_session_command(options, codex_home.to_path_buf()).await?;
     run_session_archive_action_with_app_server(
@@ -120,7 +112,7 @@ async fn run_session_archive_action_with_app_server(
             if matches!(confirmation, DeleteConfirmation::Prompt)
                 && !confirm_session_delete(&resolved)?
             {
-                return Ok(tr(current(), "Delete cancelled.").to_string());
+                return Ok("Delete cancelled.".to_string());
             }
             app_server.thread_delete(resolved.session_id).await?;
             resolved.session_name
@@ -152,11 +144,7 @@ async fn resolve_session_target(
                 .thread_read(session_id, /*include_turns*/ false)
                 .await
                 .with_context(|| {
-                    tr_with(
-                        current(),
-                        "No active or archived session found matching '{0}'.",
-                        &[target],
-                    )
+                    format!("No active or archived session found matching '{target}'.")
                 })?;
             return Ok(ResolvedSessionTarget {
                 session_id,
@@ -172,7 +160,7 @@ async fn resolve_session_target(
     let (search_scope, collections): (&str, &[SessionCollection]) = match action {
         SessionArchiveAction::Archive => ("active", &[SessionCollection::Active]),
         SessionArchiveAction::Delete(_) => (
-            tr(current(), "active or archived"),
+            "active or archived",
             &[SessionCollection::Active, SessionCollection::Archived],
         ),
         SessionArchiveAction::Unarchive => ("archived", &[SessionCollection::Archived]),
@@ -191,21 +179,14 @@ async fn resolve_session_target(
     {
         return session_target_from_app_server_thread(thread);
     }
-    Err(eyre!(tr_with(
-        current(),
-        "No {0} session found matching '{1}'.",
-        &[search_scope, target],
-    )))
+    Err(eyre!(
+        "No {search_scope} session found matching '{target}'."
+    ))
 }
 
 fn session_target_from_app_server_thread(thread: AppServerThread) -> Result<ResolvedSessionTarget> {
-    let session_id = ThreadId::from_string(&thread.id).wrap_err_with(|| {
-        tr_with(
-            current(),
-            "app server returned invalid session id `{0}`",
-            &[&thread.id.to_string()],
-        )
-    })?;
+    let session_id = ThreadId::from_string(&thread.id)
+        .wrap_err_with(|| format!("app server returned invalid session id `{}`", thread.id))?;
     Ok(ResolvedSessionTarget {
         session_id,
         session_name: Some(display_label(&thread).to_string()),
@@ -214,42 +195,25 @@ fn session_target_from_app_server_thread(thread: AppServerThread) -> Result<Reso
 
 fn confirm_session_delete(target: &ResolvedSessionTarget) -> Result<bool> {
     if !(std::io::stdin().is_terminal() && std::io::stderr().is_terminal()) {
-        return Err(eyre!(tr(
-            current(),
+        return Err(eyre!(
             "cannot confirm session deletion without an interactive terminal; rerun with --force and a session UUID"
-        )));
+        ));
     }
 
     let mut stderr = std::io::stderr().lock();
     match target.session_name.as_deref() {
         Some(name) => writeln!(
             stderr,
-            "{}",
-            tr_with(
-                current(),
-                "Permanently delete session '{0}' ({1})?",
-                &[name, &target.session_id.to_string()],
-            )
+            "Permanently delete session '{name}' ({})?",
+            target.session_id
         ),
-        None => writeln!(
-            stderr,
-            "{}",
-            tr_with(
-                current(),
-                "Permanently delete session {0}?",
-                &[&target.session_id.to_string()]
-            )
-        ),
+        None => writeln!(stderr, "Permanently delete session {}?", target.session_id),
     }?;
     writeln!(
         stderr,
-        "{}",
-        tr(
-            current(),
-            "This cannot be undone. Subagent threads will also be deleted."
-        )
+        "This cannot be undone. Subagent threads will also be deleted."
     )?;
-    write!(stderr, "{}", tr(current(), "Continue? [y/N]: "))?;
+    write!(stderr, "Continue? [y/N]: ")?;
     stderr.flush()?;
 
     let mut input = String::new();
@@ -267,17 +231,16 @@ pub(super) async fn start_app_server_for_session_command(
         arg0_paths,
         explicit_remote_endpoint,
     } = options;
+    if cli.no_daemon && explicit_remote_endpoint.is_some() {
+        return Err(eyre!("--no-daemon cannot be used with --remote."));
+    }
     let loader_overrides = LoaderOverrides::default();
     let strict_config = cli.strict_config;
     let raw_overrides = cli.config_overrides.raw_overrides.clone();
     let overrides_cli = CliConfigOverrides { raw_overrides };
-    let cli_kv_overrides = overrides_cli.parse_overrides().map_err(|err| {
-        eyre!(tr_with(
-            current(),
-            "failed to parse -c overrides: {0}",
-            &[&err]
-        ))
-    })?;
+    let cli_kv_overrides = overrides_cli
+        .parse_overrides()
+        .map_err(|err| eyre!("failed to parse -c overrides: {err}"))?;
     let mut launch_loader_overrides = loader_overrides.clone();
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
         launch_loader_overrides.user_config_path = Some(resolve_profile_v2_config_path(
@@ -287,14 +250,36 @@ pub(super) async fn start_app_server_for_session_command(
         launch_loader_overrides.user_config_profile = Some(profile_v2.clone());
     }
 
+    if let Some(endpoint) = explicit_remote_endpoint {
+        // Validate config before connecting, but leave authentication and execution
+        // to the selected server even when this caller has workload identity set.
+        launch_loader_overrides.ignore_login_requirements = true;
+        ConfigBuilder::default()
+            .codex_home(codex_home)
+            .cli_overrides(cli_kv_overrides)
+            .loader_overrides(launch_loader_overrides)
+            .strict_config(strict_config)
+            .build()
+            .await
+            .wrap_err("failed to load config.toml")?;
+        return Ok(AppServerSession::new(
+            crate::backend_id::BackendId::new(),
+            super::connect_remote_app_server(endpoint).await?,
+            ThreadParamsMode::Remote,
+        )
+        .with_remote_cwd_override(cli.cwd.clone()));
+    }
+
     let workload_identity_selected = codex_login::is_workload_identity_selected();
-    let reuse_implicit_local_daemon = !workload_identity_selected
-        && super::can_reuse_implicit_local_daemon(
+    let reuse_implicit_local_daemon = !cli.no_daemon
+        && !workload_identity_selected
+        && super::daemon_startup::config_exclusion(
             &cli_kv_overrides,
             &launch_loader_overrides,
             strict_config,
             cli.bypass_hook_trust,
-        );
+        )
+        .is_none();
     let default_daemon = if explicit_remote_endpoint.is_none() && reuse_implicit_local_daemon {
         super::maybe_probe_default_daemon_socket(codex_home.as_path()).await
     } else {
@@ -312,20 +297,20 @@ pub(super) async fn start_app_server_for_session_command(
         .clone()
         .filter(|_| app_server_target.uses_remote_workspace());
 
-    let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
+    let local_runtime_paths = ExecServerRuntimeOptions::from_optional_paths(
         arg0_paths.codex_self_exe.clone(),
         arg0_paths.codex_linux_sandbox_exe.clone(),
     )
-    .wrap_err(tr(current(), "failed to resolve local runtime paths"))?;
+    .wrap_err("failed to resolve local runtime paths")?;
     let prepared_environment_manager = EnvironmentManager::prepare_from_env()
         .await
-        .wrap_err(tr(current(), "failed to discover execution environments"))?;
+        .wrap_err("failed to discover execution environments")?;
     let config_cwd = super::config_cwd_for_app_server_target(
         cli.cwd.as_deref(),
         &app_server_target,
         prepared_environment_manager.default_environment_is_remote(),
     )
-    .wrap_err(tr(current(), "failed to resolve config cwd"))?;
+    .wrap_err("failed to resolve config cwd")?;
 
     let mut loader_overrides = loader_overrides;
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
@@ -336,6 +321,8 @@ pub(super) async fn start_app_server_for_session_command(
         loader_overrides.user_config_profile = Some(profile_v2.clone());
     }
     loader_overrides.ignore_login_requirements = app_server_target.uses_remote_workspace();
+    let embedded_network_policy =
+        codex_app_server_client::EmbeddedNetworkPolicy::load(&loader_overrides).await;
 
     let bootstrap_config = load_config_toml_with_layer_stack(
         codex_home.as_path(),
@@ -348,12 +335,13 @@ pub(super) async fn start_app_server_for_session_command(
         },
     )
     .await
-    .wrap_err(tr(current(), "failed to load config.toml"))?;
+    .wrap_err("failed to load config.toml")?;
     let config_toml = &bootstrap_config.config_toml;
     let cloud_config_bundle = super::cloud_config_bundle_for_app_server_target(
         &app_server_target,
         &bootstrap_config,
         codex_home.as_path(),
+        &embedded_network_policy,
     )
     .await?;
 
@@ -381,7 +369,6 @@ pub(super) async fn start_app_server_for_session_command(
             model_provider,
             codex_self_exe: arg0_paths.codex_self_exe.clone(),
             codex_linux_sandbox_exe: arg0_paths.codex_linux_sandbox_exe.clone(),
-            main_execve_wrapper_exe: arg0_paths.main_execve_wrapper_exe.clone(),
             show_raw_agent_reasoning: cli.oss.then_some(true),
             bypass_hook_trust: cli.bypass_hook_trust.then_some(true),
             ..Default::default()
@@ -391,15 +378,19 @@ pub(super) async fn start_app_server_for_session_command(
         .cloud_config_bundle(cloud_config_bundle.clone())
         .build()
         .await
-        .wrap_err(tr(current(), "failed to load configuration"))?;
+        .wrap_err("failed to load configuration")?;
     let environment_manager = Arc::new(
         prepared_environment_manager
-            .build(Some(local_runtime_paths), config.http_client_factory())
-            .wrap_err(tr(current(), "failed to initialize environment manager"))?,
+            .build(
+                Some(local_runtime_paths),
+                app_server_target
+                    .environment_http_client_factory(&config, &embedded_network_policy),
+            )
+            .wrap_err("failed to initialize environment manager")?,
     );
     let mut state_db = super::init_state_db_for_app_server_target(&config, &app_server_target)
         .await
-        .wrap_err(tr(current(), "failed to initialize state database"))?;
+        .wrap_err("failed to initialize state database")?;
     let app_server = super::start_app_server(
         &mut app_server_target,
         arg0_paths,
@@ -412,12 +403,15 @@ pub(super) async fn start_app_server_for_session_command(
         /*log_db*/ None,
         &mut state_db,
         environment_manager,
+        embedded_network_policy,
     )
     .await?;
-    Ok(
-        AppServerSession::new(app_server, app_server_target.thread_params_mode())
-            .with_remote_cwd_override(remote_cwd_override),
+    Ok(AppServerSession::new(
+        crate::backend_id::BackendId::new(),
+        app_server,
+        app_server_target.thread_params_mode(),
     )
+    .with_remote_cwd_override(remote_cwd_override))
 }
 
 #[cfg(test)]

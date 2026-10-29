@@ -1,5 +1,7 @@
-use codex_i18n::current;
-use codex_i18n::tr_with;
+//! Read clipboard images and text on the TUI host. Text reads run on the clipboard worker.
+
+pub(crate) mod text;
+
 use std::path::Path;
 use std::path::PathBuf;
 use tempfile::Builder;
@@ -15,24 +17,10 @@ pub enum PasteImageError {
 impl std::fmt::Display for PasteImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PasteImageError::ClipboardUnavailable(msg) => write!(
-                f,
-                "{}",
-                tr_with(current(), "clipboard unavailable: {0}", &[msg])
-            ),
-            PasteImageError::NoImage(msg) => write!(
-                f,
-                "{}",
-                tr_with(current(), "no image on clipboard: {0}", &[msg])
-            ),
-            PasteImageError::EncodeFailed(msg) => write!(
-                f,
-                "{}",
-                tr_with(current(), "could not encode image: {0}", &[msg])
-            ),
-            PasteImageError::IoError(msg) => {
-                write!(f, "{}", tr_with(current(), "io error: {0}", &[msg]))
-            }
+            PasteImageError::ClipboardUnavailable(msg) => write!(f, "clipboard unavailable: {msg}"),
+            PasteImageError::NoImage(msg) => write!(f, "no image on clipboard: {msg}"),
+            PasteImageError::EncodeFailed(msg) => write!(f, "could not encode image: {msg}"),
+            PasteImageError::IoError(msg) => write!(f, "io error: {msg}"),
         }
     }
 }
@@ -89,9 +77,13 @@ pub fn paste_image_as_png() -> Result<(Vec<u8>, PastedImageInfo), PasteImageErro
         img
     } else {
         let _span = tracing::debug_span!("get_image").entered();
-        let img = cb
-            .get_image()
-            .map_err(|e| PasteImageError::NoImage(e.to_string()))?;
+        let img = cb.get_image().map_err(|e| {
+            if cfg!(windows) && !matches!(e, arboard::Error::ContentNotAvailable) {
+                PasteImageError::ClipboardUnavailable(e.to_string())
+            } else {
+                PasteImageError::NoImage(e.to_string())
+            }
+        })?;
         let w = img.width as u32;
         let h = img.height as u32;
         tracing::debug!("clipboard image opened from image: {}x{}", w, h);
@@ -128,7 +120,7 @@ pub fn paste_image_as_png() -> Result<(Vec<u8>, PastedImageInfo), PasteImageErro
 #[cfg(target_os = "android")]
 pub fn paste_image_as_png() -> Result<(Vec<u8>, PastedImageInfo), PasteImageError> {
     Err(PasteImageError::ClipboardUnavailable(
-        tr(current(), "clipboard image paste is unsupported on Android").into(),
+        "clipboard image paste is unsupported on Android".into(),
     ))
 }
 
@@ -248,7 +240,7 @@ fn try_dump_windows_clipboard_image() -> Option<String> {
 pub fn paste_image_to_temp_png() -> Result<(PathBuf, PastedImageInfo), PasteImageError> {
     // Keep error consistent with paste_image_as_png.
     Err(PasteImageError::ClipboardUnavailable(
-        tr(current(), "clipboard image paste is unsupported on Android").into(),
+        "clipboard image paste is unsupported on Android".into(),
     ))
 }
 

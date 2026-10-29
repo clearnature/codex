@@ -768,8 +768,11 @@ pub(crate) static ENTRIES: &[(&str, &str)] = &[
         "For difficult problems when quality matters more than speed · higher usage",
         "适合质量优先于速度的难题 · 用量较高",
     ),
-    ("Fresh thread with this plan.", "用此计划新建线程。"),
-    ("Fresh thread. Context: {0}.", "新建线程。上下文：{0}。"),
+    ("Fresh thread with this plan", "用此计划新建线程。"),
+    (
+        "Start a fresh thread (current context: {0})",
+        "新建线程（当前上下文：{0}）",
+    ),
     (
         "Future messages will include your current IDE selection and open tabs.",
         "后续消息会包含你当前的IDE选中内容与打开的标签页。",

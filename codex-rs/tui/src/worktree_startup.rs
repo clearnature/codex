@@ -2,9 +2,6 @@
 //! Source distrust is never upgraded; ownership is bound before exposing the new thread.
 //! Failed startup retains the checkout and reports manual recovery until ownership is bound.
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
@@ -20,7 +17,7 @@ impl ManagedTuiWorktree {
         self.manager
             .bind_thread(&self.checkout.root, &thread_id.to_string())
             .map_err(std::io::Error::other)
-            .wrap_err(tr(current(), "failed to bind managed worktree thread"))?;
+            .wrap_err("failed to bind managed worktree thread")?;
         self.recovery.finished.store(true, Ordering::Relaxed);
         Ok(())
     }
@@ -48,10 +45,9 @@ impl ManagedTuiWorktree {
             .await
             .map_err(std::io::Error::other)?;
         if source.active_project.is_untrusted() {
-            return Err(std::io::Error::other(tr(
-                current(),
+            return Err(std::io::Error::other(
                 "`--worktree` cannot create a checkout from an explicitly untrusted source",
-            )));
+            ));
         }
         Ok(())
     }
@@ -65,10 +61,12 @@ struct StartupRecovery {
 
 impl StartupRecovery {
     fn message(&self) -> String {
-        tr_with(
-            current(),
-            "Startup did not finish binding a thread to this worktree: {0}\nThe checkout was kept. Inspect it and confirm no session is using it.\nTo remove it, run `git worktree remove <checkout-path>` from the source repository,\nreplacing <checkout-path> with the path above. Do not use --force.",
-            &[&format!("{:?}", self.root)],
+        format!(
+            "Startup did not finish binding a thread to this worktree: {:?}\n\
+             The checkout was kept. Inspect it and confirm no session is using it.\n\
+             To remove it, run `git worktree remove <checkout-path>` from the source repository,\n\
+             replacing <checkout-path> with the path above. Do not use --force.",
+            self.root
         )
     }
 
@@ -97,8 +95,10 @@ impl ManagedTuiWorktree {
 
 async fn latest_thread_cwd(path: Option<PathBuf>, fallback: PathBuf) -> PathBuf {
     let Some(path) = path else { return fallback };
-    tokio::task::spawn_blocking(move || {
-        let reader = codex_rollout::open_rollout_seekable_reader(&path).ok()?;
+    let (stop, keep_running) = tokio::sync::oneshot::channel::<()>();
+    let result = tokio::task::spawn_blocking(move || {
+        let reader =
+            codex_rollout::open_rollout_seekable_reader(&path, || stop.is_closed()).ok()?;
         let mut scanner = codex_rollout::ReverseJsonlScanner::new(reader).ok()?;
         while let Some(outcome) = scanner.scan_next_rollout_line().ok()? {
             if let codex_rollout::ScanOutcome::Parsed(codex_rollout::RolloutLine {
@@ -114,7 +114,9 @@ async fn latest_thread_cwd(path: Option<PathBuf>, fallback: PathBuf) -> PathBuf 
     .await
     .ok()
     .flatten()
-    .unwrap_or(fallback)
+    .unwrap_or(fallback);
+    drop(keep_running);
+    result
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -128,6 +130,7 @@ pub(super) async fn prepare(
     target: &AppServerTarget,
     arg0_paths: &Arg0DispatchPaths,
     source_bundle: CloudConfigBundleLoader,
+    embedded_network_policy: &codex_app_server_client::EmbeddedNetworkPolicy,
 ) -> color_eyre::Result<(Config, CloudConfigBundleLoader, ManagedTuiWorktree)> {
     if let Some(id_or_name) = cli.fork_session_id.as_deref() {
         let prepared = if should_load_configured_environments(&loader_overrides, target) {
@@ -137,17 +140,14 @@ pub(super) async fn prepare(
         }
         .map_err(std::io::Error::other)?;
         if prepared.default_environment_is_remote() {
-            color_eyre::eyre::bail!(tr(
-                current(),
-                "`--worktree` is only supported for local sessions"
-            ));
+            color_eyre::eyre::bail!("`--worktree` is only supported for local sessions");
         }
         let environment = prepared.build(
-            Some(ExecServerRuntimePaths::from_optional_paths(
+            Some(ExecServerRuntimeOptions::from_optional_paths(
                 arg0_paths.codex_self_exe.clone(),
                 arg0_paths.codex_linux_sandbox_exe.clone(),
             )?),
-            source.http_client_factory(),
+            embedded_network_policy.bind(source.http_client_factory()),
         )?;
         let state =
             init_state_db_for_app_server_target(&source, &AppServerTarget::Embedded).await?;
@@ -164,22 +164,18 @@ pub(super) async fn prepare(
             /*log_db*/ None,
             state,
             Arc::new(environment),
+            embedded_network_policy.clone(),
         )
         .await?;
         let mut lookup = AppServerSession::new(
+            crate::backend_id::BackendId::new(),
             AppServerClient::InProcess(client),
             crate::app_server_session::ThreadParamsMode::Embedded,
         );
         let resolved = async {
             let target = lookup_session_target_with_app_server(&mut lookup, &source, id_or_name)
                 .await?
-                .ok_or_else(|| {
-                    color_eyre::eyre::eyre!(tr_with(
-                        current(),
-                        "Session not found: {0}",
-                        &[id_or_name],
-                    ))
-                })?;
+                .ok_or_else(|| color_eyre::eyre::eyre!("Session not found: {id_or_name}"))?;
             lookup
                 .thread_read(target.thread_id, /*include_turns*/ false)
                 .await
@@ -201,9 +197,13 @@ pub(super) async fn prepare(
                 CloudConfigBundleLoader::default(),
             )
             .await;
-            let source_bundle =
-                cloud_config_bundle_for_app_server_target(target, &bootstrap, &source.codex_home)
-                    .await?;
+            let source_bundle = cloud_config_bundle_for_app_server_target(
+                target,
+                &bootstrap,
+                &source.codex_home,
+                embedded_network_policy,
+            )
+            .await?;
             overrides.cwd = Some(cwd.into_path_buf());
             source = load_config_or_exit(
                 cli_overrides.clone(),
@@ -215,17 +215,10 @@ pub(super) async fn prepare(
             .await;
         }
     }
-    if !source.features.enabled(codex_features::Feature::Worktrees) {
-        color_eyre::eyre::bail!(tr(
-            current(),
-            "`--worktree` requires the worktrees feature; enable it with `--enable worktrees`",
-        ));
-    }
     if source.active_project.is_untrusted() {
-        color_eyre::eyre::bail!(tr(
-            current(),
-            "`--worktree` cannot create a checkout from an explicitly untrusted source",
-        ));
+        color_eyre::eyre::bail!(
+            "`--worktree` cannot create a checkout from an explicitly untrusted source"
+        );
     }
     let invocation_cwd = std::env::current_dir()?;
     for path in &mut overrides.additional_writable_roots {
@@ -276,8 +269,13 @@ pub(super) async fn prepare(
         },
     )
     .await?;
-    let bundle =
-        cloud_config_bundle_for_app_server_target(target, &bootstrap, &source.codex_home).await?;
+    let bundle = cloud_config_bundle_for_app_server_target(
+        target,
+        &bootstrap,
+        &source.codex_home,
+        embedded_network_policy,
+    )
+    .await?;
     managed
         .check_source_policy(
             &cli_overrides,

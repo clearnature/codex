@@ -1,8 +1,11 @@
 use super::*;
+use crate::model_catalog::ModelCatalog;
+use codex_config::ConfigPathContext;
 use codex_core::config::permission_profile_catalog;
 use codex_hooks::HookListEntryHandler;
-use codex_i18n::current;
-use codex_i18n::tr_with;
+use codex_utils_absolute_path::AbsolutePathBufGuard;
+use codex_utils_path_uri::PathConvention;
+use codex_utils_path_uri::PathUri;
 use futures::StreamExt;
 
 #[derive(Clone)]
@@ -12,13 +15,14 @@ pub(crate) struct CatalogRequestProcessor {
     pub(super) thread_manager: Arc<ThreadManager>,
     pub(super) config: Arc<Config>,
     pub(super) config_manager: ConfigManager,
+    model_catalog: Arc<ModelCatalog>,
 }
 
 const SKILLS_LIST_CWD_CONCURRENCY: usize = 5;
 
 fn skills_to_info(
     skills: &[codex_skills::SkillMetadata],
-    disabled_paths: &HashSet<AbsolutePathBuf>,
+    disabled_paths: &HashSet<PathUri>,
 ) -> Vec<codex_app_server_protocol::SkillMetadata> {
     skills
         .iter()
@@ -56,7 +60,7 @@ fn skills_to_info(
                             .collect(),
                     }
                 }),
-                path: skill.path_to_skills_md.clone(),
+                path: skill.path_to_skills_md.clone().into(),
                 scope: skill.scope.into(),
                 enabled,
                 plugin_id: skill.plugin_id.clone(),
@@ -122,6 +126,7 @@ impl CatalogRequestProcessor {
         thread_manager: Arc<ThreadManager>,
         config: Arc<Config>,
         config_manager: ConfigManager,
+        model_catalog: Arc<ModelCatalog>,
     ) -> Self {
         Self {
             outgoing,
@@ -129,6 +134,7 @@ impl CatalogRequestProcessor {
             thread_manager,
             config,
             config_manager,
+            model_catalog,
         }
     }
 
@@ -172,13 +178,47 @@ impl CatalogRequestProcessor {
         &self,
         params: ModelListParams,
     ) -> Result<Option<ClientResponsePayload>, JSONRPCErrorError> {
-        Self::list_models(
-            self.thread_manager.clone(),
-            self.config.http_client_factory(),
-            params,
+        let (config, models_manager) = self
+            .model_catalog
+            .current()
+            .await
+            .map_err(|err| config_load_error(&err))?;
+        // Gate the same provider used by the catalog, including when its model cache is warm.
+        // Resolving credentials may refresh them, but explicit host policy prevents browser login.
+        if let Some(gateway) = codex_model_provider::create_model_provider(
+            config.model_provider.clone(),
+            Some(self.thread_manager.auth_manager()),
         )
-        .await
-        .map(|response| Some(response.into()))
+        .gateway_auth_manager()
+        .map_err(|error| internal_error(error.to_string()))?
+        {
+            // Refreshing credentials can contact the gateway before the catalog's own check.
+            self.config_manager
+                .check_thread_model_provider(&config)
+                .await
+                .map_err(|err| config_load_error(&err))?;
+            if gateway.resolve_access_token().await.is_err() {
+                let current = self
+                    .config_manager
+                    .load_latest_config(/*fallback_cwd*/ None)
+                    .await
+                    .map_err(|err| config_load_error(&err))?;
+                // Configuration edits without an account transition still require a restart to refresh the model catalog.
+                if current.model_provider_id != config.model_provider_id
+                    || current.model_provider != config.model_provider
+                {
+                    return Err(invalid_request(
+                        "Model provider settings changed. Restart Codex to apply them, then retry fetching the model list",
+                    ));
+                }
+                return Err(invalid_request(
+                    "Gateway sign-in required or unavailable. Complete gateway sign-in and retry fetching the model list",
+                ));
+            }
+        }
+        self.list_models(params, config, models_manager)
+            .await
+            .map(|response| Some(response.into()))
     }
 
     pub(crate) async fn experimental_feature_list(
@@ -239,31 +279,30 @@ impl CatalogRequestProcessor {
         self.config_manager
             .load_latest_config(fallback_cwd)
             .await
-            .map_err(|err| {
-                internal_error(tr_with(
-                    current(),
-                    "failed to reload config: {0}",
-                    &[&err.to_string()],
-                ))
-            })
+            .map_err(|err| internal_error(format!("failed to reload config: {err}")))
     }
 
     async fn list_models(
-        thread_manager: Arc<ThreadManager>,
-        http_client_factory: codex_http_client::HttpClientFactory,
+        &self,
         params: ModelListParams,
+        config: Arc<Config>,
+        models_manager: codex_models_manager::manager::SharedModelsManager,
     ) -> Result<ModelListResponse, JSONRPCErrorError> {
         let ModelListParams {
             limit,
             cursor,
             include_hidden,
         } = params;
-        let models = supported_models(
-            thread_manager,
-            include_hidden.unwrap_or(false),
-            http_client_factory,
-        )
-        .await;
+        let presets = self
+            .model_catalog
+            .list_models_from_snapshot(
+                config,
+                models_manager,
+                codex_models_manager::manager::RefreshStrategy::OnlineIfUncached,
+            )
+            .await
+            .map_err(|err| config_load_error(&err))?;
+        let models = supported_models(presets, include_hidden.unwrap_or(false));
         let total = models.len();
 
         if total == 0 {
@@ -276,17 +315,15 @@ impl CatalogRequestProcessor {
         let effective_limit = limit.unwrap_or(total as u32).max(1) as usize;
         let effective_limit = effective_limit.min(total);
         let start = match cursor {
-            Some(cursor) => cursor.parse::<usize>().map_err(|_| {
-                invalid_request(tr_with(current(), "invalid cursor: {0}", &[&cursor]))
-            })?,
+            Some(cursor) => cursor
+                .parse::<usize>()
+                .map_err(|_| invalid_request(format!("invalid cursor: {cursor}")))?,
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(tr_with(
-                current(),
-                "cursor {0} exceeds total models {1}",
-                &[&start.to_string(), &total.to_string()],
+            return Err(invalid_request(format!(
+                "cursor {start} exceeds total models {total}"
             )));
         }
 
@@ -328,35 +365,21 @@ impl CatalogRequestProcessor {
         } = params;
         let config = match thread_id.as_deref() {
             Some(thread_id) => {
-                let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
-                    invalid_request(tr_with(
-                        current(),
-                        "invalid thread id: {0}",
-                        &[&err.to_string()],
-                    ))
-                })?;
+                let thread_id = ThreadId::from_string(thread_id)
+                    .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
                 let thread = self
                     .thread_manager
                     .get_thread(thread_id)
                     .await
-                    .map_err(|_| {
-                        invalid_request(tr_with(
-                            current(),
-                            "thread not found: {0}",
-                            &[&thread_id.to_string()],
-                        ))
-                    })?;
+                    .map_err(|_| invalid_request(format!("thread not found: {thread_id}")))?;
                 let thread_config = thread.config().await;
                 self.config_manager
-                    .load_latest_config_for_thread(thread_config.as_ref())
+                    .load_latest_config_with_session_layers(
+                        &thread_config.config_layer_stack,
+                        &thread_config.cwd,
+                    )
                     .await
-                    .map_err(|err| {
-                        internal_error(tr_with(
-                            current(),
-                            "failed to reload config: {0}",
-                            &[&err.to_string()],
-                        ))
-                    })?
+                    .map_err(|err| internal_error(format!("failed to reload config: {err}")))?
             }
             None => self.load_latest_config(/*fallback_cwd*/ None).await?,
         };
@@ -413,22 +436,14 @@ impl CatalogRequestProcessor {
         let start = match cursor {
             Some(cursor) => match cursor.parse::<usize>() {
                 Ok(idx) => idx,
-                Err(_) => {
-                    return Err(invalid_request(tr_with(
-                        current(),
-                        "invalid cursor: {0}",
-                        &[&cursor],
-                    )));
-                }
+                Err(_) => return Err(invalid_request(format!("invalid cursor: {cursor}"))),
             },
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(tr_with(
-                current(),
-                "cursor {0} exceeds total feature flags {1}",
-                &[&start.to_string(), &total.to_string()],
+            return Err(invalid_request(format!(
+                "cursor {start} exceeds total feature flags {total}"
             )));
         }
 
@@ -448,35 +463,27 @@ impl CatalogRequestProcessor {
         params: PermissionProfileListParams,
     ) -> Result<PermissionProfileListResponse, JSONRPCErrorError> {
         let PermissionProfileListParams { cursor, limit, cwd } = params;
-        let config_layer_stack = match cwd {
-            Some(cwd) => {
-                let cwd = PathBuf::from(cwd);
-                let (_, config_layer_stack) =
-                    self.resolve_cwd_config(&cwd).await.map_err(|err| {
-                        internal_error(tr_with(current(), "failed to reload config: {0}", &[&err]))
-                    })?;
-                config_layer_stack
-            }
-            None => self
-                .config_manager
-                .load_config_layers(/*cwd*/ None)
+        let (cwd, config_layer_stack) = match cwd {
+            Some(cwd) => self
+                .resolve_cwd_config(&PathBuf::from(cwd))
                 .await
-                .map_err(|err| {
-                    internal_error(tr_with(
-                        current(),
-                        "failed to reload config: {0}",
-                        &[&err.to_string()],
-                    ))
-                })?,
+                .map_err(|err| internal_error(format!("failed to reload config: {err}")))?,
+            None => (
+                self.config.cwd.clone(),
+                self.config_manager
+                    .load_config_layers(/*cwd*/ None)
+                    .await
+                    .map_err(|err| internal_error(format!("failed to reload config: {err}")))?,
+            ),
         };
-        let profiles = permission_profile_catalog(&config_layer_stack)
-            .map_err(|err| {
-                internal_error(tr_with(
-                    current(),
-                    "failed to resolve permission profiles: {0}",
-                    &[&err.to_string()],
-                ))
-            })?
+        let context = ConfigPathContext::new(
+            PathConvention::native(),
+            Some(PathUri::from_abs_path(&cwd)),
+            AbsolutePathBufGuard::home_directory()
+                .and_then(|home| PathUri::from_host_native_path(home).ok()),
+        );
+        let profiles = permission_profile_catalog(&config_layer_stack, &context)
+            .map_err(|err| internal_error(format!("failed to resolve permission profiles: {err}")))?
             .into_iter()
             .map(|profile| PermissionProfileSummary {
                 id: profile.id,
@@ -488,17 +495,15 @@ impl CatalogRequestProcessor {
         let effective_limit = limit.unwrap_or(total as u32).max(1) as usize;
         let effective_limit = effective_limit.min(total);
         let start = match cursor {
-            Some(cursor) => cursor.parse::<usize>().map_err(|_| {
-                invalid_request(tr_with(current(), "invalid cursor: {0}", &[&cursor]))
-            })?,
+            Some(cursor) => cursor
+                .parse::<usize>()
+                .map_err(|_| invalid_request(format!("invalid cursor: {cursor}")))?,
             None => 0,
         };
 
         if start > total {
-            return Err(invalid_request(tr_with(
-                current(),
-                "cursor {0} exceeds total permission profiles {1}",
-                &[&start.to_string(), &total.to_string()],
+            return Err(invalid_request(format!(
+                "cursor {start} exceeds total permission profiles {total}"
             )));
         }
 
@@ -666,14 +671,17 @@ impl CatalogRequestProcessor {
             } else {
                 codex_core_plugins::PluginHookLoadOutcome::default()
             };
-            let hooks = codex_hooks::list_hooks(codex_hooks::HooksConfig {
+            let hooks_config = codex_hooks::HooksConfig {
                 feature_enabled: hooks_enabled,
                 bypass_hook_trust: config.bypass_hook_trust,
                 config_layer_stack: Some(config.config_layer_stack),
                 plugin_hook_sources: plugin_hooks.hook_sources,
                 plugin_hook_load_warnings: plugin_hooks.hook_load_warnings,
                 ..Default::default()
-            });
+            };
+            let hooks = tokio::task::spawn_blocking(move || codex_hooks::list_hooks(hooks_config))
+                .await
+                .map_err(|err| internal_error(format!("hook discovery task failed: {err}")))?;
             data.push(codex_app_server_protocol::HooksListEntry {
                 cwd,
                 hooks: hooks_to_info(&hooks.hooks),
@@ -719,12 +727,6 @@ impl CatalogRequestProcessor {
                     effective_enabled: enabled,
                 }
             })
-            .map_err(|err| {
-                internal_error(tr_with(
-                    current(),
-                    "failed to update skill settings: {0}",
-                    &[&err.to_string()],
-                ))
-            })
+            .map_err(|err| internal_error(format!("failed to update skill settings: {err}")))
     }
 }

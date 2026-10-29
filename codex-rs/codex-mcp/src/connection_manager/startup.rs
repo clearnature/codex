@@ -6,9 +6,6 @@ use codex_api::SharedAuthProvider;
 use codex_config::McpServerAuth;
 use codex_config::McpServerConfig;
 use codex_config::McpServerTransportConfig;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::McpStartupFailureReason;
@@ -62,6 +59,13 @@ pub(super) fn mcp_startup_failure_reason(
     if !error.is_authentication_required() {
         return None;
     }
+    if let StartupOutcomeError::Failed {
+        is_ema_authentication_required: true,
+        ..
+    } = error
+    {
+        return Some(McpStartupFailureReason::ReauthenticationRequired);
+    }
     match auth_state {
         Some(
             McpAuthState::LoggedOut(McpLoginRequirement::Reauthentication) | McpAuthState::OAuth,
@@ -101,28 +105,25 @@ pub(super) fn mcp_init_error_display(
         && bearer_token_env_var.is_none()
         && http_headers.as_ref().map(HashMap::is_empty).unwrap_or(true)
     {
-        tr_with(
-            current(),
-            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{0}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN",
-            &[&server_key],
+        format!(
+            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_key}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN"
         )
     } else if error.is_authentication_required() {
-        let recovery_hint = if config.is_some_and(|config| !config.is_local_environment()) {
-            tr(current(), "Use your client's MCP OAuth sign-in flow.").to_string()
-        } else {
-            tr_with(current(), "Run `codex mcp login {0}`.", &[server_name])
-        };
+        let recovery_hint =
+            if config.is_some_and(|config| matches!(config.auth, McpServerAuth::EmaAuth)) {
+                "Sign in to your enterprise provider in Codex, then start a new thread.".to_string()
+            } else if config.is_some_and(|config| !config.is_local_environment()) {
+                "Use your client's MCP OAuth sign-in flow.".to_string()
+            } else {
+                format!("Run `codex mcp login {server_name}`.")
+            };
         let auth_status = match reason {
             Some(McpStartupFailureReason::ReauthenticationRequired) => {
-                tr(current(), "requires OAuth reauthentication")
+                "requires OAuth reauthentication"
             }
-            None => tr(current(), "is not logged in"),
+            None => "is not logged in",
         };
-        tr_with(
-            current(),
-            "The {0} MCP server {1}. {2}",
-            &[server_name, auth_status, &recovery_hint],
-        )
+        format!("The {server_name} MCP server {auth_status}. {recovery_hint}")
     } else if matches!(
         error,
         StartupOutcomeError::Failed { error, .. }
@@ -134,16 +135,10 @@ pub(super) fn mcp_init_error_display(
             .and_then(|config| config.startup_timeout_sec)
             .unwrap_or(DEFAULT_STARTUP_TIMEOUT)
             .as_secs();
-        tr_with(
-            current(),
-            "MCP client for `{0}` timed out after {1} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{2}]\nstartup_timeout_sec = XX",
-            &[server_name, &startup_timeout_secs.to_string(), &server_key],
+        format!(
+            "MCP client for `{server_name}` timed out after {startup_timeout_secs} seconds. Add or adjust `startup_timeout_sec` in your config.toml:\n[mcp_servers.{server_key}]\nstartup_timeout_sec = XX"
         )
     } else {
-        tr_with(
-            current(),
-            "MCP client for `{0}` failed to start: {1}",
-            &[server_name, &format!("{error:#}")],
-        )
+        format!("MCP client for `{server_name}` failed to start: {error:#}")
     }
 }

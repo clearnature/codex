@@ -2,9 +2,6 @@
 
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::sync::atomic::AtomicU64;
 
 /// Prevents stale requests from matching a replacement widget for the same thread.
@@ -169,8 +166,8 @@ impl ChatWidget {
     pub(crate) fn add_connectors_output(&mut self) {
         if !self.connectors_enabled() {
             self.add_info_message(
-                tr(current(), "Apps are disabled.").to_string(),
-                Some(tr(current(), "Enable the apps feature to use $ or /apps.").to_string()),
+                "Apps are disabled.".to_string(),
+                Some("Enable the apps feature to use $ or /apps.".to_string()),
             );
             return;
         }
@@ -184,10 +181,7 @@ impl ChatWidget {
         match connectors_cache {
             ConnectorsCacheState::Ready(snapshot) => {
                 if snapshot.connectors.is_empty() {
-                    self.add_info_message(
-                        tr(current(), "No apps available.").to_string(),
-                        /*hint*/ None,
-                    );
+                    self.add_info_message("No apps available.".to_string(), /*hint*/ None);
                 } else {
                     self.open_connectors_popup(&snapshot.connectors);
                 }
@@ -219,54 +213,38 @@ impl ChatWidget {
     }
 
     fn connectors_loading_popup_params(&self) -> SelectionViewParams {
-        let mut header = ColumnRenderable::new();
-        header.push(Line::from("Apps".bold()));
-        header.push(Line::from(
-            tr(current(), "Loading installed and available apps...").dim(),
-        ));
-
         SelectionViewParams {
             view_id: Some(CONNECTORS_SELECTION_VIEW_ID),
-            header: Box::new(header),
+            title: Some("Apps".to_string()),
+            subtitle: Some("Loading installed and available apps...".to_string()),
             items: vec![SelectionItem {
-                name: tr(current(), "Loading apps...").to_string(),
-                description: Some(
-                    tr(current(), "This updates when the full list is ready.").to_string(),
-                ),
+                name: "Loading apps...".to_string(),
+                description: Some("This updates when the full list is ready".to_string()),
                 is_disabled: true,
                 ..Default::default()
             }],
-            ..Default::default()
+            ..SelectionViewParams::picker()
         }
     }
 
     fn connectors_error_popup_params(&self) -> SelectionViewParams {
-        let mut header = ColumnRenderable::new();
-        header.push(Line::from("Apps".bold()));
-        header.push(Line::from(tr(current(), "Failed to load apps.").dim()));
-
         SelectionViewParams {
             view_id: Some(CONNECTORS_SELECTION_VIEW_ID),
-            header: Box::new(header),
-            footer_hint: Some(self.bottom_pane.standard_popup_hint_line()),
+            title: Some("Apps".to_string()),
+            subtitle: Some("Failed to load apps.".to_string()),
             items: vec![
                 SelectionItem {
-                    name: tr(current(), "App directory unavailable").to_string(),
+                    name: "App directory unavailable".to_string(),
                     description: Some(
-                        tr(
-                            current(),
-                            "The app directory request failed. Retry, or press Esc to continue.",
-                        )
-                        .to_string(),
+                        "Retry the failed app directory request, or press Esc to continue"
+                            .to_string(),
                     ),
                     is_disabled: true,
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: tr(current(), "Retry").to_string(),
-                    description: Some(
-                        tr(current(), "Reload installed and available apps.").to_string(),
-                    ),
+                    name: "Retry".to_string(),
+                    description: Some("Reload installed and available apps".to_string()),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::RefreshConnectors {
                             force_refetch: true,
@@ -275,7 +253,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
             ],
-            ..Default::default()
+            ..SelectionViewParams::picker()
         }
     }
 
@@ -289,23 +267,12 @@ impl ChatWidget {
             .iter()
             .filter(|connector| connector.is_accessible)
             .count();
-        let mut header = ColumnRenderable::new();
-        header.push(Line::from("Apps".bold()));
-        header.push(Line::from(
-            tr(
-                current(),
-                "Use $ to insert an installed app into your prompt.",
-            )
-            .dim(),
-        ));
-        header.push(Line::from(
-            tr_with(
-                current(),
-                "Installed {0} of {1} available apps.",
-                &[&installed.to_string(), &total.to_string()],
-            )
-            .dim(),
-        ));
+        let header = Paragraph::new(vec![
+            Line::from("Apps".bold()),
+            Line::from("Use $ to insert an installed app into your prompt.".dim()),
+            Line::from(format!("Installed {installed} of {total} available apps.").dim()),
+        ])
+        .wrap(Wrap { trim: false });
         let initial_selected_idx = selected_connector_id.and_then(|selected_connector_id| {
             connectors
                 .iter()
@@ -327,26 +294,17 @@ impl ChatWidget {
             };
             let is_installed = connector.is_accessible;
             let selected_label = if is_installed {
-                tr_with(
-                    current(),
-                    "{0}. Press Enter to open the app page to install, manage, or enable/disable this app.",
-                    &[status_label],
+                format!(
+                    "{status_label} · Press Enter to open the app page to install, manage, or enable/disable this app"
                 )
             } else {
-                tr_with(
-                    current(),
-                    "{0}. Press Enter to open the app page to install this app.",
-                    &[status_label],
-                )
+                format!("{status_label} · Press Enter to open the app page to install this app")
             };
-            let missing_label = tr_with(current(), "{0}. App link unavailable.", &[status_label]);
+            let missing_label = format!("{status_label} · App link unavailable");
             let instructions = if connector.is_accessible {
-                tr(current(), "Manage this app in your browser.")
+                "Manage this app in your browser."
             } else {
-                tr(
-                    current(),
-                    "Install this app in your browser, then reload Codex.",
-                )
+                "Install this app in your browser, then reload Codex."
             };
             if let Some(install_url) = connector.install_url.clone() {
                 let app_id = connector.id.clone();
@@ -386,13 +344,12 @@ impl ChatWidget {
         SelectionViewParams {
             view_id: Some(CONNECTORS_SELECTION_VIEW_ID),
             header: Box::new(header),
-            footer_hint: Some(self.bottom_pane.standard_popup_hint_line()),
             items,
             is_searchable: true,
-            search_placeholder: Some(tr(current(), "Type to search apps").to_string()),
+            search_placeholder: Some("Type to search apps".to_string()),
             col_width_mode: ColumnWidthMode::AutoAllRows,
             initial_selected_idx,
-            ..Default::default()
+            ..SelectionViewParams::picker()
         }
     }
 
@@ -429,10 +386,10 @@ impl ChatWidget {
             if connector.is_enabled {
                 "Installed"
             } else {
-                tr(current(), "Installed · Disabled")
+                "Installed · Disabled"
             }
         } else {
-            tr(current(), "Can be installed")
+            "Can be installed"
         }
     }
 

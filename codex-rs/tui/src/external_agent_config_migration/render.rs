@@ -1,16 +1,17 @@
+//! Render import choices with shared picker focus while preserving import state.
+
 use super::*;
+use crate::bottom_pane::picker_option_row;
+use crate::bottom_pane::selection_style;
 use crate::key_hint;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::render::Insets;
 use crate::render::RectExt as _;
-use crate::selection_list::selection_option_row_with_dim;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::layout::Layout;
 use ratatui::layout::Rect;
+use ratatui::style::Style;
 use ratatui::widgets::Clear;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Widget;
@@ -51,8 +52,9 @@ impl ExternalAgentConfigMigrationScreen {
                     cursor.content = "› ".into();
                 }
                 line.spans.iter_mut().for_each(|span| {
-                    span.style = span.style.cyan().bold();
+                    span.style = selection_style();
                 });
+                line = line.style(selection_style());
             } else if entry.kind != RenderLineKind::Item && !line.spans.is_empty() {
                 line.spans.iter_mut().for_each(|span| {
                     span.style = span.style.dim();
@@ -81,23 +83,14 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         let error_height = u16::from(self.error.is_some());
         let intro_lines = match self.view {
             MigrationView::Summary => vec![
-                Line::from(tr(
-                    current(),
-                    "Bring over supported setup from another coding agent.",
-                )),
-                Line::from(tr(
-                    current(),
-                    "Codex may add files to your current project folder.",
-                )),
-                Line::from(tr(current(), "Your existing setup will not be changed.")),
+                Line::from("Bring over supported setup from another coding agent."),
+                Line::from("Codex may add files to your current project folder."),
+                Line::from("Your existing setup will not be changed."),
             ],
             MigrationView::Customize => vec![
-                Line::from(tr(current(), "Choose items to import.")),
-                Line::from(tr(
-                    current(),
-                    "Codex may add files to your current project folder.",
-                )),
-                Line::from(tr(current(), "Your existing setup will not be changed.")),
+                Line::from("Choose items to import."),
+                Line::from("Codex may add files to your current project folder."),
+                Line::from("Your existing setup will not be changed."),
             ],
         };
         let intro_height = intro_lines.len() as u16;
@@ -130,8 +123,8 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         .areas(inner_area);
 
         let title = match self.view {
-            MigrationView::Summary => tr(current(), "Import setup"),
-            MigrationView::Customize => tr(current(), "Choose what to import"),
+            MigrationView::Summary => "Import setup",
+            MigrationView::Customize => "Choose what to import",
         };
         let heading = Line::from(vec!["> ".into(), title.bold()]);
         heading.render(header_area, buf);
@@ -155,65 +148,60 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         ))
         .split(actions_area);
         let item_label = if self.items.len() == 1 {
-            tr(current(), "item")
+            "item"
         } else {
-            tr(current(), "items")
+            "items"
         };
-        let actions_intro = tr_with(
-            current(),
-            "Selected {0} of {1} {2}.",
-            &[
-                &self.selected_count().to_string(),
-                &self.items.len().to_string(),
-                item_label,
-            ],
+        let actions_intro = format!(
+            "Selected {} of {} {item_label}.",
+            self.selected_count(),
+            self.items.len()
         );
         Paragraph::new(actions_intro)
             .wrap(Wrap { trim: false })
             .render(action_areas[0], buf);
         for (idx, action) in actions.iter().enumerate() {
-            selection_option_row_with_dim(
-                idx,
-                action.label().to_string(),
-                self.focus == FocusArea::Actions && self.highlighted_action == *action,
-                /*dim*/ self.focus != FocusArea::Actions,
-            )
-            .render(action_areas[idx + 1], buf);
+            let selected = self.focus == FocusArea::Actions && self.highlighted_action == *action;
+            let line = picker_option_row(idx, action.label().to_string(), selected);
+            line.render(action_areas[idx + 1], buf);
+            if self.focus != FocusArea::Actions {
+                buf.set_style(action_areas[idx + 1], Style::default().dim());
+            }
         }
 
         let footer = match self.view {
             MigrationView::Summary => Line::from(vec![
-                tr(current(), "Use ").dim(),
+                "Use ".dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                tr(current(), " to move, ").dim(),
+                " to move, ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                tr(current(), " to select, ").dim(),
-                "c".cyan(),
-                tr(current(), " to customize").dim(),
+                " to select, ".dim(),
+                "c".fg(crate::style::accent_color()),
+                " to customize".dim(),
             ]),
             MigrationView::Customize if self.focus == FocusArea::Actions => Line::from(vec![
                 "Press ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                tr(current(), " to continue, ").dim(),
+                " to continue, ".dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                tr(current(), " to move, ").dim(),
-                "b".cyan(),
-                tr(current(), " to go back").dim(),
+                " to move, ".dim(),
+                "b".fg(crate::style::accent_color()),
+                " to go back".dim(),
             ]),
             MigrationView::Customize => Line::from(vec![
-                tr(current(), "Use ").dim(),
+                "Use ".dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
-                tr(current(), " to move, ").dim(),
+                " to move, ".dim(),
                 key_hint::plain(KeyCode::Char(' ')).into(),
-                tr(current(), " to toggle, ").dim(),
-                "b".cyan(),
-                tr(current(), " to go back").dim(),
+                " to toggle, ".dim(),
+                "b".fg(crate::style::accent_color()),
+                " to go back".dim(),
             ]),
         };
         footer.render(footer_area, buf);

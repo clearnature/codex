@@ -4,8 +4,6 @@ use codex_i18n::tr;
 use codex_i18n::tr_with;
 use std::fs;
 use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
 
 pub(super) fn clone_git_source(
     url: &str,
@@ -118,12 +116,8 @@ pub(super) fn replace_marketplace_root(
     fs::rename(staged_root, destination)
 }
 
-pub(super) fn marketplace_staging_root(install_root: &Path) -> PathBuf {
-    install_root.join(".staging")
-}
-
 fn run_git(args: &[&str], cwd: Option<&Path>) -> Result<(), MarketplaceAddError> {
-    let mut command = Command::new("git");
+    let mut command = codex_utils_process::background_command("git");
     command
         .args(["-c", codex_git_utils::SAFE_BARE_REPOSITORY_CONFIG])
         .args(args);

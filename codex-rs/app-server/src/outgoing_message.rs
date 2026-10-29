@@ -48,6 +48,10 @@ pub(crate) type ClientRequestResult = std::result::Result<Result, JSONRPCErrorEr
 static IN_FLIGHT_REQUESTS: Gauge = Gauge::new("app.requests.in_flight");
 static PENDING_SERVER_REQUESTS: Gauge = Gauge::new("app.server_requests.pending");
 
+#[path = "account_notifications.rs"]
+mod account_notifications;
+pub(crate) use account_notifications::AccountNotification;
+
 #[path = "user_verification_auth.rs"]
 mod user_verification_auth;
 
@@ -58,24 +62,42 @@ pub(crate) struct ConnectionRequestId {
     pub(crate) request_id: RequestId,
 }
 
-/// Trace data we keep for an incoming request until we send its final
-/// response or error.
+/// Trace data and cancellation state retained until an incoming request's final response or error.
 #[derive(Clone)]
 pub(crate) struct RequestContext {
     request_id: ConnectionRequestId,
+    pub(crate) cancellation: tokio_util::sync::CancellationToken,
+    cancellation_scope: RequestCancellationScope,
     span: Span,
     parent_trace: Option<W3cTraceContext>,
     _diagnostics_guard: Arc<GaugeGuard>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RequestCancellationScope {
+    Unavailable,
+    UserVerification,
+    ThreadSample,
+}
+
 impl RequestContext {
     pub(crate) fn new(
         request_id: ConnectionRequestId,
+        method: &str,
         span: Span,
         parent_trace: Option<W3cTraceContext>,
     ) -> Self {
         Self {
             request_id,
+            cancellation: tokio_util::sync::CancellationToken::new(),
+            cancellation_scope: match method {
+                "userVerification/status"
+                | "userVerification/enroll"
+                | "userVerification/delete"
+                | "userVerification/verify" => RequestCancellationScope::UserVerification,
+                "thread/sample" => RequestCancellationScope::ThreadSample,
+                _ => RequestCancellationScope::Unavailable,
+            },
             span,
             parent_trace,
             _diagnostics_guard: Arc::new(IN_FLIGHT_REQUESTS.track()),
@@ -178,6 +200,12 @@ impl ThreadScopedOutgoingMessageSender {
             );
     }
 
+    pub(crate) fn track_realtime_session_updated(&self, realtime_session_id: String) {
+        self.outgoing
+            .analytics_events_client
+            .track_realtime_session_updated(self.thread_id.to_string(), realtime_session_id);
+    }
+
     pub(crate) async fn send_server_notification(&self, notification: ServerNotification) {
         self.outgoing
             .analytics_events_client
@@ -218,14 +246,6 @@ impl ThreadScopedOutgoingMessageSender {
     {
         self.outgoing.send_response(request_id, response).await;
     }
-
-    pub(crate) async fn send_error(
-        &self,
-        request_id: ConnectionRequestId,
-        error: impl Into<JSONRPCErrorError>,
-    ) {
-        self.outgoing.send_error(request_id, error).await;
-    }
 }
 
 impl OutgoingMessageSender {
@@ -251,6 +271,24 @@ impl OutgoingMessageSender {
             .is_some()
         {
             warn!("replaced unresolved request context");
+        }
+    }
+
+    pub(crate) async fn cancel_user_verification_request(&self, request_id: &ConnectionRequestId) {
+        let contexts = self.request_contexts.lock().await;
+        if let Some(context) = contexts.get(request_id)
+            && context.cancellation_scope == RequestCancellationScope::UserVerification
+        {
+            context.cancellation.cancel();
+        }
+    }
+
+    pub(crate) async fn cancel_thread_sample_request(&self, request_id: &ConnectionRequestId) {
+        let contexts = self.request_contexts.lock().await;
+        if let Some(context) = contexts.get(request_id)
+            && context.cancellation_scope == RequestCancellationScope::ThreadSample
+        {
+            context.cancellation.cancel();
         }
     }
 
@@ -641,6 +679,44 @@ impl OutgoingMessageSender {
             .await;
     }
 
+    /// Revalidates a sensitive result after reserving queue capacity, with no
+    /// suspension between the identity check and handing off the response.
+    pub(crate) async fn send_response_as_checked(
+        &self,
+        request_id: ConnectionRequestId,
+        response: ClientResponsePayload,
+        check: impl FnOnce() -> std::result::Result<(), JSONRPCErrorError>,
+    ) {
+        // Remain cancellable while waiting to deliver a proof, including after native work ends.
+        let permit = self.sender.reserve().await;
+        let _context = self.take_request_context(&request_id).await;
+        let Ok(permit) = permit else {
+            return;
+        };
+        let message = match check() {
+            Ok(()) => {
+                self.analytics_events_client.track_response(
+                    request_id.connection_id.0,
+                    request_id.request_id.clone(),
+                    &response,
+                );
+                OutgoingMessage::Response(OutgoingResponse {
+                    id: request_id.request_id,
+                    result: Box::new(response),
+                })
+            }
+            Err(error) => OutgoingMessage::Error(OutgoingError {
+                id: request_id.request_id,
+                error,
+            }),
+        };
+        permit.send(OutgoingEnvelope::ToConnection {
+            connection_id: request_id.connection_id,
+            message,
+            write_complete_tx: None,
+        });
+    }
+
     async fn send_response_as_inner(
         &self,
         request_id: ConnectionRequestId,
@@ -685,13 +761,23 @@ impl OutgoingMessageSender {
     pub(crate) async fn send_server_notification(&self, notification: ServerNotification) {
         if matches!(
             notification,
-            ServerNotification::ThreadArchived(_) | ServerNotification::ThreadUnarchived(_)
+            ServerNotification::ThreadArchived(_)
+                | ServerNotification::ThreadClosed(_)
+                | ServerNotification::ThreadUnarchived(_)
         ) {
             self.analytics_events_client
                 .track_notification(&notification);
         }
         self.send_server_notification_to_connections(&[], notification)
             .await;
+    }
+
+    pub(crate) fn try_send_server_notification(&self, notification: ServerNotification) {
+        if let Err(error) = self.sender.try_send(OutgoingEnvelope::Broadcast {
+            message: timestamped_server_notification(notification),
+        }) {
+            warn!("failed to queue server notification to clients: {error}");
+        }
     }
 
     pub(crate) async fn send_server_notification_to_connections(
@@ -716,12 +802,13 @@ impl OutgoingMessageSender {
             }
             return;
         }
-        for connection_id in connection_ids {
+        let messages = std::iter::repeat_n(outgoing_message, connection_ids.len());
+        for (connection_id, message) in connection_ids.iter().zip(messages) {
             if let Err(err) = self
                 .sender
                 .send(OutgoingEnvelope::ToConnection {
                     connection_id: *connection_id,
-                    message: outgoing_message.clone(),
+                    message,
                     write_complete_tx: None,
                 })
                 .await
@@ -839,8 +926,16 @@ fn timestamped_server_notification(notification: ServerNotification) -> Outgoing
 }
 
 #[cfg(test)]
+#[path = "thread_sample_cancel_context_tests.rs"]
+mod thread_sample_cancel_context_tests;
+
+#[cfg(test)]
 #[path = "user_verification_ownership_tests.rs"]
 mod user_verification_ownership_tests;
+
+#[cfg(test)]
+#[path = "user_verification_cancel_context_tests.rs"]
+mod user_verification_cancel_context_tests;
 
 #[cfg(test)]
 mod tests {
@@ -1222,6 +1317,7 @@ mod tests {
         outgoing
             .register_request_context(RequestContext::new(
                 request_id.clone(),
+                "thread/start",
                 tracing::info_span!("app_server.request", rpc.method = "thread/start"),
                 /*parent_trace*/ None,
             ))
@@ -1275,41 +1371,66 @@ mod tests {
         }
     }
 
+    /// Empty target lists broadcast; explicit targets preserve order, payload, and one timestamp.
     #[tokio::test]
     async fn send_server_notification_to_connections_reuses_timestamp() {
-        let (tx, mut rx) = mpsc::channel::<OutgoingEnvelope>(2);
-        let outgoing =
-            OutgoingMessageSender::new(tx, codex_analytics::AnalyticsEventsClient::disabled());
+        for connection_ids in [
+            vec![],
+            vec![ConnectionId(1)],
+            vec![ConnectionId(1), ConnectionId(2)],
+        ] {
+            let (tx, mut rx) = mpsc::channel::<OutgoingEnvelope>(2);
+            let outgoing =
+                OutgoingMessageSender::new(tx, codex_analytics::AnalyticsEventsClient::disabled());
+            let notification = ServerNotification::ConfigWarning(ConfigWarningNotification {
+                summary: "test".to_string(),
+                details: None,
+                path: None,
+                range: None,
+            });
+            let expected = serde_json::to_value(&notification).expect("serialize notification");
 
-        outgoing
-            .send_server_notification_to_connections(
-                &[ConnectionId(1), ConnectionId(2)],
-                ServerNotification::ConfigWarning(ConfigWarningNotification {
-                    summary: "test".to_string(),
-                    details: None,
-                    path: None,
-                    range: None,
-                }),
-            )
-            .await;
+            outgoing
+                .send_server_notification_to_connections(&connection_ids, notification)
+                .await;
 
-        let timestamps = [
-            rx.recv()
-                .await
-                .expect("first connection should receive notification"),
-            rx.recv()
-                .await
-                .expect("second connection should receive notification"),
-        ]
-        .map(|envelope| match envelope {
-            OutgoingEnvelope::ToConnection {
-                message: OutgoingMessage::AppServerNotification(envelope),
-                ..
-            } => envelope.emitted_at_ms,
-            _ => panic!("expected targeted server notification"),
-        });
-
-        assert_eq!(timestamps[0], timestamps[1]);
+            let mut timestamps = Vec::new();
+            for index in 0..connection_ids.len().max(1) {
+                let message = match rx.try_recv().expect("notification should be queued") {
+                    OutgoingEnvelope::Broadcast { message } => {
+                        assert!(connection_ids.is_empty());
+                        message
+                    }
+                    OutgoingEnvelope::ToConnection {
+                        connection_id,
+                        message,
+                        write_complete_tx,
+                    } => {
+                        assert_eq!(connection_id, connection_ids[index]);
+                        assert!(write_complete_tx.is_none());
+                        message
+                    }
+                };
+                let OutgoingMessage::AppServerNotification(envelope) = message else {
+                    panic!("expected server notification");
+                };
+                assert_eq!(
+                    serde_json::to_value(&envelope.notification).unwrap(),
+                    expected
+                );
+                timestamps.push(
+                    envelope
+                        .emitted_at_ms
+                        .expect("notification has a timestamp"),
+                );
+            }
+            assert!(
+                timestamps
+                    .iter()
+                    .all(|timestamp| *timestamp == timestamps[0])
+            );
+            assert!(rx.try_recv().is_err());
+        }
     }
 
     #[tokio::test]
@@ -1381,6 +1502,7 @@ mod tests {
         outgoing
             .register_request_context(RequestContext::new(
                 closed_connection_request,
+                "turn/interrupt",
                 tracing::info_span!("app_server.request", rpc.method = "turn/interrupt"),
                 /*parent_trace*/ None,
             ))
@@ -1388,6 +1510,7 @@ mod tests {
         outgoing
             .register_request_context(RequestContext::new(
                 open_connection_request,
+                "turn/start",
                 tracing::info_span!("app_server.request", rpc.method = "turn/start"),
                 /*parent_trace*/ None,
             ))

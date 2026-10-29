@@ -160,8 +160,8 @@ async fn maybe_install_mcp_dependencies(
     }
 
     let (_, runtime_context) = sess.runtime_mcp_config_and_context(config).await;
-    for (name, server_config) in added {
-        let http_client = match runtime_context.resolve_http_client(&name, &server_config) {
+    for (name, server_config) in &added {
+        let http_client = match runtime_context.resolve_http_client(name, server_config) {
             Ok(http_client) => http_client,
             Err(err) => {
                 warn!("failed to resolve MCP dependency runtime for {name}: {err}");
@@ -194,8 +194,8 @@ async fn maybe_install_mcp_dependencies(
             server_config.scopes.clone(),
             oauth_config.discovered_scopes.clone(),
         );
-        let oauth_client_id = server_config.oauth_client_id();
-        let oauth_credential_name = server_config.oauth_credential_name(&name);
+        let oauth_client_config = server_config.oauth.as_ref();
+        let oauth_credential_name = server_config.oauth_credential_name(name);
         let callback_port = server_config.oauth_callback_port(config.mcp_oauth_callback_port);
         let first_attempt = perform_oauth_login(
             oauth_credential_name.as_ref(),
@@ -205,7 +205,7 @@ async fn maybe_install_mcp_dependencies(
             oauth_config.http_headers.clone(),
             oauth_config.env_http_headers.clone(),
             &resolved_scopes.scopes,
-            oauth_client_id,
+            oauth_client_config,
             McpOAuthClientRegistration::Auto,
             server_config.oauth_resource.as_deref(),
             callback_port,
@@ -225,7 +225,7 @@ async fn maybe_install_mcp_dependencies(
                     oauth_config.http_headers,
                     oauth_config.env_http_headers,
                     &[],
-                    oauth_client_id,
+                    oauth_client_config,
                     McpOAuthClientRegistration::Auto,
                     server_config.oauth_resource.as_deref(),
                     callback_port,
@@ -243,18 +243,7 @@ async fn maybe_install_mcp_dependencies(
         }
     }
 
-    let mut refresh_config = config.clone();
-    let mut configured_servers = config.mcp_servers.get().clone();
-    for (name, server_config) in &servers {
-        configured_servers
-            .entry(name.clone())
-            .or_insert_with(|| server_config.clone());
-    }
-    if let Err(err) = refresh_config.mcp_servers.set(configured_servers) {
-        warn!("failed to refresh MCP dependencies for mentioned skills: {err}");
-        return;
-    }
-    sess.refresh_mcp_servers_now(turn_context, &refresh_config, elicitation_reviewer)
+    sess.refresh_mcp_servers_now(added.into_iter().collect(), elicitation_reviewer)
         .await;
 }
 
@@ -428,7 +417,9 @@ fn mcp_dependency_to_server_config(
             environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
+            startup_readiness: Default::default(),
             supports_parallel_tool_calls: false,
+            tool_input_schema_max_bytes: None,
             omit_tools_from: None,
             disabled_reason: None,
             startup_timeout_sec: None,
@@ -443,6 +434,7 @@ fn mcp_dependency_to_server_config(
                     client_id: None,
                     callback_url: None,
                     callback_port: Some(callback_port),
+                    ..Default::default()
                 }),
             oauth_resource: None,
             tools: HashMap::new(),
@@ -466,7 +458,9 @@ fn mcp_dependency_to_server_config(
             environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
+            startup_readiness: Default::default(),
             supports_parallel_tool_calls: false,
+            tool_input_schema_max_bytes: None,
             omit_tools_from: None,
             disabled_reason: None,
             startup_timeout_sec: None,

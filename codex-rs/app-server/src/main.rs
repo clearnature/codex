@@ -4,7 +4,6 @@ use clap::Parser;
 use codex_app_server::AppServerCodeModeHostArgs;
 use codex_app_server::AppServerRuntimeOptions;
 use codex_app_server::AppServerTransport;
-use codex_app_server::AppServerWebsocketAuthArgs;
 use codex_app_server::PluginStartupTasks;
 use codex_app_server::run_main_with_transport_options;
 use codex_arg0::Arg0DispatchPaths;
@@ -12,6 +11,7 @@ use codex_arg0::arg0_dispatch_or_else;
 use codex_config::LoaderOverrides;
 use codex_protocol::protocol::SessionSource;
 use codex_utils_cli::CliConfigOverrides;
+use codex_websocket_auth::WebsocketAuthArgs;
 use std::path::PathBuf;
 
 #[cfg(all(
@@ -30,6 +30,9 @@ const DISABLE_MANAGED_CONFIG_ENV_VAR: &str = "CODEX_APP_SERVER_DISABLE_MANAGED_C
 #[derive(Debug, Parser)]
 #[command(version)]
 struct AppServerArgs {
+    /// Load frozen cloud skills from a JSON snapshot instead of a live skill service.
+    #[arg(long, value_name = "PATH")]
+    cloud_skills_snapshot: Option<PathBuf>,
     #[command(flatten)]
     config_overrides: CliConfigOverrides,
 
@@ -55,7 +58,7 @@ struct AppServerArgs {
     session_source: SessionSource,
 
     #[command(flatten)]
-    auth: AppServerWebsocketAuthArgs,
+    auth: WebsocketAuthArgs,
 
     /// Fail if config.toml contains unknown configuration fields.
     #[arg(long = "strict-config", default_value_t = false)]
@@ -70,12 +73,17 @@ struct AppServerArgs {
     /// Enable remote control for this app-server process without changing persistence.
     #[arg(long = "remote-control", hide = true)]
     remote_control: bool,
+
+    /// Save loaded threads during managed daemon shutdown.
+    #[arg(long, hide = true)]
+    managed_daemon: bool,
 }
 
 fn main() -> anyhow::Result<()> {
     let remote_control_disabled = codex_app_server::take_remote_control_disabled_env();
     arg0_dispatch_or_else(move |arg0_paths: Arg0DispatchPaths| async move {
         let AppServerArgs {
+            cloud_skills_snapshot,
             config_overrides,
             code_mode_host,
             listen,
@@ -85,6 +93,7 @@ fn main() -> anyhow::Result<()> {
             #[cfg(debug_assertions)]
             disable_plugin_startup_tasks_for_tests,
             remote_control,
+            managed_daemon,
         } = AppServerArgs::parse();
         let loader_overrides = if disable_managed_config_from_debug_env() {
             LoaderOverrides::without_managed_config_for_tests()
@@ -96,7 +105,9 @@ fn main() -> anyhow::Result<()> {
         let transport = listen;
         let auth = auth.try_into_settings()?;
         let mut runtime_options = AppServerRuntimeOptions {
+            cloud_skills_snapshot,
             code_mode_host_transport: code_mode_host.into(),
+            managed_daemon,
             ..Default::default()
         };
         #[cfg(debug_assertions)]
@@ -110,7 +121,7 @@ fn main() -> anyhow::Result<()> {
                 (false, false) => codex_app_server::RemoteControlStartupMode::ResolvePersisted,
             };
 
-        run_main_with_transport_options(
+        let exit = run_main_with_transport_options(
             arg0_paths,
             config_overrides,
             loader_overrides,
@@ -122,6 +133,10 @@ fn main() -> anyhow::Result<()> {
             runtime_options,
         )
         .await?;
+        if exit == codex_app_server::AppServerExit::Forced {
+            // Runtime teardown can wait forever for blocked rollout I/O.
+            std::process::exit(0);
+        }
         Ok(())
     })
 }

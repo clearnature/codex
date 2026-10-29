@@ -1,13 +1,12 @@
 //! Permission and approval popup flows for `ChatWidget`.
 //!
-//! This module owns the generic permission pickers and confirmation surfaces;
+//! This module presents permission choices and confirmations in the shared picker;
 //! Windows-specific sandbox prompting lives beside it in
 //! `windows_sandbox_prompts`.
 
+use super::permissions_menu::permission_preset_description;
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
+use crate::style::accent_color;
 use codex_protocol::openai_models::MODEL_SPECIALTY_CYBER;
 
 impl ChatWidget {
@@ -18,7 +17,8 @@ impl ChatWidget {
 
     /// Open a popup to choose the permissions mode.
     pub(crate) fn open_permissions_popup(&mut self) {
-        if self.config.explicit_permission_profile_mode
+        if self.thread_id.is_some()
+            || self.config.explicit_permission_profile_mode
             || self.permission_profiles_menu_opened
             || self
                 .config
@@ -44,15 +44,20 @@ impl ChatWidget {
         let presets: Vec<ApprovalPreset> = builtin_approval_presets();
 
         #[cfg(target_os = "windows")]
-        let windows_sandbox_level = crate::windows_sandbox::level_from_config(&self.config);
+        let windows_sandbox_level = self.windows_sandbox_config.level();
         #[cfg(target_os = "windows")]
         let windows_degraded_sandbox_enabled =
-            matches!(windows_sandbox_level, WindowsSandboxLevel::RestrictedToken);
+            matches!(windows_sandbox_level, WindowsSandboxLevel::RestrictedToken)
+                && self.windows_sandbox_local_server
+                && self.windows_sandbox_host == crate::app::WindowsSandboxHost::Local;
         #[cfg(not(target_os = "windows"))]
         let windows_degraded_sandbox_enabled = false;
 
-        let show_elevate_sandbox_hint =
-            windows_degraded_sandbox_enabled && presets.iter().any(|preset| preset.id == "auto");
+        let show_elevate_sandbox_hint = windows_degraded_sandbox_enabled
+            && self
+                .windows_sandbox_config
+                .allows(WindowsSandboxSetupMode::Elevated)
+            && presets.iter().any(|preset| preset.id == "auto");
 
         let guardian_disabled_reason = |enabled: bool| {
             let mut next_features = self.config.features.get().clone();
@@ -69,18 +74,13 @@ impl ChatWidget {
                 continue;
             }
             let base_name = if preset.id == "auto" && windows_degraded_sandbox_enabled {
-                tr_with(
-                    current(),
-                    "{0} (non-admin sandbox)",
-                    &[ASK_FOR_APPROVAL_LABEL],
-                )
+                format!("{ASK_FOR_APPROVAL_LABEL} (non-admin sandbox)")
             } else if preset.id == "auto" {
                 ASK_FOR_APPROVAL_LABEL.to_string()
             } else {
                 preset.label.to_string()
             };
-            let base_description =
-                Some(preset.description.replace(" (Identical to Agent mode)", ""));
+            let base_description = Some(permission_preset_description(&preset).to_string());
             let approval_disabled_reason = match self
                 .config
                 .permissions
@@ -166,46 +166,36 @@ impl ChatWidget {
 
         let footer_note = show_elevate_sandbox_hint.then(|| {
             vec![
-                tr(current(), "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ").dim(),
-                "/setup-default-sandbox".cyan(),
+                "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ".dim(),
+                "/setup-default-sandbox".fg(accent_color()),
                 ".".dim(),
             ]
             .into()
         });
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some(tr(current(), "Update Model Permissions").to_string()),
             footer_note,
-            footer_hint: Some(standard_popup_hint_line()),
             items,
-            header: Box::new(()),
-            ..Default::default()
+            title: Some("Update Model Permissions".into()),
+            ..SelectionViewParams::picker()
         });
     }
 
     pub(crate) fn open_auto_review_denials_popup(&mut self) {
         if self.review.recent_auto_review_denials.is_empty() {
             self.add_info_message(
-                tr(current(), "No recent auto-review denials in this thread.").to_string(),
-                Some(
-                    tr(
-                        current(),
-                        "Denials are recorded after auto-review rejects an action.",
-                    )
-                    .to_string(),
-                ),
+                "No recent auto-review denials in this thread.".to_string(),
+                Some("Denials are recorded after auto-review rejects an action.".to_string()),
             );
             return;
         }
         let Some(thread_id) = self.thread_id() else {
-            self.add_error_message(
-                tr(current(), "That thread is no longer available.").to_string(),
-            );
+            self.add_error_message("That thread is no longer available.".to_string());
             return;
         };
 
         let mut items = vec![SelectionItem {
-            name: tr(current(), "Action").to_string(),
+            name: "Action".to_string(),
             description: Some("Rationale".to_string()),
             is_disabled: true,
             search_value: Some(String::new()),
@@ -221,7 +211,7 @@ impl ChatWidget {
                     let rationale = event
                         .rationale
                         .as_deref()
-                        .unwrap_or("Auto-review did not include a rationale.");
+                        .unwrap_or("Auto-review did not include a rationale");
                     SelectionItem {
                         name: summary.clone(),
                         description: Some(rationale.to_string()),
@@ -240,22 +230,25 @@ impl ChatWidget {
         );
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some(tr(current(), "Auto-review Denials").to_string()),
-            subtitle: Some(tr(current(), "Select a denied action to approve.").to_string()),
-            footer_hint: Some(standard_popup_hint_line()),
+            header: Box::new(
+                Paragraph::new(vec![
+                    Line::from("Auto-review Denials".bold()),
+                    Line::from("Select a denied action to approve.".dim()),
+                ])
+                .wrap(Wrap { trim: false }),
+            ),
             items,
             is_searchable: true,
-            col_width_mode: ColumnWidthMode::AutoAllRows,
-            ..Default::default()
+            // Denial rationales remain visible before authorizing a retry.
+            description_layout: crate::bottom_pane::SelectionDescriptionLayout::Columns,
+            ..SelectionViewParams::picker()
         });
         self.request_redraw();
     }
 
     pub(crate) fn approve_recent_auto_review_denial(&mut self, thread_id: ThreadId, id: String) {
         let Some(event) = self.review.recent_auto_review_denials.take(&id) else {
-            self.add_error_message(
-                tr(current(), "That auto-review denial is no longer available.").to_string(),
-            );
+            self.add_error_message("That auto-review denial is no longer available.".to_string());
             return;
         };
 
@@ -264,9 +257,9 @@ impl ChatWidget {
             op: AppCommand::approve_guardian_denied_action(event),
         });
         self.add_info_message(
-            tr(current(), "Approval recorded for one retry of the selected auto-review denial.").to_string(),
+            "Approval recorded for one retry of the selected auto-review denial.".to_string(),
             Some(
-                tr(current(), "The model will see the approval context; the retry still goes through auto-review.")
+                "The model will see the approval context; the retry still goes through auto-review."
                     .to_string(),
             ),
         );
@@ -286,13 +279,11 @@ impl ChatWidget {
                 Some(approvals_reviewer),
                 Some(permission_profile.clone()),
                 Some(active_permission_profile.clone()),
-                /*windows_sandbox_level*/ None,
                 /*model*/ None,
                 /*effort*/ None,
                 /*summary*/ None,
                 /*service_tier*/ None,
                 /*collaboration_mode*/ None,
-                /*personality*/ None,
             )));
             tx.send(AppEvent::UpdateAskForApprovalPolicy(approval));
             tx.send(AppEvent::UpdateActivePermissionProfile(
@@ -301,7 +292,7 @@ impl ChatWidget {
             tx.send(AppEvent::UpdateApprovalsReviewer(approvals_reviewer));
             tx.send(AppEvent::InsertHistoryCell(Box::new(
                 history_cell::new_info_event(
-                    tr_with(current(), "Permissions updated to {0}", &[&label]),
+                    format!("Permissions updated to {label}"),
                     /*hint*/ None,
                 ),
             )));
@@ -324,6 +315,14 @@ impl ChatWidget {
         profile_selection: Option<PermissionProfileSelection>,
         return_to_permissions: bool,
     ) -> Vec<SelectionAction> {
+        let profile_selection = profile_selection.or_else(|| {
+            self.thread_id.map(|_| PermissionProfileSelection {
+                profile_id: preset.active_permission_profile.id.clone(),
+                approval_policy: Some(AskForApproval::from(preset.approval)),
+                approvals_reviewer: Some(approvals_reviewer),
+                display_label: label.clone(),
+            })
+        });
         let apply_actions = || {
             profile_selection.clone().map_or_else(
                 || {
@@ -338,8 +337,22 @@ impl ChatWidget {
                 Self::permission_profile_selection_actions,
             )
         };
-        let requires_confirmation =
-            approvals_reviewer == ApprovalsReviewer::User && preset.id == "full-access";
+        let requires_confirmation = preset.id == "full-access";
+        #[cfg(target_os = "windows")]
+        if preset.id == "auto"
+            && matches!(
+                self.windows_sandbox_host,
+                crate::app::WindowsSandboxHost::Mixed | crate::app::WindowsSandboxHost::Unknown
+            )
+        {
+            let preset = preset.clone();
+            return vec![Box::new(move |tx| {
+                tx.send(AppEvent::OpenWindowsSandboxEnablePrompt {
+                    preset: preset.clone(),
+                    profile_selection: profile_selection.clone(),
+                });
+            })];
+        }
         if requires_confirmation {
             let preset = preset.clone();
             return vec![Box::new(move |tx| {
@@ -353,39 +366,17 @@ impl ChatWidget {
         if approvals_reviewer == ApprovalsReviewer::User && preset.id == "auto" {
             #[cfg(target_os = "windows")]
             {
-                if crate::windows_sandbox::level_from_config(&self.config)
-                    == WindowsSandboxLevel::Disabled
-                {
+                if self.windows_sandbox_host == crate::app::WindowsSandboxHost::Remote {
+                    // The remote server owns the permission choice. Its executor
+                    // cannot be set up from this TUI's Windows account.
+                    return apply_actions();
+                }
+                if !self.windows_sandbox_config.is_enabled() {
                     let preset = preset.clone();
-                    if crate::windows_sandbox::sandbox_setup_is_complete(
-                        self.config.codex_home.as_path(),
-                    ) {
-                        return vec![Box::new(move |tx| {
-                            tx.send(AppEvent::EnableWindowsSandboxForAgentMode {
-                                preset: preset.clone(),
-                                mode: WindowsSandboxEnableMode::Elevated,
-                                profile_selection: profile_selection.clone(),
-                            });
-                        })];
-                    }
                     return vec![Box::new(move |tx| {
                         tx.send(AppEvent::OpenWindowsSandboxEnablePrompt {
                             preset: preset.clone(),
                             profile_selection: profile_selection.clone(),
-                        });
-                    })];
-                }
-                if let Some((sample_paths, extra_count, failed_scan)) =
-                    self.world_writable_warning_details()
-                {
-                    let preset = preset.clone();
-                    return vec![Box::new(move |tx| {
-                        tx.send(AppEvent::OpenWorldWritableWarningConfirmation {
-                            preset: Some(preset.clone()),
-                            profile_selection: profile_selection.clone(),
-                            sample_paths: sample_paths.clone(),
-                            extra_count,
-                            failed_scan,
                         });
                     })];
                 }
@@ -445,45 +436,30 @@ impl ChatWidget {
                     && model.model_specialty.as_deref() == Some(MODEL_SPECIALTY_CYBER)
             })
         });
-        let title_line = Line::from(tr(current(), "Enable full access?")).bold();
+        let title_line = Line::from("Enable full access?").bold();
         let info_lines = if is_cyber_model {
             let recommendation = if auto_review_available(&self.config) {
-                tr(
-                    current(),
-                    "We strongly recommend selecting \"Approve for me\" instead, and customizing the reviewer policy for your use case.",
-                )
+                "We strongly recommend selecting \"Approve for me\" instead, and customizing the reviewer policy for your use case."
             } else {
-                tr(
-                    current(),
-                    "We strongly recommend selecting \"Ask for approval\" instead.",
-                )
+                "We strongly recommend selecting \"Ask for approval\" instead."
             };
             vec![
                 Line::default(),
-                Line::from(tr(
-                    current(),
+                Line::from(
                     "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval.",
-                )),
+                ),
                 Line::default(),
                 Line::from(vec![
-                    tr(
-                        current(),
-                        "Cyber models carry a higher risk of dangerous actions.",
-                    )
-                    .red(),
-                    tr(
-                        current(),
-                        " Ensure proper safeguards are in place before granting full access. ",
-                    )
-                    .into(),
+                    "Cyber models carry a higher risk of dangerous actions.".red(),
+                    " Ensure proper safeguards are in place before granting full access. ".into(),
                     recommendation.into(),
                 ]),
             ]
         } else {
             vec![Line::from(vec![
-                tr(current(), "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. ")
+                "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
                     .into(),
-                tr(current(), "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior.")
+                "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior."
                     .red(),
             ])]
         };
@@ -517,17 +493,15 @@ impl ChatWidget {
 
         let items = vec![
             SelectionItem {
-                name: tr(current(), "Yes, continue anyway").to_string(),
-                description: Some(tr(current(), "Apply full access for this session").to_string()),
+                name: "Yes, continue anyway".to_string(),
+                description: Some("Apply full access for this session".to_string()),
                 actions: accept_actions,
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: tr(current(), "Cancel").to_string(),
-                description: Some(
-                    tr(current(), "Go back without enabling full access").to_string(),
-                ),
+                name: "Cancel".to_string(),
+                description: Some("Go back without enabling full access".to_string()),
                 actions: deny_actions,
                 dismiss_on_select: true,
                 ..Default::default()
@@ -535,10 +509,9 @@ impl ChatWidget {
         ];
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            footer_hint: Some(standard_popup_hint_line()),
             items,
             header: Box::new(header),
-            ..Default::default()
+            ..SelectionViewParams::confirmation()
         });
     }
 }

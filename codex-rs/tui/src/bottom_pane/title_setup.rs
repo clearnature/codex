@@ -7,8 +7,6 @@
 //! - Reorder items
 //! - Preview the rendered title
 
-use codex_i18n::current;
-use codex_i18n::tr;
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -85,6 +83,8 @@ pub(crate) enum TerminalTitleItem {
     SessionId,
     /// Whether Fast mode is currently active.
     FastMode,
+    /// Whether Daybreak is enabled for this thread.
+    Daybreak,
     /// Current model name.
     #[strum(to_string = "model", serialize = "model-name")]
     Model,
@@ -98,82 +98,52 @@ pub(crate) enum TerminalTitleItem {
 
 impl TerminalTitleItem {
     pub(crate) fn description(self) -> &'static str {
-        // The English text is the key; `En` renders it verbatim, so the settings
-        // picker stays byte-identical whenever English is selected.
         match self {
-            TerminalTitleItem::AppName => tr(current(), "Codex app name"),
-            TerminalTitleItem::Project => tr(
-                current(),
-                "Project name (falls back to current directory name)",
-            ),
-            TerminalTitleItem::CurrentDir => tr(current(), "Current working directory"),
-            TerminalTitleItem::Spinner => tr(
-                current(),
-                "Spinner while working, action-required message while blocked.",
-            ),
-            TerminalTitleItem::Status => tr(
-                current(),
-                "Compact session run-state text (Ready, Working, Thinking)",
-            ),
-            TerminalTitleItem::ThreadName => {
-                tr(current(), "Current thread name (omitted when unnamed)")
+            TerminalTitleItem::AppName => "Codex app name",
+            TerminalTitleItem::Project => "Project name (falls back to current directory name)",
+            TerminalTitleItem::CurrentDir => "Current working directory",
+            TerminalTitleItem::Spinner => {
+                "Spinner while working, action-required message while blocked"
             }
-            TerminalTitleItem::Thread => tr(
-                current(),
-                "Current thread title, or thread identifier when unnamed",
-            ),
-            TerminalTitleItem::GitBranch => {
-                tr(current(), "Current Git branch (omitted when unavailable)")
+            TerminalTitleItem::Status => {
+                "Compact session run-state text (Ready, Working, Thinking)"
             }
-            TerminalTitleItem::ContextRemaining => tr(
-                current(),
-                "Percentage of context window remaining (omitted when unknown)",
-            ),
-            TerminalTitleItem::ContextUsed => tr(
-                current(),
-                "Percentage of context window used (omitted when unknown)",
-            ),
-            TerminalTitleItem::FiveHourLimit => tr(
-                current(),
-                "Remaining usage on the primary usage limit (omitted when unavailable)",
-            ),
-            TerminalTitleItem::WeeklyLimit => tr(
-                current(),
-                "Remaining usage on the secondary usage limit (omitted when unavailable)",
-            ),
-            TerminalTitleItem::CodexVersion => tr(current(), "Codex application version"),
-            TerminalTitleItem::UsedTokens => tr(
-                current(),
-                "Total tokens used in session (omitted when zero)",
-            ),
-            TerminalTitleItem::TotalInputTokens => {
-                tr(current(), "Total input tokens used in session")
+            TerminalTitleItem::ThreadName => "Current thread name (omitted when unnamed)",
+            TerminalTitleItem::Thread => "Current thread title, or thread identifier when unnamed",
+            TerminalTitleItem::GitBranch => "Current Git branch (omitted when unavailable)",
+            TerminalTitleItem::ContextRemaining => {
+                "Percentage of context window remaining (omitted when unknown)"
             }
-            TerminalTitleItem::TotalOutputTokens => {
-                tr(current(), "Total output tokens used in session")
+            TerminalTitleItem::ContextUsed => {
+                "Percentage of context window used (omitted when unknown)"
             }
-            TerminalTitleItem::ThreadCredits => tr(
-                current(),
-                "Estimated current-thread credits (Enterprise workspaces only; omitted when unavailable)",
-            ),
-            TerminalTitleItem::EstimatedThreadCost => tr(
-                current(),
-                "Estimated current-thread cost (Enterprise workspaces only; omitted when unavailable)",
-            ),
-            TerminalTitleItem::SessionId => tr(
-                current(),
-                "Current thread identifier (omitted until thread starts)",
-            ),
-            TerminalTitleItem::FastMode => tr(current(), "Whether Fast mode is currently active"),
-            TerminalTitleItem::Model => tr(current(), "Current model name"),
-            TerminalTitleItem::ModelWithReasoning => {
-                tr(current(), "Current model name with reasoning level")
+            TerminalTitleItem::FiveHourLimit => {
+                "Remaining usage on the primary usage limit (omitted when unavailable)"
             }
-            TerminalTitleItem::Reasoning => tr(current(), "Current reasoning level"),
-            TerminalTitleItem::TaskProgress => tr(
-                current(),
-                "Latest task progress from update_plan (omitted until available)",
-            ),
+            TerminalTitleItem::WeeklyLimit => {
+                "Remaining usage on the secondary usage limit (omitted when unavailable)"
+            }
+            TerminalTitleItem::CodexVersion => "Codex application version",
+            TerminalTitleItem::UsedTokens => "Total tokens used in session (omitted when zero)",
+            TerminalTitleItem::TotalInputTokens => "Total input tokens used in session",
+            TerminalTitleItem::TotalOutputTokens => "Total output tokens used in session",
+            TerminalTitleItem::ThreadCredits => {
+                "Estimated current-thread credits (Enterprise workspaces only; omitted when unavailable)"
+            }
+            TerminalTitleItem::EstimatedThreadCost => {
+                "Estimated current-thread cost (Enterprise workspaces only; omitted when unavailable)"
+            }
+            TerminalTitleItem::SessionId => {
+                "Current thread identifier (omitted until thread starts)"
+            }
+            TerminalTitleItem::FastMode => "Whether Fast mode is currently active",
+            TerminalTitleItem::Daybreak => "Whether Daybreak is enabled for this thread",
+            TerminalTitleItem::Model => "Current model name",
+            TerminalTitleItem::ModelWithReasoning => "Current model name with reasoning level",
+            TerminalTitleItem::Reasoning => "Current reasoning level",
+            TerminalTitleItem::TaskProgress => {
+                "Latest task progress from update_plan (omitted until available)"
+            }
         }
     }
 
@@ -203,6 +173,7 @@ impl TerminalTitleItem {
             }
             TerminalTitleItem::SessionId => Some(StatusSurfacePreviewItem::SessionId),
             TerminalTitleItem::FastMode => Some(StatusSurfacePreviewItem::FastMode),
+            TerminalTitleItem::Daybreak => Some(StatusSurfacePreviewItem::Daybreak),
             TerminalTitleItem::Model => Some(StatusSurfacePreviewItem::Model),
             TerminalTitleItem::ModelWithReasoning => {
                 Some(StatusSurfacePreviewItem::ModelWithReasoning)
@@ -326,14 +297,8 @@ impl TerminalTitleSetupView {
 
         Self {
             picker: MultiSelectPicker::builder(
-                tr(current(), "Configure Terminal Title").to_string(),
-                Some(
-                    tr(
-                        current(),
-                        "Select which items to display in the terminal title.",
-                    )
-                    .to_string(),
-                ),
+                "Configure Terminal Title".to_string(),
+                Some("Select which items to display in the terminal title.".to_string()),
                 app_event_tx,
             )
             .list_keymap(list_keymap)
@@ -404,6 +369,10 @@ impl TerminalTitleSetupView {
 impl BottomPaneView for TerminalTitleSetupView {
     fn keymap_contexts(&self) -> crate::keymap::KeymapContextSet {
         crate::keymap::KeymapContextSet::new(crate::keymap::KeymapContext::List)
+    }
+
+    fn accepts_input_when_disconnected(&self) -> bool {
+        true
     }
 
     fn handle_key_event(&mut self, key_event: crossterm::event::KeyEvent) {

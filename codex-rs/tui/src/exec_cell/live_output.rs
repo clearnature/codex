@@ -1,5 +1,3 @@
-use codex_i18n::current;
-use codex_i18n::tr_with;
 use itertools::Either;
 use std::borrow::Cow;
 use std::collections::VecDeque;
@@ -149,7 +147,8 @@ impl LiveCommandOutput {
                     .iter()
                     .map(|line| Cow::Borrowed(line.as_str()))
                     .chain((omitted > 0).then(|| {
-                        Cow::Owned(tr_with(current(), "… +{0} lines", &[&omitted.to_string()]))
+                        let noun = if omitted == 1 { "line" } else { "lines" };
+                        Cow::Owned(format!("… +{omitted} {noun}"))
                     }))
                     .chain(self.tail.iter().map(|line| Cow::Borrowed(line.as_str())))
                     .chain(

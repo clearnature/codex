@@ -12,6 +12,7 @@ const OTEL_SERVICE_NAME: &str = "codex-exec-server";
 pub(crate) enum ParentLifetime {
     Independent,
     StdinPipe,
+    MonitoredStdin(tokio::sync::oneshot::Receiver<()>),
 }
 
 pub(crate) enum ShutdownBehavior {
@@ -67,6 +68,7 @@ where
 {
     let parent_disconnected = match parent_lifetime {
         ParentLifetime::Independent => None,
+        ParentLifetime::MonitoredStdin(receiver) => Some(receiver),
         ParentLifetime::StdinPipe => {
             let (sender, receiver) = tokio::sync::oneshot::channel();
             std::thread::spawn(move || {

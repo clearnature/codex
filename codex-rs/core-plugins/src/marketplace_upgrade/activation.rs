@@ -6,7 +6,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
 use std::path::PathBuf;
-use tempfile::TempDir;
 use tracing::warn;
 
 const MARKETPLACE_INSTALL_METADATA_FILE: &str = ".codex-marketplace-install.json";
@@ -99,11 +98,10 @@ pub(super) fn write_installed_marketplace_metadata(
 
 pub(super) fn activate_marketplace_root(
     destination: &Path,
-    staged_dir: TempDir,
+    staged_root: &Path,
     previous_snapshot: &InstalledMarketplaceSnapshot,
     after_activate: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), String> {
-    let staged_root = staged_dir.path();
     let Some(parent) = destination.parent() else {
         return Err(tr_with(
             current(),

@@ -6,9 +6,6 @@
 //! - Typing while focused on options jumps into notes to keep freeform input fast.
 //! - The composer submit binding advances to the next question; the last question submits all answers.
 //! - Freeform-only questions submit an empty answer list when empty.
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -20,6 +17,8 @@ use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 use crossterm::event::KeyModifiers;
+use ratatui::style::Stylize;
+use ratatui::text::Line;
 mod layout;
 pub(super) mod render;
 
@@ -33,6 +32,7 @@ use crate::bottom_pane::bottom_pane_view::BottomPaneView;
 use crate::bottom_pane::scroll_state::ScrollState;
 use crate::bottom_pane::selection_popup_common::GenericDisplayRow;
 use crate::bottom_pane::selection_popup_common::measure_rows_height;
+use crate::footer_hint::shortcut;
 use crate::history_cell;
 use crate::key_hint::KeyBinding;
 use crate::key_hint::KeyBindingListExt;
@@ -51,6 +51,7 @@ use codex_app_server_protocol::ToolRequestUserInputOption;
 use codex_app_server_protocol::ToolRequestUserInputParams;
 use codex_app_server_protocol::ToolRequestUserInputQuestion;
 use codex_app_server_protocol::ToolRequestUserInputResponse;
+use codex_protocol::ThreadId;
 use codex_protocol::user_input::TextElement;
 use unicode_width::UnicodeWidthStr;
 
@@ -62,13 +63,13 @@ const SELECT_OPTION_PLACEHOLDER: &str = "Select an option to add notes";
 pub(super) const TIP_SEPARATOR: &str = " | ";
 pub(super) const DESIRED_SPACERS_BETWEEN_SECTIONS: u16 = 2;
 const OTHER_OPTION_LABEL: &str = "None of the above";
-/// Display text only (never compared), so it can carry `tr` at the use site.
-const OTHER_OPTION_DESCRIPTION: &str = "Optionally, add details in notes (tab).";
+const OTHER_OPTION_DESCRIPTION: &str = "Optionally, add details in notes (tab)";
 const UNANSWERED_CONFIRM_TITLE: &str = "Submit with unanswered questions?";
 const UNANSWERED_CONFIRM_GO_BACK: &str = "Go back";
-const UNANSWERED_CONFIRM_GO_BACK_DESC: &str = "Return to the first unanswered question.";
+const UNANSWERED_CONFIRM_GO_BACK_DESC: &str = "Return to the first unanswered question";
 const UNANSWERED_CONFIRM_SUBMIT: &str = "Proceed";
-
+const UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR: &str = "question";
+const UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL: &str = "questions";
 const AUTO_RESOLUTION_HIDDEN_GRACE: Duration = Duration::from_secs(/*secs*/ 60);
 const AUTO_RESOLUTION_VISIBLE_COUNTDOWN: Duration = Duration::from_secs(/*secs*/ 60);
 
@@ -96,11 +97,7 @@ fn format_auto_resolution_remaining(remaining: Duration) -> String {
     }
     let minutes = seconds / 60;
     let seconds = seconds % 60;
-    tr_with(
-        current(),
-        "{0}m {1}s",
-        &[&minutes.to_string(), &format!("{seconds:02}")],
-    )
+    format!("{minutes}m {seconds:02}s")
 }
 
 #[derive(Default, Clone, PartialEq)]
@@ -138,28 +135,6 @@ struct AnswerState {
     answer_committed: bool,
     // Whether the notes UI has been explicitly opened for this question.
     notes_visible: bool,
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct FooterTip {
-    pub(super) text: String,
-    pub(super) highlight: bool,
-}
-
-impl FooterTip {
-    fn new(text: impl Into<String>) -> Self {
-        Self {
-            text: text.into(),
-            highlight: false,
-        }
-    }
-
-    fn highlighted(text: impl Into<String>) -> Self {
-        Self {
-            text: text.into(),
-            highlight: true,
-        }
-    }
 }
 
 pub(crate) struct RequestUserInputOverlay {
@@ -338,10 +313,9 @@ impl RequestUserInputOverlay {
 
     fn auto_resolution_countdown_text_at(&self, now: Instant) -> Option<String> {
         match self.auto_resolution_timing_at(now) {
-            AutoResolutionTiming::VisibleCountdown { remaining } => Some(tr_with(
-                current(),
-                "auto-resolves in {0}",
-                &[&format_auto_resolution_remaining(remaining)],
+            AutoResolutionTiming::VisibleCountdown { remaining } => Some(format!(
+                "auto-resolves in {}",
+                format_auto_resolution_remaining(remaining)
             )),
             AutoResolutionTiming::Disabled
             | AutoResolutionTiming::HiddenGrace { .. }
@@ -353,23 +327,15 @@ impl RequestUserInputOverlay {
         if self.question_count() > 0 {
             let idx = self.current_index() + 1;
             let total = self.question_count();
-            let base = tr_with(
-                current(),
-                "Question {0}/{1}",
-                &[&idx.to_string(), &total.to_string()],
-            );
+            let base = format!("Question {idx}/{total}");
             let unanswered = self.unanswered_count();
             if unanswered > 0 {
-                tr_with(
-                    current(),
-                    "{0} ({1} unanswered)",
-                    &[base.as_str(), &unanswered.to_string()],
-                )
+                format!("{base} ({unanswered} unanswered)")
             } else {
                 base
             }
         } else {
-            tr(current(), "No questions").to_string()
+            "No questions".to_string()
         }
     }
 
@@ -422,13 +388,30 @@ impl RequestUserInputOverlay {
             .is_some_and(|answer| answer.notes_visible || self.notes_has_content(idx))
     }
 
-    pub(super) fn wrapped_question_lines(&self, width: u16) -> Vec<String> {
+    pub(super) fn wrapped_question_lines(
+        &self,
+        width: u16,
+    ) -> Vec<crate::terminal_hyperlinks::HyperlinkLine> {
         self.current_question()
             .map(|q| {
-                textwrap::wrap(&q.question, width.max(1) as usize)
-                    .into_iter()
-                    .map(|line| line.to_string())
-                    .collect::<Vec<_>>()
+                q.question
+                    .split('\n')
+                    .flat_map(|text| {
+                        let source = crate::terminal_hyperlinks::annotate_web_urls_in_line(
+                            text.to_owned().into(),
+                        );
+                        let wrapped =
+                            crate::wrapping::wrap_ranges_trim(text, usize::from(width.max(1)))
+                                .into_iter()
+                                .map(|range| crate::wrapping::WrappedLine {
+                                    line: (&text[range.clone()]).into(),
+                                    range,
+                                    prefix_bytes: 0,
+                                })
+                                .collect();
+                        crate::terminal_hyperlinks::remap_source_wrapped_line(&source, wrapped)
+                    })
+                    .collect()
             })
             .unwrap_or_default()
     }
@@ -459,6 +442,7 @@ impl RequestUserInputOverlay {
                         let prefix_label = format!("{prefix} {number}. ");
                         let wrap_indent = UnicodeWidthStr::width(prefix_label.as_str());
                         GenericDisplayRow {
+                            selection_style: Some(crate::bottom_pane::selection_style()),
                             name: format!("{prefix_label}{label}"),
                             description: Some(opt.description.clone()),
                             wrap_indent: Some(wrap_indent),
@@ -475,8 +459,9 @@ impl RequestUserInputOverlay {
                     let prefix_label = format!("{prefix} {number}. ");
                     let wrap_indent = UnicodeWidthStr::width(prefix_label.as_str());
                     rows.push(GenericDisplayRow {
+                        selection_style: Some(crate::bottom_pane::selection_style()),
                         name: format!("{prefix_label}{OTHER_OPTION_LABEL}"),
-                        description: Some(tr(current(), OTHER_OPTION_DESCRIPTION).to_string()),
+                        description: Some(OTHER_OPTION_DESCRIPTION.to_string()),
                         wrap_indent: Some(wrap_indent),
                         ..Default::default()
                     });
@@ -602,15 +587,23 @@ impl RequestUserInputOverlay {
         self.sync_composer_placeholder();
     }
 
-    fn footer_tips(&self) -> Vec<FooterTip> {
+    fn footer_tips(&self) -> Vec<Line<'static>> {
         let mut tips = Vec::new();
         let notes_visible = self.notes_ui_visible();
         if self.has_options() {
             if self.selected_option_index().is_some() && !notes_visible {
-                tips.push(FooterTip::highlighted(tr(current(), "tab to add notes")));
+                tips.push(shortcut("tab", "to add notes"));
             }
             if self.selected_option_index().is_some() && notes_visible {
-                tips.push(FooterTip::new(tr(current(), "tab or esc to clear notes")));
+                tips.push(Line::from(
+                    [
+                        crate::key_hint::key_label_spans("tab"),
+                        vec![" or ".dim()],
+                        crate::key_hint::key_label_spans("esc"),
+                        vec![" to clear notes".dim()],
+                    ]
+                    .concat(),
+                ));
             }
         }
 
@@ -625,34 +618,26 @@ impl RequestUserInputOverlay {
         };
         if let Some(submit_key) = submit_key {
             let submit_tip = if question_count == 1 {
-                FooterTip::highlighted(tr_with(
-                    current(),
-                    "{0} to submit answer",
-                    &[submit_key.as_str()],
-                ))
+                shortcut(&submit_key, "to submit answer")
             } else if is_last_question {
-                FooterTip::highlighted(tr_with(
-                    current(),
-                    "{0} to submit all",
-                    &[submit_key.as_str()],
-                ))
+                shortcut(&submit_key, "to submit all")
             } else {
-                FooterTip::new(tr_with(
-                    current(),
-                    "{0} to submit answer",
-                    &[submit_key.as_str()],
-                ))
+                shortcut(&submit_key, "to submit answer")
             };
             tips.push(submit_tip);
         }
         if question_count > 1 {
             if self.has_options() && !self.focus_is_notes() {
-                tips.push(FooterTip::new(tr(current(), "←/→ to navigate questions")));
+                tips.push(shortcut("←/→", "to navigate questions"));
             } else if !self.has_options() {
-                tips.push(FooterTip::new(tr(
-                    current(),
-                    "ctrl + p / ctrl + n change question",
-                )));
+                tips.push(shortcut(
+                    &format!(
+                        "{} / {}",
+                        crate::key_hint::ctrl(KeyCode::Char('p')).display_label(),
+                        crate::key_hint::ctrl(KeyCode::Char('n')).display_label()
+                    ),
+                    "change question",
+                ));
             }
         }
         if let Some(interrupt_key) = self.interrupt_turn_hint
@@ -660,24 +645,20 @@ impl RequestUserInputOverlay {
                 && notes_visible
                 && interrupt_key == ShortcutHint::Single(crate::key_hint::plain(KeyCode::Esc)))
         {
-            tips.push(FooterTip::new(tr_with(
-                current(),
-                "{0} to interrupt",
-                &[&interrupt_key.display_label()],
-            )));
+            tips.push(shortcut(&interrupt_key.display_label(), "to interrupt"));
         }
         tips
     }
 
-    pub(super) fn footer_tip_lines(&self, width: u16) -> Vec<Vec<FooterTip>> {
+    pub(super) fn footer_tip_lines(&self, width: u16) -> Vec<Vec<Line<'static>>> {
         self.wrap_footer_tips(width, self.footer_tips())
     }
 
     pub(super) fn footer_tip_lines_with_prefix(
         &self,
         width: u16,
-        prefix: Option<FooterTip>,
-    ) -> Vec<Vec<FooterTip>> {
+        prefix: Option<Line<'static>>,
+    ) -> Vec<Vec<Line<'static>>> {
         let mut tips = Vec::new();
         if let Some(prefix) = prefix {
             tips.push(prefix);
@@ -686,45 +667,13 @@ impl RequestUserInputOverlay {
         self.wrap_footer_tips(width, tips)
     }
 
-    fn wrap_footer_tips(&self, width: u16, tips: Vec<FooterTip>) -> Vec<Vec<FooterTip>> {
-        let max_width = width.max(1) as usize;
-        let separator_width = UnicodeWidthStr::width(TIP_SEPARATOR);
-        if tips.is_empty() {
-            return vec![Vec::new()];
-        }
-
-        let mut lines: Vec<Vec<FooterTip>> = Vec::new();
-        let mut current: Vec<FooterTip> = Vec::new();
-        let mut used = 0usize;
-
-        for tip in tips {
-            let tip_width = UnicodeWidthStr::width(tip.text.as_str()).min(max_width);
-            let extra = if current.is_empty() {
-                tip_width
-            } else {
-                separator_width.saturating_add(tip_width)
-            };
-            if !current.is_empty() && used.saturating_add(extra) > max_width {
-                lines.push(current);
-                current = Vec::new();
-                used = 0;
-            }
-            if current.is_empty() {
-                used = tip_width;
-            } else {
-                used = used
-                    .saturating_add(separator_width)
-                    .saturating_add(tip_width);
-            }
-            current.push(tip);
-        }
-
-        if current.is_empty() {
-            lines.push(Vec::new());
-        } else {
-            lines.push(current);
-        }
-        lines
+    fn wrap_footer_tips(&self, width: u16, tips: Vec<Line<'static>>) -> Vec<Vec<Line<'static>>> {
+        crate::footer_hint::wrap_hint_rows(
+            tips,
+            width,
+            UnicodeWidthStr::width(TIP_SEPARATOR),
+            Line::width,
+        )
     }
 
     pub(super) fn footer_required_height(&self, width: u16) -> u16 {
@@ -949,7 +898,12 @@ impl RequestUserInputOverlay {
                 },
             );
         }
+        let Ok(thread_id) = ThreadId::from_string(&self.request.thread_id) else {
+            tracing::error!("user input request had an invalid thread ID");
+            return;
+        };
         self.app_event_tx.user_input_answer(
+            thread_id,
             self.request.turn_id.clone(),
             ToolRequestUserInputResponse {
                 answers: answers.clone(),
@@ -968,7 +922,12 @@ impl RequestUserInputOverlay {
     fn submit_empty_auto_resolution(&mut self, now: Instant) {
         self.confirm_unanswered = None;
         let answers: HashMap<String, ToolRequestUserInputAnswer> = HashMap::new();
+        let Ok(thread_id) = ThreadId::from_string(&self.request.thread_id) else {
+            tracing::error!("user input request had an invalid thread ID");
+            return;
+        };
         self.app_event_tx.user_input_answer(
+            thread_id,
             self.request.turn_id.clone(),
             ToolRequestUserInputResponse {
                 answers: answers.clone(),
@@ -1017,15 +976,11 @@ impl RequestUserInputOverlay {
     fn unanswered_submit_description(&self) -> String {
         let count = self.unanswered_question_count();
         let suffix = if count == 1 {
-            tr(current(), "question")
+            UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR
         } else {
-            tr(current(), "questions")
+            UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL
         };
-        tr_with(
-            current(),
-            "Submit with {0} unanswered {1}.",
-            &[&count.to_string(), suffix],
-        )
+        format!("Submit with {count} unanswered {suffix}")
     }
 
     fn first_unanswered_index(&self) -> Option<usize> {
@@ -1061,6 +1016,7 @@ impl RequestUserInputOverlay {
                 let prefix = if idx == selected { '›' } else { ' ' };
                 let number = idx + 1;
                 GenericDisplayRow {
+                    selection_style: Some(crate::bottom_pane::selection_style()),
                     name: format!("{prefix} {number}. {label}"),
                     description: Some(description.clone()),
                     ..Default::default()
@@ -1504,6 +1460,12 @@ impl BottomPaneView for RequestUserInputOverlay {
         true
     }
 
+    fn program_status_blocked_kind(
+        &self,
+    ) -> Option<crate::terminal_program_status::ProgramStatusKind> {
+        Some(crate::terminal_program_status::ProgramStatusKind::Question)
+    }
+
     fn on_ctrl_c(&mut self) -> CancellationEvent {
         if self.confirm_unanswered_active() {
             self.close_unanswered_confirmation();
@@ -1760,13 +1722,26 @@ mod tests {
         questions: Vec<ToolRequestUserInputQuestion>,
     ) -> ToolRequestUserInputParams {
         ToolRequestUserInputParams {
-            thread_id: "thread-1".to_string(),
+            thread_id: "00000000-0000-0000-0000-000000000001".to_string(),
             item_id: "call-1".to_string(),
             turn_id: turn_id.to_string(),
             questions,
             is_blocking: true,
             auto_resolution_ms: None,
         }
+    }
+
+    fn expect_user_input_answer(
+        event: AppEvent,
+    ) -> (ThreadId, String, ToolRequestUserInputResponse) {
+        let AppEvent::SubmitThreadOp {
+            thread_id,
+            op: Op::UserInputAnswer { id, response },
+        } = event
+        else {
+            panic!("expected thread-scoped UserInputAnswer event");
+        };
+        (thread_id, id, response)
     }
 
     fn request_event_with_auto_resolution(
@@ -1906,9 +1881,8 @@ mod tests {
         assert!(overlay.done);
 
         let event = rx.try_recv().expect("expected UserInputAnswer event");
-        let AppEvent::CodexOp(Op::UserInputAnswer { id, response }) = event else {
-            panic!("expected UserInputAnswer event");
-        };
+        let (thread_id, id, response) = expect_user_input_answer(event);
+        assert_eq!(thread_id.to_string(), overlay.request.thread_id);
         assert_eq!(id, "turn-1");
         assert_eq!(response.answers, HashMap::new());
     }
@@ -2031,9 +2005,8 @@ mod tests {
         assert!(overlay.done);
 
         let event = rx.try_recv().expect("expected UserInputAnswer event");
-        let AppEvent::CodexOp(Op::UserInputAnswer { id, response }) = event else {
-            panic!("expected UserInputAnswer event");
-        };
+        let (thread_id, id, response) = expect_user_input_answer(event);
+        assert_eq!(thread_id.to_string(), overlay.request.thread_id);
         assert_eq!(id, "turn-1");
         assert_eq!(response.answers, HashMap::new());
 
@@ -2210,7 +2183,7 @@ mod tests {
         let (tx, mut rx) = test_sender();
         let mut overlay = RequestUserInputOverlay::new(
             ToolRequestUserInputParams {
-                thread_id: "thread-1".to_string(),
+                thread_id: "00000000-0000-0000-0000-000000000001".to_string(),
                 item_id: "call-1".to_string(),
                 turn_id: "turn-1".to_string(),
                 questions: vec![question_with_options("q1", "First")],
@@ -2277,9 +2250,8 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { id, response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (thread_id, id, response) = expect_user_input_answer(event);
+        assert_eq!(thread_id.to_string(), overlay.request.thread_id);
         assert_eq!(id, "turn-1");
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, Vec::<String>::new());
@@ -2299,9 +2271,7 @@ mod tests {
         overlay.handle_key_event(KeyEvent::from(KeyCode::Enter));
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, vec!["Option 1".to_string()]);
     }
@@ -2335,9 +2305,7 @@ mod tests {
 
         overlay.handle_key_event(KeyEvent::from(KeyCode::Enter));
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let mut expected = HashMap::new();
         expected.insert(
             "q1".to_string(),
@@ -2368,9 +2336,7 @@ mod tests {
         overlay.handle_key_event(KeyEvent::from(KeyCode::Char('2')));
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, vec!["Option 2".to_string()]);
     }
@@ -2512,7 +2478,7 @@ mod tests {
             /*disable_paste_burst*/ false,
         );
         let tips = overlay.footer_tips();
-        let tip_texts = tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>();
+        let tip_texts = tips.iter().map(ToString::to_string).collect::<Vec<_>>();
         assert_eq!(
             tip_texts,
             vec![
@@ -2525,7 +2491,7 @@ mod tests {
 
         overlay.handle_key_event(KeyEvent::from(KeyCode::Tab));
         let tips = overlay.footer_tips();
-        let tip_texts = tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>();
+        let tip_texts = tips.iter().map(ToString::to_string).collect::<Vec<_>>();
         assert_eq!(
             tip_texts,
             vec!["tab or esc to clear notes", "enter to submit answer",]
@@ -2551,12 +2517,12 @@ mod tests {
         overlay.move_question(/*next*/ true);
 
         let tips = overlay.footer_tips();
-        let tip_texts = tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>();
+        let tip_texts = tips.iter().map(ToString::to_string).collect::<Vec<_>>();
         assert_eq!(
             tip_texts,
             vec![
                 "enter to submit all",
-                "ctrl + p / ctrl + n change question",
+                "⌃p / ⌃n change question",
                 "esc to interrupt",
             ]
         );
@@ -2577,11 +2543,8 @@ mod tests {
         );
 
         let tips = overlay.footer_tips();
-        let tip_texts = tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>();
-        assert_eq!(
-            tip_texts,
-            vec!["ctrl + j to submit answer", "esc to interrupt"]
-        );
+        let tip_texts = tips.iter().map(ToString::to_string).collect::<Vec<_>>();
+        assert_eq!(tip_texts, vec!["⌃j to submit answer", "esc to interrupt"]);
     }
 
     #[test]
@@ -2589,21 +2552,21 @@ mod tests {
         for (specs, expected_tips) in [
             (
                 KeybindingsSpec::One(KeybindingSpec("ctrl-x enter".to_string())),
-                vec!["ctrl + x enter to submit answer", "esc to interrupt"],
+                vec!["⌃x enter to submit answer", "esc to interrupt"],
             ),
             (
                 KeybindingsSpec::Many(vec![
                     KeybindingSpec("ctrl-enter".to_string()),
                     KeybindingSpec("ctrl-x enter".to_string()),
                 ]),
-                vec!["ctrl + enter to submit answer", "esc to interrupt"],
+                vec!["⌃enter to submit answer", "esc to interrupt"],
             ),
             (
                 KeybindingsSpec::Many(vec![
                     KeybindingSpec("ctrl-x enter".to_string()),
                     KeybindingSpec("ctrl-enter".to_string()),
                 ]),
-                vec!["ctrl + x enter to submit answer", "esc to interrupt"],
+                vec!["⌃x enter to submit answer", "esc to interrupt"],
             ),
         ] {
             let (tx, _rx) = test_sender();
@@ -2621,7 +2584,7 @@ mod tests {
             let tips = overlay.footer_tips();
 
             assert_eq!(
-                tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>(),
+                tips.iter().map(ToString::to_string).collect::<Vec<_>>(),
                 expected_tips
             );
         }
@@ -2645,7 +2608,7 @@ mod tests {
         overlay.handle_key_event(KeyEvent::from(KeyCode::Tab));
 
         let tips = overlay.footer_tips();
-        let tip_texts = tips.iter().map(|tip| tip.text.as_str()).collect::<Vec<_>>();
+        let tip_texts = tips.iter().map(ToString::to_string).collect::<Vec<_>>();
         assert_eq!(
             tip_texts,
             vec![
@@ -2741,9 +2704,7 @@ mod tests {
         overlay.handle_key_event(KeyEvent::from(KeyCode::Enter));
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, Vec::<String>::new());
         let answer = response.answers.get("q2").expect("answer missing");
@@ -3132,9 +3093,7 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, Vec::<String>::new());
     }
@@ -3157,9 +3116,7 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, Vec::<String>::new());
     }
@@ -3200,9 +3157,7 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(answer.answers, Vec::<String>::new());
     }
@@ -3236,9 +3191,7 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(
             answer.answers,
@@ -3350,9 +3303,7 @@ mod tests {
         overlay.submit_answers();
 
         let event = rx.try_recv().expect("expected AppEvent");
-        let AppEvent::CodexOp(Op::UserInputAnswer { response, .. }) = event else {
-            panic!("expected UserInputAnswer");
-        };
+        let (_, _, response) = expect_user_input_answer(event);
         let answer = response.answers.get("q1").expect("answer missing");
         assert_eq!(
             answer.answers,
@@ -3426,7 +3377,10 @@ mod tests {
     fn request_user_input_options_snapshot() {
         let (tx, _rx) = test_sender();
         let overlay = RequestUserInputOverlay::new(
-            request_event("turn-1", vec![question_with_options("q1", "Area")]),
+            request_event(
+                "turn-1",
+                vec![question_with_options_and_other("q1", "Area")],
+            ),
             tx,
             /*has_input_focus*/ true,
             /*enhanced_keys_supported*/ false,
@@ -3561,7 +3515,7 @@ mod tests {
         let separator_width = UnicodeWidthStr::width(TIP_SEPARATOR);
         for tips in lines {
             let used = tips.iter().enumerate().fold(0usize, |acc, (idx, tip)| {
-                let tip_width = UnicodeWidthStr::width(tip.text.as_str()).min(width as usize);
+                let tip_width = tip.width().min(width as usize);
                 let extra = if idx == 0 {
                     tip_width
                 } else {
@@ -3782,6 +3736,47 @@ mod tests {
     }
 
     #[test]
+    fn wrapped_question_preserves_the_complete_url_destination() {
+        let url = "https://github.com/openai/codex/pull/12345?diff=split";
+        let (tx, _rx) = test_sender();
+        let mut question = question_without_options("q1", "Release");
+        question.question = format!("Review the release\n\nReview {url} before choosing.");
+        let overlay = RequestUserInputOverlay::new(
+            request_event("turn-1", vec![question]),
+            tx,
+            /*has_input_focus*/ true,
+            /*enhanced_keys_supported*/ false,
+            /*disable_paste_burst*/ false,
+        );
+        let area = Rect::new(0, 0, 40, 18);
+        let mut buf = Buffer::empty(area);
+        overlay.render(area, &mut buf);
+        let linked = buf
+            .content
+            .iter()
+            .filter(|cell| cell.symbol().contains("\x1b]8;;"))
+            .map(|cell| {
+                assert!(cell.symbol().starts_with(&format!("\x1b]8;;{url}\x07")));
+                crate::terminal_hyperlinks::strip_osc8(cell.symbol())
+            })
+            .collect::<String>();
+        assert_eq!(linked, url);
+        let visible = buf
+            .content
+            .chunks(40)
+            .map(|row| {
+                row.iter()
+                    .map(|cell| crate::terminal_hyperlinks::strip_osc8(cell.symbol()))
+                    .collect::<String>()
+                    .trim_end()
+                    .to_owned()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        insta::assert_snapshot!("request_user_input_wrapped_url", visible);
+    }
+
+    #[test]
     fn request_user_input_freeform_snapshot() {
         let (tx, _rx) = test_sender();
         let overlay = RequestUserInputOverlay::new(
@@ -3823,16 +3818,16 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n");
 
-        insta::assert_snapshot!(snapshot, @r"
+        insta::assert_snapshot!(snapshot, @"
 
-          Question 1/1 (1 unanswered)
-          Share details.
+        Question 1/1 (1 unanswered)
+        Share details.
 
-          › Type your answer (optional)
+        › Type your answer (optional)
 
 
 
-          ctrl + x enter to submit answer | esc to interrupt
+        ⌃x enter to submit answer | esc to interrupt
         ");
     }
 

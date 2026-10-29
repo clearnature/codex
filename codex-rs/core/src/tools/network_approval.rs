@@ -1,4 +1,5 @@
 use crate::config::NetworkProxySpec;
+use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::guardian::GuardianNetworkAccessTrigger;
 use crate::guardian::GuardianReviewContext;
 use crate::network_policy_decision::denied_network_policy_message;
@@ -9,9 +10,7 @@ use crate::tools::approvals::ApprovalAction;
 use crate::tools::approvals::ApprovalContext;
 use crate::tools::events::truncate_rejection_message;
 use crate::tools::sandboxing::ToolError;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
+use codex_features::Feature;
 use codex_network_proxy::BlockedRequest;
 use codex_network_proxy::BlockedRequestObserver;
 use codex_network_proxy::EnvironmentNetworkPolicy;
@@ -23,9 +22,12 @@ use codex_network_proxy::NetworkProxy;
 use codex_network_proxy::NetworkRequestCancellation;
 use codex_network_proxy::NetworkRequestCancellationReason;
 use codex_network_proxy::NetworkRequestDisconnect;
+use codex_network_proxy::RemoteCredentialMasking;
+use codex_network_proxy::RemoteNetworkProxyLaunchConfig;
 use codex_protocol::approvals::NetworkApprovalContext;
 use codex_protocol::approvals::NetworkApprovalProtocol;
 use codex_protocol::approvals::NetworkPolicyRuleAction;
+use codex_protocol::error::CodexErr;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::protocol::AskForApproval;
 use codex_protocol::protocol::Event;
@@ -34,6 +36,7 @@ use codex_protocol::protocol::ReviewDecision;
 use codex_protocol::protocol::WarningEvent;
 use codex_sandboxing::record_network_sandbox_violation;
 use codex_tools::ToolName;
+use codex_utils_path_uri::Platform;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -50,14 +53,8 @@ use tracing::error;
 use tracing::warn;
 use uuid::Uuid;
 
-// A `const` cannot call `tr`; the value is a call outcome, which the TUI shows
-// as the tool result (design §3.6).
-fn abandoned_network_approval_message() -> &'static str {
-    tr(
-        current(),
-        "network approval was cancelled before a decision was returned",
-    )
-}
+const ABANDONED_NETWORK_APPROVAL_MESSAGE: &str =
+    "network approval was cancelled before a decision was returned";
 
 #[derive(Debug)]
 pub(crate) struct NetworkApprovalSpec {
@@ -191,7 +188,7 @@ fn network_approval_outcome_to_result(outcome: Option<String>) -> Result<(), Too
 fn abandoned_network_approval_outcome(cancellation_token: &CancellationToken) -> Option<String> {
     cancellation_token
         .is_cancelled()
-        .then(|| abandoned_network_approval_message().to_string())
+        .then(|| ABANDONED_NETWORK_APPROVAL_MESSAGE.to_string())
 }
 
 /// Whether an allowlist miss may be reviewed instead of hard-denied.
@@ -250,6 +247,7 @@ struct ActiveNetworkApprovalCall {
     command: String,
     environment_id: String,
     permission_profile: PermissionProfile,
+    environments: TurnEnvironmentSnapshot,
     cancellation_token: CancellationToken,
 }
 
@@ -374,14 +372,9 @@ impl Drop for PendingHostApprovalOwner<'_> {
                     .and_then(NetworkRequestDisconnect::elapsed)
             {
                 let elapsed_ms = elapsed.as_millis();
-                self.service.record_call_outcome_if_absent(
-                    registration_id,
-                    tr_with(
-                        current(),
-                        "Network request disconnected after {0} ms, before approval could complete",
-                        &[&elapsed_ms.to_string()],
-                    ),
-                );
+                self.service.record_call_outcome_if_absent(registration_id, format!(
+                    "Network request disconnected after {elapsed_ms} ms, before approval could complete"
+                ));
             }
             self.cancel_execution_if_denied(self.decision_on_drop);
             self.publish_and_remove(self.decision_on_drop);
@@ -653,11 +646,17 @@ impl NetworkApprovalService {
         else {
             return NetworkDecision::deny(REASON_NOT_ALLOWED);
         };
+        if owner_call
+            .as_ref()
+            .is_some_and(|call| call.cancellation_token.is_cancelled())
+        {
+            return NetworkDecision::deny(REASON_NOT_ALLOWED);
+        }
         let active_turn = session.active_turn_context_and_strict_auto_review().await;
         let Some(environment_id) = active_environment_id.or_else(|| {
             active_turn
                 .as_ref()
-                .and_then(|(turn_context, _, _)| turn_context.environments.primary())
+                .and_then(|(_, _, environments, _)| environments.primary())
                 .map(|environment| environment.selection.environment_id.clone())
         }) else {
             return NetworkDecision::deny(REASON_NOT_ALLOWED);
@@ -680,18 +679,12 @@ impl NetworkApprovalService {
         }
 
         let target = Self::format_network_target(key.protocol, request.host.as_str(), key.port);
-        let policy_denial_message = tr_with(
-            current(),
-            "Network access to \"{0}\" was blocked by policy.",
-            &[&target],
-        );
-        let prompt_reason = tr_with(
-            current(),
-            "{0} is not in the allowed_domains",
-            &[&request.host],
-        );
+        let policy_denial_message =
+            format!("Network access to \"{target}\" was blocked by policy.");
+        let prompt_reason = format!("Network access to {} requires approval", request.host);
 
-        let Some((turn_context, step_settings, strict_auto_review)) = active_turn else {
+        let Some((turn_context, settings, active_environments, strict_auto_review)) = active_turn
+        else {
             if let Some(owner_call) = owner_call.as_ref() {
                 self.record_call_outcome(&owner_call.registration_id, policy_denial_message);
             }
@@ -721,12 +714,15 @@ impl NetworkApprovalService {
         pending_owner.disconnect = request.disconnect.clone();
         pending_owner.cancellation = request.cancellation.clone();
 
+        // Review under current settings, but an owned process keeps the environments it started in.
+        let review_environments = owner_call
+            .as_ref()
+            .map_or(&active_environments, |call| &call.environments);
         let permission_profile = owner_call
             .as_ref()
             .map(|call| &call.permission_profile)
             .or_else(|| {
-                turn_context
-                    .environments
+                review_environments
                     .turn_environments()
                     .find(|environment| environment.selection.environment_id == environment_id)
                     .map(TurnEnvironment::permission_profile)
@@ -740,7 +736,8 @@ impl NetworkApprovalService {
         }
         let review_context = GuardianReviewContext::from_resolved_settings(
             Arc::clone(&turn_context),
-            &step_settings,
+            &settings,
+            review_environments,
         );
         if !allows_network_approval_flow(review_context.approval_policy) {
             if let Some(owner_call) = owner_call.as_ref() {
@@ -769,8 +766,7 @@ impl NetworkApprovalService {
         {
             cwd
         } else {
-            turn_context
-                .environments
+            review_environments
                 .turn_environments()
                 .find(|environment| environment.selection.environment_id == environment_id)
                 .and_then(|environment| environment.cwd().to_abs_path().ok())
@@ -812,7 +808,22 @@ impl NetworkApprovalService {
             retry_reason: Some(policy_denial_message.clone()),
             network_approval_context: Some(network_approval_context.clone()),
         };
-        let approval_decision = match session.request_approval(action, approval_context).await {
+        let approval = session.request_approval(action, approval_context);
+        let approval_result = if let Some(owner_call) = &owner_call {
+            // A ready review result takes precedence over concurrent cancellation.
+            let Some(result) = owner_call
+                .cancellation_token
+                .run_until_cancelled(approval)
+                .await
+            else {
+                pending_owner.complete(PendingApprovalDecision::Deny);
+                return NetworkDecision::deny(REASON_NOT_ALLOWED);
+            };
+            result
+        } else {
+            approval.await
+        };
+        let approval_decision = match approval_result.result {
             Ok(decision) => decision,
             Err(ToolError::Rejected(rejection)) => {
                 if let Some(owner_call) = owner_call.as_ref() {
@@ -843,11 +854,7 @@ impl NetworkApprovalService {
                     ) {
                         "rejected by user".to_string()
                     } else {
-                        tr_with(
-                            current(),
-                            "Error while requesting approval: {0}",
-                            &[&err.to_string()],
-                        )
+                        format!("Error while requesting approval: {err}")
                     };
                     self.record_call_outcome(&owner_call.registration_id, rejection);
                 }
@@ -940,11 +947,8 @@ impl NetworkApprovalService {
                                 .await;
                         }
                         Err(err) => {
-                            let message = tr_with(
-                                current(),
-                                "Failed to apply network policy amendment: {0}",
-                                &[&err.to_string()],
-                            );
+                            let message =
+                                format!("Failed to apply network policy amendment: {err}");
                             warn!("{message}");
                             session
                                 .send_event_raw(Event {
@@ -992,11 +996,8 @@ impl NetworkApprovalService {
                                 .await;
                         }
                         Err(err) => {
-                            let message = tr_with(
-                                current(),
-                                "Failed to apply network policy amendment: {0}",
-                                &[&err.to_string()],
-                            );
+                            let message =
+                                format!("Failed to apply network policy amendment: {err}");
                             warn!("{message}");
                             session
                                 .send_event_raw(Event {
@@ -1028,7 +1029,7 @@ impl NetworkApprovalService {
                 if let Some(owner_call) = owner_call.as_ref() {
                     self.record_call_outcome(
                         &owner_call.registration_id,
-                        tr(current(), "Error while requesting approval").to_string(),
+                        "Error while requesting approval".to_string(),
                     );
                 }
                 PendingApprovalDecision::Deny
@@ -1098,6 +1099,7 @@ pub(crate) fn build_network_policy_decider(
 pub(crate) async fn begin_network_approval(
     session: &Arc<Session>,
     turn: &TurnContext,
+    environments: &TurnEnvironmentSnapshot,
     managed_network_active: bool,
     spec: Option<NetworkApprovalSpec>,
 ) -> Result<Option<ActiveNetworkApproval>, ToolError> {
@@ -1117,24 +1119,92 @@ pub(crate) async fn begin_network_approval(
         return Ok(None);
     }
 
+    let fallback_policy_decider = network_policy.as_ref().map(|_| {
+        build_network_policy_decider(
+            Arc::clone(&session.services.network_approval),
+            Arc::new(RwLock::new(Arc::downgrade(session))),
+        )
+    });
+    let registration_id = Uuid::new_v4().to_string();
+    let Some(execution_proxy) = execution_network_proxy(
+        session,
+        turn,
+        environments
+            .turn_environments()
+            .find(|environment| environment.selection.environment_id == environment_id),
+        network,
+        &environment_id,
+        &permission_profile,
+        network_policy.as_ref(),
+        &registration_id,
+        fallback_policy_decider,
+    )
+    .await?
+    else {
+        return Ok(None);
+    };
+    let cancellation_token = CancellationToken::new();
+    session
+        .services
+        .network_approval
+        .register_call(ActiveNetworkApprovalCall {
+            registration_id: registration_id.clone(),
+            turn_id: turn.sub_id.clone(),
+            trigger,
+            tool_name,
+            command,
+            environment_id,
+            permission_profile,
+            environments: environments.clone(),
+            cancellation_token: cancellation_token.clone(),
+        })
+        .await;
+
+    Ok(Some(ActiveNetworkApproval {
+        registration_id: Some(registration_id),
+        cancellation_token,
+        execution_proxy,
+    }))
+}
+
+/// Resolve the issuing environment's network policy under controller requirements and
+/// return a proxy with unique execution attribution. Does not register an approval flow.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn execution_network_proxy(
+    session: &Session,
+    turn: &TurnContext,
+    environment: Option<&TurnEnvironment>,
+    network: Option<NetworkProxy>,
+    environment_id: &str,
+    permission_profile: &PermissionProfile,
+    network_policy: Option<&EnvironmentNetworkPolicy>,
+    registration_id: &str,
+    fallback_policy_decider: Option<Arc<dyn NetworkPolicyDecider>>,
+) -> Result<Option<NetworkProxy>, ToolError> {
     let controller = turn.config.permissions.network.as_ref();
     let owner_spec = network_policy
-        .as_ref()
         .map(|policy| {
             // Resolve owner policy once, where the command's actual enforcing proxy is built.
             NetworkProxySpec::for_environment(
                 controller,
                 policy,
-                &permission_profile,
+                permission_profile,
                 session.services.exec_policy.current().as_ref(),
+                environment.map_or(
+                    codex_network_proxy::LocalBindingPolicy::DefaultFalse,
+                    |environment| {
+                        crate::windows_sandbox::local_binding_policy_for_sandbox(
+                            environment.config().windows_sandbox_type,
+                            environment.executor_platform_os.as_deref(),
+                        )
+                    },
+                ),
             )
         })
         .transpose()
         .map_err(|error| {
-            ToolError::Rejected(tr_with(
-                current(),
-                "failed to resolve environment network policy: {0}",
-                &[&error.to_string()],
+            ToolError::Rejected(format!(
+                "failed to resolve environment network policy: {error}"
             ))
         })?;
     let network = if let Some(owner_spec) = owner_spec.as_ref() {
@@ -1149,24 +1219,24 @@ pub(crate) async fn begin_network_approval(
                 })
                 .ok_or_else(|| {
                     ToolError::Rejected(
-                        tr(
-                            current(),
-                            "environment network policy requires its configured controller proxy",
-                        )
-                        .to_string(),
+                        "environment network policy requires its configured controller proxy"
+                            .to_string(),
                     )
                 })?
         } else {
             // This carrier never listens: the executor starts the real per-command proxy.
+            let executor_os = Platform::from_platform_os(
+                environment.and_then(|environment| environment.executor_platform_os.as_deref()),
+            );
             let state = owner_spec
                 .build_state_with_audit_metadata(
                     session.services.network_proxy_audit_metadata.clone(),
+                    executor_os,
+                    codex_network_proxy::LocalBindingPolicy::DefaultFalse,
                 )
                 .map_err(|error| {
-                    ToolError::Rejected(tr_with(
-                        current(),
-                        "failed to build environment network policy: {0}",
-                        &[&error.to_string()],
+                    ToolError::Rejected(format!(
+                        "failed to build environment network policy: {error}"
                     ))
                 })?;
             NetworkProxy::builder()
@@ -1175,10 +1245,8 @@ pub(crate) async fn begin_network_approval(
                 .build()
                 .await
                 .map_err(|error| {
-                    ToolError::Rejected(tr_with(
-                        current(),
-                        "failed to build execution-scoped network proxy: {0}",
-                        &[&error.to_string()],
+                    ToolError::Rejected(format!(
+                        "failed to build execution-scoped network proxy: {error}"
                     ))
                 })?
         }
@@ -1188,52 +1256,62 @@ pub(crate) async fn begin_network_approval(
         return Ok(None);
     };
     let environment_policy = owner_spec.map(|spec| spec.environment_policy());
-    let fallback_policy_decider = environment_policy.as_ref().map(|_| {
-        build_network_policy_decider(
-            Arc::clone(&session.services.network_approval),
-            Arc::new(RwLock::new(Arc::downgrade(session))),
-        )
-    });
-    let registration_id = Uuid::new_v4().to_string();
     let attribution_token = Uuid::new_v4().to_string();
     let execution_proxy = network
         .for_execution(
-            &environment_id,
-            &registration_id,
+            environment_id,
+            registration_id,
             attribution_token,
             environment_policy,
             fallback_policy_decider,
         )
         .map_err(|err| {
-            ToolError::Codex(codex_protocol::error::CodexErr::Io(io::Error::other(
-                tr_with(
-                    current(),
-                    "failed to create execution-scoped network proxy: {0}",
-                    &[&err.to_string()],
-                ),
-            )))
+            ToolError::Codex(CodexErr::Io(io::Error::other(format!(
+                "failed to create execution-scoped network proxy: {err}"
+            ))))
         })?;
-    let cancellation_token = CancellationToken::new();
-    session
-        .services
-        .network_approval
-        .register_call(ActiveNetworkApprovalCall {
-            registration_id: registration_id.clone(),
-            turn_id: turn.sub_id.clone(),
-            trigger,
-            tool_name,
-            command,
-            environment_id,
-            permission_profile,
-            cancellation_token: cancellation_token.clone(),
-        })
-        .await;
+    Ok(Some(execution_proxy))
+}
 
-    Ok(Some(ActiveNetworkApproval {
-        registration_id: Some(registration_id),
-        cancellation_token,
-        execution_proxy,
-    }))
+/// Resolve a proxy launch against the executor's capabilities, failing closed if required.
+pub(crate) async fn remote_network_proxy_launch(
+    environment: &TurnEnvironment,
+    network: &NetworkProxy,
+    turn: &TurnContext,
+) -> Result<(RemoteNetworkProxyLaunchConfig, RemoteCredentialMasking), ToolError> {
+    let network_proxy = environment
+        .environment
+        .info()
+        .await
+        .map_err(|err| {
+            ToolError::Codex(CodexErr::Io(io::Error::other(format!(
+                "failed to query exec-server capabilities: {err}"
+            ))))
+        })?
+        .capabilities
+        .network_proxy();
+    let credential_masking = if turn.config.features.enabled(Feature::CredentialMasking) {
+        network_proxy.credential_masking
+    } else {
+        RemoteCredentialMasking::Disabled
+    };
+    let launch = network
+        .remote_launch_config(
+            crate::windows_sandbox::local_binding_policy_for_sandbox(
+                environment.config().windows_sandbox_type,
+                environment.executor_platform_os.as_deref(),
+            ),
+            credential_masking,
+        )
+        .await
+        .map_err(|err| ToolError::Codex(CodexErr::Io(io::Error::other(err))))?;
+    if launch.proxy.enabled && !network_proxy.launch {
+        return Err(ToolError::Rejected(
+            "selected exec-server does not support executor-local network proxy launches"
+                .to_string(),
+        ));
+    }
+    Ok((launch, credential_masking))
 }
 
 pub(crate) async fn finish_deferred_network_approval(

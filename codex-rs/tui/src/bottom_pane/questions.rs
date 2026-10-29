@@ -1,9 +1,6 @@
 //! Own question-editor creation, restoration, and the collapsed entry point.
 
 use super::*;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 impl BottomPane {
     pub(crate) fn push_async_questions(
@@ -16,7 +13,14 @@ impl BottomPane {
         self.request_redraw();
     }
 
-    fn question_editor(&mut self) -> &mut AsyncQuestions {
+    pub(crate) fn clear_pending_questions(&mut self) {
+        if let Some(questions) = &mut self.questions {
+            questions.clear_pending();
+            self.request_redraw();
+        }
+    }
+
+    pub(crate) fn question_editor(&mut self) -> &mut AsyncQuestions {
         self.questions.get_or_insert_with(|| {
             let mut questions = AsyncQuestions::new(
                 self.app_event_tx.clone(),
@@ -26,7 +30,6 @@ impl BottomPane {
                 self.keymap.clone(),
             );
             questions.set_vim_enabled(self.composer.is_vim_enabled());
-            questions.next_hint = self.pending_input_preview.edit_binding;
             Box::new(questions)
         })
     }
@@ -35,6 +38,28 @@ impl BottomPane {
         if let Some(state) = state {
             self.question_editor().restore(state);
         }
+        self.request_redraw();
+    }
+
+    /// Capture answers and settle the main draft before turn finalization can restore input.
+    pub(crate) fn take_question_drafts(&mut self) -> Option<Vec<String>> {
+        let questions = self.questions.as_mut()?;
+        // The question editor closes at turn end; recover its typed answer, not a history preview.
+        questions.composer.cancel_history_search();
+        let drafts = questions.take_pending_drafts();
+        if !drafts.is_empty() && !self.composer.history_search_active() {
+            self.composer.flush_pending_input();
+        }
+        Some(drafts)
+    }
+
+    /// Append recovered answers after turn finalization, retaining existing composer elements.
+    pub(crate) fn append_question_drafts(&mut self, drafts: &[String]) {
+        if drafts.is_empty() {
+            return;
+        }
+        self.composer
+            .edit_stored_draft(|composer| composer.append_recovered_drafts(&drafts.join("\n\n")));
         self.request_redraw();
     }
 
@@ -51,25 +76,17 @@ impl BottomPane {
         let mut lines = vec![Line::from(vec![
             "  ? ".dim(),
             Span::styled(
-                if count == 1 {
-                    tr_with(current(), "{0} question", &[&count.to_string()])
-                } else {
-                    tr_with(current(), "{0} questions", &[&count.to_string()])
-                },
+                format!("{count} question{}", if count == 1 { "" } else { "s" }),
                 crate::style::accent_style(),
             )
             .bold(),
             countdown.dim(),
         ])];
         if let Some(binding) = self.pending_input_preview.edit_binding {
-            lines.push(
-                Line::from(vec![
-                    "    ".into(),
-                    binding.into(),
-                    tr(current(), " to answer").into(),
-                ])
-                .dim(),
-            );
+            let mut hint = Line::from("    ");
+            hint.spans.extend(binding.spans());
+            hint.spans.push(" to answer".dim());
+            lines.push(hint);
         }
         Some(lines)
     }

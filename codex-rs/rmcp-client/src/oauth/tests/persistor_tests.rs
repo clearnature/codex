@@ -29,6 +29,7 @@ use tracing::Subscriber;
 use tracing::span::Attributes;
 use tracing::span::Record;
 use tracing::subscriber::Interest;
+use tracing_test::traced_test;
 use wiremock::Mock;
 use wiremock::MockServer;
 use wiremock::ResponseTemplate;
@@ -49,9 +50,11 @@ use crate::oauth::OAuthRuntime;
 use crate::oauth::ResolvedOAuthCredentialStore;
 use crate::oauth::StoredOAuthTokens;
 use crate::oauth::WrappedOAuthTokenResponse;
+use crate::oauth::compute_expires_at_millis;
 use crate::oauth::compute_store_key;
 use crate::oauth::delete_oauth_tokens;
 use crate::oauth::load_oauth_tokens_from_file;
+use crate::oauth::normalized_oauth_credentials;
 use crate::oauth::refresh_lock::RefreshCredentialLock;
 use crate::oauth::save_oauth_tokens;
 use crate::oauth::save_oauth_tokens_to_file;
@@ -178,8 +181,9 @@ async fn coordinated_401_refresh_rereads_and_persists_before_retry() -> Result<(
     let mut manager = authorization_manager_for(&initial).await?;
     manager.set_credential_store(OAuthCredentialStore::new(
         initial.clone(),
-        ResolvedOAuthCredentialStore::File,
+        ResolvedOAuthCredentialStore::file(),
         DefaultKeyringStore,
+        /*oauth_config*/ None,
     ));
     let client = AuthClient::new(
         StreamableHttpClientAdapter::new(
@@ -394,8 +398,9 @@ async fn resolved_keyring_read_error_preserves_in_memory_credentials() -> Result
         initial.server_name.clone(),
         initial.url.clone(),
         Arc::clone(&manager),
-        ResolvedOAuthCredentialStore::Keyring(AuthKeyringBackendKind::Direct),
+        ResolvedOAuthCredentialStore::keyring(AuthKeyringBackendKind::Direct),
         Some(initial.clone()),
+        /*oauth_config*/ None,
     );
 
     let error = persistor
@@ -458,6 +463,58 @@ async fn rejected_refresh_token_requires_reauthorization() -> Result<()> {
     let stored = load_oauth_tokens_from_file(&initial.server_name, &initial.url)?
         .expect("rejected refresh must preserve the durable credentials");
     assert_tokens_match_without_expiry(&stored, &initial);
+    server.verify().await;
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[traced_test]
+async fn rejection_callback_failure_keeps_reauthentication_and_redacts_diagnostics() -> Result<()> {
+    let (env, server, initial) = test_context().await?;
+    save_oauth_tokens_to_file(&initial)?;
+    let (auth_manager, store) = coordinated_manager_for(&initial).await?;
+    let credentials_path = env.path().join(".credentials.json");
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(move |_: &wiremock::Request| {
+            // The provider rejects after the guarded reread. Make retirement fail with a
+            // deserialization error containing a sentinel credential value.
+            std::fs::write(
+                &credentials_path,
+                r#"{"invalid-entry":"credential-backend-secret"}"#,
+            )
+            .expect("corrupt the synthetic credential store");
+            ResponseTemplate::new(400).set_body_json(serde_json::json!({"error": "invalid_grant"}))
+        })
+        .expect(1)
+        .mount(&server)
+        .await;
+    let error = OAuthRuntime::Coordinated {
+        auth_manager,
+        store: store.clone(),
+    }
+    .refresh_if_needed()
+    .await
+    .expect_err("rejected credentials must still require reauthentication");
+    assert!(is_authentication_required_error(&error));
+    let mut expected = initial.clone();
+    expected.token_response.0.set_refresh_token(None);
+    assert_eq!(
+        store.stored_credentials().await,
+        normalized_oauth_credentials(Some(&expected))
+    );
+    assert!(logs_contain(
+        "failed to persist rejected MCP OAuth refresh token retirement"
+    ));
+    assert!(logs_contain("Failed to handle rejected refresh token"));
+    assert!(!logs_contain("credential-backend-secret"));
+    // A failed durable retirement must not let this runtime reuse the same credential.
+    std::fs::remove_file(env.path().join(".credentials.json"))?;
+    save_oauth_tokens_to_file(&initial)?;
+    assert!(matches!(
+        store.acquire_transaction_guard().await,
+        Err(AuthError::AuthorizationRequired)
+    ));
     server.verify().await;
     Ok(())
 }
@@ -533,8 +590,14 @@ async fn issuerless_newer_credentials_are_not_adopted_before_refresh() -> Result
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn transient_refresh_failure_does_not_require_reauthorization() -> Result<()> {
-    let (_env, server, initial) = test_context().await?;
+async fn proactive_refresh_failure_with_unexpired_token_does_not_require_reauthorization()
+-> Result<()> {
+    let (_env, server, mut initial) = test_context().await?;
+    initial
+        .token_response
+        .0
+        .set_expires_in(Some(&Duration::from_secs(/*secs*/ 30)));
+    initial.expires_at = compute_expires_at_millis(&initial.token_response.0);
     Mock::given(method("POST"))
         .and(path("/oauth/token"))
         .and(body_string_contains("grant_type=refresh_token"))
@@ -639,6 +702,139 @@ async fn assert_caller_cancellation(mode: crate::McpOAuthRefreshMode) -> Result<
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn failed_refresh_adopts_login_completed_during_request() -> Result<()> {
+    for expires_in in [Some(Duration::from_secs(/*secs*/ 3600)), None] {
+        let (_env, server, initial) = test_context().await?;
+        let mut replacement = initial.clone();
+        replacement.client_id = "new-login-client".to_string();
+        replacement
+            .token_response
+            .0
+            .set_access_token(AccessToken::new("new-login-access-token".to_string()));
+        replacement
+            .token_response
+            .0
+            .set_expires_in(expires_in.as_ref());
+        replacement.expires_at = compute_expires_at_millis(&replacement.token_response.0);
+        save_oauth_tokens_to_file(&initial)?;
+        let persistor = persistor_for(&initial).await?;
+        let provider_replacement = replacement.clone();
+        Mock::given(method("POST"))
+            .and(path("/oauth/token"))
+            .and(body_string_contains("grant_type=refresh_token"))
+            .respond_with(move |_request: &wiremock::Request| {
+                // A browser login writes independently of the refresh transaction lock.
+                save_oauth_tokens_to_file(&provider_replacement).expect("complete new login");
+                ResponseTemplate::new(200).set_body_string("not an OAuth token response")
+            })
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        persistor.refresh_if_needed().await?;
+        let live = persistor.stored_credentials().await.expect("adopted login");
+        let mut expected_live = replacement.clone();
+        expected_live.token_response.0.set_expires_in(None);
+        assert_eq!(live, expected_live);
+        persistor.persist_if_needed().await?;
+        let stored = load_oauth_tokens_from_file(&initial.server_name, &initial.url)?
+            .expect("new login must remain stored");
+        assert_tokens_match_without_expiry(&stored, &replacement);
+        server.verify().await;
+    }
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn failed_refresh_does_not_adopt_unbound_replacement_credentials() -> Result<()> {
+    for issuer in [None, Some("https://different-issuer.example.test")] {
+        let (_env, server, initial) = test_context().await?;
+        let mut replacement = initial.clone();
+        replacement.issuer = issuer.map(str::to_string);
+        replacement.expires_at = Some(u64::MAX);
+        replacement
+            .token_response
+            .0
+            .set_access_token(AccessToken::new("replacement-access-token".to_string()));
+        save_oauth_tokens_to_file(&initial)?;
+        let persistor = persistor_for(&initial).await?;
+        let provider_replacement = replacement.clone();
+        Mock::given(method("POST"))
+            .and(path("/oauth/token"))
+            .and(body_string_contains("grant_type=refresh_token"))
+            .respond_with(move |_request: &wiremock::Request| {
+                save_oauth_tokens_to_file(&provider_replacement).expect("complete new login");
+                ResponseTemplate::new(200).set_body_string("invalid JSON")
+            })
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let error = persistor
+            .refresh_if_needed()
+            .await
+            .expect_err("an unbound replacement must not enter the authorization manager");
+        assert!(is_authentication_required_error(&error));
+        let live = persistor
+            .stored_credentials()
+            .await
+            .expect("original credentials");
+        let mut expected_live = initial.clone();
+        expected_live.token_response.0.set_expires_in(None);
+        assert_eq!(live, expected_live);
+        let stored = load_oauth_tokens_from_file(&initial.server_name, &initial.url)?
+            .expect("the replacement must not be deleted or overwritten");
+        assert_tokens_match_without_expiry(&stored, &replacement);
+        server.verify().await;
+    }
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn expired_refresh_failure_preserves_credentials_for_a_later_retry() -> Result<()> {
+    let (_env, server, initial) = test_context().await?;
+    save_oauth_tokens_to_file(&initial)?;
+    let persistor = persistor_for(&initial).await?;
+    let failure = Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("invalid JSON"))
+        .expect(1)
+        .mount_as_scoped(&server)
+        .await;
+
+    let error = persistor
+        .refresh_if_needed()
+        .await
+        .expect_err("refresh failed");
+    assert!(is_authentication_required_error(&error));
+    let stored = load_oauth_tokens_from_file(&initial.server_name, &initial.url)?
+        .expect("failed refresh must preserve stored credentials");
+    assert_tokens_match_without_expiry(&stored, &initial);
+    drop(failure);
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .and(body_string_contains("refresh_token=refresh-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "access_token": "retry-access-token",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    persistor.refresh_if_needed().await?;
+    let stored = load_oauth_tokens_from_file(&initial.server_name, &initial.url)?
+        .expect("successful retry must persist new credentials");
+    assert_eq!(
+        stored.token_response.0.access_token().secret(),
+        "retry-access-token"
+    );
+    server.verify().await;
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn provider_timeout_releases_lock_and_preserves_durable_credentials() -> Result<()> {
     let (_env, server, initial) = test_context().await?;
     mount_delayed_refresh(&server, "late-access-token").await;
@@ -653,6 +849,7 @@ async fn provider_timeout_releases_lock_and_preserves_durable_credentials() -> R
         .await
         .expect_err("provider request should reach its explicit timeout");
     assert!(error.to_string().contains("timed out after 50ms"));
+    assert!(is_authentication_required_error(&error));
 
     let _lock = tokio::time::timeout(
         Duration::from_millis(/*millis*/ 100),
@@ -732,8 +929,9 @@ async fn coordinated_manager_for(
     let mut manager = authorization_manager_for(tokens).await?;
     let store = OAuthCredentialStore::new(
         tokens.clone(),
-        ResolvedOAuthCredentialStore::File,
+        ResolvedOAuthCredentialStore::file(),
         DefaultKeyringStore,
+        /*oauth_config*/ None,
     );
     manager.set_credential_store(store.clone());
     Ok((Arc::new(TokioMutex::new(manager)), store))
@@ -744,12 +942,13 @@ async fn persistor_for(tokens: &StoredOAuthTokens) -> Result<OAuthPersistor> {
         tokens.server_name.clone(),
         tokens.url.clone(),
         Arc::new(TokioMutex::new(authorization_manager_for(tokens).await?)),
-        ResolvedOAuthCredentialStore::File,
+        ResolvedOAuthCredentialStore::file(),
         Some(tokens.clone()),
+        /*oauth_config*/ None,
     ))
 }
 
-async fn test_context() -> Result<(TempCodexHome, MockServer, StoredOAuthTokens)> {
+pub(super) async fn test_context() -> Result<(TempCodexHome, MockServer, StoredOAuthTokens)> {
     let env = TempCodexHome::new();
     let server = MockServer::start().await;
     mount_oauth_metadata(&server).await;
@@ -757,7 +956,9 @@ async fn test_context() -> Result<(TempCodexHome, MockServer, StoredOAuthTokens)
     Ok((env, server, tokens))
 }
 
-async fn authorization_manager_for(tokens: &StoredOAuthTokens) -> Result<AuthorizationManager> {
+pub(super) async fn authorization_manager_for(
+    tokens: &StoredOAuthTokens,
+) -> Result<AuthorizationManager> {
     let oauth_http_client = Arc::new(OAuthHttpClientAdapter::new(
         Arc::new(RouteAwareHttpClient::new(HttpClientFactory::new(
             OutboundProxyPolicy::ReqwestDefault,

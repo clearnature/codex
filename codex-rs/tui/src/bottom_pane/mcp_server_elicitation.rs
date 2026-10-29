@@ -1,6 +1,3 @@
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -18,6 +15,8 @@ use codex_protocol::ThreadId;
 use codex_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as APPROVAL_META_KIND_KEY;
 use codex_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as APPROVAL_META_KIND_MCP_TOOL_CALL;
 use codex_protocol::mcp_approval_meta::APPROVAL_KIND_TOOL_SUGGESTION as APPROVAL_META_KIND_TOOL_SUGGESTION;
+use codex_protocol::mcp_approval_meta::CANCELLATION_REASON_KEY;
+use codex_protocol::mcp_approval_meta::McpApprovalCancellationReason;
 use codex_protocol::mcp_approval_meta::PERSIST_ALWAYS as APPROVAL_PERSIST_ALWAYS_VALUE;
 use codex_protocol::mcp_approval_meta::PERSIST_KEY as APPROVAL_PERSIST_KEY;
 use codex_protocol::mcp_approval_meta::PERSIST_SESSION as APPROVAL_PERSIST_SESSION_VALUE;
@@ -52,12 +51,14 @@ use crate::bottom_pane::selection_popup_common::menu_surface_inset;
 use crate::bottom_pane::selection_popup_common::menu_surface_padding_height;
 use crate::bottom_pane::selection_popup_common::render_menu_surface;
 use crate::bottom_pane::selection_popup_common::render_rows;
+use crate::footer_hint::shortcut;
 use crate::key_hint::ShortcutHint;
 use crate::keymap::KeymapContext;
 use crate::keymap::ListAction;
 use crate::keymap::ListKeymap;
 use crate::keymap::RuntimeKeymap;
 use crate::render::renderable::Renderable;
+use crate::terminal_program_status::ProgramStatusKind;
 use crate::text_formatting::format_json_compact;
 use crate::text_formatting::truncate_text;
 
@@ -176,6 +177,7 @@ pub(crate) struct McpServerElicitationFormRequest {
     message: String,
     approval_display_params: Vec<McpToolApprovalDisplayParam>,
     response_mode: McpServerElicitationResponseMode,
+    is_tool_approval: bool,
     fields: Vec<McpServerElicitationField>,
     tool_suggestion: Option<ToolSuggestionRequest>,
 }
@@ -185,28 +187,6 @@ struct McpServerElicitationAnswerState {
     selection: ScrollState,
     draft: ComposerDraft,
     answer_committed: bool,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct FooterTip {
-    text: String,
-    highlight: bool,
-}
-
-impl FooterTip {
-    fn new(text: impl Into<String>) -> Self {
-        Self {
-            text: text.into(),
-            highlight: false,
-        }
-    }
-
-    fn highlighted(text: impl Into<String>) -> Self {
-        Self {
-            text: text.into(),
-            highlight: true,
-        }
-    }
 }
 
 impl McpServerElicitationFormRequest {
@@ -273,9 +253,9 @@ impl McpServerElicitationFormRequest {
             (McpServerElicitationResponseMode::FormContent, Vec::new())
         } else if is_message_only_schema {
             let allow_description = if is_tool_approval_action {
-                tr(current(), "Run the tool and continue.")
+                "Run the tool and continue"
             } else {
-                tr(current(), "Allow this request and continue.")
+                "Allow this request and continue"
             };
             let mut options = vec![McpServerElicitationOption {
                 label: "Allow".to_string(),
@@ -284,36 +264,24 @@ impl McpServerElicitationFormRequest {
             }];
             if approval_supports_persist_mode(meta, APPROVAL_PERSIST_SESSION_VALUE) {
                 let description = if is_tool_approval_action {
-                    tr(
-                        current(),
-                        "Run the tool and remember this choice for this session.",
-                    )
+                    "Run the tool and remember this choice for this session"
                 } else {
-                    tr(
-                        current(),
-                        "Allow this request and remember this choice for this session.",
-                    )
+                    "Allow this request and remember this choice for this session"
                 };
                 options.push(McpServerElicitationOption {
-                    label: tr(current(), "Allow for this session").to_string(),
+                    label: "Allow for this session".to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_SESSION_VALUE.to_string()),
                 });
             }
             if approval_supports_persist_mode(meta, APPROVAL_PERSIST_ALWAYS_VALUE) {
                 let description = if is_tool_approval_action {
-                    tr(
-                        current(),
-                        "Run the tool and remember this choice for future tool calls.",
-                    )
+                    "Run the tool and remember this choice for future tool calls"
                 } else {
-                    tr(
-                        current(),
-                        "Allow this request and remember this choice for future requests.",
-                    )
+                    "Allow this request and remember this choice for future requests"
                 };
                 options.push(McpServerElicitationOption {
-                    label: tr(current(), "Always allow").to_string(),
+                    label: "Always allow".to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_ALWAYS_VALUE.to_string()),
                 });
@@ -321,21 +289,19 @@ impl McpServerElicitationFormRequest {
             if is_tool_approval_action {
                 options.push(McpServerElicitationOption {
                     label: "Cancel".to_string(),
-                    description: Some(tr(current(), "Cancel this tool call").to_string()),
+                    description: Some("Cancel this tool call".to_string()),
                     value: Value::String(APPROVAL_CANCEL_VALUE.to_string()),
                 });
             } else {
                 options.extend([
                     McpServerElicitationOption {
-                        label: tr(current(), "Deny").to_string(),
-                        description: Some(
-                            tr(current(), "Decline this request and continue.").to_string(),
-                        ),
+                        label: "Deny".to_string(),
+                        description: Some("Decline this request and continue".to_string()),
                         value: Value::String(APPROVAL_DECLINE_VALUE.to_string()),
                     },
                     McpServerElicitationOption {
                         label: "Cancel".to_string(),
-                        description: Some(tr(current(), "Cancel this request").to_string()),
+                        description: Some("Cancel this request".to_string()),
                         value: Value::String(APPROVAL_CANCEL_VALUE.to_string()),
                     },
                 ]);
@@ -367,6 +333,7 @@ impl McpServerElicitationFormRequest {
             message,
             approval_display_params,
             response_mode,
+            is_tool_approval,
             fields,
             tool_suggestion,
         })
@@ -599,15 +566,7 @@ fn parse_field(
             let options = [true, false]
                 .into_iter()
                 .map(|value| {
-                    // Two separate calls, not `tr(current(), if value {..} else {..})`:
-                    // the checker only recognises a literal first argument, so a
-                    // conditional argument makes the key invisible to it (it then
-                    // reports the entry as unused while it is on screen).
-                    let label = if value {
-                        tr(current(), "True").to_string()
-                    } else {
-                        tr(current(), "False").to_string()
-                    };
+                    let label = if value { "True" } else { "False" }.to_string();
                     McpServerElicitationOption {
                         label,
                         description: None,
@@ -967,6 +926,7 @@ impl McpServerElicitationOverlay {
                 let prefix_label = format!("{prefix} {number}. ");
                 let wrap_indent = UnicodeWidthStr::width(prefix_label.as_str());
                 GenericDisplayRow {
+                    selection_style: Some(crate::bottom_pane::selection_style()),
                     name: format!("{prefix_label}{}", option.label),
                     description: option.description.clone(),
                     wrap_indent: Some(wrap_indent),
@@ -976,10 +936,22 @@ impl McpServerElicitationOverlay {
             .collect()
     }
 
-    fn wrapped_prompt_lines(&self, width: u16) -> Vec<String> {
-        textwrap::wrap(&self.current_prompt_text(), width.max(1) as usize)
-            .into_iter()
-            .map(|line| line.to_string())
+    fn wrapped_prompt_lines(&self, width: u16) -> Vec<crate::terminal_hyperlinks::HyperlinkLine> {
+        self.current_prompt_text()
+            .split('\n')
+            .flat_map(|text| {
+                let source =
+                    crate::terminal_hyperlinks::annotate_web_urls_in_line(text.to_owned().into());
+                let wrapped = crate::wrapping::wrap_ranges_trim(text, usize::from(width.max(1)))
+                    .into_iter()
+                    .map(|range| crate::wrapping::WrappedLine {
+                        line: (&text[range.clone()]).into(),
+                        range,
+                        prefix_bytes: 0,
+                    })
+                    .collect();
+                crate::terminal_hyperlinks::remap_source_wrapped_line(&source, wrapped)
+            })
             .collect()
     }
 
@@ -1013,7 +985,7 @@ impl McpServerElicitationOverlay {
         sections.join("\n\n")
     }
 
-    fn footer_tips(&self) -> Vec<FooterTip> {
+    fn footer_tips(&self) -> Vec<Line<'static>> {
         let mut tips = Vec::new();
         let is_last_field = self.current_index().saturating_add(1) >= self.field_count();
         let submit_hint = if self.current_field_is_select() {
@@ -1023,43 +995,41 @@ impl McpServerElicitationOverlay {
         };
         if let Some(submit_hint) = submit_hint.map(ShortcutHint::display_label) {
             if self.field_count() == 1 {
-                tips.push(FooterTip::highlighted(tr_with(
-                    current(),
-                    "{0} to submit",
-                    &[&submit_hint],
-                )));
+                tips.push(shortcut(&submit_hint, "to submit"));
             } else if is_last_field {
-                tips.push(FooterTip::highlighted(tr_with(
-                    current(),
-                    "{0} to submit all",
-                    &[&submit_hint],
-                )));
+                tips.push(shortcut(&submit_hint, "to submit all"));
             } else {
-                tips.push(FooterTip::new(tr_with(
-                    current(),
-                    "{0} to submit answer",
-                    &[&submit_hint],
-                )));
+                tips.push(shortcut(&submit_hint, "to submit answer"));
             }
         }
         if self.field_count() > 1 {
             if self.current_field_is_select() {
-                tips.push(FooterTip::new(tr(current(), "←/→ to navigate fields")));
+                tips.push(shortcut("←/→", "to navigate fields"));
             } else {
-                tips.push(FooterTip::new(tr(
-                    current(),
-                    "ctrl + p / ctrl + n change field",
-                )));
+                tips.push(shortcut(
+                    &format!(
+                        "{} / {}",
+                        crate::key_hint::ctrl(KeyCode::Char('p')).display_label(),
+                        crate::key_hint::ctrl(KeyCode::Char('n')).display_label()
+                    ),
+                    "change field",
+                ));
             }
         }
-        tips.push(FooterTip::new(tr(current(), "esc to cancel")));
+        tips.push(shortcut("esc", "to cancel"));
         tips
     }
 
-    fn footer_tip_lines(&self, width: u16) -> Vec<Vec<FooterTip>> {
+    fn footer_tip_lines(&self, width: u16) -> Vec<Vec<Line<'static>>> {
         let mut tips = Vec::new();
         if let Some(error) = self.validation_error.as_ref() {
-            tips.push(FooterTip::highlighted(error.clone()));
+            tips.push(Line::from(
+                error
+                    .clone()
+                    .fg(crate::style::accent_color())
+                    .bold()
+                    .not_dim(),
+            ));
         }
         tips.extend(self.footer_tips());
         wrap_footer_tips(width, tips)
@@ -1185,7 +1155,11 @@ impl McpServerElicitationOverlay {
             self.request.request_id.clone(),
             McpServerElicitationAction::Cancel,
             /*content*/ None,
-            /*meta*/ None,
+            self.request.is_tool_approval.then(|| {
+                serde_json::json!({
+                    CANCELLATION_REASON_KEY: McpApprovalCancellationReason::User,
+                })
+            }),
         );
     }
 
@@ -1202,8 +1176,7 @@ impl McpServerElicitationOverlay {
     fn submit_answers(&mut self) {
         self.save_current_draft();
         if let Some(idx) = self.first_required_unanswered_index() {
-            self.validation_error =
-                Some(tr(current(), "Answer required fields before submitting.").to_string());
+            self.validation_error = Some("Answer required fields before submitting.".to_string());
             self.jump_to_field(idx);
             return;
         }
@@ -1225,7 +1198,14 @@ impl McpServerElicitationOverlay {
                         })),
                     ),
                     Some(APPROVAL_DECLINE_VALUE) => (McpServerElicitationAction::Decline, None),
-                    Some(APPROVAL_CANCEL_VALUE) => (McpServerElicitationAction::Cancel, None),
+                    Some(APPROVAL_CANCEL_VALUE) => (
+                        McpServerElicitationAction::Cancel,
+                        self.request.is_tool_approval.then(|| {
+                            serde_json::json!({
+                                CANCELLATION_REASON_KEY: McpApprovalCancellationReason::User,
+                            })
+                        }),
+                    ),
                     _ => (McpServerElicitationAction::Cancel, None),
                 };
             self.app_event_tx.resolve_elicitation(
@@ -1332,27 +1312,16 @@ impl McpServerElicitationOverlay {
         if area.width == 0 || area.height == 0 {
             return;
         }
-        let answered = self.is_current_field_answered();
-        for (offset, line) in self.wrapped_prompt_lines(area.width).iter().enumerate() {
-            let y = area.y.saturating_add(offset as u16);
-            if y >= area.y + area.height {
-                break;
-            }
-            let line = if answered {
-                Line::from(line.clone())
-            } else {
-                Line::from(line.clone()).cyan()
-            };
-            Paragraph::new(line).render(
-                Rect {
-                    x: area.x,
-                    y,
-                    width: area.width,
-                    height: 1,
-                },
-                buf,
-            );
-        }
+        let style = if self.is_current_field_answered() {
+            ratatui::style::Style::default()
+        } else {
+            ratatui::style::Style::default().fg(crate::style::accent_color())
+        };
+        crate::terminal_hyperlinks::HyperlinkParagraph::new(
+            &self.wrapped_prompt_lines(area.width),
+            style,
+        )
+        .render(area, buf);
     }
 
     fn render_input(&self, area: Rect, buf: &mut Buffer) {
@@ -1369,14 +1338,7 @@ impl McpServerElicitationOverlay {
                 state.selected_idx = Some(0);
             }
             state.ensure_visible(rows.len(), area.height as usize);
-            render_rows(
-                area,
-                buf,
-                &rows,
-                &state,
-                rows.len().max(1),
-                tr(current(), "No options"),
-            );
+            render_rows(area, buf, &rows, &state, rows.len().max(1), "No options");
             return;
         }
         if self.current_field_is_secret() {
@@ -1396,7 +1358,7 @@ impl McpServerElicitationOverlay {
         let option_tip = if options_hidden {
             let selected = self.selected_option_index().unwrap_or(0).saturating_add(1);
             let total = self.options_len();
-            Some(FooterTip::new(format!("option {selected}/{total}")))
+            Some(Line::from(format!("option {selected}/{total}").dim()))
         } else {
             None
         };
@@ -1418,11 +1380,7 @@ impl McpServerElicitationOverlay {
                 if tip_idx > 0 {
                     spans.push(FOOTER_SEPARATOR.into());
                 }
-                if tip.highlight {
-                    spans.push(tip.text.cyan().bold().not_dim());
-                } else {
-                    spans.push(tip.text.into());
-                }
+                spans.extend(tip.spans);
             }
             let line = Line::from(spans).dim();
             Paragraph::new(line).render(
@@ -1510,25 +1468,14 @@ impl Renderable for McpServerElicitationOverlay {
         let progress_line = if self.field_count() > 0 {
             let idx = self.current_index() + 1;
             let total = self.field_count();
-            let base = tr_with(
-                current(),
-                "Field {0}/{1}",
-                &[&idx.to_string(), &total.to_string()],
-            );
+            let base = format!("Field {idx}/{total}");
             if unanswered > 0 {
-                Line::from(
-                    tr_with(
-                        current(),
-                        "{0} ({1} required unanswered)",
-                        &[&base, &unanswered.to_string()],
-                    )
-                    .dim(),
-                )
+                Line::from(format!("{base} ({unanswered} required unanswered)").dim())
             } else {
                 Line::from(base.dim())
             }
         } else {
-            Line::from(tr(current(), "No fields").dim())
+            Line::from("No fields".dim())
         };
         Paragraph::new(progress_line).render(progress_area, buf);
         self.render_prompt(prompt_area, buf);
@@ -1725,6 +1672,13 @@ impl BottomPaneView for McpServerElicitationOverlay {
         true
     }
 
+    fn program_status_blocked_kind(&self) -> Option<ProgramStatusKind> {
+        Some(match self.request.response_mode {
+            McpServerElicitationResponseMode::FormContent => ProgramStatusKind::Question,
+            McpServerElicitationResponseMode::ApprovalAction => ProgramStatusKind::Permission,
+        })
+    }
+
     fn on_ctrl_c(&mut self) -> CancellationEvent {
         if !self.current_field_is_select() && !self.composer.current_text_with_pending().is_empty()
         {
@@ -1772,45 +1726,13 @@ impl BottomPaneView for McpServerElicitationOverlay {
     }
 }
 
-fn wrap_footer_tips(width: u16, tips: Vec<FooterTip>) -> Vec<Vec<FooterTip>> {
-    let max_width = width.max(1) as usize;
-    let separator_width = UnicodeWidthStr::width(FOOTER_SEPARATOR);
-    if tips.is_empty() {
-        return vec![Vec::new()];
-    }
-
-    let mut lines = Vec::new();
-    let mut current = Vec::new();
-    let mut used = 0usize;
-
-    for tip in tips {
-        let tip_width = UnicodeWidthStr::width(tip.text.as_str()).min(max_width);
-        let extra = if current.is_empty() {
-            tip_width
-        } else {
-            separator_width.saturating_add(tip_width)
-        };
-        if !current.is_empty() && used.saturating_add(extra) > max_width {
-            lines.push(current);
-            current = Vec::new();
-            used = 0;
-        }
-        if current.is_empty() {
-            used = tip_width;
-        } else {
-            used = used
-                .saturating_add(separator_width)
-                .saturating_add(tip_width);
-        }
-        current.push(tip);
-    }
-
-    if current.is_empty() {
-        lines.push(Vec::new());
-    } else {
-        lines.push(current);
-    }
-    lines
+fn wrap_footer_tips(width: u16, tips: Vec<Line<'static>>) -> Vec<Vec<Line<'static>>> {
+    crate::footer_hint::wrap_hint_rows(
+        tips,
+        width,
+        UnicodeWidthStr::width(FOOTER_SEPARATOR),
+        Line::width,
+    )
 }
 
 #[cfg(test)]
@@ -1918,7 +1840,12 @@ mod tests {
         for y in 0..buf.area().height {
             let mut row = String::new();
             for x in 0..buf.area().width {
-                row.push(buf[(x, y)].symbol().chars().next().unwrap_or(' '));
+                row.push(
+                    crate::terminal_hyperlinks::strip_osc8(buf[(x, y)].symbol())
+                        .chars()
+                        .next()
+                        .unwrap_or(' '),
+                );
             }
             lines.push(row);
         }
@@ -1963,6 +1890,7 @@ mod tests {
                 message: "Allow this request?".to_string(),
                 approval_display_params: Vec::new(),
                 response_mode: McpServerElicitationResponseMode::FormContent,
+                is_tool_approval: false,
                 fields: vec![McpServerElicitationField {
                     id: "confirmed".to_string(),
                     label: "Confirm".to_string(),
@@ -2033,6 +1961,7 @@ mod tests {
                 message: "Allow this request?".to_string(),
                 approval_display_params: Vec::new(),
                 response_mode: McpServerElicitationResponseMode::ApprovalAction,
+                is_tool_approval: false,
                 fields: vec![McpServerElicitationField {
                     id: APPROVAL_FIELD_ID.to_string(),
                     label: String::new(),
@@ -2042,12 +1971,12 @@ mod tests {
                         options: vec![
                             McpServerElicitationOption {
                                 label: "Allow".to_string(),
-                                description: Some("Allow this request and continue.".to_string()),
+                                description: Some("Allow this request and continue".to_string()),
                                 value: Value::String(APPROVAL_ACCEPT_ONCE_VALUE.to_string()),
                             },
                             McpServerElicitationOption {
-                                label: tr(current(), "Deny").to_string(),
-                                description: Some("Decline this request and continue.".to_string()),
+                                label: "Deny".to_string(),
+                                description: Some("Decline this request and continue".to_string()),
                                 value: Value::String(APPROVAL_DECLINE_VALUE.to_string()),
                             },
                             McpServerElicitationOption {
@@ -2090,6 +2019,7 @@ mod tests {
                 message: "Allow this request?".to_string(),
                 approval_display_params: Vec::new(),
                 response_mode: McpServerElicitationResponseMode::ApprovalAction,
+                is_tool_approval: true,
                 fields: vec![McpServerElicitationField {
                     id: APPROVAL_FIELD_ID.to_string(),
                     label: String::new(),
@@ -2099,7 +2029,7 @@ mod tests {
                         options: vec![
                             McpServerElicitationOption {
                                 label: "Allow".to_string(),
-                                description: Some("Run the tool and continue.".to_string()),
+                                description: Some("Run the tool and continue".to_string()),
                                 value: Value::String(APPROVAL_ACCEPT_ONCE_VALUE.to_string()),
                             },
                             McpServerElicitationOption {
@@ -2322,7 +2252,7 @@ mod tests {
             overlay
                 .footer_tips()
                 .iter()
-                .all(|tip| !tip.text.contains("submit"))
+                .all(|tip| !tip.to_string().contains("submit"))
         );
     }
 
@@ -2410,7 +2340,7 @@ mod tests {
             overlay
                 .footer_tips()
                 .iter()
-                .all(|tip| !tip.text.contains("submit"))
+                .all(|tip| !tip.to_string().contains("submit"))
         );
     }
 
@@ -2714,6 +2644,43 @@ mod tests {
     }
 
     #[test]
+    fn form_prompt_preserves_the_complete_wrapped_url_destination() {
+        let url = "https://github.com/openai/codex/pull/12345?diff=split";
+        let (tx, _rx) = test_sender();
+        let request = from_form_request(
+            ThreadId::default(),
+            form_request(
+                &format!("Review {url} before choosing."),
+                serde_json::json!({
+                    "type": "object",
+                    "properties": {"confirmed": {"type": "boolean", "title": "Continue"}},
+                    "required": ["confirmed"]
+                }),
+                /*meta*/ None,
+            ),
+        )
+        .expect("supported form");
+        let overlay = McpServerElicitationOverlay::new(
+            request, tx, /*has_input_focus*/ true, /*enhanced_keys_supported*/ false,
+            /*disable_paste_burst*/ false,
+        );
+        let area = Rect::new(0, 0, 40, 20);
+        let mut buf = Buffer::empty(area);
+        overlay.render(area, &mut buf);
+        let linked = buf
+            .content
+            .iter()
+            .filter(|cell| cell.symbol().contains("\x1b]8;;"))
+            .map(|cell| {
+                assert!(cell.symbol().starts_with(&format!("\x1b]8;;{url}\x07")));
+                crate::terminal_hyperlinks::strip_osc8(cell.symbol())
+            })
+            .collect::<String>();
+        assert_eq!(linked, url);
+        insta::assert_snapshot!("mcp_form_wrapped_url", snapshot_buffer(&buf));
+    }
+
+    #[test]
     fn boolean_form_snapshot() {
         let (tx, _rx) = test_sender();
         let request = from_form_request(
@@ -2740,6 +2707,10 @@ mod tests {
             /*disable_paste_burst*/ false,
         );
 
+        assert_eq!(
+            overlay.program_status_blocked_kind(),
+            Some(ProgramStatusKind::Question)
+        );
         insta::assert_snapshot!(
             "mcp_server_elicitation_boolean_form",
             render_snapshot(&overlay, Rect::new(0, 0, 120, 16))
@@ -2767,6 +2738,10 @@ mod tests {
             /*disable_paste_burst*/ false,
         );
 
+        assert_eq!(
+            overlay.program_status_blocked_kind(),
+            Some(ProgramStatusKind::Permission)
+        );
         insta::assert_snapshot!(
             "mcp_server_elicitation_approval_form_without_schema",
             render_snapshot(&overlay, Rect::new(0, 0, 120, 16))

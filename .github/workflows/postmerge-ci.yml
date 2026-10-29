@@ -3,8 +3,8 @@ name: postmerge-ci
 # This is the single entrypoint for main-only CI that is intentionally outside
 # the merge-blocking suite. It keeps the broader postmerge signal in one run.
 on:
-  push:
-    branches: [main]
+  # Personal fork: postmerge checks need enterprise runners we do not have.
+  # workflow_dispatch: {}  # re-enable locally if ever needed
 
 jobs:
   # Keep reusable workflow calls alphabetized. Each child retains its own

@@ -97,6 +97,9 @@ impl RemotePluginMutationError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RemotePluginFetchError {
+    #[error("{}", tr_with(current(), "failed to authenticate remote featured plugin request: {0}", &[&_0.to_string()]))]
+    AuthToken(#[source] std::io::Error),
+
     #[error("{}", tr_with(current(), "invalid chatgpt base url for remote featured plugin request: {0}", &[&_0.to_string()]))]
     InvalidBaseUrl(#[source] url::ParseError),
 
@@ -140,8 +143,12 @@ pub async fn fetch_remote_featured_plugin_ids(
         .timeout(REMOTE_FEATURED_PLUGIN_FETCH_TIMEOUT);
 
     if let Some(auth) = auth.filter(|auth| auth.uses_codex_backend()) {
-        request =
-            request.headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers());
+        request = request.headers(
+            codex_model_provider::auth_provider_from_auth(auth)
+                .to_auth_headers()
+                .map_err(std::io::Error::other)
+                .map_err(RemotePluginFetchError::AuthToken)?,
+        );
     }
 
     let response = request
@@ -204,7 +211,12 @@ async fn post_remote_plugin_mutation(
     let request = config
         .http_request(Method::POST, &url)
         .timeout(REMOTE_PLUGIN_MUTATION_TIMEOUT)
-        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers());
+        .headers(
+            codex_model_provider::auth_provider_from_auth(auth)
+                .to_auth_headers()
+                .map_err(std::io::Error::other)
+                .map_err(RemotePluginMutationError::AuthToken)?,
+        );
 
     let response = request
         .send()

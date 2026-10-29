@@ -1,16 +1,13 @@
 use crate::app_server_session::AppServerSession;
 use crate::app_server_session::EXTERNAL_AGENT_CONFIG_IMPORT_IN_PROGRESS_MESSAGE;
-use crate::legacy_core::config::Config;
 use crate::tui;
 use codex_app_server_protocol::ExternalAgentConfigDetectParams;
 use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItemType;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use ratatui::prelude::Stylize as _;
 use ratatui::text::Line;
+use std::path::Path;
 
 use super::ExternalAgentConfigMigrationOutcome;
 use super::model::external_agent_config_migration_item_count;
@@ -19,21 +16,8 @@ use super::run_external_agent_config_migration_prompt;
 use super::source::ExternalAgentConfigMigrationSource;
 use super::source::run_external_agent_config_source_prompt;
 
-pub(crate) fn external_agent_config_migration_no_items_message() -> &'static str {
-    tr(current(), "No compatible setup was found to import.")
-}
-pub(crate) fn external_agent_config_migration_remote_unavailable_message() -> &'static str {
-    tr(
-        current(),
-        "Import from other apps is unavailable in remote sessions. Start Codex locally and run /import.",
-    )
-}
-pub(crate) fn external_agent_config_migration_daemon_unavailable_message() -> &'static str {
-    tr(
-        current(),
-        "Import from other apps is unavailable while Codex is connected to the local app-server daemon. Stop the daemon, restart Codex, and run /import.",
-    )
-}
+pub(crate) const EXTERNAL_AGENT_CONFIG_MIGRATION_NO_ITEMS_MESSAGE: &str =
+    "No compatible setup was found to import.";
 
 pub(crate) enum ExternalAgentConfigMigrationFlowOutcome {
     Started(Vec<Line<'static>>),
@@ -85,10 +69,9 @@ impl ExternalAgentConfigDetection {
         } else if self.errors.is_empty() {
             ExternalAgentConfigDetectionOutcome::NoItems
         } else {
-            ExternalAgentConfigDetectionOutcome::Failed(tr_with(
-                current(),
-                "Could not check for importable setup: {0}",
-                &[&self.errors.join("; ")],
+            ExternalAgentConfigDetectionOutcome::Failed(format!(
+                "Could not check for importable setup: {}",
+                self.errors.join("; ")
             ))
         }
     }
@@ -162,15 +145,11 @@ fn external_agent_config_migration_started_lines(
     let mut lines = vec![
         vec![
             "• ".dim(),
-            tr(current(), "Import started.").cyan(),
-            tr(current(), " You can keep working while it finishes.").into(),
+            "Import started.".cyan(),
+            " You can keep working while it finishes.".into(),
         ]
         .into(),
-        vec![
-            "  ".into(),
-            tr(current(), "Imported setup will apply to new chats.").dim(),
-        ]
-        .into(),
+        vec!["  ".into(), "Imported setup will apply to new chats.".dim()].into(),
         vec!["  ".into(), "Importing:".cyan().bold()].into(),
     ];
     lines.extend(
@@ -187,11 +166,8 @@ fn external_agent_config_migration_started_lines(
                     let shown_names = names.iter().take(3).copied().collect::<Vec<_>>();
                     let mut name_summary = shown_names.join(", ");
                     if names.len() > shown_names.len() {
-                        name_summary.push_str(&tr_with(
-                            current(),
-                            ", +{0} more",
-                            &[&(names.len() - shown_names.len()).to_string()],
-                        ));
+                        name_summary
+                            .push_str(&format!(", +{} more", names.len() - shown_names.len()));
                     }
                     line.extend([" — ".dim(), name_summary.into()]);
                 }
@@ -218,15 +194,15 @@ pub(crate) fn external_agent_config_migration_finished_lines(
         .map(|type_result| type_result.failures.len())
         .sum::<usize>();
     let failed_count = if failed_count == 0 {
-        tr_with(current(), "{0} failed", &[&failed_count.to_string()]).green()
+        format!("{failed_count} failed").green()
     } else {
-        tr_with(current(), "{0} failed", &[&failed_count.to_string()]).red()
+        format!("{failed_count} failed").red()
     };
     let mut lines = vec![
         vec![
             "• ".dim(),
-            tr(current(), "Import finished: ").into(),
-            tr_with(current(), "{0} imported", &[&imported_count.to_string()]).green(),
+            "Import finished: ".into(),
+            format!("{imported_count} imported").green(),
             ", ".into(),
             failed_count,
             ".".into(),
@@ -234,13 +210,9 @@ pub(crate) fn external_agent_config_migration_finished_lines(
         .into(),
     ];
     if !notification.item_type_results.is_empty() {
-        lines.push(vec!["  ".into(), tr(current(), "Results by type:").cyan().bold()].into());
+        lines.push(vec!["  ".into(), "Results by type:".cyan().bold()].into());
         lines.extend(notification.item_type_results.iter().map(|type_result| {
-            let failed_count = tr_with(
-                current(),
-                "{0} failed",
-                &[&type_result.failures.len().to_string()],
-            );
+            let failed_count = format!("{} failed", type_result.failures.len());
             let failed_count = if type_result.failures.is_empty() {
                 failed_count.green()
             } else {
@@ -250,12 +222,7 @@ pub(crate) fn external_agent_config_migration_finished_lines(
                 "    ".into(),
                 external_agent_config_migration_type_label(type_result.item_type).cyan(),
                 ": ".into(),
-                tr_with(
-                    current(),
-                    "{0} imported",
-                    &[&type_result.successes.len().to_string()],
-                )
-                .green(),
+                format!("{} imported", type_result.successes.len()).green(),
                 ", ".into(),
                 failed_count,
             ]
@@ -265,11 +232,7 @@ pub(crate) fn external_agent_config_migration_finished_lines(
     lines.push(
         vec![
             "  ".into(),
-            tr(
-                current(),
-                "Run /import again to check for additional items.",
-            )
-            .dim(),
+            "Run /import again to check for additional items.".dim(),
         ]
         .into(),
     );
@@ -280,16 +243,11 @@ fn remaining_items_handoff(remaining_item_count: usize) -> Option<String> {
     match remaining_item_count {
         0 => None,
         1 => Some(
-            tr(
-                current(),
-                "1 additional item remains. After it finishes, run /import again to review it.",
-            )
-            .to_string(),
+            "1 additional item remains. After it finishes, run /import again to review it."
+                .to_string(),
         ),
-        _ => Some(tr_with(
-            current(),
-            "{0} additional items remain. After it finishes, run /import again to review them.",
-            &[&remaining_item_count.to_string()],
+        _ => Some(format!(
+            "{remaining_item_count} additional items remain. After it finishes, run /import again to review them."
         )),
     }
 }
@@ -297,25 +255,18 @@ fn remaining_items_handoff(remaining_item_count: usize) -> Option<String> {
 pub(crate) async fn handle_external_agent_config_migration_prompt(
     tui: &mut tui::Tui,
     app_server: &mut AppServerSession,
-    config: &Config,
+    cwd: Option<&Path>,
 ) -> Result<ExternalAgentConfigMigrationFlowOutcome, String> {
-    if app_server.uses_remote_workspace() {
-        return Err(external_agent_config_migration_remote_unavailable_message().to_string());
-    }
-    if !app_server.uses_embedded_app_server() {
-        return Err(external_agent_config_migration_daemon_unavailable_message().to_string());
-    }
     if app_server.external_agent_config_import_in_progress() {
         return Err(EXTERNAL_AGENT_CONFIG_IMPORT_IN_PROGRESS_MESSAGE.to_string());
     }
 
-    let cwd = config.cwd.to_path_buf();
     let mut detection = ExternalAgentConfigDetection::default();
     for source in ExternalAgentConfigMigrationSource::ALL {
         let response = match app_server
             .external_agent_config_detect(ExternalAgentConfigDetectParams {
                 include_home: true,
-                cwds: Some(vec![cwd.clone()]),
+                cwds: cwd.map(|cwd| vec![cwd.to_path_buf()]),
                 max_session_age_days: None,
                 max_sessions: None,
                 source: None,
@@ -327,7 +278,7 @@ pub(crate) async fn handle_external_agent_config_migration_prompt(
             Err(err) => {
                 tracing::warn!(
                     error = %err,
-                    cwd = %cwd.display(),
+                    cwd = ?cwd,
                     source = source.label(),
                     "failed to detect external agent config migrations"
                 );
@@ -363,7 +314,7 @@ pub(crate) async fn handle_external_agent_config_migration_prompt(
         .into_iter()
         .find(|detected| detected.source == selected_source)
     else {
-        return Err(tr(current(), "Selected import source is no longer available.").to_string());
+        return Err("Selected import source is no longer available.".to_string());
     };
     let detected_items = detected_source.items;
 
@@ -402,14 +353,10 @@ pub(crate) async fn handle_external_agent_config_migration_prompt(
                     Err(err) => {
                         tracing::warn!(
                             error = %err,
-                            cwd = %cwd.display(),
+                            cwd = ?cwd,
                             "failed to import external agent config migration items"
                         );
-                        error = Some(tr_with(
-                            current(),
-                            "Import failed: {0}",
-                            &[&err.to_string()],
-                        ));
+                        error = Some(format!("Import failed: {err}"));
                     }
                 }
             }

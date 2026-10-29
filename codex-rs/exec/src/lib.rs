@@ -6,6 +6,7 @@
 #![deny(clippy::print_stdout)]
 
 mod cli;
+mod daybreak;
 mod event_processor;
 mod event_processor_with_human_output;
 pub(crate) mod event_processor_with_jsonl_output;
@@ -17,7 +18,7 @@ pub use cli::Command;
 pub use cli::ReviewArgs;
 use codex_app_server_client::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
 use codex_app_server_client::EnvironmentManager;
-use codex_app_server_client::ExecServerRuntimePaths;
+use codex_app_server_client::ExecServerRuntimeOptions;
 use codex_app_server_client::InProcessAppServerClient;
 use codex_app_server_client::InProcessClientStartArgs;
 use codex_app_server_client::InProcessServerEvent;
@@ -26,6 +27,7 @@ use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::ConfigWarningNotification;
 use codex_app_server_protocol::JSONRPCErrorError;
 use codex_app_server_protocol::McpServerElicitationAction;
+use codex_app_server_protocol::McpServerElicitationRequest;
 use codex_app_server_protocol::McpServerElicitationRequestResponse;
 use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::ReviewStartParams;
@@ -83,9 +85,6 @@ use codex_feedback::CodexFeedback;
 use codex_git_utils::get_git_repo_root;
 use codex_history::RolloutItem;
 use codex_history::RolloutLine;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use codex_login::default_client::set_default_client_residency_requirement;
 use codex_login::default_client::set_default_originator;
 use codex_login::enforce_login_restrictions;
@@ -98,6 +97,10 @@ use codex_protocol::SessionId;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::config_types::SandboxMode;
+use codex_protocol::mcp_approval_meta::APPROVAL_KIND_KEY;
+use codex_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL;
+use codex_protocol::mcp_approval_meta::CANCELLATION_REASON_KEY;
+use codex_protocol::mcp_approval_meta::McpApprovalCancellationReason;
 use codex_protocol::models::ActivePermissionProfile;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::protocol::AskForApproval;
@@ -221,6 +224,7 @@ struct ExecRunArgs {
     command: Option<ExecCommand>,
     config: Config,
     resume_approvals_reviewer_override: Option<codex_app_server_protocol::ApprovalsReviewer>,
+    daybreak_override: Option<bool>,
     dangerously_bypass_approvals_and_sandbox: bool,
     exec_span: tracing::Span,
     images: Vec<PathBuf>,
@@ -234,6 +238,7 @@ struct ExecRunArgs {
     skip_git_repo_check: bool,
     stderr_with_ansi: bool,
     thread_source: ThreadSource,
+    cyber_access_program: Option<codex_app_server_protocol::CyberAccessProgram>,
 }
 
 struct ManagedExecWorktree {
@@ -276,6 +281,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         strict_config,
         shared,
         thread_source,
+        cyber_access_program,
         skip_git_repo_check,
         ephemeral,
         ignore_user_config,
@@ -287,9 +293,21 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         output_schema: output_schema_path,
         mut config_overrides,
     } = cli;
+    if cyber_access_program.is_some() {
+        match command.as_ref() {
+            Some(ExecCommand::Review(_)) => {
+                anyhow::bail!("--cyber-access-program is not supported with `codex exec review`");
+            }
+            Some(ExecCommand::Fork(args)) if args.prompt.is_none() && prompt.is_none() => {
+                anyhow::bail!("Forking with --cyber-access-program requires a prompt");
+            }
+            Some(ExecCommand::Resume(_) | ExecCommand::Fork(_)) | None => {}
+        }
+    }
     let mut shared = shared.into_inner();
     shared.take_auto_review_config_overrides(&mut config_overrides);
     let SharedCliOptions {
+        lang,
         images,
         model: model_cli_arg,
         oss,
@@ -302,34 +320,21 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         cwd,
         mut add_dir,
         worktree,
-        lang,
     } = shared;
 
     if worktree {
         if ignore_user_config {
-            anyhow::bail!(tr(
-                current(),
-                "--worktree cannot be combined with --ignore-user-config"
-            ));
+            anyhow::bail!("--worktree cannot be combined with --ignore-user-config");
         }
         if ephemeral {
-            anyhow::bail!(tr(
-                current(),
-                "--worktree cannot be combined with --ephemeral"
-            ));
+            anyhow::bail!("--worktree cannot be combined with --ephemeral");
         }
         match command.as_ref() {
             Some(ExecCommand::Resume(_)) => {
-                anyhow::bail!(tr(
-                    current(),
-                    "--worktree is not supported with `codex exec resume`"
-                ));
+                anyhow::bail!("--worktree is not supported with `codex exec resume`");
             }
             Some(ExecCommand::Review(_)) => {
-                anyhow::bail!(tr(
-                    current(),
-                    "--worktree is not supported with `codex exec review`"
-                ));
+                anyhow::bail!("--worktree is not supported with `codex exec review`");
             }
             Some(ExecCommand::Fork(_)) | None => {}
         }
@@ -359,10 +364,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         Ok(v) => v,
         #[allow(clippy::print_stderr)]
         Err(e) => {
-            eprintln!(
-                "{}",
-                tr_with(current(), "Error parsing -c overrides: {0}", &[&e])
-            );
+            eprintln!("Error parsing -c overrides: {e}");
             std::process::exit(1);
         }
     };
@@ -380,14 +382,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     let codex_home = match find_codex_home() {
         Ok(codex_home) => codex_home,
         Err(err) => {
-            eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Error finding codex home: {0}",
-                    &[&err.to_string()]
-                )
-            );
+            eprintln!("Error finding codex home: {err}");
             std::process::exit(1);
         }
     };
@@ -401,16 +396,17 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         ignore_user_and_project_exec_policy_rules: ignore_rules,
         ..Default::default()
     };
-
     if worktree
         && EnvironmentManager::prepare_from_codex_home(&codex_home)
             .await?
             .default_environment_is_remote()
     {
-        anyhow::bail!(tr(current(), "--worktree requires local execution"));
+        anyhow::bail!("--worktree requires local execution");
     }
 
     let managed_worktree = if worktree {
+        let embedded_network_policy =
+            codex_app_server_client::EmbeddedNetworkPolicy::load(&loader_overrides).await;
         let gate_bootstrap = load_bootstrap_config_or_exit(
             &codex_home,
             /*cwd*/ None,
@@ -421,7 +417,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         )
         .await;
         let gate_cloud_config = cloud_config_bundle_loader_for_storage(
-            bootstrap_auth_config(&codex_home, &gate_bootstrap)?,
+            embedded_network_policy
+                .bind_bootstrap_auth(bootstrap_auth_config(&codex_home, &gate_bootstrap)?),
             /*enable_codex_api_key_env*/ false,
         )
         .await?;
@@ -437,12 +434,6 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .cloud_config_bundle(gate_cloud_config.clone())
             .build()
             .await?;
-        if !gate_config.features.enabled(Feature::Worktrees) {
-            anyhow::bail!(tr(
-                current(),
-                "--worktree requires the worktrees feature; enable it with --enable worktrees"
-            ));
-        }
         if let Some(ExecCommand::Fork(args)) = command.as_mut() {
             let saved_cwd = worktree::fork_source(
                 args,
@@ -450,7 +441,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
                 &arg0_paths,
                 &cli_kv_overrides,
                 &loader_overrides,
-                gate_cloud_config.clone(),
+                worktree::ForkNetwork {
+                    cloud_config_bundle: gate_cloud_config.clone(),
+                    policy: embedded_network_policy.clone(),
+                },
                 strict_config,
             )
             .await?;
@@ -471,10 +465,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .build()
             .await?;
         if source_config.active_project.is_untrusted() {
-            anyhow::bail!(tr(
-                current(),
-                "--worktree requires a source that is not explicitly untrusted"
-            ));
+            anyhow::bail!("--worktree requires a source that is not explicitly untrusted");
         }
         for path in &mut add_dir {
             if path.is_relative() {
@@ -508,6 +499,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     } else {
         None
     };
+    let embedded_network_policy =
+        codex_app_server_client::EmbeddedNetworkPolicy::load(&loader_overrides).await;
     let bootstrap_config = load_bootstrap_config_or_exit(
         &codex_home,
         Some(&config_cwd),
@@ -518,7 +511,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     )
     .await;
     let bootstrap_config_toml = &bootstrap_config.config_toml;
-    let bootstrap_auth_config = bootstrap_auth_config(&codex_home, &bootstrap_config)?;
+    let bootstrap_auth_config = embedded_network_policy
+        .bind_bootstrap_auth(bootstrap_auth_config(&codex_home, &bootstrap_config)?);
     // API keys cannot fetch workspace-managed configuration. Preserve the
     // existing ChatGPT bootstrap identity even when model requests allow
     // CODEX_API_KEY.
@@ -542,11 +536,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .build()
             .await?;
         if source_config.active_project.is_untrusted() {
-            anyhow::bail!(tr_with(
-                current(),
-                "--worktree requires a source that is not explicitly untrusted; unused checkout at {0} remains. Remove it manually with `git worktree remove` when safe",
-                &[&worktree.checkout.display().to_string()],
-            ));
+            anyhow::bail!(
+                "--worktree requires a source that is not explicitly untrusted; unused checkout at {} remains. Remove it manually with `git worktree remove` when safe",
+                worktree.checkout.display()
+            );
         }
     }
     let run_cli_overrides = cli_kv_overrides.clone();
@@ -578,11 +571,9 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         if let Some(provider) = resolved {
             Some(provider)
         } else {
-            return Err(anyhow::anyhow!(tr_with(
-                current(),
-                "No default OSS provider configured. Use --local-provider=provider or set oss_provider to one of: {0}, {1} in config.toml",
-                &[LMSTUDIO_OSS_PROVIDER_ID, OLLAMA_OSS_PROVIDER_ID],
-            )));
+            return Err(anyhow::anyhow!(
+                "No default OSS provider configured. Use --local-provider=provider or set oss_provider to one of: {LMSTUDIO_OSS_PROVIDER_ID}, {OLLAMA_OSS_PROVIDER_ID} in config.toml"
+            ));
         }
     } else {
         None // No OSS mode enabled
@@ -611,14 +602,14 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         permission_profile: None,
         default_permissions: None,
         persisted_permission_profile_id: None,
+        persisted_permission_profile: None,
         cwd: resolved_cwd,
         workspace_roots: None,
         model_provider: model_provider.clone(),
         service_tier: None,
         codex_self_exe: arg0_paths.codex_self_exe.clone(),
         codex_linux_sandbox_exe: arg0_paths.codex_linux_sandbox_exe.clone(),
-        main_execve_wrapper_exe: arg0_paths.main_execve_wrapper_exe.clone(),
-        default_zsh_path: None,
+        main_execve_wrapper_exe: None,
         base_instructions: None,
         developer_instructions: None,
         personality: None,
@@ -640,13 +631,17 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .cloud_config_bundle(cloud_config_bundle.clone())
             .build()
     };
-    let config = build_exec_config(
+    let mut config = build_exec_config(
         overrides,
         dangerously_bypass_approvals_and_sandbox,
         build_config,
     )
     .await?;
-
+    embedded_network_policy.activate(&mut config);
+    let daybreak_override = cli_kv_overrides
+        .iter()
+        .any(|(key, _)| key == "daybreak")
+        .then_some(config.daybreak_enabled);
     // `config.toml` is available now, so apply the middle link of the locale
     // chain: `--lang` > `config.locale` > environment > system.
     codex_i18n::set_current(codex_i18n::resolve_from_process(
@@ -663,12 +658,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         Ok(None) => {}
         Ok(Some(err)) | Err(err) => {
             eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Error loading rules:\n{0}",
-                    &[&format_exec_policy_error_with_source(&err)],
-                )
+                "Error loading rules:\n{}",
+                format_exec_policy_error_with_source(&err)
             );
             std::process::exit(1);
         }
@@ -693,24 +684,11 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     })) {
         Ok(Ok(otel)) => otel,
         Ok(Err(e)) => {
-            eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Could not create otel exporter: {0}",
-                    &[&e.to_string()]
-                )
-            );
+            eprintln!("Could not create otel exporter: {e}");
             None
         }
         Err(_) => {
-            eprintln!(
-                "{}",
-                tr(
-                    current(),
-                    "Could not create otel exporter: panicked during initialization"
-                )
-            );
+            eprintln!("Could not create otel exporter: panicked during initialization");
             None
         }
     };
@@ -741,7 +719,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             range: None,
         })
         .collect();
-    let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
+    let local_runtime_paths = ExecServerRuntimeOptions::from_optional_paths(
         arg0_paths.codex_self_exe.clone(),
         arg0_paths.codex_linux_sandbox_exe.clone(),
     )?;
@@ -751,13 +729,16 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     );
     let state_db = codex_core::init_state_db(&config).await;
     let environment_manager = if run_loader_overrides.ignore_user_config {
-        EnvironmentManager::from_env(Some(local_runtime_paths), config.http_client_factory())
-            .await?
+        EnvironmentManager::from_env(
+            Some(local_runtime_paths),
+            embedded_network_policy.bind(config.http_client_factory()),
+        )
+        .await?
     } else {
         EnvironmentManager::from_codex_home(
             config.codex_home.clone(),
             Some(local_runtime_paths),
-            config.http_client_factory(),
+            embedded_network_policy.bind(config.http_client_factory()),
         )
         .await?
     };
@@ -768,6 +749,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         loader_overrides: run_loader_overrides,
         strict_config,
         cloud_config_bundle: run_cloud_config_bundle,
+        embedded_network_policy,
         feedback: CodexFeedback::new(),
         log_db: None,
         state_db: state_db.clone(),
@@ -788,6 +770,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         command,
         config,
         resume_approvals_reviewer_override,
+        daybreak_override,
         dangerously_bypass_approvals_and_sandbox,
         exec_span: exec_span.clone(),
         images,
@@ -801,6 +784,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         skip_git_repo_check,
         stderr_with_ansi,
         thread_source: thread_source.map(Into::into).unwrap_or(ThreadSource::User),
+        cyber_access_program: cyber_access_program.map(Into::into),
     })
     .instrument(exec_span)
     .await
@@ -870,22 +854,11 @@ async fn load_bootstrap_config_or_exit(
                 .map(ConfigLoadError::config_error);
             if let Some(config_error) = config_error {
                 eprintln!(
-                    "{}",
-                    tr_with(
-                        current(),
-                        "Error loading config.toml:\n{0}",
-                        &[&format_config_error_with_source(config_error)],
-                    )
+                    "Error loading config.toml:\n{}",
+                    format_config_error_with_source(config_error)
                 );
             } else {
-                eprintln!(
-                    "{}",
-                    tr_with(
-                        current(),
-                        "Error loading config.toml: {0}",
-                        &[&err.to_string()]
-                    )
-                );
+                eprintln!("Error loading config.toml: {err}");
             }
             std::process::exit(1);
         }
@@ -899,6 +872,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         command,
         config,
         resume_approvals_reviewer_override,
+        daybreak_override,
         dangerously_bypass_approvals_and_sandbox,
         exec_span,
         images,
@@ -912,7 +886,21 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         skip_git_repo_check,
         stderr_with_ansi,
         thread_source,
+        cyber_access_program,
     } = args;
+
+    if config.features.enabled(Feature::CliDaybreak)
+        && config.daybreak_enabled
+        && !matches!(&command, Some(ExecCommand::Review(_)))
+    {
+        anyhow::ensure!(
+            !oss || matches!(
+                &command,
+                Some(ExecCommand::Resume(_) | ExecCommand::Fork(_))
+            ),
+            "Daybreak requires the OpenAI model provider"
+        );
+    }
 
     let mut event_processor: Box<dyn EventProcessor> = match json_mode {
         true => Box::new(EventProcessorWithJsonOutput::new(last_message_file.clone())),
@@ -936,13 +924,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         };
         ensure_oss_provider_ready(provider_id, &config)
             .await
-            .map_err(|e| {
-                anyhow::anyhow!(tr_with(
-                    current(),
-                    "OSS setup failed: {0}",
-                    &[&e.to_string()]
-                ))
-            })?;
+            .map_err(|e| anyhow::anyhow!("OSS setup failed: {e}"))?;
     }
 
     let default_cwd = config.cwd.to_path_buf();
@@ -1009,14 +991,11 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                     prompt_text,
                 )
             } else if !imgs.is_empty() || !args.images.is_empty() {
-                anyhow::bail!(tr(current(), "Forking with images requires a prompt"));
+                anyhow::bail!("Forking with images requires a prompt");
             } else if output_schema_path.is_some() || last_message_file.is_some() {
-                anyhow::bail!(tr(
-                    current(),
-                    "Forking with output options requires a prompt"
-                ));
+                anyhow::bail!("Forking with output options requires a prompt");
             } else if config.ephemeral {
-                anyhow::bail!(tr(current(), "Ephemeral forks require a prompt"));
+                anyhow::bail!("Ephemeral forks require a prompt");
             } else {
                 (InitialOperation::ForkOnly, String::new())
             }
@@ -1049,13 +1028,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         && !dangerously_bypass_approvals_and_sandbox
         && get_git_repo_root(&default_cwd).is_none()
     {
-        eprintln!(
-            "{}",
-            tr(
-                current(),
-                "Not inside a trusted directory and --skip-git-repo-check was not specified."
-            )
-        );
+        eprintln!("Not inside a trusted directory and --skip-git-repo-check was not specified.");
         std::process::exit(1);
     }
 
@@ -1063,13 +1036,10 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
     let mut client = InProcessAppServerClient::start(in_process_start_args)
         .await
         .map_err(|err| {
-            anyhow::anyhow!(tr_with(
-                current(),
-                "failed to initialize in-process app-server client: {0}",
-                &[&err.to_string()],
-            ))
+            anyhow::anyhow!("failed to initialize in-process app-server client: {err}")
         })?;
 
+    let mut daybreak_enabled = config.daybreak_enabled;
     // Resolve resume and fork through existing app-server thread lifecycle APIs.
     let (primary_thread_id, fallback_session_configured) = if let Some(ExecCommand::Resume(args)) =
         command.as_ref()
@@ -1094,6 +1064,9 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
             let session_configured =
                 session_configured_from_thread_resume_response(&response, &config)
                     .map_err(anyhow::Error::msg)?;
+            daybreak_enabled = daybreak_override
+                .or(response.thread.daybreak_enabled)
+                .unwrap_or(false);
             (session_configured.thread_id, session_configured)
         } else {
             let response = start_thread(&client, &mut request_ids, &config, &thread_source)
@@ -1115,13 +1088,25 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         let source_thread_id =
             resolve_resume_thread_id(&client, &config, state_db.as_ref(), &source_args)
                 .await?
-                .ok_or_else(|| {
-                    anyhow::anyhow!(tr_with(
-                        current(),
-                        "Session not found: {0}",
-                        &[&args.session_id],
-                    ))
-                })?;
+                .ok_or_else(|| anyhow::anyhow!("Session not found: {}", args.session_id))?;
+        let source_daybreak = if config.ephemeral && daybreak_override.is_none() {
+            let response: ThreadReadResponse = send_request_with_response(
+                &client,
+                ClientRequest::ThreadRead {
+                    request_id: request_ids.next(),
+                    params: ThreadReadParams {
+                        thread_id: source_thread_id.clone(),
+                        include_turns: false,
+                    },
+                },
+                "thread/read",
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            response.thread.daybreak_enabled
+        } else {
+            None
+        };
         let permissions = permissions_selection_from_config(&config);
         let sandbox = permissions.is_none().then(|| {
             sandbox_mode_from_permission_profile(
@@ -1174,6 +1159,10 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
             response.reasoning_effort,
         )
         .map_err(anyhow::Error::msg)?;
+        daybreak_enabled = daybreak_override
+            .or(response.thread.daybreak_enabled)
+            .or(source_daybreak)
+            .unwrap_or(false);
         (session_configured.thread_id, session_configured)
     } else {
         let response = start_thread(&client, &mut request_ids, &config, &thread_source)
@@ -1202,8 +1191,10 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
     // is using.
     event_processor.print_config_summary(&config, &prompt_summary, &session_configured);
     if !json_mode
-        && let Some(message) =
-            codex_core::config::system_bwrap_warning(config.permissions.permission_profile())
+        && let Some(message) = codex_core::config::system_bwrap_warning(
+            &config.permissions.effective_permission_profile(),
+            &config.cwd,
+        )
     {
         event_processor.process_warning(message);
     }
@@ -1223,13 +1214,10 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
             request_shutdown(&client, &mut request_ids, &primary_thread_id_for_span)
                 .await
                 .map_err(anyhow::Error::msg)?;
-            client.shutdown().await.map_err(|err| {
-                anyhow::anyhow!(tr_with(
-                    current(),
-                    "in-process app-server shutdown failed: {0}",
-                    &[&err.to_string()],
-                ))
-            })?;
+            client
+                .shutdown()
+                .await
+                .map_err(|err| anyhow::anyhow!("in-process app-server shutdown failed: {err}"))?;
             event_processor.print_final_output();
             return Ok(());
         }
@@ -1237,17 +1225,36 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
             items,
             output_schema,
         } => {
+            let cyber_access_program = match cyber_access_program {
+                Some(program) => Some(program),
+                None if config.features.enabled(Feature::CliDaybreak) => {
+                    daybreak::program_for_turn(
+                        &config.features,
+                        &client,
+                        &mut request_ids,
+                        &session_configured.model,
+                        &session_configured.model_provider_id,
+                        daybreak_enabled,
+                    )
+                    .await?
+                }
+                None => None,
+            };
             let response: TurnStartResponse = send_request_with_response(
                 &client,
                 ClientRequest::TurnStart {
                     request_id: request_ids.next(),
                     params: TurnStartParams {
+                        disabled_plugin_ids: None,
                         thread_id: primary_thread_id_for_span.clone(),
-                        turn_trigger: None,
+                        turn_trigger: Some("exec".to_string()),
+                        parent_turn_id: None,
+                        root_turn_id: None,
                         client_user_message_id: None,
                         input: items.into_iter().map(Into::into).collect(),
                         tool_output: None,
                         responsesapi_client_metadata: None,
+                        responsesapi_client_metadata_patch: None,
                         additional_context: None,
                         environments: None,
                         cwd: Some(default_cwd),
@@ -1265,7 +1272,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                         output_schema,
                         collaboration_mode: None,
                         multi_agent_mode: None,
-                        cyber_access_program: None,
+                        cyber_access_program,
                     },
                 },
                 "turn/start",
@@ -1466,6 +1473,7 @@ fn thread_start_params_from_config(
         permissions,
         config: thread_config_overrides_from_config(config),
         ephemeral: Some(config.ephemeral),
+        daybreak_enabled: (config.daybreak_enabled && !config.ephemeral).then_some(true),
         history_mode: (!config.ephemeral).then_some(ThreadHistoryMode::Paginated),
         thread_source: Some(thread_source.clone()),
         ..ThreadStartParams::default()
@@ -1638,40 +1646,18 @@ fn session_configured_from_thread_response(
     cwd: AbsolutePathBuf,
     reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
 ) -> Result<SessionConfiguredEvent, String> {
-    let session_id = SessionId::from_string(session_id).map_err(|err| {
-        tr_with(
-            current(),
-            "session id `{0}` is invalid: {1}",
-            &[session_id, &err.to_string()],
-        )
-    })?;
-    let thread_id = ThreadId::from_string(thread_id).map_err(|err| {
-        tr_with(
-            current(),
-            "thread id `{0}` is invalid: {1}",
-            &[thread_id, &err.to_string()],
-        )
-    })?;
+    let session_id = SessionId::from_string(session_id)
+        .map_err(|err| format!("session id `{session_id}` is invalid: {err}"))?;
+    let thread_id = ThreadId::from_string(thread_id)
+        .map_err(|err| format!("thread id `{thread_id}` is invalid: {err}"))?;
     let forked_from_id = forked_from_id
         .map(ThreadId::from_string)
         .transpose()
-        .map_err(|err| {
-            tr_with(
-                current(),
-                "forked-from thread id is invalid: {0}",
-                &[&err.to_string()],
-            )
-        })?;
+        .map_err(|err| format!("forked-from thread id is invalid: {err}"))?;
     let parent_thread_id = parent_thread_id
         .map(ThreadId::from_string)
         .transpose()
-        .map_err(|err| {
-            tr_with(
-                current(),
-                "parent thread id is invalid: {0}",
-                &[&err.to_string()],
-            )
-        })?;
+        .map_err(|err| format!("parent thread id is invalid: {err}"))?;
 
     Ok(SessionConfiguredEvent {
         session_id,
@@ -1689,18 +1675,13 @@ fn session_configured_from_thread_response(
         active_permission_profile,
         cwd,
         reasoning_effort,
-        initial_messages: None,
         network_proxy: None,
         rollout_path,
     })
 }
 
 fn lagged_event_warning_message(skipped: usize) -> String {
-    tr_with(
-        current(),
-        "in-process app-server event stream lagged; dropped {0} events",
-        &[&skipped.to_string()],
-    )
+    format!("in-process app-server event stream lagged; dropped {skipped} events")
 }
 
 fn should_process_notification(
@@ -1860,8 +1841,10 @@ async fn latest_thread_cwd(thread: &AppServerThread) -> PathBuf {
 
 async fn parse_latest_turn_context_cwd(path: &Path) -> Option<PathBuf> {
     let path = path.to_path_buf();
-    tokio::task::spawn_blocking(move || {
-        let reader = codex_rollout::open_rollout_seekable_reader(&path).ok()?;
+    let (stop, keep_running) = tokio::sync::oneshot::channel::<()>();
+    let result = tokio::task::spawn_blocking(move || {
+        let reader =
+            codex_rollout::open_rollout_seekable_reader(&path, || stop.is_closed()).ok()?;
         let mut scanner = codex_rollout::ReverseJsonlScanner::new(reader).ok()?;
         while let Some(outcome) = scanner.scan_next_rollout_line().ok()? {
             if let codex_rollout::ScanOutcome::Parsed(RolloutLine {
@@ -1876,7 +1859,9 @@ async fn parse_latest_turn_context_cwd(path: &Path) -> Option<PathBuf> {
     })
     .await
     .ok()
-    .flatten()
+    .flatten();
+    drop(keep_running);
+    result
 }
 
 fn cwds_match(current_cwd: &Path, session_cwd: &Path) -> bool {
@@ -1900,6 +1885,8 @@ async fn resolve_resume_thread_id(
                 ClientRequest::ThreadList {
                     request_id: RequestId::Integer(0),
                     params: ThreadListParams {
+                        excluded_thread_ids: None,
+                        attached_to_thread_id: None,
                         originators: None,
                         cursor,
                         limit: Some(100),
@@ -1986,6 +1973,8 @@ async fn resolve_resume_thread_id(
             ClientRequest::ThreadList {
                 request_id: RequestId::Integer(0),
                 params: ThreadListParams {
+                    excluded_thread_ids: None,
+                    attached_to_thread_id: None,
                     originators: None,
                     cursor,
                     limit: Some(100),
@@ -2034,19 +2023,21 @@ fn resume_lookup_model_providers(
     }
 }
 
-fn canceled_mcp_server_elicitation_response() -> Result<Value, String> {
+fn canceled_mcp_server_elicitation_response(
+    request: &McpServerElicitationRequest,
+) -> Result<Value, String> {
+    let tool_approval = matches!(request, McpServerElicitationRequest::Form { meta: Some(meta), .. }
+        if meta.get(APPROVAL_KIND_KEY).and_then(Value::as_str) == Some(APPROVAL_KIND_MCP_TOOL_CALL));
     serde_json::to_value(McpServerElicitationRequestResponse {
         action: McpServerElicitationAction::Cancel,
         content: None,
-        meta: None,
+        meta: tool_approval.then(|| {
+            serde_json::json!({
+                CANCELLATION_REASON_KEY: McpApprovalCancellationReason::NonInteractive,
+            })
+        }),
     })
-    .map_err(|err| {
-        tr_with(
-            current(),
-            "failed to encode mcp elicitation response: {0}",
-            &[&err.to_string()],
-        )
-    })
+    .map_err(|err| format!("failed to encode mcp elicitation response: {err}"))
 }
 
 async fn request_shutdown(
@@ -2074,13 +2065,7 @@ async fn resolve_server_request(
     client
         .resolve_server_request(request_id, value)
         .await
-        .map_err(|err| {
-            tr_with(
-                current(),
-                "failed to resolve `{0}` server request: {1}",
-                &[method, &err.to_string()],
-            )
-        })
+        .map_err(|err| format!("failed to resolve `{method}` server request: {err}"))
 }
 
 async fn reject_server_request(
@@ -2099,13 +2084,7 @@ async fn reject_server_request(
             },
         )
         .await
-        .map_err(|err| {
-            tr_with(
-                current(),
-                "failed to reject `{0}` server request: {1}",
-                &[method, &err.to_string()],
-            )
-        })
+        .map_err(|err| format!("failed to reject `{method}` server request: {err}"))
 }
 
 fn server_request_method_name(request: &ServerRequest) -> String {
@@ -2127,11 +2106,11 @@ async fn handle_server_request(
 ) {
     let method = server_request_method_name(&request);
     let handle_result = match request {
-        ServerRequest::McpServerElicitationRequest { request_id, .. } => {
+        ServerRequest::McpServerElicitationRequest { request_id, params } => {
             // Exec auto-cancels elicitation instead of surfacing it
             // interactively. Preserve that behavior for attached subagent
             // threads too so we do not turn a cancel into a decline/error.
-            match canceled_mcp_server_elicitation_response() {
+            match canceled_mcp_server_elicitation_response(&params.request) {
                 Ok(value) => {
                     resolve_server_request(
                         client,
@@ -2149,10 +2128,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "command execution approval is not supported in exec mode for thread `{0}`",
-                    &[&params.thread_id.to_string()],
+                format!(
+                    "command execution approval is not supported in exec mode for thread `{}`",
+                    params.thread_id
                 ),
             )
             .await
@@ -2162,10 +2140,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "file change approval is not supported in exec mode for thread `{0}`",
-                    &[&params.thread_id.to_string()],
+                format!(
+                    "file change approval is not supported in exec mode for thread `{}`",
+                    params.thread_id
                 ),
             )
             .await
@@ -2175,10 +2152,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "request_user_input is not supported in exec mode for thread `{0}`",
-                    &[&params.thread_id.to_string()],
+                format!(
+                    "request_user_input is not supported in exec mode for thread `{}`",
+                    params.thread_id
                 ),
             )
             .await
@@ -2188,10 +2164,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "dynamic tool calls are not supported in exec mode for thread `{0}`",
-                    &[&params.thread_id.to_string()],
+                format!(
+                    "dynamic tool calls are not supported in exec mode for thread `{}`",
+                    params.thread_id
                 ),
             )
             .await
@@ -2201,11 +2176,7 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr(
-                    current(),
-                    "chatgpt auth token refresh is not supported in exec mode",
-                )
-                .to_string(),
+                "chatgpt auth token refresh is not supported in exec mode".to_string(),
             )
             .await
         }
@@ -2214,11 +2185,7 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr(
-                    current(),
-                    "attestation generation is not supported in exec mode",
-                )
-                .to_string(),
+                "attestation generation is not supported in exec mode".to_string(),
             )
             .await
         }
@@ -2227,11 +2194,7 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr(
-                    current(),
-                    "external current time is not supported in exec mode",
-                )
-                .to_string(),
+                "external current time is not supported in exec mode".to_string(),
             )
             .await
         }
@@ -2240,10 +2203,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "apply_patch approval is not supported in exec mode for thread `{0}`",
-                    &[&params.conversation_id.to_string()],
+                format!(
+                    "apply_patch approval is not supported in exec mode for thread `{}`",
+                    params.conversation_id
                 ),
             )
             .await
@@ -2253,10 +2215,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "exec command approval is not supported in exec mode for thread `{0}`",
-                    &[&params.conversation_id.to_string()],
+                format!(
+                    "exec command approval is not supported in exec mode for thread `{}`",
+                    params.conversation_id
                 ),
             )
             .await
@@ -2266,10 +2227,9 @@ async fn handle_server_request(
                 client,
                 request_id,
                 &method,
-                tr_with(
-                    current(),
-                    "permissions approval is not supported in exec mode for thread `{0}`",
-                    &[&params.thread_id.to_string()],
+                format!(
+                    "permissions approval is not supported in exec mode for thread `{}`",
+                    params.thread_id
                 ),
             )
             .await
@@ -2289,12 +2249,8 @@ fn load_output_schema(path: Option<PathBuf>) -> Option<Value> {
         Ok(contents) => contents,
         Err(err) => {
             eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Failed to read output schema file {0}: {1}",
-                    &[&path.display().to_string(), &err.to_string()],
-                )
+                "Failed to read output schema file {}: {err}",
+                path.display()
             );
             std::process::exit(1);
         }
@@ -2304,12 +2260,8 @@ fn load_output_schema(path: Option<PathBuf>) -> Option<Value> {
         Ok(value) => Some(value),
         Err(err) => {
             eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Output schema file {0} is not valid JSON: {1}",
-                    &[&path.display().to_string(), &err.to_string()],
-                )
+                "Output schema file {} is not valid JSON: {err}",
+                path.display()
             );
             std::process::exit(1);
         }
@@ -2328,30 +2280,15 @@ impl std::fmt::Display for PromptDecodeError {
         match self {
             PromptDecodeError::InvalidUtf8 { valid_up_to } => write!(
                 f,
-                "{}",
-                tr_with(
-                    current(),
-                    "input is not valid UTF-8 (invalid byte at offset {0}). Convert it to UTF-8 and retry (e.g., `iconv -f <ENC> -t UTF-8 prompt.txt`).",
-                    &[&valid_up_to.to_string()],
-                )
+                "input is not valid UTF-8 (invalid byte at offset {valid_up_to}). Convert it to UTF-8 and retry (e.g., `iconv -f <ENC> -t UTF-8 prompt.txt`)."
             ),
             PromptDecodeError::InvalidUtf16 { encoding } => write!(
                 f,
-                "{}",
-                tr_with(
-                    current(),
-                    "input looked like {0} but could not be decoded. Convert it to UTF-8 and retry.",
-                    &[encoding],
-                )
+                "input looked like {encoding} but could not be decoded. Convert it to UTF-8 and retry."
             ),
             PromptDecodeError::UnsupportedBom { encoding } => write!(
                 f,
-                "{}",
-                tr_with(
-                    current(),
-                    "input appears to be {0}. Convert it to UTF-8 and retry.",
-                    &[encoding],
-                )
+                "input appears to be {encoding}. Convert it to UTF-8 and retry."
             ),
         }
     }
@@ -2412,51 +2349,30 @@ fn read_prompt_from_stdin(behavior: StdinPromptBehavior) -> Option<String> {
     match behavior {
         StdinPromptBehavior::RequiredIfPiped if stdin_is_terminal => {
             eprintln!(
-                "{}",
-                tr(
-                    current(),
-                    "No prompt provided. Either specify one as an argument or pipe the prompt into stdin."
-                )
+                "No prompt provided. Either specify one as an argument or pipe the prompt into stdin."
             );
             std::process::exit(1);
         }
         StdinPromptBehavior::RequiredIfPiped => {
-            eprintln!("{}", tr(current(), "Reading prompt from stdin..."));
+            eprintln!("Reading prompt from stdin...");
         }
         StdinPromptBehavior::Forced => {}
         StdinPromptBehavior::OptionalAppend if stdin_is_terminal => return None,
         StdinPromptBehavior::OptionalAppend => {
-            eprintln!(
-                "{}",
-                tr(current(), "Reading additional input from stdin...")
-            );
+            eprintln!("Reading additional input from stdin...");
         }
     }
 
     let mut bytes = Vec::new();
     if let Err(e) = std::io::stdin().read_to_end(&mut bytes) {
-        eprintln!(
-            "{}",
-            tr_with(
-                current(),
-                "Failed to read prompt from stdin: {0}",
-                &[&e.to_string()]
-            )
-        );
+        eprintln!("Failed to read prompt from stdin: {e}");
         std::process::exit(1);
     }
 
     let buffer = match decode_prompt_bytes(&bytes) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!(
-                "{}",
-                tr_with(
-                    current(),
-                    "Failed to read prompt from stdin: {0}",
-                    &[&e.to_string()]
-                )
-            );
+            eprintln!("Failed to read prompt from stdin: {e}");
             std::process::exit(1);
         }
     };
@@ -2465,7 +2381,7 @@ fn read_prompt_from_stdin(behavior: StdinPromptBehavior) -> Option<String> {
         match behavior {
             StdinPromptBehavior::OptionalAppend => None,
             StdinPromptBehavior::RequiredIfPiped | StdinPromptBehavior::Forced => {
-                eprintln!("{}", tr(current(), "No prompt provided via stdin."));
+                eprintln!("No prompt provided via stdin.");
                 std::process::exit(1);
             }
         }
@@ -2526,16 +2442,15 @@ fn build_review_request(args: &ReviewArgs) -> anyhow::Result<ReviewRequest> {
     } else if let Some(prompt_arg) = args.prompt.clone() {
         let prompt = resolve_prompt(Some(prompt_arg)).trim().to_string();
         if prompt.is_empty() {
-            anyhow::bail!(tr(current(), "Review prompt cannot be empty"));
+            anyhow::bail!("Review prompt cannot be empty");
         }
         ReviewTarget::Custom {
             instructions: prompt,
         }
     } else {
-        anyhow::bail!(tr(
-            current(),
+        anyhow::bail!(
             "Specify --uncommitted, --base, --commit, or provide custom review instructions"
-        ));
+        );
     };
 
     Ok(ReviewRequest {

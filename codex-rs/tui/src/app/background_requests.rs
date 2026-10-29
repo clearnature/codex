@@ -4,6 +4,7 @@
 //! limits, add-credit nudges, and feedback uploads. Results are routed back through `AppEvent` so
 //! the main event loop remains single-threaded.
 
+use super::feedback_upload::fetch_feedback_upload;
 use super::plugin_mentions::fetch_plugin_mentions;
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
@@ -23,19 +24,15 @@ use codex_app_server_protocol::MarketplaceRemoveParams;
 use codex_app_server_protocol::MarketplaceRemoveResponse;
 use codex_app_server_protocol::MarketplaceUpgradeParams;
 use codex_app_server_protocol::MarketplaceUpgradeResponse;
+use codex_app_server_protocol::McpServerOauthLoginParams;
 use codex_app_server_protocol::RequestId;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 use crate::hooks_rpc::fetch_hooks_list;
 use crate::hooks_rpc::write_hook_trust;
 use crate::hooks_rpc::write_hook_trusts;
 use codex_utils_absolute_path::AbsolutePathBuf;
 
-const TOKEN_ACTIVITY_FETCH_TIMEOUT: std::time::Duration =
-    std::time::Duration::from_secs(/*secs*/ 15);
-const THREAD_USAGE_FETCH_TIMEOUT: std::time::Duration =
+pub(super) const THREAD_USAGE_FETCH_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(/*secs*/ 65);
 const RATE_LIMIT_RESET_REQUEST_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(/*secs*/ 15);
@@ -43,6 +40,33 @@ const WORKSPACE_HEADLINE_FETCH_TIMEOUT: std::time::Duration =
     std::time::Duration::from_millis(/*millis*/ 2000);
 
 impl App {
+    pub(super) fn start_mcp_login(
+        &self,
+        app_server: &AppServerSession,
+        request_id: String,
+        name: String,
+        thread_id: ThreadId,
+    ) {
+        let request_handle = app_server.request_handle();
+        let app_event_tx = self.app_event_tx.clone();
+        tokio::spawn(async move {
+            let result = request_handle
+                .request_typed(ClientRequest::McpServerOauthLogin {
+                    request_id: RequestId::String(request_id.clone()),
+                    params: McpServerOauthLoginParams {
+                        name,
+                        thread_id: Some(thread_id.to_string()),
+                        client_registration: None,
+                        scopes: None,
+                        timeout_secs: None,
+                    },
+                })
+                .await
+                .map_err(|error| error.to_string());
+            app_event_tx.send(AppEvent::McpLoginStarted { request_id, result });
+        });
+    }
+
     pub(super) fn fetch_mcp_inventory(
         &mut self,
         app_server: &AppServerSession,
@@ -80,7 +104,7 @@ impl App {
     /// Recovery requests are coalesced and bounded by the reset-request timeout. The origin
     /// also identifies command-specific completion work, such as finalizing a `/status` card,
     /// without confusing sparse inference notifications with authoritative usage responses.
-    pub(super) fn refresh_rate_limits(
+    pub(crate) fn refresh_rate_limits(
         &mut self,
         app_server: &AppServerSession,
         origin: RateLimitRefreshOrigin,
@@ -98,6 +122,7 @@ impl App {
         else {
             return;
         };
+        self.chat_widget.start_usage_notice_read(request_id);
         let request_handle = app_server.request_handle();
         let app_event_tx = self.app_event_tx.clone();
         tokio::spawn(async move {
@@ -127,25 +152,6 @@ impl App {
         });
     }
 
-    pub(super) fn refresh_token_activity(
-        &mut self,
-        app_server: &AppServerSession,
-        request_id: u64,
-    ) {
-        let request_handle = app_server.request_handle();
-        let app_event_tx = self.app_event_tx.clone();
-        tokio::spawn(async move {
-            let result = tokio::time::timeout(
-                TOKEN_ACTIVITY_FETCH_TIMEOUT,
-                fetch_account_token_activity(request_handle),
-            )
-            .await
-            .map_err(|_| "account/usage/read timed out in TUI".to_string())
-            .and_then(|result| result.map_err(|err| err.to_string()));
-            app_event_tx.send(AppEvent::TokenActivityLoaded { request_id, result });
-        });
-    }
-
     pub(super) fn refresh_thread_usage(
         &mut self,
         app_server: &AppServerSession,
@@ -160,7 +166,7 @@ impl App {
                 fetch_thread_usage(request_handle, thread_id),
             )
             .await
-            .map_err(|_| tr(current(), "thread usage request timed out in TUI").to_string())
+            .map_err(|_| "thread usage request timed out in TUI".to_string())
             .and_then(|result| result.map_err(|err| err.to_string()));
             app_event_tx.send(AppEvent::ThreadUsageLoaded {
                 thread_id,
@@ -358,13 +364,7 @@ impl App {
             let source_for_event = source.clone();
             let result = fetch_marketplace_add(request_handle, cwd, source)
                 .await
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to add marketplace: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to add marketplace: {err}"));
             app_event_tx.send(AppEvent::MarketplaceAddLoaded {
                 cwd: cwd_for_event,
                 source: source_for_event,
@@ -387,13 +387,7 @@ impl App {
             let marketplace_name_for_event = marketplace_name.clone();
             let result = fetch_marketplace_remove(request_handle, marketplace_name)
                 .await
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to remove marketplace: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to remove marketplace: {err}"));
             app_event_tx.send(AppEvent::MarketplaceRemoveLoaded {
                 cwd: cwd_for_event,
                 marketplace_name: marketplace_name_for_event,
@@ -415,13 +409,7 @@ impl App {
             let cwd_for_event = cwd.clone();
             let result = fetch_marketplace_upgrade(request_handle, marketplace_name)
                 .await
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to upgrade marketplace: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to upgrade marketplace: {err}"));
             app_event_tx.send(AppEvent::MarketplaceUpgradeLoaded {
                 cwd: cwd_for_event,
                 result,
@@ -445,13 +433,7 @@ impl App {
             let plugin_name_for_event = plugin_name.clone();
             let result = fetch_plugin_install(request_handle, location, plugin_name)
                 .await
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to install plugin: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to install plugin: {err}"));
             app_event_tx.send(AppEvent::PluginInstallLoaded {
                 cwd: cwd_for_event,
                 location: location_for_event,
@@ -476,13 +458,7 @@ impl App {
             let plugin_id_for_event = plugin_id.clone();
             let result = fetch_plugin_uninstall(request_handle, plugin_id)
                 .await
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to uninstall plugin: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to uninstall plugin: {err}"));
             app_event_tx.send(AppEvent::PluginUninstallLoaded {
                 cwd: cwd_for_event,
                 plugin_id: plugin_id_for_event,
@@ -524,13 +500,7 @@ impl App {
             let result = write_plugin_enabled(request_handle, plugin_id, enabled)
                 .await
                 .map(|_| ())
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to update plugin config: {0}",
-                        &[&err.to_string()],
-                    )
-                });
+                .map_err(|err| format!("Failed to update plugin config: {err}"));
             app_event_tx.send(AppEvent::PluginEnabledSet {
                 cwd: cwd_for_event,
                 plugin_id: plugin_id_for_event,
@@ -569,10 +539,9 @@ impl App {
                 .await
                 .map(|_| ())
                 .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to update hook config: {0}",
-                        &[&format_config_error(&err)],
+                    format!(
+                        "Failed to update hook config: {}",
+                        format_config_error(&err)
                     )
                 });
             app_event_tx.send(AppEvent::HookEnabledSet {
@@ -595,13 +564,7 @@ impl App {
             let result = write_hook_trust(request_handle, key, current_hash)
                 .await
                 .map(|_| ())
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to trust hook: {0}",
-                        &[&format_config_error(&err)],
-                    )
-                });
+                .map_err(|err| format!("Failed to trust hook: {}", format_config_error(&err)));
             app_event_tx.send(AppEvent::HookTrusted { result });
         });
     }
@@ -617,13 +580,7 @@ impl App {
             let result = write_hook_trusts(request_handle, updates)
                 .await
                 .map(|_| ())
-                .map_err(|err| {
-                    tr_with(
-                        current(),
-                        "Failed to trust hooks: {0}",
-                        &[&format_config_error(&err)],
-                    )
-                });
+                .map_err(|err| format!("Failed to trust hooks: {}", format_config_error(&err)));
             app_event_tx.send(AppEvent::HookTrusted { result });
         });
     }
@@ -676,8 +633,10 @@ impl App {
             turn_id,
             include_logs,
         );
+        let codex_home = app_server.codex_home_path(&self.config.codex_home);
+        let feedback = self.feedback.clone();
         tokio::spawn(async move {
-            let result = fetch_feedback_upload(request_handle, params)
+            let result = fetch_feedback_upload(request_handle, codex_home, params, feedback)
                 .await
                 .map(|response| response.thread_id)
                 .map_err(|err| err.to_string());
@@ -703,10 +662,8 @@ impl App {
             }
             Err(err) => self
                 .chat_widget
-                .add_to_history(history_cell::new_error_event(tr_with(
-                    current(),
-                    "Failed to upload feedback: {0}",
-                    &[&err],
+                .add_to_history(history_cell::new_error_event(format!(
+                    "Failed to upload feedback: {err}"
                 ))),
         }
     }
@@ -785,11 +742,8 @@ impl App {
         let statuses = match result {
             Ok(statuses) => statuses,
             Err(err) => {
-                self.chat_widget.add_error_message(tr_with(
-                    current(),
-                    "Failed to load MCP inventory: {0}",
-                    &[&err],
-                ));
+                self.chat_widget
+                    .add_error_message(format!("Failed to load MCP inventory: {err}"));
                 return;
             }
         };
@@ -816,6 +770,7 @@ impl App {
         };
 
         self.transcript_cells.remove(index);
+        self.native_history.retain(&self.transcript_cells);
         if let Some(Overlay::Transcript(overlay)) = &mut self.overlay {
             overlay.replace_cells(self.transcript_cells.clone());
         }
@@ -841,6 +796,7 @@ pub(super) async fn fetch_all_mcp_server_statuses(
                     limit: Some(100),
                     detail: Some(detail),
                     thread_id: thread_id.clone(),
+                    server_name: None,
                 },
             })
             .await
@@ -888,20 +844,7 @@ pub(super) async fn fetch_account_rate_limits(
     result.wrap_err("account/rateLimits/read failed in TUI")
 }
 
-pub(super) async fn fetch_account_token_activity(
-    request_handle: AppServerRequestHandle,
-) -> Result<codex_app_server_protocol::GetAccountTokenUsageResponse> {
-    let request_id = RequestId::String(format!("account-token-usage-{}", Uuid::new_v4()));
-    request_handle
-        .request_typed(ClientRequest::GetAccountTokenUsage {
-            request_id,
-            params: None,
-        })
-        .await
-        .wrap_err("account/usage/read failed in TUI")
-}
-
-async fn fetch_thread_usage(
+pub(super) async fn fetch_thread_usage(
     request_handle: AppServerRequestHandle,
     thread_id: ThreadId,
 ) -> Result<ThreadUsageOutcome> {
@@ -1033,19 +976,19 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
     if !remote_plugin_enabled {
         sections.push((
             "vertical",
-            tr(current(), "OpenAI Curated"),
+            "OpenAI Curated",
             vec![PluginListMarketplaceKind::Vertical],
         ));
     }
     sections.push((
         "workspace",
-        tr(current(), "Workspace"),
+        "Workspace",
         vec![PluginListMarketplaceKind::WorkspaceDirectory],
     ));
     if plugin_sharing_enabled {
         sections.push((
             "shared-with-me",
-            tr(current(), "Shared with me"),
+            "Shared with me",
             vec![PluginListMarketplaceKind::SharedWithMe],
         ));
     } else {
@@ -1065,7 +1008,7 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
                 section_errors.push(PluginRemoteSectionError {
                     section_id: section_id.to_string(),
                     label: label.to_string(),
-                    message: plugin_remote_section_error_message(section_id, &message),
+                    message: plugin_remote_section_error_message(label, &message),
                 });
             }
         }
@@ -1074,8 +1017,8 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
     (marketplaces, section_errors)
 }
 
-fn plugin_remote_section_error_message(section_id: &str, err: &str) -> String {
-    let next_step = plugin_remote_section_error_next_step(section_id, err);
+fn plugin_remote_section_error_message(label: &str, err: &str) -> String {
+    let next_step = plugin_remote_section_error_next_step(label, err);
     if next_step.is_empty() {
         err.to_string()
     } else {
@@ -1083,45 +1026,27 @@ fn plugin_remote_section_error_message(section_id: &str, err: &str) -> String {
     }
 }
 
-fn plugin_remote_section_error_next_step(section_id: &str, err: &str) -> &'static str {
+fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str {
     let err = err.to_ascii_lowercase();
     if err.contains("api key auth is not supported") {
-        tr(
-            current(),
-            "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
-        )
+        "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs"
     } else if err.contains("authentication required")
         || err.contains("not signed in")
         || err.contains("not logged in")
     {
-        tr(
-            current(),
-            "Sign in to ChatGPT, then try loading this section again.",
-        )
+        "Sign in to ChatGPT, then try loading this section again"
     } else if err.contains("codex plugins are disabled")
         || err.contains("plugin sharing is disabled")
         || err.contains("plugin sharing is not enabled")
         || err.contains("feature disabled")
     {
-        tr(
-            current(),
-            "Ask a workspace admin to enable Codex plugins or plugin sharing.",
-        )
+        "Ask a workspace admin to enable Codex plugins or plugin sharing"
     } else if err.contains("workspace") && (err.contains("access") || err.contains("mismatch")) {
-        tr(
-            current(),
-            "Switch to the matching workspace or ask the sharer for access.",
-        )
+        "Switch to the matching workspace or ask the sharer for access"
     } else if err.contains("not found") || err.contains("status 404") {
-        tr(
-            current(),
-            "Check that you are signed in to the correct workspace and still have access.",
-        )
+        "Check that you are signed in to the correct workspace and still have access"
     } else if err.contains("old build") || err.contains("update codex") || err.contains("stale") {
-        tr(
-            current(),
-            "Update Codex, then try opening the shared plugin again.",
-        )
+        "Update Codex, then try opening the shared plugin again"
     } else if err.contains("service unavailable")
         || err.contains("temporarily unavailable")
         || err.contains("status 503")
@@ -1129,17 +1054,11 @@ fn plugin_remote_section_error_next_step(section_id: &str, err: &str) -> &'stati
         || err.contains("request")
         || err.contains("status")
     {
-        tr(
-            current(),
-            "Try again later; local plugin functionality is still available.",
-        )
+        "Try again later; local plugin functionality is still available"
     } else if err.contains("disabled by admin") || err.contains("admin disabled") {
-        tr(current(), "Ask a workspace admin to confirm plugin access.")
-    } else if section_id == "shared-with-me" && err.contains("plugin") && err.contains("disabled") {
-        tr(
-            current(),
-            "Ask the sharer or a workspace admin to confirm plugin access.",
-        )
+        "Ask a workspace admin to confirm plugin access"
+    } else if label == "Shared with me" && err.contains("plugin") && err.contains("disabled") {
+        "Ask the sharer or a workspace admin to confirm plugin access"
     } else {
         ""
     }
@@ -1148,8 +1067,8 @@ fn plugin_remote_section_error_next_step(section_id: &str, err: &str) -> &'stati
 fn plugin_sharing_disabled_remote_section_error() -> PluginRemoteSectionError {
     PluginRemoteSectionError {
         section_id: "shared-with-me".to_string(),
-        label: tr(current(), "Shared with me").to_string(),
-        message: tr(current(), "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.").to_string(),
+        label: "Shared with me".to_string(),
+        message: "Enable plugin sharing for this Codex session to load shared plugins".to_string(),
     }
 }
 
@@ -1182,8 +1101,7 @@ async fn request_plugin_list_with_marketplace_kinds(
     cwd: PathBuf,
     marketplace_kinds: Option<Vec<PluginListMarketplaceKind>>,
 ) -> Result<PluginListResponse> {
-    let cwd = AbsolutePathBuf::try_from(cwd)
-        .wrap_err(tr(current(), "plugin list cwd must be absolute"))?;
+    let cwd = AbsolutePathBuf::try_from(cwd).wrap_err("plugin list cwd must be absolute")?;
     let request_id = RequestId::String(format!("plugin-list-{}", Uuid::new_v4()));
     request_handle
         .request_typed(ClientRequest::PluginList {
@@ -1392,17 +1310,6 @@ pub(super) fn build_feedback_upload_params(
     }
 }
 
-pub(super) async fn fetch_feedback_upload(
-    request_handle: AppServerRequestHandle,
-    params: FeedbackUploadParams,
-) -> Result<FeedbackUploadResponse> {
-    let request_id = RequestId::String(format!("feedback-upload-{}", Uuid::new_v4()));
-    request_handle
-        .request_typed(ClientRequest::FeedbackUpload { request_id, params })
-        .await
-        .wrap_err("feedback/upload failed in TUI")
-}
-
 /// Convert flat `McpServerStatus` responses into the per-server maps used by the
 /// in-process MCP subsystem (tools keyed as `mcp__{server}__{tool}`, plus
 /// per-server resource/template/auth maps). Test-only because the TUI
@@ -1463,16 +1370,33 @@ mod tests {
         let server = wiremock::MockServer::start().await;
         let thread_id = ThreadId::new();
         app.config.chatgpt_base_url = server.uri();
+        app.cli_kv_overrides = vec![(
+            "chatgpt_base_url".to_string(),
+            toml::Value::String(server.uri()),
+        )];
         app.config.cli_auth_credentials_store_mode = AuthCredentialsStoreMode::File;
+        wiremock::Mock::given(wiremock::matchers::method("GET"))
+            .and(wiremock::matchers::path("/api/codex/config/bundle"))
+            .respond_with(wiremock::ResponseTemplate::new(/*s*/ 200).set_body_string("{}"))
+            .mount(&server)
+            .await;
         write_chatgpt_auth(
             app.config.codex_home.as_path(),
             ChatGptAuthFixture::new("chatgpt-token").account_id("account-123"),
             AuthCredentialsStoreMode::File,
         )
         .expect("write ChatGPT authentication");
-        let app_server = crate::start_embedded_app_server_for_picker(&app.config)
-            .await
-            .expect("start authenticated embedded app server");
+        let app_server = crate::start_app_server_for_picker(
+            crate::backend_id::BackendId::new(),
+            &app.config,
+            &crate::AppServerTarget::Embedded,
+            app.cli_kv_overrides.clone(),
+            app.loader_overrides.clone(),
+            /*state_db*/ None,
+            app.environment_manager.clone(),
+        )
+        .await
+        .expect("start authenticated embedded app server");
         write_chatgpt_auth(
             app.config.codex_home.as_path(),
             ChatGptAuthFixture::new("different-token").account_id("different-account"),
@@ -1608,65 +1532,44 @@ mod tests {
     fn plugin_remote_section_error_message_adds_concrete_next_steps() {
         let cases = [
             (
-                tr(current(), "Workspace"),
+                "Workspace",
                 "chatgpt authentication required for remote plugin catalog",
-                tr(
-                    current(),
-                    "Sign in to ChatGPT, then try loading this section again.",
-                ),
+                "Sign in to ChatGPT, then try loading this section again",
             ),
             (
-                tr(current(), "OpenAI Curated"),
+                "OpenAI Curated",
                 "chatgpt authentication required for remote plugin catalog; api key auth is not supported",
-                tr(
-                    current(),
-                    "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
-                ),
+                "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs",
             ),
             (
-                tr(current(), "Shared with me"),
+                "Shared with me",
                 "remote plugin catalog request failed with status 404: missing",
-                tr(
-                    current(),
-                    "Check that you are signed in to the correct workspace and still have access.",
-                ),
+                "Check that you are signed in to the correct workspace and still have access",
             ),
             (
-                tr(current(), "Shared with me"),
+                "Shared with me",
                 "workspace access mismatch",
-                tr(
-                    current(),
-                    "Switch to the matching workspace or ask the sharer for access.",
-                ),
+                "Switch to the matching workspace or ask the sharer for access",
             ),
             (
-                tr(current(), "Shared with me"),
+                "Shared with me",
                 "old build fallback",
-                tr(
-                    current(),
-                    "Update Codex, then try opening the shared plugin again.",
-                ),
+                "Update Codex, then try opening the shared plugin again",
             ),
             (
-                tr(current(), "Shared with me"),
+                "Shared with me",
                 "remote service unavailable",
-                tr(
-                    current(),
-                    "Try again later; local plugin functionality is still available.",
-                ),
+                "Try again later; local plugin functionality is still available",
             ),
             (
-                tr(current(), "Workspace"),
+                "Workspace",
                 "plugin disabled by admin",
-                tr(current(), "Ask a workspace admin to confirm plugin access."),
+                "Ask a workspace admin to confirm plugin access",
             ),
             (
-                tr(current(), "Shared with me"),
+                "Shared with me",
                 "plugin sharing is not enabled",
-                tr(
-                    current(),
-                    "Ask a workspace admin to enable Codex plugins or plugin sharing.",
-                ),
+                "Ask a workspace admin to enable Codex plugins or plugin sharing",
             ),
         ];
 
@@ -1684,8 +1587,9 @@ mod tests {
             plugin_sharing_disabled_remote_section_error(),
             PluginRemoteSectionError {
                 section_id: "shared-with-me".to_string(),
-                label: tr(current(), "Shared with me").to_string(),
-                message: tr(current(), "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.").to_string(),
+                label: "Shared with me".to_string(),
+                message: "Enable plugin sharing for this Codex session to load shared plugins"
+                    .to_string(),
             }
         );
     }
@@ -1694,10 +1598,13 @@ mod tests {
     fn mcp_inventory_maps_prefix_tool_names_by_server() {
         let statuses = vec![
             McpServerStatus {
+                server_capabilities: None,
+                tool_list_meta: None,
                 tools_error: None,
                 name: "docs".to_string(),
                 runtime_status: None,
                 plugin_id: None,
+                http_origin: None,
                 server_info: None,
                 tools: HashMap::from([(
                     "list".to_string(),
@@ -1717,10 +1624,13 @@ mod tests {
                 auth_status: codex_app_server_protocol::McpAuthStatus::Unsupported,
             },
             McpServerStatus {
+                server_capabilities: None,
+                tool_list_meta: None,
                 tools_error: None,
                 name: "disabled".to_string(),
                 runtime_status: None,
                 plugin_id: None,
+                http_origin: None,
                 server_info: None,
                 tools: HashMap::new(),
                 resources: Vec::new(),

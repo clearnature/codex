@@ -1,18 +1,18 @@
 //! Shortcut picker construction for `/keymap`.
+//!
+//! Keep the shared picker panel and reserved result viewport on the production
+//! factory so tabs and search stay anchored in the live picker.
 
 use codex_config::types::TuiKeymap;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use ratatui::style::Styled;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::text::Span;
-use std::sync::OnceLock;
 use unicode_width::UnicodeWidthStr;
 
 use crate::app_event::AppEvent;
 use crate::bottom_pane::ColumnWidthMode;
+use crate::bottom_pane::PickerSurface;
 use crate::bottom_pane::SelectionItem;
 use crate::bottom_pane::SelectionRowDisplay;
 use crate::bottom_pane::SelectionTab;
@@ -22,10 +22,10 @@ use crate::render::renderable::ColumnRenderable;
 use crate::render::renderable::Renderable;
 use crate::style::accent_style;
 
+use super::actions::KEYMAP_ACTIONS;
 use super::actions::KeymapActionFilter;
 use super::actions::action_label;
 use super::actions::format_action_binding_summary;
-use super::actions::keymap_actions;
 use super::has_custom_binding;
 
 pub(crate) const KEYMAP_PICKER_VIEW_ID: &str = "keymap-picker";
@@ -54,7 +54,7 @@ impl KeymapActionRow {
     }
 }
 
-pub(super) struct KeymapContextTab {
+struct KeymapContextTab {
     id: &'static str,
     label: &'static str,
     description: &'static str,
@@ -85,66 +85,55 @@ const KEYMAP_COMMON_ACTIONS: &[(&str, &str)] = &[
     ("approval", "cancel"),
 ];
 
-/// The per-context tabs, rendered in the current UI language.
-///
-/// A cached function rather than a `const`, per §3.6 of
-/// `docs/plan/i18n-design.md`: the labels and descriptions have to pass through
-/// `tr`, which a `const` cannot call. The language is fixed per process, so the
-/// table is built once and handed out as a `&'static [..]`.
-pub(super) fn keymap_context_tabs() -> &'static [KeymapContextTab] {
-    static TABS: OnceLock<Vec<KeymapContextTab>> = OnceLock::new();
-    TABS.get_or_init(|| {
-        vec![
-            KeymapContextTab {
-                id: "app-shortcuts",
-                label: tr(current(), "App"),
-                description: tr(current(), "Global and chat-level shortcuts."),
-                contexts: &["global", "chat"],
-            },
-            KeymapContextTab {
-                id: "composer-shortcuts",
-                label: tr(current(), "Composer"),
-                description: tr(current(), "Composer submission and queue shortcuts."),
-                contexts: &["composer"],
-            },
-            KeymapContextTab {
-                id: "editor-shortcuts",
-                label: tr(current(), "Editor"),
-                description: tr(current(), "Inline editor movement and editing shortcuts."),
-                contexts: &["editor"],
-            },
-            KeymapContextTab {
-                id: "vim-shortcuts",
-                label: tr(current(), "Vim"),
-                description: tr(current(), "Vim normal-mode and operator shortcuts."),
-                contexts: &[
-                    "vim_normal",
-                    "vim_operator",
-                    "vim_search",
-                    "vim_text_object",
-                ],
-            },
-            KeymapContextTab {
-                id: "navigation-shortcuts",
-                label: tr(current(), "Navigation"),
-                description: tr(current(), "Pager and selection-list navigation shortcuts."),
-                contexts: &["pager", "list"],
-            },
-            KeymapContextTab {
-                id: "agents-shortcuts",
-                label: tr(current(), "Agents"),
-                description: tr(current(), "Shared agents dashboard shortcuts."),
-                contexts: &["agents"],
-            },
-            KeymapContextTab {
-                id: "approval-shortcuts",
-                label: tr(current(), "Approval"),
-                description: tr(current(), "Approval prompt shortcuts."),
-                contexts: &["approval"],
-            },
-        ]
-    })
-}
+const KEYMAP_CONTEXT_TABS: &[KeymapContextTab] = &[
+    KeymapContextTab {
+        id: "app-shortcuts",
+        label: "App",
+        description: "Global and chat-level shortcuts.",
+        contexts: &["global", "chat"],
+    },
+    KeymapContextTab {
+        id: "composer-shortcuts",
+        label: "Composer",
+        description: "Composer submission and queue shortcuts.",
+        contexts: &["composer"],
+    },
+    KeymapContextTab {
+        id: "editor-shortcuts",
+        label: "Editor",
+        description: "Inline editor movement and editing shortcuts.",
+        contexts: &["editor"],
+    },
+    KeymapContextTab {
+        id: "vim-shortcuts",
+        label: "Vim",
+        description: "Vim normal-mode and operator shortcuts.",
+        contexts: &[
+            "vim_normal",
+            "vim_operator",
+            "vim_search",
+            "vim_text_object",
+        ],
+    },
+    KeymapContextTab {
+        id: "navigation-shortcuts",
+        label: "Navigation",
+        description: "Pager and selection-list navigation shortcuts.",
+        contexts: &["pager", "list"],
+    },
+    KeymapContextTab {
+        id: "agents-shortcuts",
+        label: "Agents",
+        description: "Shared agents dashboard shortcuts.",
+        contexts: &["agents"],
+    },
+    KeymapContextTab {
+        id: "approval-shortcuts",
+        label: "Approval",
+        description: "Approval prompt shortcuts.",
+        contexts: &["approval"],
+    },
+];
 
 #[cfg(test)]
 pub(crate) fn build_keymap_picker_params(
@@ -224,23 +213,15 @@ fn build_keymap_picker_params_for_action(
     let mut tabs = Vec::new();
     tabs.push(SelectionTab {
         id: KEYMAP_ALL_TAB_ID.to_string(),
-        label: tr(current(), "All").to_string(),
+        label: "All".to_string(),
         header: keymap_header(
-            tr(current(), "All configurable shortcuts.").to_string(),
-            tr_with(
-                current(),
-                "{0} actions, {1} customized, {2} unbound.",
-                &[
-                    &total.to_string(),
-                    &custom_count.to_string(),
-                    &unbound_count.to_string(),
-                ],
-            ),
+            "All configurable shortcuts.".to_string(),
+            format!("{total} actions, {custom_count} customized, {unbound_count} unbound."),
         ),
         items: keymap_selection_items(
             rows.iter(),
-            tr(current(), "No shortcuts available"),
-            tr(current(), "No configurable shortcuts are available."),
+            "No shortcuts available",
+            "No configurable shortcuts are available",
         ),
     });
 
@@ -248,15 +229,15 @@ fn build_keymap_picker_params_for_action(
     let common_count = common_rows.len();
     tabs.push(SelectionTab {
         id: KEYMAP_COMMON_TAB_ID.to_string(),
-        label: tr(current(), "Common").to_string(),
+        label: "Common".to_string(),
         header: keymap_header(
-            tr(current(), "Frequently customized shortcuts.").to_string(),
+            "Frequently customized shortcuts.".to_string(),
             action_count_line(common_count),
         ),
         items: keymap_selection_items(
             common_rows,
-            tr(current(), "No common shortcuts"),
-            tr(current(), "No common shortcut actions are available."),
+            "No common shortcuts",
+            "No common shortcut actions are available",
         ),
     });
 
@@ -266,18 +247,15 @@ fn build_keymap_picker_params_for_action(
         .collect::<Vec<_>>();
     tabs.push(SelectionTab {
         id: KEYMAP_CUSTOM_TAB_ID.to_string(),
-        label: tr_with(current(), "Customized ({0})", &[&custom_count.to_string()]),
+        label: format!("Customized ({custom_count})"),
         header: keymap_header(
-            tr(current(), "Root-level shortcut overrides.").to_string(),
+            "Root-level shortcut overrides.".to_string(),
             action_count_line(custom_count),
         ),
         items: keymap_selection_items(
             custom_rows,
-            tr(current(), "No customized shortcuts"),
-            tr(
-                current(),
-                "No root-level keymap overrides have been configured.",
-            ),
+            "No customized shortcuts",
+            "No root-level keymap overrides have been configured",
         ),
     });
 
@@ -287,22 +265,19 @@ fn build_keymap_picker_params_for_action(
         .collect::<Vec<_>>();
     tabs.push(SelectionTab {
         id: KEYMAP_UNBOUND_TAB_ID.to_string(),
-        label: tr_with(current(), "Unbound ({0})", &[&unbound_count.to_string()]),
+        label: format!("Unbound ({unbound_count})"),
         header: keymap_header(
-            tr(current(), "Actions without an active shortcut.").to_string(),
+            "Actions without an active shortcut.".to_string(),
             action_count_line(unbound_count),
         ),
         items: keymap_selection_items(
             unbound_rows,
-            tr(current(), "No unbound shortcuts"),
-            tr(
-                current(),
-                "Every configurable action currently has a shortcut.",
-            ),
+            "No unbound shortcuts",
+            "Every configurable action currently has a shortcut",
         ),
     });
 
-    for tab in keymap_context_tabs() {
+    for tab in KEYMAP_CONTEXT_TABS {
         let tab_rows = rows
             .iter()
             .filter(|row| tab.contexts.contains(&row.context))
@@ -314,25 +289,26 @@ fn build_keymap_picker_params_for_action(
             header: keymap_header(tab.description.to_string(), action_count_line(count)),
             items: keymap_selection_items(
                 tab_rows,
-                tr(current(), "No shortcuts in this group"),
-                tr(
-                    current(),
-                    "No configurable actions are available in this group.",
-                ),
+                "No shortcuts in this group",
+                "No configurable actions are available in this group",
             ),
         });
     }
     tabs.push(keymap_debug_tab());
 
     SelectionViewParams {
+        allow_input_when_disconnected: true,
         view_id: Some(KEYMAP_PICKER_VIEW_ID),
+        picker_surface: PickerSurface::Panel,
+        max_visible_rows: 24,
+        reserve_result_rows: true,
         header: Box::new(()),
         footer_hint: Some(keymap_picker_hint_line()),
         tab_footer_hints: vec![(KEYMAP_DEBUG_TAB_ID.to_string(), keymap_debug_hint_line())],
         tabs,
         initial_tab_id: Some(KEYMAP_ALL_TAB_ID.to_string()),
         is_searchable: true,
-        search_placeholder: Some(tr(current(), "Type to search shortcuts").to_string()),
+        search_placeholder: Some("Type to search shortcuts".to_string()),
         col_width_mode: ColumnWidthMode::AutoAllRows,
         row_display: SelectionRowDisplay::SingleLine,
         name_column_width,
@@ -344,19 +320,19 @@ fn build_keymap_picker_params_for_action(
 fn keymap_debug_tab() -> SelectionTab {
     SelectionTab {
         id: KEYMAP_DEBUG_TAB_ID.to_string(),
-        label: tr(current(), "Debug").to_string(),
+        label: "Debug".to_string(),
         header: keymap_header(
-            tr(current(), "Inspect keypresses from your terminal.").to_string(),
-            tr(current(), "See the key Codex detects and any shortcuts assigned to it.").to_string(),
+            "Inspect keypresses from your terminal.".to_string(),
+            "See the key Codex detects and any shortcuts assigned to it.".to_string(),
         ),
         items: vec![SelectionItem {
-            name: tr(current(), "Inspect keypresses").to_string(),
+            name: "Inspect keypresses".to_string(),
             description: Some(
-                tr(current(), "Press Enter to start. Then press any key to inspect it; Ctrl+C exits.")
+                "Press Enter, then any key to inspect it (Ctrl+C exits)"
                     .to_string(),
             ),
             selected_description: Some(
-                tr(current(), "Open a live inspector that shows the detected key, config key, and matching actions.")
+                "Open a live inspector that shows the detected key, config key, and matching actions"
                     .to_string(),
             ),
             actions: vec![Box::new(|tx| {
@@ -373,7 +349,7 @@ fn build_keymap_rows(
     keymap_config: &TuiKeymap,
     action_filter: KeymapActionFilter,
 ) -> Vec<KeymapActionRow> {
-    keymap_actions()
+    KEYMAP_ACTIONS
         .iter()
         .copied()
         .filter(|descriptor| descriptor.is_visible(action_filter))
@@ -480,7 +456,7 @@ fn keymap_row_prefix(row: &KeymapActionRow) -> Vec<Span<'static>> {
 
 fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
     let mut header = ColumnRenderable::new();
-    header.push(Line::from(tr(current(), "Keymap").bold()));
+    header.push(Line::from("Keymap".bold()));
     header.push(Line::from(description.dim()));
     header.push(Line::from(summary.dim()));
     Box::new(header)
@@ -488,33 +464,36 @@ fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
 
 fn action_count_line(count: usize) -> String {
     match count {
-        1 => tr(current(), "1 action.").to_string(),
-        _ => tr_with(current(), "{0} actions.", &[&count.to_string()]),
+        1 => "1 action.".to_string(),
+        _ => format!("{count} actions."),
     }
 }
 
 fn keymap_picker_hint_line() -> Line<'static> {
-    let style = accent_style();
-    Line::from(vec![
-        "left/right".set_style(style),
-        tr(current(), " group · ").dim(),
-        "enter".set_style(style),
-        tr(current(), " edit shortcut · ").dim(),
-        "*".set_style(style),
-        tr(current(), " custom · ").dim(),
-        "-".set_style(style),
-        tr(current(), " unbound · ").dim(),
-        "esc".set_style(style),
-        tr(current(), " close").dim(),
-    ])
+    [
+        ("left/right", " group · "),
+        ("enter", " edit shortcut · "),
+        ("*", " custom · "),
+        ("-", " unbound · "),
+        ("esc", " close"),
+    ]
+    .into_iter()
+    .flat_map(|(key, label)| {
+        crate::key_hint::key_label_spans(key)
+            .into_iter()
+            .chain([label.set_style(crate::style::footer_hint_label_style())])
+    })
+    .collect::<Line>()
 }
 
 fn keymap_debug_hint_line() -> Line<'static> {
-    let style = accent_style();
-    Line::from(vec![
-        "enter".set_style(style),
-        tr(current(), " start inspector · ").dim(),
-        "esc".set_style(style),
-        tr(current(), " close").dim(),
-    ])
+    let mut spans = crate::key_hint::key_label_spans("enter");
+    spans.push(" start inspector · ".set_style(crate::style::footer_hint_label_style()));
+    spans.extend(crate::key_hint::key_label_spans("esc"));
+    spans.push(" close".set_style(crate::style::footer_hint_label_style()));
+    spans.into()
 }
+
+#[cfg(test)]
+#[path = "picker_tests.rs"]
+mod tests;

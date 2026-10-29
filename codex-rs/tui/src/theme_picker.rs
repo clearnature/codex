@@ -19,9 +19,6 @@
 //! - `ThemePreviewNarrowRenderable` -- compact 4-line snippet stacked below the
 //!   list when side-by-side does not fit.
 
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::path::Path;
 
 use crate::app_event::AppEvent;
@@ -138,13 +135,7 @@ const WIDE_PREVIEW_LEFT_INSET: u16 = 2;
 /// Minimum frame padding used for vertically centered wide preview.
 const PREVIEW_FRAME_PADDING: u16 = 1;
 
-/// 预览副标题。
-///
-/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`；引用点（含本文件测试）
-/// 已 `grep -rn` 确认。
-fn preview_fallback_subtitle() -> &'static str {
-    tr(current(), "Move up/down to live preview themes")
-}
+const PREVIEW_FALLBACK_SUBTITLE: &str = "Move up/down to live preview themes";
 
 /// Side-by-side preview: syntax-highlighted Rust diff snippet, vertically
 /// centered with a 2-column left inset.  Fills the entire side panel height.
@@ -299,17 +290,13 @@ fn theme_picker_subtitle(codex_home: Option<&Path>, terminal_width: Option<u16>)
     if let Some(path) = themes_dir_display
         && path.starts_with('~')
     {
-        let subtitle = tr_with(
-            current(),
-            "Custom .tmTheme files can be added to the {0} directory.",
-            &[&path],
-        );
+        let subtitle = format!("Custom .tmTheme files can be added to the {path} directory.");
         if UnicodeWidthStr::width(subtitle.as_str()) <= available_width {
             return subtitle;
         }
     }
 
-    preview_fallback_subtitle().to_string()
+    PREVIEW_FALLBACK_SUBTITLE.to_string()
 }
 
 /// Builds [`SelectionViewParams`] for the `/theme` picker dialog.
@@ -352,7 +339,7 @@ pub(crate) fn build_theme_picker_params(
         .enumerate()
         .map(|(idx, entry)| {
             let display_name = if entry.is_custom {
-                tr_with(current(), "{0} (custom)", &[&entry.name])
+                format!("{} (custom)", entry.name)
             } else {
                 entry.name.clone()
             };
@@ -401,7 +388,8 @@ pub(crate) fn build_theme_picker_params(
         }) as Box<dyn Fn(&crate::app_event_sender::AppEventSender) + Send + Sync>,
     );
     SelectionViewParams {
-        title: Some(tr(current(), "Select Syntax Theme").to_string()),
+        allow_input_when_disconnected: true,
+        title: Some("Select Syntax Theme".to_string()),
         subtitle: Some(theme_picker_subtitle(
             codex_home_owned.as_deref(),
             terminal_width,
@@ -409,7 +397,7 @@ pub(crate) fn build_theme_picker_params(
         footer_hint: Some(standard_popup_hint_line()),
         items,
         is_searchable: true,
-        search_placeholder: Some(tr(current(), "Type to filter themes...").to_string()),
+        search_placeholder: Some("Type to filter themes...".to_string()),
         initial_selected_idx: initial_idx,
         side_content: Box::new(ThemePreviewWideRenderable),
         side_content_width: SideContentWidth::Half,
@@ -418,7 +406,7 @@ pub(crate) fn build_theme_picker_params(
         preserve_side_content_bg: true,
         on_selection_changed,
         on_cancel,
-        ..Default::default()
+        ..SelectionViewParams::picker()
     }
 }
 
@@ -426,7 +414,6 @@ pub(crate) fn build_theme_picker_params(
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use ratatui::style::Modifier;
 
     fn render_buffer(renderable: &dyn Renderable, width: u16, height: u16) -> Buffer {
         let area = Rect::new(0, 0, width, height);
@@ -451,17 +438,6 @@ mod tests {
                 line
             })
             .collect()
-    }
-
-    fn first_non_space_style_after_marker(buf: &Buffer, row: u16, width: u16) -> Option<Modifier> {
-        let marker_col = (0..width)
-            .find(|&col| buf[(col, row)].symbol() == "-" || buf[(col, row)].symbol() == "+")?;
-        for col in marker_col + 1..width {
-            if buf[(col, row)].symbol() != " " {
-                return Some(buf[(col, row)].style().add_modifier);
-            }
-        }
-        None
     }
 
     fn preview_line_number(line: &str) -> Option<usize> {
@@ -592,25 +568,6 @@ mod tests {
     }
 
     #[test]
-    fn deleted_preview_code_uses_dim_overlay_like_real_diff_renderer() {
-        let width = 80;
-        let height = 6;
-        let buf = render_buffer(&ThemePreviewNarrowRenderable, width, height);
-        let lines = render_lines(&ThemePreviewNarrowRenderable, width, height);
-        let deleted_row = lines
-            .iter()
-            .enumerate()
-            .find_map(|(row, line)| (preview_line_marker(line) == Some('-')).then_some(row as u16))
-            .expect("expected a deleted preview row");
-        let modifiers = first_non_space_style_after_marker(&buf, deleted_row, width)
-            .expect("expected code text after diff marker");
-        assert!(
-            modifiers.contains(Modifier::DIM),
-            "expected deleted preview code to be dimmed"
-        );
-    }
-
-    #[test]
     fn subtitle_uses_tilde_path_when_codex_home_under_home_directory() {
         let home = dirs::home_dir().expect("home directory should be available");
         let codex_home = home.join(".codex");
@@ -629,14 +586,14 @@ mod tests {
 
         let subtitle = theme_picker_subtitle(Some(&codex_home), Some(140));
 
-        assert_eq!(subtitle, preview_fallback_subtitle());
+        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
     }
 
     #[test]
     fn subtitle_falls_back_to_preview_instructions_without_tilde_path() {
         let subtitle =
             theme_picker_subtitle(/*codex_home*/ None, /*terminal_width*/ None);
-        assert_eq!(subtitle, preview_fallback_subtitle());
+        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
     }
 
     #[test]
@@ -646,7 +603,7 @@ mod tests {
 
         let subtitle = theme_picker_subtitle(Some(&codex_home), Some(94));
 
-        assert_eq!(subtitle, preview_fallback_subtitle());
+        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
     }
 
     #[test]
@@ -668,3 +625,7 @@ mod tests {
         assert_eq!(selected_name, configured_or_default_theme);
     }
 }
+
+#[cfg(test)]
+#[path = "theme_picker_model_tests.rs"]
+mod model_tests;

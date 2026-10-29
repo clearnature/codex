@@ -8,8 +8,6 @@ use codex_app_server_daemon::LifecycleCommand as AppServerLifecycleCommand;
 use codex_app_server_daemon::RemoteControlMode as AppServerRemoteControlMode;
 use codex_arg0::Arg0DispatchPaths;
 use codex_arg0::arg0_dispatch_or_else;
-use codex_i18n::current;
-use codex_i18n::tr;
 use codex_chatgpt::apply_command::ApplyCommand;
 use codex_chatgpt::apply_command::run_apply_command;
 use codex_cli::read_access_token_from_stdin;
@@ -25,6 +23,8 @@ use codex_exec::Cli as ExecCli;
 use codex_exec::Command as ExecCommand;
 use codex_exec::ReviewArgs;
 use codex_execpolicy::ExecPolicyCheckCommand;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_responses_api_proxy::Args as ResponsesApiProxyArgs;
 use codex_rollout_trace::REDUCED_STATE_FILE_NAME;
 use codex_rollout_trace::replay_bundle;
@@ -159,7 +159,7 @@ struct MultitoolCli {
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
     /// Browse all agent sessions on the shared local app-server daemon.
-#[clap(about = tr(current(), "Browse all agent sessions on the shared local app-server daemon"))]
+    #[clap(about = tr(current(), "Browse all agent sessions on the shared local app-server daemon"))]
     Agents(AgentsCommand),
 
     /// Internal: forward a local TCP socket through an HTTP/3 CONNECT proxy.
@@ -170,31 +170,31 @@ enum Subcommand {
     Exec(ExecCli),
 
     /// Run a code review non-interactively.
-#[clap(about = tr(current(), "Run a code review non-interactively"))]
+    #[clap(about = tr(current(), "Run a code review non-interactively"))]
     Review(ReviewCommand),
 
     /// Manage login.
-#[clap(about = tr(current(), "Manage login"))]
+    #[clap(about = tr(current(), "Manage login"))]
     Login(LoginCommand),
 
     /// Remove stored authentication credentials.
-#[clap(about = tr(current(), "Remove stored authentication credentials"))]
+    #[clap(about = tr(current(), "Remove stored authentication credentials"))]
     Logout(LogoutCommand),
 
     /// Manage external MCP servers for Codex.
-#[clap(about = tr(current(), "Manage external MCP servers for Codex"))]
+    #[clap(about = tr(current(), "Manage external MCP servers for Codex"))]
     Mcp(McpCli),
 
     /// Manage Codex plugins.
-#[clap(about = tr(current(), "Manage Codex plugins"))]
+    #[clap(about = tr(current(), "Manage Codex plugins"))]
     Plugin(PluginCli),
 
     /// [experimental] Run the app server or related tooling.
-#[clap(about = tr(current(), "[experimental] Run the app server or related tooling"))]
+    #[clap(about = tr(current(), "[experimental] Run the app server or related tooling"))]
     AppServer(AppServerCommand),
 
     /// [experimental] Manage the app-server daemon with remote control enabled.
-#[clap(about = tr(current(), "[experimental] Manage the app-server daemon with remote control enabled"))]
+    #[clap(about = tr(current(), "[experimental] Manage the app-server daemon with remote control enabled"))]
     RemoteControl(RemoteControlCommand),
 
     /// Launch the Desktop app (opens the app installer if missing).
@@ -202,22 +202,22 @@ enum Subcommand {
     App(app_cmd::AppCommand),
 
     /// Generate shell completion scripts.
-#[clap(about = tr(current(), "Generate shell completion scripts"))]
+    #[clap(about = tr(current(), "Generate shell completion scripts"))]
     Completion(CompletionCommand),
 
     /// Update Codex to the latest version.
     Update,
 
     /// Diagnose local Codex installation, config, auth, and runtime health.
-#[clap(about = tr(current(), "Diagnose local Codex installation, config, auth, and runtime health"))]
+    #[clap(about = tr(current(), "Diagnose local Codex installation, config, auth, and runtime health"))]
     Doctor(DoctorCommand),
 
     /// Run commands within a Codex-provided sandbox.
-#[clap(about = tr(current(), "Run commands within a Codex-provided sandbox"))]
+    #[clap(about = tr(current(), "Run commands within a Codex-provided sandbox"))]
     Sandbox(SandboxCommand),
 
     /// Debugging tools.
-#[clap(about = tr(current(), "Debugging tools"))]
+    #[clap(about = tr(current(), "Debugging tools"))]
     Debug(DebugCommand),
 
     /// Execpolicy tooling.
@@ -229,34 +229,34 @@ enum Subcommand {
     Apply(ApplyCommand),
 
     /// Resume a previous interactive session (picker by default; use --last to continue the most recent).
-#[clap(about = tr(current(), "Resume a previous interactive session (picker by default; use --last to continue the most recent)"))]
+    #[clap(about = tr(current(), "Resume a previous interactive session (picker by default; use --last to continue the most recent)"))]
     Resume(ResumeCommand),
 
     /// Queue a message for an existing session.
-#[clap(about = tr(current(), "Queue a message for an existing session"))]
+    #[clap(about = tr(current(), "Queue a message for an existing session"))]
     Queue(QueueCommand),
 
     /// Archive a saved session by id or session name.
-#[clap(about = tr(current(), "Archive a saved session by id or session name"))]
+    #[clap(about = tr(current(), "Archive a saved session by id or session name"))]
     Archive(SessionArchiveCommand),
 
     /// Permanently delete a saved session by id or session name.
-#[clap(about = tr(current(), "Permanently delete a saved session by id or session name"))]
+    #[clap(about = tr(current(), "Permanently delete a saved session by id or session name"))]
     Delete(DeleteCommand),
 
     /// Inspect or migrate legacy local sessions to paginated thread history.
-#[clap(about = tr(current(), "Inspect or migrate legacy local sessions to paginated thread history"))]
+    #[clap(about = tr(current(), "Inspect or migrate legacy local sessions to paginated thread history"))]
     MigrateRollouts(migrate_rollouts::MigrateRolloutsCommand),
 
     /// [experimental] Migrate configured SQLite databases to DELETE mode in place.
     MigrateNfsDb(migrate_nfs_db::MigrateNfsDbCommand),
 
     /// Unarchive a saved session by id or session name.
-#[clap(about = tr(current(), "Unarchive a saved session by id or session name"))]
+    #[clap(about = tr(current(), "Unarchive a saved session by id or session name"))]
     Unarchive(SessionArchiveCommand),
 
     /// Fork a previous interactive session (picker by default; use --last to fork the most recent).
-#[clap(about = tr(current(), "Fork a previous interactive session (picker by default; use --last to fork the most recent)"))]
+    #[clap(about = tr(current(), "Fork a previous interactive session (picker by default; use --last to fork the most recent)"))]
     Fork(ForkCommand),
 
     /// [EXPERIMENTAL] Browse tasks from Codex Cloud and apply changes locally.
@@ -272,11 +272,11 @@ enum Subcommand {
     StdioToUds(StdioToUdsCommand),
 
     /// [EXPERIMENTAL] Run the standalone exec-server service.
-#[clap(about = tr(current(), "[EXPERIMENTAL] Run the standalone exec-server service"))]
+    #[clap(about = tr(current(), "[EXPERIMENTAL] Run the standalone exec-server service"))]
     ExecServer(ExecServerCommand),
 
     /// Inspect feature flags.
-#[clap(about = tr(current(), "Inspect feature flags"))]
+    #[clap(about = tr(current(), "Inspect feature flags"))]
     Features(FeaturesCli),
 }
 

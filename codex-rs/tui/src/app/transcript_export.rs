@@ -1,5 +1,8 @@
 //! Complete, Markdown-preserving conversation exports.
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
@@ -38,7 +41,7 @@ impl App {
         let thread_id = self
             .chat_widget
             .thread_id()
-            .ok_or_else(|| "No active conversation to export.".to_string())?;
+            .ok_or_else(|| tr(current(), "No active conversation to export.").to_string())?;
         let visibility = if self.config.show_raw_agent_reasoning {
             RawReasoningVisibility::Visible
         } else {
@@ -69,7 +72,11 @@ impl App {
                 };
                 let path = write_transcript(cwd, &path, &markdown)?;
                 self.chat_widget.add_info_message(
-                    format!("Saved conversation to {}", path.display()),
+                    tr_with(
+                        current(),
+                        "Saved conversation to {0}",
+                        &[&path.display().to_string()],
+                    ),
                     /*hint*/ None,
                 );
             }
@@ -88,7 +95,13 @@ pub(super) async fn load_export_transcript(
     let mut thread = app_server
         .thread_read(thread_id, /*include_turns*/ false)
         .await
-        .map_err(|error| format!("could not load conversation: {error}"))?;
+        .map_err(|error| {
+            tr_with(
+                current(),
+                "could not load conversation: {0}",
+                &[&error.to_string()],
+            )
+        })?;
     if thread.ephemeral {
         return Ok(visible_transcript);
     }
@@ -116,7 +129,11 @@ pub(super) async fn load_export_transcript(
                 _ => return Ok(visible_transcript),
             }
         } else {
-            return Err(format!("could not load conversation history: {error}"));
+            return Err(tr_with(
+                current(),
+                "could not load conversation history: {0}",
+                &[&error.to_string()],
+            ));
         }
     }
     let mut cells: Vec<Arc<dyn HistoryCell>> = Vec::new();
@@ -141,8 +158,14 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         ThreadItem::FileChange {
             changes, status, ..
         } => {
-            let mut lines =
-                vec![format!("file changes: {status:?} · {} changes", changes.len()).into()];
+            let mut lines = vec![
+                tr_with(
+                    current(),
+                    "file changes: {0} · {1} changes",
+                    &[&format!("{status:?}"), &changes.len().to_string()],
+                )
+                .into(),
+            ];
             for change in changes {
                 lines.push(format!("{:?}: {}", change.kind, change.path).into());
                 lines.extend(change.diff.lines().map(|line| line.to_string().into()));
@@ -158,8 +181,19 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
             error,
             ..
         } => {
-            let mut lines =
-                vec![format!("mcp tool: {server}/{tool}({arguments}) · {status:?}").into()];
+            let mut lines = vec![
+                tr_with(
+                    current(),
+                    "mcp tool: {0}/{1}({2}) · {3}",
+                    &[
+                        server.as_str(),
+                        tool.as_str(),
+                        &arguments.to_string(),
+                        &format!("{status:?}"),
+                    ],
+                )
+                .into(),
+            ];
             if let Some(result) = result {
                 for content in &result.content {
                     match serde_json::from_value::<rmcp::model::ContentBlock>(content.clone()) {
@@ -170,7 +204,7 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                             lines.push("Returned image".into());
                         }
                         Ok(rmcp::model::ContentBlock::Audio(_)) => {
-                            lines.push("<audio content>".into());
+                            lines.push(tr(current(), "<audio content>").into());
                         }
                         Ok(rmcp::model::ContentBlock::Resource(_)) => {
                             let uri = content
@@ -180,17 +214,25 @@ fn export_activity_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
                             lines.push(format!("embedded resource: {uri}").into());
                         }
                         Ok(rmcp::model::ContentBlock::ResourceLink(link)) => {
-                            lines.push(format!("link: {}", link.uri).into());
+                            lines
+                                .push(tr_with(current(), "link: {0}", &[link.uri.as_str()]).into());
                         }
                         _ => lines.push(content.to_string().into()),
                     }
                 }
                 if let Some(content) = &result.structured_content {
-                    lines.push(format!("structured result: {content}").into());
+                    lines.push(
+                        tr_with(current(), "structured result: {0}", &[&content.to_string()])
+                            .into(),
+                    );
                 }
             }
             if let Some(error) = error {
-                lines.extend(raw_lines_from_source(&format!("error: {}", error.message)));
+                lines.extend(raw_lines_from_source(&tr_with(
+                    current(),
+                    "error: {0}",
+                    &[error.message.as_str()],
+                )));
             }
             lines
         }
@@ -253,11 +295,10 @@ fn render_markdown_transcript(cells: &[Arc<dyn HistoryCell>]) -> Result<String, 
                 && lines.first().is_some_and(|line| {
                     let text = line.to_string();
                     [
-                        "• Saved conversation to ",
-                        "• Copied conversation to clipboard",
-                        "• Copy unconfirmed; /export saves chat",
-                        "■ Export failed: ",
-                        "■ Copy failed: ",
+                        tr(current(), "• Saved conversation to "),
+                        tr(current(), "• Copied conversation to clipboard"),
+                        tr(current(), "■ Export failed: "),
+                        tr(current(), "■ Copy failed: "),
                     ]
                     .iter()
                     .any(|prefix| text.starts_with(prefix))
@@ -266,15 +307,15 @@ fn render_markdown_transcript(cells: &[Arc<dyn HistoryCell>]) -> Result<String, 
             continue;
         }
         let (heading, indent) = if cell.as_any().is::<UserHistoryCell>() {
-            ("User", false)
+            (tr(current(), "User"), false)
         } else if cell.as_any().is::<AgentMarkdownCell>() {
-            ("Assistant", false)
+            (tr(current(), "Assistant"), false)
         } else if cell.as_any().is::<ProposedPlanCell>() {
-            ("Plan", false)
+            (tr(current(), "Plan"), false)
         } else if cell.as_any().is::<ReasoningSummaryCell>() {
-            ("Reasoning", false)
+            (tr(current(), "Reasoning"), false)
         } else {
-            ("Activity", true)
+            (tr(current(), "Activity"), true)
         };
         markdown.push_str(&format!("\n## {heading}\n\n"));
         for line in lines {
@@ -290,26 +331,42 @@ fn render_markdown_transcript(cells: &[Arc<dyn HistoryCell>]) -> Result<String, 
     if markdown != "# Codex conversation\n" {
         Ok(markdown)
     } else {
-        Err("No conversation content to export.".to_string())
+        Err(tr(current(), "No conversation content to export.").to_string())
     }
 }
 
 fn write_transcript(cwd: &Path, requested_path: &Path, markdown: &str) -> Result<PathBuf, String> {
     let path = if let Ok(relative) = requested_path.strip_prefix("~") {
         dirs::home_dir()
-            .ok_or_else(|| "could not determine the home directory".to_string())?
+            .ok_or_else(|| tr(current(), "could not determine the home directory").to_string())?
             .join(relative)
     } else if requested_path.is_absolute() {
         requested_path.to_path_buf()
     } else {
         cwd.join(requested_path)
     };
-    let mut file = tempfile::NamedTempFile::new_in(path.parent().unwrap_or(cwd))
-        .map_err(|error| format!("could not create {}: {error}", path.display()))?;
-    file.write_all(markdown.as_bytes())
-        .map_err(|error| format!("could not write {}: {error}", path.display()))?;
-    file.persist_noclobber(&path)
-        .map_err(|error| format!("could not create {}: {error}", path.display()))?;
+    let mut file =
+        tempfile::NamedTempFile::new_in(path.parent().unwrap_or(cwd)).map_err(|error| {
+            tr_with(
+                current(),
+                "could not create {0}: {1}",
+                &[&path.display().to_string(), &error.to_string()],
+            )
+        })?;
+    file.write_all(markdown.as_bytes()).map_err(|error| {
+        tr_with(
+            current(),
+            "could not write {0}: {1}",
+            &[&path.display().to_string(), &error.to_string()],
+        )
+    })?;
+    file.persist_noclobber(&path).map_err(|error| {
+        tr_with(
+            current(),
+            "could not create {0}: {1}",
+            &[&path.display().to_string(), &error.to_string()],
+        )
+    })?;
     Ok(path)
 }
 

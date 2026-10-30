@@ -5565,9 +5565,9 @@ async fn side_parent_status_prioritizes_input_over_approval() -> Result<()> {
     assert_snapshot!(
         format!("{input_footer}\n{approval_footer}\n{cleared_footer}"),
         @"
-    Side from main thread · main needs input · ⌃/ to switch · ⌃c to close
-    Side from main thread · main needs approval · ⌃/ to switch · ⌃c to close
-    Side from main thread · ⌃/ to switch · ⌃c to close
+    Side from main thread · main needs input · ⌃/ to switch · ctrl + c to close
+    Side from main thread · main needs approval · ⌃/ to switch · ctrl + c to close
+    Side from main thread · ⌃/ to switch · ctrl + c to close
     "
     );
 

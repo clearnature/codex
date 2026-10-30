@@ -13,18 +13,46 @@ use codex_app_server_protocol::ThreadUnsubscribeParams;
 use codex_app_server_protocol::ThreadUnsubscribeResponse;
 use codex_app_server_protocol::TurnInterruptParams;
 use codex_app_server_protocol::TurnInterruptResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::ResponseItem;
 
-const SIDE_RENAME_BLOCK_MESSAGE: &str = "Side conversations are ephemeral and cannot be renamed.";
-const SIDE_MAIN_THREAD_UNAVAILABLE_MESSAGE: &str =
-    "'/side' is unavailable until the main thread is ready.";
-const SIDE_NO_STARTED_CONVERSATION_MESSAGE: &str = concat!(
-    "'/side' is unavailable until the current conversation has started. ",
-    "Send a message first, then try /side again."
-);
-const SIDE_ALREADY_OPEN_MESSAGE: &str =
-    "A side conversation is already open. Press ctrl + c to return before starting another.";
+/// Messages shown when a `/side` action is refused.
+///
+/// Functions rather than `const`s: the text has to pass through `tr`, and a
+/// `const` cannot call a non-`const` function (see `docs/plan/i18n-design.md`
+/// §3.6). `SIDE_BOUNDARY_PROMPT` below stays a `const` on purpose -- it is fed
+/// to the model rather than rendered to the user, so translating it would change
+/// what the model sees (design §4, decision 3).
+fn side_rename_block_message() -> &'static str {
+    tr(
+        current(),
+        "Side conversations are ephemeral and cannot be renamed.",
+    )
+}
+
+fn side_main_thread_unavailable_message() -> &'static str {
+    tr(
+        current(),
+        "'/side' is unavailable until the main thread is ready.",
+    )
+}
+
+fn side_no_started_conversation_message() -> &'static str {
+    tr(
+        current(),
+        "'/side' is unavailable until the current conversation has started. Send a message first, then try /side again.",
+    )
+}
+
+fn side_already_open_message() -> &'static str {
+    tr(
+        current(),
+        "A side conversation is already open. Press ctrl + c to return before starting another.",
+    )
+}
 const SIDE_BOUNDARY_PROMPT: &str = r#"Side conversation boundary.
 
 Everything before this boundary is inherited history from the parent thread. It is reference context only. It is not your current task.
@@ -72,18 +100,18 @@ pub(super) enum SideParentStatus {
 impl SideParentStatus {
     fn label(self, parent_is_main: bool) -> &'static str {
         match (self, parent_is_main) {
-            (SideParentStatus::NeedsInput, true) => "main needs input",
-            (SideParentStatus::NeedsInput, false) => "parent needs input",
-            (SideParentStatus::NeedsApproval, true) => "main needs approval",
-            (SideParentStatus::NeedsApproval, false) => "parent needs approval",
-            (SideParentStatus::Failed, true) => "main failed",
-            (SideParentStatus::Failed, false) => "parent failed",
-            (SideParentStatus::Interrupted, true) => "main interrupted",
-            (SideParentStatus::Interrupted, false) => "parent interrupted",
-            (SideParentStatus::Closed, true) => "main closed",
-            (SideParentStatus::Closed, false) => "parent closed",
-            (SideParentStatus::Finished, true) => "main finished",
-            (SideParentStatus::Finished, false) => "parent finished",
+            (SideParentStatus::NeedsInput, true) => tr(current(), "main needs input"),
+            (SideParentStatus::NeedsInput, false) => tr(current(), "parent needs input"),
+            (SideParentStatus::NeedsApproval, true) => tr(current(), "main needs approval"),
+            (SideParentStatus::NeedsApproval, false) => tr(current(), "parent needs approval"),
+            (SideParentStatus::Failed, true) => tr(current(), "main failed"),
+            (SideParentStatus::Failed, false) => tr(current(), "parent failed"),
+            (SideParentStatus::Interrupted, true) => tr(current(), "main interrupted"),
+            (SideParentStatus::Interrupted, false) => tr(current(), "parent interrupted"),
+            (SideParentStatus::Closed, true) => tr(current(), "main closed"),
+            (SideParentStatus::Closed, false) => tr(current(), "parent closed"),
+            (SideParentStatus::Finished, true) => tr(current(), "main finished"),
+            (SideParentStatus::Finished, false) => tr(current(), "parent finished"),
         }
     }
 
@@ -254,16 +282,17 @@ impl App {
                 )
             {
                 self.chat_widget
-                    .set_side_conversation_context_label(Some(format!(
-                        "{} for side",
-                        binding.display_label()
+                    .set_side_conversation_context_label(Some(tr_with(
+                        current(),
+                        "{0} for side",
+                        &[&binding.display_label()],
                     )));
             }
             return;
         };
 
         self.chat_widget
-            .set_thread_rename_block_message(SIDE_RENAME_BLOCK_MESSAGE);
+            .set_thread_rename_block_message(side_rename_block_message());
         self.chat_widget
             .set_side_conversation_active(/*active*/ true);
         self.chat_widget
@@ -271,10 +300,14 @@ impl App {
         let mut label_parts = Vec::new();
         let parent_is_main = self.primary_thread_id == Some(parent_thread_id);
         if parent_is_main {
-            label_parts.push("from main thread".to_string());
+            label_parts.push(tr(current(), "from main thread").to_string());
         } else {
             let parent_label = self.thread_label(parent_thread_id);
-            label_parts.push(format!("from parent thread ({parent_label})"));
+            label_parts.push(tr_with(
+                current(),
+                "from parent thread ({0})",
+                &[&parent_label],
+            ));
         }
         if let Some(parent_status) = parent_status {
             label_parts.push(parent_status.label(parent_is_main).to_string());
@@ -283,14 +316,19 @@ impl App {
             crate::keymap::KeymapContext::Global,
             "toggle_side_conversation",
         ) {
-            label_parts.push(format!("{} to switch", binding.display_label()));
+            label_parts.push(tr_with(
+                current(),
+                "{0} to switch",
+                &[&binding.display_label()],
+            ));
         }
-        label_parts.push(format!(
-            "{} to close",
-            crate::key_hint::ctrl(KeyCode::Char('c')).display_label()
-        ));
+        label_parts.push(tr(current(), "ctrl + c to close").to_string());
         self.chat_widget
-            .set_side_conversation_context_label(Some(format!("Side {}", label_parts.join(" · "))));
+            .set_side_conversation_context_label(Some(tr_with(
+                current(),
+                "Side {0}",
+                &[&label_parts.join(" · ")],
+            )));
     }
 
     pub(super) fn active_side_parent_thread_id(&self) -> Option<ThreadId> {
@@ -434,8 +472,11 @@ impl App {
             return false;
         }
         if let Err(err) = app_server.thread_unsubscribe(thread_id).await {
-            let message =
-                format!("Failed to close side conversation {thread_id}; it is still open: {err}");
+            let message = tr_with(
+                current(),
+                "Failed to close side conversation {0}; it is still open: {1}",
+                &[&thread_id.to_string(), &err.to_string()],
+            );
             tracing::warn!("{message}");
             self.add_agents_overview_error(message);
             return false;
@@ -569,7 +610,11 @@ impl App {
             return Ok(());
         }
         interrupt_result.map_err(|err| {
-            format!("Failed to close side conversation {thread_id}; it is still open: {err}")
+            tr_with(
+                current(),
+                "Failed to close side conversation {0}; it is still open: {1}",
+                &[&thread_id.to_string(), &err.to_string()],
+            )
         })
     }
 
@@ -644,9 +689,9 @@ impl App {
 
     pub(super) fn side_start_block_message(&self) -> Option<&'static str> {
         if self.primary_thread_id.is_none() {
-            Some(SIDE_MAIN_THREAD_UNAVAILABLE_MESSAGE)
+            Some(side_main_thread_unavailable_message())
         } else if self.active_side_parent_thread_id().is_some() {
-            Some(SIDE_ALREADY_OPEN_MESSAGE)
+            Some(side_already_open_message())
         } else {
             None
         }
@@ -658,9 +703,13 @@ impl App {
             message.contains("no rollout found for thread id")
                 || message.contains("includeTurns is unavailable before first user message")
         }) {
-            SIDE_NO_STARTED_CONVERSATION_MESSAGE.to_string()
+            side_no_started_conversation_message().to_string()
         } else {
-            format!("Failed to start side conversation: {err}")
+            tr_with(
+                current(),
+                "Failed to start side conversation: {0}",
+                &[&err.to_string()],
+            )
         }
     }
 
@@ -720,8 +769,9 @@ impl App {
         if self.pending_server_profiles.contains_key(&parent_thread_id) {
             self.restore_side_user_message(user_message.take());
             self.sync_side_thread_ui();
-            self.chat_widget
-                .add_error_message("Wait for permissions to update before forking.".into());
+            self.chat_widget.add_error_message(
+                tr(current(), "Wait for permissions to update before forking.").into(),
+            );
             return Ok(AppRunControl::Continue);
         }
 
@@ -783,8 +833,10 @@ impl App {
                     self.discard_side_thread_or_keep_visible(tui, app_server, child_thread_id)
                         .await;
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to prepare side conversation {child_thread_id}: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to prepare side conversation {0}: {1}",
+                        &[&child_thread_id.to_string(), &err.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
@@ -806,8 +858,10 @@ impl App {
                         );
                     }
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to switch into side conversation {child_thread_id}: {err}"
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to switch into side conversation {0}: {1}",
+                        &[&child_thread_id.to_string(), &err.to_string()],
                     ));
                     return Ok(AppRunControl::Continue);
                 }
@@ -824,8 +878,10 @@ impl App {
                     self.discard_side_thread_or_keep_visible(tui, app_server, child_thread_id)
                         .await;
                     self.restore_side_user_message(user_message.take());
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to switch into side conversation {child_thread_id}."
+                    self.chat_widget.add_error_message(tr_with(
+                        current(),
+                        "Failed to switch into side conversation {0}.",
+                        &[&child_thread_id.to_string()],
                     ));
                 }
             }

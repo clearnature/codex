@@ -25,6 +25,8 @@ mod browsing;
 mod legacy_input;
 mod prompt_navigation;
 
+use codex_i18n::current;
+use codex_i18n::tr_with;
 use std::any::TypeId;
 use std::sync::Arc;
 
@@ -151,8 +153,11 @@ impl App {
         err: impl std::fmt::Display,
     ) {
         self.chat_widget.restore_user_message_to_composer(prompt);
-        self.chat_widget
-            .add_error_message(format!("Failed to edit the selected prompt: {err:#}"));
+        self.chat_widget.add_error_message(tr_with(
+            current(),
+            "Failed to branch before the selected prompt: {0}",
+            &[&err.to_string()],
+        ));
     }
 
     /// Show detailed history in the owned viewport or the inline session's transcript overlay.

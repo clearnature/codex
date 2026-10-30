@@ -1,0 +1,10 @@
+{"run_id":"ed3fad91-a2a1-4189-92fc-ce38ba4e9686","line":55,"new":{"module_name":"codex_tui__app__tests__turn_submission","snapshot_name":"worktree_creation_rejects_untrusted_source_before_allocation","metadata":{"source":"tui/src/app/tests/turn_submission.rs","assertion_line":55,"expression":"message"},"snapshot":"■ Enable worktrees in /experimental to create a worktree."},"old":{"module_name":"codex_tui__app__tests__turn_submission","metadata":{},"snapshot":"■ Cannot create a worktree from an explicitly untrusted source."}}
+{"run_id":"ed3fad91-a2a1-4189-92fc-ce38ba4e9686","line":55,"new":{"module_name":"codex_tui__app__tests__turn_submission","snapshot_name":"worktree_creation_rejects_untrusted_source_before_allocation","metadata":{"source":"tui/src/app/tests/turn_submission.rs","assertion_line":55,"expression":"message"},"snapshot":"■ Enable worktrees in /experimental to create a worktree."},"old":{"module_name":"codex_tui__app__tests__turn_submission","metadata":{},"snapshot":"■ Cannot create a worktree from an explicitly untrusted source."}}
+{"run_id":"1793320168-506848353","line":55,"new":{"module_name":"codex_tui__app__tests__turn_submission","snapshot_name":"worktree_creation_rejects_untrusted_source_before_allocation","metadata":{"source":"tui/src/app/tests/turn_submission.rs","assertion_line":55,"expression":"message"},"snapshot":"■ Enable worktrees in /experimental to create a worktree."},"old":{"module_name":"codex_tui__app__tests__turn_submission","metadata":{},"snapshot":"■ Cannot create a worktree from an explicitly untrusted source."}}
+{"run_id":"1793320272-7694691","line":55,"new":null,"old":null}
+{"run_id":"1793320272-7694691","line":55,"new":null,"old":null}
+{"run_id":"80030893-5bbd-4e2e-b1f3-5e30696c00b5","line":149,"new":null,"old":null}
+{"run_id":"80030893-5bbd-4e2e-b1f3-5e30696c00b5","line":103,"new":null,"old":null}
+{"run_id":"80030893-5bbd-4e2e-b1f3-5e30696c00b5","line":433,"new":null,"old":null}
+{"run_id":"80030893-5bbd-4e2e-b1f3-5e30696c00b5","line":55,"new":null,"old":null}
+{"run_id":"80030893-5bbd-4e2e-b1f3-5e30696c00b5","line":55,"new":null,"old":null}

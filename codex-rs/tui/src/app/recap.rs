@@ -1,9 +1,14 @@
 //! Schedules and generates bounded recaps through the existing temporary request path.
 //! The TUI opt-out suppresses automatic scheduling and requests, but not manual `/recap`.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::time::Duration;
 use std::time::Instant;
 use tokio_util::sync::CancellationToken;
+
+#[path = "recap_history.rs"]
+mod history;
 
 use super::App;
 use crate::app_event::AppEvent;
@@ -23,6 +28,7 @@ use codex_app_server_protocol::TurnStatus;
 use codex_context_fragments::ContextualUserFragment;
 use codex_context_fragments::RecapPrompt;
 use codex_protocol::ThreadId;
+use history::recap_history;
 use serde::Deserialize;
 use serde_json::Value;
 use serde_json::json;
@@ -36,15 +42,22 @@ pub(super) const RECAP_DELAY: Duration = Duration::from_secs(/*secs*/ 30 * 60);
 const RECAP_MAX_CHARS: usize = 700;
 const RECAP_NEXT_MAX_CHARS: usize = 200;
 const RECAP_RETRY_DELAY: Duration = Duration::from_secs(/*secs*/ 30);
-const MANUAL_RECAP_FAILURE_MESSAGE: &str = "Could not generate a recap. Please try again.";
-const MANUAL_RECAP_IN_PROGRESS_MESSAGE: &str = "A recap is already being generated.";
-const MANUAL_RECAP_EMPTY_HISTORY_MESSAGE: &str = "There is no conversation history to recap.";
+/// 手动 recap 的三种用户可见反馈。
+///
+/// 用函数而不是 `const`：文案要过 `tr()`，而 `tr` 不是 `const fn`。
+fn manual_recap_failure_message() -> &'static str {
+    tr(current(), "Could not generate a recap. Please try again.")
+}
+
+fn manual_recap_in_progress_message() -> &'static str {
+    tr(current(), "A recap is already being generated.")
+}
+
+fn manual_recap_empty_history_message() -> &'static str {
+    tr(current(), "There is no conversation history to recap.")
+}
 #[cfg(test)]
 pub(super) const RECAP_PROMPT_MAX_BYTES: usize = RecapPrompt::MAX_BYTES;
-
-#[path = "recap_history.rs"]
-mod history;
-use history::recap_history;
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -174,7 +187,7 @@ impl App {
             ),
             RecapTrigger::Manual => self
                 .chat_widget
-                .add_error_message(MANUAL_RECAP_FAILURE_MESSAGE.to_string()),
+                .add_error_message(manual_recap_failure_message().to_string()),
         }
     }
 
@@ -190,7 +203,7 @@ impl App {
         if self.recap.in_flight_request.is_some() {
             if matches!(trigger, RecapTrigger::Manual) {
                 self.chat_widget
-                    .add_error_message(MANUAL_RECAP_IN_PROGRESS_MESSAGE.to_string());
+                    .add_error_message(manual_recap_in_progress_message().to_string());
             }
             return;
         }
@@ -199,7 +212,7 @@ impl App {
         if history.is_empty() {
             if matches!(trigger, RecapTrigger::Manual) {
                 self.chat_widget
-                    .add_error_message(MANUAL_RECAP_EMPTY_HISTORY_MESSAGE.to_string());
+                    .add_error_message(manual_recap_empty_history_message().to_string());
             }
             return;
         }

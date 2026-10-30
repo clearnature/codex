@@ -17,6 +17,8 @@ use crate::terminal_program_status::ProgramStatus;
 use codex_app_server_protocol::AskForApproval;
 use codex_config::ConfigLayerSource;
 use codex_config::os_host_name;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::config_types::ServiceTier;
 use codex_protocol::models::PermissionProfile;
@@ -40,8 +42,12 @@ pub(super) const TERMINAL_TITLE_SPINNER_INTERVAL: Duration = Duration::from_mill
 const TERMINAL_TITLE_ACTION_REQUIRED_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Prefix shown in the terminal title when the agent is blocked on user input.
-const TERMINAL_TITLE_ACTION_REQUIRED_PREFIX: &str = "[ ! ] Action Required";
-const TERMINAL_TITLE_ACTION_REQUIRED_PREFIX_HIDDEN: &str = "[ . ] Action Required";
+fn terminal_title_action_required_prefix() -> &'static str {
+    tr(current(), "[ ! ] Action Required")
+}
+fn terminal_title_action_required_prefix_hidden() -> &'static str {
+    tr(current(), "[ . ] Action Required")
+}
 
 #[derive(Debug)]
 /// Parsed status-surface configuration for one refresh pass.
@@ -409,15 +415,15 @@ impl ChatWidget {
 
     fn action_required_terminal_title_prefix_at(&self, now: Instant) -> &'static str {
         if !(self.local_settings.tui.animations && self.local_settings.tui.effects.title) {
-            return TERMINAL_TITLE_ACTION_REQUIRED_PREFIX;
+            return terminal_title_action_required_prefix();
         }
 
         let elapsed = now.saturating_duration_since(self.terminal_title_animation_origin);
         let phase = (elapsed.as_millis() / TERMINAL_TITLE_ACTION_REQUIRED_INTERVAL.as_millis()) % 2;
         if phase == 0 {
-            TERMINAL_TITLE_ACTION_REQUIRED_PREFIX
+            terminal_title_action_required_prefix()
         } else {
-            TERMINAL_TITLE_ACTION_REQUIRED_PREFIX_HIDDEN
+            terminal_title_action_required_prefix_hidden()
         }
     }
 
@@ -750,7 +756,7 @@ impl ChatWidget {
                 .and_then(|summary| summary.branch_change_stats.as_ref())
                 .map(|stats| {
                     if stats.additions == 0 && stats.deletions == 0 {
-                        "No changes".to_string()
+                        tr(current(), "No changes").to_string()
                     } else {
                         format!("+{} -{}", stats.additions, stats.deletions)
                     }
@@ -826,9 +832,9 @@ impl ChatWidget {
                 .is_none_or(|preset| preset.supports_fast_mode())
                 .then(|| {
                     if self.current_service_tier() == Some(ServiceTier::Fast.request_value()) {
-                        "Fast on".to_string()
+                        tr(current(), "Fast on").to_string()
                     } else {
-                        "Fast off".to_string()
+                        tr(current(), "Fast off").to_string()
                     }
                 }),
             StatusLineItem::Daybreak => Some(
@@ -838,7 +844,9 @@ impl ChatWidget {
                     "Daybreak off".to_string()
                 },
             ),
-            StatusLineItem::RawOutput => self.raw_output_mode().then(|| "raw output".to_string()),
+            StatusLineItem::RawOutput => self
+                .raw_output_mode()
+                .then(|| tr(current(), "raw output").to_string()),
             StatusLineItem::ThreadName => {
                 self.thread_name.as_deref().and_then(normalize_thread_name)
             }
@@ -1240,26 +1248,26 @@ fn permissions_display(config: &Config) -> String {
     if let Some(details) = summary.strip_prefix("read-only")
         && !details.contains("(network access enabled)")
     {
-        return "Read Only".to_string();
+        return tr(current(), "Read Only").to_string();
     }
     if let Some(details) = summary.strip_prefix("workspace-write")
         && !details.contains("(network access enabled)")
     {
-        return "Workspace".to_string();
+        return tr(current(), "Workspace").to_string();
     }
     if permission_profile == PermissionProfile::Disabled {
-        return "Full Access".to_string();
+        return tr(current(), "Full Access").to_string();
     }
 
-    "Custom permissions".to_string()
+    tr(current(), "Custom permissions").to_string()
 }
 
 fn approval_mode_display(config: &Config) -> String {
     let approval_policy = AskForApproval::from(config.permissions.approval_policy.value());
     if approval_policy == AskForApproval::OnRequest {
         return match config.approvals_reviewer {
-            ApprovalsReviewer::AutoReview => "Approve for me".to_string(),
-            ApprovalsReviewer::User => "Ask for approval".to_string(),
+            ApprovalsReviewer::AutoReview => tr(current(), "Approve for me").to_string(),
+            ApprovalsReviewer::User => tr(current(), "Ask for approval").to_string(),
         };
     }
 

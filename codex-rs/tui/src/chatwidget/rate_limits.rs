@@ -1,6 +1,8 @@
 //! Rate-limit warning, prompt, and notice surfaces, plus quota-aware account refresh cadence.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 pub(super) const WORKSPACE_NUDGE_VIEW_ID: &str = "workspace-usage-nudge";
 use crate::bottom_pane::ActionableBanner;
 use crate::model_catalog::LUNA_RESERVE_MODEL;
@@ -18,7 +20,9 @@ pub(super) const RATE_LIMIT_SWITCH_PROMPT_VIEW_ID: &str = "rate-limit-switch-pro
 
 const RATE_LIMIT_WARNING_THRESHOLDS: [f64; 4] = [50.0, 75.0, 90.0, 95.0];
 const PRIMARY_LIMIT_FALLBACK_LABEL: &str = "usage";
-const SECONDARY_LIMIT_FALLBACK_LABEL: &str = "secondary usage";
+fn secondary_limit_fallback_label() -> &'static str {
+    tr(current(), "secondary usage")
+}
 
 #[derive(Default)]
 pub(super) struct RateLimitWarningState {
@@ -133,7 +137,7 @@ pub(crate) fn get_limits_duration(windows_minutes: i64) -> Option<String> {
 
 pub(crate) fn fallback_limit_label(is_secondary: bool) -> &'static str {
     if is_secondary {
-        SECONDARY_LIMIT_FALLBACK_LABEL
+        secondary_limit_fallback_label()
     } else {
         PRIMARY_LIMIT_FALLBACK_LABEL
     }
@@ -505,7 +509,7 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: "Keep current model".to_string(),
+                name: tr(current(), "Keep current model").to_string(),
                 description: None,
                 selected_description: None,
                 is_current: false,
@@ -514,7 +518,7 @@ impl ChatWidget {
                 ..Default::default()
             },
             SelectionItem {
-                name: "Keep current model (never show again)".to_string(),
+                name: tr(current(), "Keep current model (never show again)").to_string(),
                 description: Some(
                     "Hide future rate limit reminders about switching models".to_string(),
                 ),
@@ -528,7 +532,7 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(RATE_LIMIT_SWITCH_PROMPT_VIEW_ID),
-            title: Some("Approaching rate limits".to_string()),
+            title: Some(tr(current(), "Approaching rate limits").to_string()),
             subtitle: Some(format!("Switch to {switch_model} for lower credit usage?")),
             footer_hint: Some(standard_popup_hint_line()),
             items,
@@ -546,11 +550,11 @@ impl ChatWidget {
 
         let (title, prompt) = match credit_type {
             AddCreditsNudgeCreditType::Credits => (
-                "You've reached your workspace credit limit",
+                tr(current(), "You've reached your workspace credit limit"),
                 "Your workspace is out of credits. Ask your workspace owner to add more. Notify owner?",
             ),
             AddCreditsNudgeCreditType::UsageLimit => (
-                "Usage limit reached",
+                tr(current(), "Usage limit reached"),
                 "Request a limit increase from your owner to continue using codex. Request increase?",
             ),
         };
@@ -559,7 +563,7 @@ impl ChatWidget {
         })];
         let items = vec![
             SelectionItem {
-                name: "Yes".to_string(),
+                name: tr(current(), "Yes").to_string(),
                 display_shortcut: Some(key_hint::plain(KeyCode::Char('y')).into()),
                 actions: send_actions,
                 dismiss_on_select: true,
@@ -614,17 +618,17 @@ impl ChatWidget {
         self.add_credits_nudge_email_in_flight = None;
         let message = match (credit_type, result) {
             (AddCreditsNudgeCreditType::Credits, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                "Workspace owner notified."
+                tr(current(), "Workspace owner notified.")
             }
             (
                 AddCreditsNudgeCreditType::Credits,
                 Ok(AddCreditsNudgeEmailStatus::CooldownActive),
-            ) => "Workspace owner was already notified recently.",
+            ) => tr(current(), "Workspace owner was already notified recently."),
             (AddCreditsNudgeCreditType::Credits, Err(_)) => {
                 "Could not notify your workspace owner. Please try again."
             }
             (AddCreditsNudgeCreditType::UsageLimit, Ok(AddCreditsNudgeEmailStatus::Sent)) => {
-                "Limit increase requested."
+                tr(current(), "Limit increase requested.")
             }
             (
                 AddCreditsNudgeCreditType::UsageLimit,

@@ -5,6 +5,8 @@ use super::*;
 use crate::bottom_pane::BottomPaneView;
 use crate::clipboard_copy::CopyStatus;
 use crate::clipboard_copy::worker::CopyResult;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// An input action the app must finish before processing the next key.
 #[derive(Debug)]
@@ -255,7 +257,12 @@ impl ChatWidget {
             return KeyEventAction::None;
         }
 
-        const REVIEW_STEER_UNAVAILABLE_MESSAGE: &str = "Steer messages aren't supported during /review. Press Ctrl+C now to cancel the review.";
+        fn review_steer_unavailable_message() -> &'static str {
+            tr(
+                current(),
+                "Steer messages aren't supported during /review. Press Ctrl+C now to cancel the review.",
+            )
+        }
 
         if self.chat_keymap.interrupt_turn.is_pressed(key_event)
             && self.review.is_review_mode
@@ -265,7 +272,7 @@ impl ChatWidget {
             && self.bottom_pane.no_modal_or_popup_active()
             && !self.should_handle_vim_insert_escape(key_event)
         {
-            self.add_warning_message(REVIEW_STEER_UNAVAILABLE_MESSAGE.to_string());
+            self.add_warning_message(review_steer_unavailable_message().to_string());
             return KeyEventAction::None;
         }
 
@@ -427,7 +434,7 @@ impl ChatWidget {
             return true;
         }
 
-        let message = "Ctrl+L is disabled while a task is in progress.".to_string();
+        let message = tr(current(), "Ctrl+L is disabled while a task is in progress.").to_string();
         self.add_to_history(history_cell::new_error_event(message));
         self.request_redraw();
         false
@@ -441,7 +448,7 @@ impl ChatWidget {
                 KeyEventAction::CopyLastResponse(markdown.into())
             }
             _ => {
-                self.add_error_message("No agent response to copy".into());
+                self.add_error_message(tr(current(), "No agent response to copy").into());
                 KeyEventAction::None
             }
         };
@@ -480,22 +487,24 @@ impl ChatWidget {
         let tx = self.app_event_tx.clone();
         let existing_name = self.thread_name.as_deref().filter(|name| !name.is_empty());
         let title = if existing_name.is_some() {
-            "Rename thread"
+            tr(current(), "Rename thread")
         } else {
-            "Name thread"
+            tr(current(), "Name thread")
         };
         let suggestion_request = self
             .thread_id
             .map(|thread_id| (thread_id, uuid::Uuid::new_v4()));
         let mut view = CustomPromptView::new(
             title.to_string(),
-            "Type a name and press Enter".to_string(),
+            tr(current(), "Type a name and press Enter").to_string(),
             /*initial_text*/ existing_name.unwrap_or_default().to_string(),
             /*context_label*/ None,
             Box::new(move |name: String| {
                 let Some(name) = normalize_thread_name(&name) else {
                     tx.send(AppEvent::InsertHistoryCell(Box::new(
-                        history_cell::new_error_event("Thread name cannot be empty.".to_string()),
+                        history_cell::new_error_event(
+                            tr(current(), "Thread name cannot be empty.").to_string(),
+                        ),
                     )));
                     return;
                 };
@@ -505,8 +514,8 @@ impl ChatWidget {
         if let Some((_, request_id)) = suggestion_request {
             view = view.with_text_suggestion(
                 request_id,
-                "Generating a title suggestion…".to_string(),
-                "Suggested from this conversation".to_string(),
+                tr(current(), "Generating a title suggestion…").to_string(),
+                tr(current(), "Suggested from this conversation").to_string(),
             );
         }
         self.bottom_pane.show_text_prompt(view);

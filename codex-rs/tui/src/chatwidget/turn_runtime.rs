@@ -5,6 +5,8 @@
 //! Terminal errors retain live question drafts across queued input delivery.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 const LEGACY_SAFETY_ACCESS_BLOCK_PREFIX: &str =
     "Invalid prompt: we've limited access to this content for safety reasons.";
@@ -382,7 +384,7 @@ impl ChatWidget {
         self.finalize_turn();
 
         let message = if message.trim().is_empty() {
-            "Codex is currently experiencing high load.".to_string()
+            tr(current(), "Codex is currently experiencing high load.").to_string()
         } else {
             message
         };

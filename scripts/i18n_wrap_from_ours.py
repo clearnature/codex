@@ -29,7 +29,7 @@ from pathlib import Path
 
 CALL_RE = re.compile(
     r'tr(?:_with)?\(\s*current\(\),\s*"(?P<key>[^"]+)"'
-    r'(?:,\s*(?P<args>&\[(?:[^\[\]]|\[(?:[^\[\]])*\])*?\]))?\s*\)',
+    r"(?:,\s*(?P<args>&\[(?:[^\[\]]|\[(?:[^\[\]])*\])*?\]))?\s*\)",
     re.S,
 )
 
@@ -83,8 +83,8 @@ def main() -> int:
             continue
         # only wrap when the working tree occurrence is NOT already a tr call
         idx = work.index(literal)
-        before = work[max(0, idx - 40): idx]
-        if re.search(r'tr(?:_with)?\(\s*$', before):
+        before = work[max(0, idx - 40) : idx]
+        if re.search(r"tr(?:_with)?\(\s*$", before):
             skipped_ambiguous += 1
             continue
         pairs.append({"old": literal, "new": call, "source": args.file})

@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::path::PathBuf;
 
 use super::ChatWidget;
@@ -64,8 +66,8 @@ impl ChatWidget {
     pub(crate) fn add_plugins_output(&mut self) {
         if !self.config.features.enabled(Feature::Plugins) {
             self.add_info_message(
-                "Plugins are disabled.".to_string(),
-                Some("Enable the plugins feature to use /plugins.".to_string()),
+                tr(current(), "Plugins are disabled.").to_string(),
+                Some(tr(current(), "Enable the plugins feature to use /plugins.").to_string()),
             );
             return;
         }
@@ -285,10 +287,10 @@ impl ChatWidget {
         let tx = self.app_event_tx.clone();
         let cwd = self.config.cwd.to_path_buf();
         let view = CustomPromptView::new(
-            "Add marketplace".to_string(),
-            "owner/repo, git URL, or local marketplace path".to_string(),
+            tr(current(), "Add marketplace").to_string(),
+            tr(current(), "owner/repo, git URL, or local marketplace path").to_string(),
             String::new(),
-            Some("Examples: owner/repo, git URL, ./marketplace".to_string()),
+            Some(tr(current(), "Examples: owner/repo, git URL, ./marketplace").to_string()),
             Box::new(move |source: String| {
                 let source = source.trim().to_string();
                 if source.is_empty() {
@@ -462,7 +464,10 @@ impl ChatWidget {
                 if self.plugin_install_apps_needing_auth.is_empty() {
                     self.add_info_message(
                         format!("Installed {plugin_display_name} plugin."),
-                        Some("No additional app authentication is required.".to_string()),
+                        Some(
+                            tr(current(), "No additional app authentication is required.")
+                                .to_string(),
+                        ),
                     );
                     true
                 } else {
@@ -617,7 +622,7 @@ impl ChatWidget {
                 let error_count = response.errors.len();
                 if selected_count == 0 {
                     self.add_info_message(
-                        "No configured Git marketplaces to upgrade.".to_string(),
+                        tr(current(), "No configured Git marketplaces to upgrade.").to_string(),
                         Some("Only configured Git marketplaces can be upgraded.".to_string()),
                     );
                     return;
@@ -800,7 +805,7 @@ impl ChatWidget {
                 self.plugin_install_auth_flow = None;
                 self.add_info_message(
                     format!("Uninstalled {plugin_display_name} plugin."),
-                    Some("Bundled apps remain installed.".to_string()),
+                    Some(tr(current(), "Bundled apps remain installed.").to_string()),
                 );
             }
             Err(err) => {

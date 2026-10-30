@@ -5,6 +5,8 @@
 use super::*;
 use crate::bottom_pane::PickerSurface;
 use codex_git_utils::CommitLogEntry;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn on_review_started(&mut self) {
@@ -16,8 +18,8 @@ impl ChatWidget {
         let mut items: Vec<SelectionItem> = Vec::new();
 
         items.push(SelectionItem {
-            name: "Review against a base branch".to_string(),
-            description: Some("(PR Style)".into()),
+            name: tr(current(), "Review against a base branch").to_string(),
+            description: Some(tr(current(), "(PR Style)").into()),
             actions: vec![Box::new({
                 let cwd = self.config.cwd.to_path_buf();
                 move |tx| {
@@ -30,7 +32,7 @@ impl ChatWidget {
         });
 
         items.push(SelectionItem {
-            name: "Review uncommitted changes".to_string(),
+            name: tr(current(), "Review uncommitted changes").to_string(),
             actions: vec![Box::new(move |tx: &AppEventSender| {
                 tx.review(ReviewTarget::UncommittedChanges);
             })],
@@ -39,7 +41,7 @@ impl ChatWidget {
         });
 
         items.push(SelectionItem {
-            name: "Review a commit".to_string(),
+            name: tr(current(), "Review a commit").to_string(),
             actions: vec![Box::new({
                 let cwd = self.config.cwd.to_path_buf();
                 move |tx| {
@@ -62,7 +64,7 @@ impl ChatWidget {
         });
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Select a review preset".into()),
+            title: Some(tr(current(), "Select a review preset").into()),
             items,
             ..SelectionViewParams::picker()
         });
@@ -92,11 +94,11 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             picker_surface: PickerSurface::Panel,
-            title: Some("Select a base branch".to_string()),
+            title: Some(tr(current(), "Select a base branch").to_string()),
             subtitle: Some(format!("Current branch: {current_branch}")),
             items,
             is_searchable: true,
-            search_placeholder: Some("Type to search branches".to_string()),
+            search_placeholder: Some(tr(current(), "Type to search branches").to_string()),
             ..Default::default()
         });
     }
@@ -129,10 +131,12 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             picker_surface: PickerSurface::Panel,
-            title: Some("Select a commit to review".into()),
+            title: Some(tr(current(), tr(current(), "Select a commit to review")).into()),
             items,
             is_searchable: true,
-            search_placeholder: Some("Type to search commits".to_string()),
+            search_placeholder: Some(
+                tr(current(), tr(current(), "Type to search commits")).to_string(),
+            ),
             ..Default::default()
         });
     }
@@ -141,7 +145,7 @@ impl ChatWidget {
         let tx = self.app_event_tx.clone();
         let view = CustomPromptView::new(
             "Custom review instructions".to_string(),
-            "Type instructions and press Enter".to_string(),
+            tr(current(), "Type instructions and press Enter").to_string(),
             /*initial_text*/ String::new(),
             /*context_label*/ None,
             Box::new(move |prompt: String| {

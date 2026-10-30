@@ -7,6 +7,8 @@
 use super::permissions_menu::permission_preset_description;
 use super::*;
 use crate::style::accent_color;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::openai_models::MODEL_SPECIALTY_CYBER;
 
 impl ChatWidget {
@@ -166,7 +168,7 @@ impl ChatWidget {
 
         let footer_note = show_elevate_sandbox_hint.then(|| {
             vec![
-                "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ".dim(),
+                tr(current(), "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ").dim(),
                 "/setup-default-sandbox".fg(accent_color()),
                 ".".dim(),
             ]
@@ -176,7 +178,7 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             footer_note,
             items,
-            title: Some("Update Model Permissions".into()),
+            title: Some(tr(current(), "Update Model Permissions").into()),
             ..SelectionViewParams::picker()
         });
     }
@@ -184,18 +186,20 @@ impl ChatWidget {
     pub(crate) fn open_auto_review_denials_popup(&mut self) {
         if self.review.recent_auto_review_denials.is_empty() {
             self.add_info_message(
-                "No recent auto-review denials in this thread.".to_string(),
+                tr(current(), "No recent auto-review denials in this thread.").to_string(),
                 Some("Denials are recorded after auto-review rejects an action.".to_string()),
             );
             return;
         }
         let Some(thread_id) = self.thread_id() else {
-            self.add_error_message("That thread is no longer available.".to_string());
+            self.add_error_message(
+                tr(current(), "That thread is no longer available.").to_string(),
+            );
             return;
         };
 
         let mut items = vec![SelectionItem {
-            name: "Action".to_string(),
+            name: tr(current(), "Action").to_string(),
             description: Some("Rationale".to_string()),
             is_disabled: true,
             search_value: Some(String::new()),
@@ -232,8 +236,8 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(
                 Paragraph::new(vec![
-                    Line::from("Auto-review Denials".bold()),
-                    Line::from("Select a denied action to approve.".dim()),
+                    Line::from(tr(current(), "Auto-review Denials").bold()),
+                    Line::from(tr(current(), "Select a denied action to approve.").dim()),
                 ])
                 .wrap(Wrap { trim: false }),
             ),
@@ -248,7 +252,9 @@ impl ChatWidget {
 
     pub(crate) fn approve_recent_auto_review_denial(&mut self, thread_id: ThreadId, id: String) {
         let Some(event) = self.review.recent_auto_review_denials.take(&id) else {
-            self.add_error_message("That auto-review denial is no longer available.".to_string());
+            self.add_error_message(
+                tr(current(), "That auto-review denial is no longer available.").to_string(),
+            );
             return;
         };
 
@@ -257,9 +263,9 @@ impl ChatWidget {
             op: AppCommand::approve_guardian_denied_action(event),
         });
         self.add_info_message(
-            "Approval recorded for one retry of the selected auto-review denial.".to_string(),
+            tr(current(), "Approval recorded for one retry of the selected auto-review denial.").to_string(),
             Some(
-                "The model will see the approval context; the retry still goes through auto-review."
+                tr(current(), "The model will see the approval context; the retry still goes through auto-review.")
                     .to_string(),
             ),
         );
@@ -436,7 +442,7 @@ impl ChatWidget {
                     && model.model_specialty.as_deref() == Some(MODEL_SPECIALTY_CYBER)
             })
         });
-        let title_line = Line::from("Enable full access?").bold();
+        let title_line = Line::from(tr(current(), "Enable full access?")).bold();
         let info_lines = if is_cyber_model {
             let recommendation = if auto_review_available(&self.config) {
                 "We strongly recommend selecting \"Approve for me\" instead, and customizing the reviewer policy for your use case."
@@ -457,9 +463,9 @@ impl ChatWidget {
             ]
         } else {
             vec![Line::from(vec![
-                "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
+                tr(current(), "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. ")
                     .into(),
-                "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior."
+                tr(current(), "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior.")
                     .red(),
             ])]
         };
@@ -493,15 +499,17 @@ impl ChatWidget {
 
         let items = vec![
             SelectionItem {
-                name: "Yes, continue anyway".to_string(),
-                description: Some("Apply full access for this session".to_string()),
+                name: tr(current(), "Yes, continue anyway").to_string(),
+                description: Some(tr(current(), "Apply full access for this session").to_string()),
                 actions: accept_actions,
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Cancel".to_string(),
-                description: Some("Go back without enabling full access".to_string()),
+                name: tr(current(), "Cancel").to_string(),
+                description: Some(
+                    tr(current(), "Go back without enabling full access").to_string(),
+                ),
                 actions: deny_actions,
                 dismiss_on_select: true,
                 ..Default::default()

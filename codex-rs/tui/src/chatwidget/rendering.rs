@@ -7,6 +7,8 @@ use crate::render::RectExt;
 use crate::terminal_hyperlinks::HyperlinkParagraph;
 use crate::wrapping::RtOptions;
 use crate::wrapping::word_wrap_lines;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::style::Styled as _;
 use ratatui::text::Span;
 use ratatui::widgets::Block;
@@ -61,7 +63,7 @@ impl ExternalWriterNotice {
         let title: Line<'static> = vec![
             "🔒".into(),
             "  ".into(),
-            "This conversation is open in another app".bold(),
+            tr(current(), "This conversation is open in another app").bold(),
         ]
         .into();
         let retry: Line<'static> = vec![
@@ -79,7 +81,7 @@ impl ExternalWriterNotice {
         }
         lines.extend(word_wrap_lines(
             &[Line::from(
-                "Close it there and press R to continue here.".dim(),
+                tr(current(), "Close it there and press R to continue here.").dim(),
             )],
             RtOptions::new(usize::from(width))
                 .initial_indent("    ".into())

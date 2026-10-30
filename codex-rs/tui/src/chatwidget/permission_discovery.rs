@@ -3,6 +3,8 @@
 use super::slash_command_args;
 use super::*;
 use crate::permission_discovery::PermissionDiscovery;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(super) const VIEW_ID: &str = "permission-profiles";
 
@@ -151,7 +153,7 @@ impl ChatWidget {
             view_id: Some(VIEW_ID),
             title: Some("Update Model Permissions".into()),
             items: vec![SelectionItem {
-                name: "Loading permission profiles…".to_string(),
+                name: tr(current(), "Loading permission profiles…").to_string(),
                 is_disabled: true,
                 ..Default::default()
             }],

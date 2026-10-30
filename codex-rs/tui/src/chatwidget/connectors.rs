@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::atomic::AtomicU64;
 
 /// Prevents stale requests from matching a replacement widget for the same thread.
@@ -166,8 +168,8 @@ impl ChatWidget {
     pub(crate) fn add_connectors_output(&mut self) {
         if !self.connectors_enabled() {
             self.add_info_message(
-                "Apps are disabled.".to_string(),
-                Some("Enable the apps feature to use $ or /apps.".to_string()),
+                tr(current(), "Apps are disabled.").to_string(),
+                Some(tr(current(), "Enable the apps feature to use $ or /apps.").to_string()),
             );
             return;
         }
@@ -181,7 +183,10 @@ impl ChatWidget {
         match connectors_cache {
             ConnectorsCacheState::Ready(snapshot) => {
                 if snapshot.connectors.is_empty() {
-                    self.add_info_message("No apps available.".to_string(), /*hint*/ None);
+                    self.add_info_message(
+                        tr(current(), "No apps available.").to_string(),
+                        /*hint*/ None,
+                    );
                 } else {
                     self.open_connectors_popup(&snapshot.connectors);
                 }
@@ -216,9 +221,9 @@ impl ChatWidget {
         SelectionViewParams {
             view_id: Some(CONNECTORS_SELECTION_VIEW_ID),
             title: Some("Apps".to_string()),
-            subtitle: Some("Loading installed and available apps...".to_string()),
+            subtitle: Some(tr(current(), "Loading installed and available apps...").to_string()),
             items: vec![SelectionItem {
-                name: "Loading apps...".to_string(),
+                name: tr(current(), "Loading apps...").to_string(),
                 description: Some("This updates when the full list is ready".to_string()),
                 is_disabled: true,
                 ..Default::default()
@@ -231,10 +236,10 @@ impl ChatWidget {
         SelectionViewParams {
             view_id: Some(CONNECTORS_SELECTION_VIEW_ID),
             title: Some("Apps".to_string()),
-            subtitle: Some("Failed to load apps.".to_string()),
+            subtitle: Some(tr(current(), "Failed to load apps.").to_string()),
             items: vec![
                 SelectionItem {
-                    name: "App directory unavailable".to_string(),
+                    name: tr(current(), "App directory unavailable").to_string(),
                     description: Some(
                         "Retry the failed app directory request, or press Esc to continue"
                             .to_string(),
@@ -243,7 +248,7 @@ impl ChatWidget {
                     ..Default::default()
                 },
                 SelectionItem {
-                    name: "Retry".to_string(),
+                    name: tr(current(), "Retry").to_string(),
                     description: Some("Reload installed and available apps".to_string()),
                     actions: vec![Box::new(|tx| {
                         tx.send(AppEvent::RefreshConnectors {
@@ -302,7 +307,7 @@ impl ChatWidget {
             };
             let missing_label = format!("{status_label} · App link unavailable");
             let instructions = if connector.is_accessible {
-                "Manage this app in your browser."
+                tr(current(), "Manage this app in your browser.")
             } else {
                 "Install this app in your browser, then reload Codex."
             };
@@ -346,7 +351,7 @@ impl ChatWidget {
             header: Box::new(header),
             items,
             is_searchable: true,
-            search_placeholder: Some("Type to search apps".to_string()),
+            search_placeholder: Some(tr(current(), "Type to search apps").to_string()),
             col_width_mode: ColumnWidthMode::AutoAllRows,
             initial_selected_idx,
             ..SelectionViewParams::picker()
@@ -386,10 +391,10 @@ impl ChatWidget {
             if connector.is_enabled {
                 "Installed"
             } else {
-                "Installed · Disabled"
+                tr(current(), "Installed · Disabled")
             }
         } else {
-            "Can be installed"
+            tr(current(), "Can be installed")
         }
     }
 

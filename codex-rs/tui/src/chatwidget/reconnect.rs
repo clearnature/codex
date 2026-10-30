@@ -4,6 +4,8 @@
 use super::realtime::RealtimeConversationPhase;
 use super::*;
 use crate::bottom_pane::RestrictedInputMode;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl ChatWidget {
     pub(crate) fn record_realtime_disconnect_failure(&mut self) {
@@ -256,7 +258,7 @@ impl ChatWidget {
     pub(crate) fn reconnect_failed(&mut self) {
         self.set_status_header("Reconnect failed — check the endpoint, then relaunch".into());
         self.add_error_message(
-            "Automatic reconnect could not restore this session. Your draft is still editable. Copy it before quitting with Ctrl+C, then reconnect with the same command.".into(),
+            tr(current(), "Automatic reconnect could not restore this session. Your draft is still editable. Copy it before quitting with Ctrl+C, then reconnect with the same command.").into(),
         );
     }
 }

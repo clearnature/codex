@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::permission_discovery::PermissionDiscovery;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
 use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
 
@@ -245,11 +247,10 @@ impl ChatWidget {
         self.bottom_pane.show_selection_view(SelectionViewParams {
             view_id: Some(super::permission_discovery::VIEW_ID),
             items,
-            title: Some("Update Model Permissions".to_string()),
-            subtitle: discovery
-                .profiles
-                .is_empty()
-                .then(|| "No permission profiles returned by the server.".to_string()),
+            title: Some(tr(current(), "Update Model Permissions").to_string()),
+            subtitle: discovery.profiles.is_empty().then(|| {
+                tr(current(), "No permission profiles returned by the server.").to_string()
+            }),
             ..SelectionViewParams::picker()
         });
     }

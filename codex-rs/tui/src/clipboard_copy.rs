@@ -125,7 +125,7 @@ fn copy_to_clipboard(
     let native_copy = |_text: &str, _html: Option<&str>| {
         Err(tr(
             current(),
-            tr(current(), "native clipboard unavailable on Android"),
+            "native clipboard unavailable on Android",
         )
         .to_string())
     };

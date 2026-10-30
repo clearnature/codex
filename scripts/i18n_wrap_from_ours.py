@@ -91,6 +91,14 @@ def main() -> int:
         if re.search(r"#\[error\(\s*$", before):
             skipped_ambiguous += 1
             continue
+        # nested-tr guard: the literal sits inside another tr() argument list
+        if re.search(r"tr\(current\(\),\s*$", work[max(0, idx - 200) : idx]):
+            # distinguish outer-wrap (allowed: ours call form wraps bare literal)
+            # from true nesting (worktree already had tr(tr( after a previous run)
+            after = work[idx + len(literal) : idx + len(literal) + 8]
+            if not re.match(r"\s*\)", after):
+                skipped_ambiguous += 1
+                continue
         pairs.append({"old": literal, "new": call, "source": args.file})
 
     if not pairs:

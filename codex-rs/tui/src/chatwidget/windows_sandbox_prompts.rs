@@ -38,11 +38,11 @@ impl ChatWidget {
         header.push(*Box::new(
             crate::terminal_hyperlinks::HyperlinkText::new(if allow_unelevated {
                 vec![
-                    line![tr(current(), tr(current(), "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"))],
+                    line![tr(current(), "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>")],
                 ]
             } else {
                 vec![
-                    line![tr(current(), tr(current(), "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access."))],
+                    line![tr(current(), "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access.")],
                     line!["Learn more <https://developers.openai.com/codex/windows>"],
                 ]
             }),
@@ -155,14 +155,7 @@ impl ChatWidget {
             !allow_unelevated || self.elevated_windows_sandbox_setup_required();
         let mut lines = Vec::new();
         lines.push(line![
-            tr(
-                current(),
-                tr(
-                    current(),
-                    tr(
-                        current(),
-                        "Couldn't set up your sandbox with Administrator permissions"
-                    )
+            tr(current(), "Couldn't set up your sandbox with Administrator permissions")
                 )
             )
             .bold()
@@ -170,17 +163,10 @@ impl ChatWidget {
         lines.push(line![""]);
         if allow_unelevated {
             lines.push(line![
-                tr(current(), tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected."))
+                tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.")
             ]);
         } else {
-            lines.push(line![tr(
-                current(),
-                tr(
-                    current(),
-                    tr(
-                        current(),
-                        "Your organization requires the default sandbox before Codex can continue."
-                    )
+            lines.push(line![tr(current(), "Your organization requires the default sandbox before Codex can continue.")
                 )
             )]);
         }
@@ -199,9 +185,7 @@ impl ChatWidget {
         let legacy_profile_selection = profile_selection;
         let quit_otel = self.session_telemetry.clone();
         let elevated_item = SelectionItem {
-            name: tr(
-                current(),
-                tr(current(), "Try setting up admin sandbox again"),
+            name: tr(current(), "Try setting up admin sandbox again"),
             )
             .to_string(),
             description: None,
@@ -233,7 +217,7 @@ impl ChatWidget {
         };
         if allow_unelevated {
             items.push(SelectionItem {
-                name: tr(current(), tr(current(), "Use Codex with non-admin sandbox")).to_string(),
+                name: tr(current(), "Use Codex with non-admin sandbox").to_string(),
                 description: None,
                 actions: vec![Box::new({
                     let otel = self.session_telemetry.clone();
@@ -321,9 +305,7 @@ impl ChatWidget {
         self.bottom_pane.set_composer_input_enabled(
             /*enabled*/ false,
             Some(
-                tr(
-                    current(),
-                    tr(current(), "Input disabled until setup completes."),
+                tr(current(), "Input disabled until setup completes."),
                 )
                 .to_string(),
             ),
@@ -333,11 +315,9 @@ impl ChatWidget {
         self.bottom_pane
             .set_interrupt_hint_visible(/*visible*/ false);
         self.set_status(
-            tr(current(), tr(current(), "Setting up sandbox...")).to_string(),
+            tr(current(), "Setting up sandbox...").to_string(),
             Some(
-                tr(
-                    current(),
-                    tr(current(), "Hang tight, this may take a few minutes"),
+                tr(current(), "Hang tight, this may take a few minutes"),
                 )
                 .to_string(),
             ),

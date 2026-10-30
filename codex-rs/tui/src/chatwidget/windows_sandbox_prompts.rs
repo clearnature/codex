@@ -3,9 +3,10 @@
 use super::*;
 #[cfg(any(target_os = "windows", test))]
 use crate::render::renderable::ColumnRenderable;
+#[cfg(any(target_os = "windows", test))]
 use codex_i18n::current;
+#[cfg(any(target_os = "windows", test))]
 use codex_i18n::tr;
-use codex_i18n::tr_with;
 
 impl ChatWidget {
     #[cfg(any(target_os = "windows", test))]
@@ -155,8 +156,9 @@ impl ChatWidget {
             !allow_unelevated || self.elevated_windows_sandbox_setup_required();
         let mut lines = Vec::new();
         lines.push(line![
-            tr(current(), "Couldn't set up your sandbox with Administrator permissions")
-                )
+            tr(
+                current(),
+                "Couldn't set up your sandbox with Administrator permissions"
             )
             .bold()
         ]);
@@ -166,8 +168,9 @@ impl ChatWidget {
                 tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.")
             ]);
         } else {
-            lines.push(line![tr(current(), "Your organization requires the default sandbox before Codex can continue.")
-                )
+            lines.push(line![tr(
+                current(),
+                "Your organization requires the default sandbox before Codex can continue."
             )]);
         }
         lines.push(line![
@@ -185,9 +188,7 @@ impl ChatWidget {
         let legacy_profile_selection = profile_selection;
         let quit_otel = self.session_telemetry.clone();
         let elevated_item = SelectionItem {
-            name: tr(current(), "Try setting up admin sandbox again"),
-            )
-            .to_string(),
+            name: tr(current(), "Try setting up admin sandbox again").to_string(),
             description: None,
             actions: vec![Box::new({
                 let otel = self.session_telemetry.clone();
@@ -304,11 +305,7 @@ impl ChatWidget {
         // accidentally queue messages that will run under an unexpected mode.
         self.bottom_pane.set_composer_input_enabled(
             /*enabled*/ false,
-            Some(
-                tr(current(), "Input disabled until setup completes."),
-                )
-                .to_string(),
-            ),
+            Some(tr(current(), "Input disabled until setup completes.").to_string()),
         );
         self.bottom_pane.reset_status_timer(Duration::ZERO);
         self.bottom_pane.ensure_status_indicator();
@@ -316,11 +313,7 @@ impl ChatWidget {
             .set_interrupt_hint_visible(/*visible*/ false);
         self.set_status(
             tr(current(), "Setting up sandbox...").to_string(),
-            Some(
-                tr(current(), "Hang tight, this may take a few minutes"),
-                )
-                .to_string(),
-            ),
+            Some(tr(current(), "Hang tight, this may take a few minutes").to_string()),
             StatusDetailsCapitalization::CapitalizeFirst,
             STATUS_DETAILS_DEFAULT_MAX_LINES,
         );

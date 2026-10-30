@@ -25,9 +25,6 @@ pub(crate) mod worker;
 mod wsl;
 
 use base64::Engine;
-use codex_i18n::current;
-use codex_i18n::tr;
-use codex_i18n::tr_with;
 use std::io::Write;
 use std::sync::Arc;
 use tmux::copy as tmux_clipboard_copy;
@@ -123,11 +120,7 @@ fn copy_to_clipboard(
     };
     #[cfg(target_os = "android")]
     let native_copy = |_text: &str, _html: Option<&str>| {
-        Err(tr(
-            current(),
-            "native clipboard unavailable on Android",
-        )
-        .to_string())
+        Err(tr(current(), "native clipboard unavailable on Android").to_string())
     };
     // Decide before propagating setup success or failure: either result could otherwise
     // start a native write or fallback long after the user abandoned this request.

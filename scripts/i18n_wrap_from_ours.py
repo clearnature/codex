@@ -83,8 +83,12 @@ def main() -> int:
             continue
         # only wrap when the working tree occurrence is NOT already a tr call
         idx = work.index(literal)
-        before = work[max(0, idx - 40) : idx]
+        before = work[max(0, idx - 60) : idx]
         if re.search(r"tr(?:_with)?\(\s*$", before):
+            skipped_ambiguous += 1
+            continue
+        # thiserror `#[error("...")]` attributes cannot call functions (E0015)
+        if re.search(r"#\[error\(\s*$", before):
             skipped_ambiguous += 1
             continue
         pairs.append({"old": literal, "new": call, "source": args.file})

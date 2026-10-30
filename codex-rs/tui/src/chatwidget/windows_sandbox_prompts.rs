@@ -3,6 +3,9 @@
 use super::*;
 #[cfg(any(target_os = "windows", test))]
 use crate::render::renderable::ColumnRenderable;
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 
 impl ChatWidget {
     #[cfg(any(target_os = "windows", test))]
@@ -35,11 +38,11 @@ impl ChatWidget {
         header.push(*Box::new(
             crate::terminal_hyperlinks::HyperlinkText::new(if allow_unelevated {
                 vec![
-                    line![tr(current(), "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>")],
+                    line![tr(current(), tr(current(), "Set up the Codex agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"))],
                 ]
             } else {
                 vec![
-                    line![tr(current(), "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access.")],
+                    line![tr(current(), tr(current(), "Your organization requires the default Codex agent sandbox to continue. Set it up to protect your files and control network access."))],
                     line!["Learn more <https://developers.openai.com/codex/windows>"],
                 ]
             }),
@@ -156,7 +159,10 @@ impl ChatWidget {
                 current(),
                 tr(
                     current(),
-                    "Couldn't set up your sandbox with Administrator permissions"
+                    tr(
+                        current(),
+                        "Couldn't set up your sandbox with Administrator permissions"
+                    )
                 )
             )
             .bold()
@@ -164,14 +170,17 @@ impl ChatWidget {
         lines.push(line![""]);
         if allow_unelevated {
             lines.push(line![
-                tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected.")
+                tr(current(), tr(current(), "You can still use Codex in a non-admin sandbox. It carries greater risk if prompt injected."))
             ]);
         } else {
             lines.push(line![tr(
                 current(),
                 tr(
                     current(),
-                    "Your organization requires the default sandbox before Codex can continue."
+                    tr(
+                        current(),
+                        "Your organization requires the default sandbox before Codex can continue."
+                    )
                 )
             )]);
         }
@@ -190,7 +199,11 @@ impl ChatWidget {
         let legacy_profile_selection = profile_selection;
         let quit_otel = self.session_telemetry.clone();
         let elevated_item = SelectionItem {
-            name: tr(current(), "Try setting up admin sandbox again").to_string(),
+            name: tr(
+                current(),
+                tr(current(), "Try setting up admin sandbox again"),
+            )
+            .to_string(),
             description: None,
             actions: vec![Box::new({
                 let otel = self.session_telemetry.clone();
@@ -220,7 +233,7 @@ impl ChatWidget {
         };
         if allow_unelevated {
             items.push(SelectionItem {
-                name: tr(current(), "Use Codex with non-admin sandbox").to_string(),
+                name: tr(current(), tr(current(), "Use Codex with non-admin sandbox")).to_string(),
                 description: None,
                 actions: vec![Box::new({
                     let otel = self.session_telemetry.clone();
@@ -307,15 +320,27 @@ impl ChatWidget {
         // accidentally queue messages that will run under an unexpected mode.
         self.bottom_pane.set_composer_input_enabled(
             /*enabled*/ false,
-            Some(tr(current(), "Input disabled until setup completes.").to_string()),
+            Some(
+                tr(
+                    current(),
+                    tr(current(), "Input disabled until setup completes."),
+                )
+                .to_string(),
+            ),
         );
         self.bottom_pane.reset_status_timer(Duration::ZERO);
         self.bottom_pane.ensure_status_indicator();
         self.bottom_pane
             .set_interrupt_hint_visible(/*visible*/ false);
         self.set_status(
-            tr(current(), "Setting up sandbox...").to_string(),
-            Some(tr(current(), "Hang tight, this may take a few minutes").to_string()),
+            tr(current(), tr(current(), "Setting up sandbox...")).to_string(),
+            Some(
+                tr(
+                    current(),
+                    tr(current(), "Hang tight, this may take a few minutes"),
+                )
+                .to_string(),
+            ),
             StatusDetailsCapitalization::CapitalizeFirst,
             STATUS_DETAILS_DEFAULT_MAX_LINES,
         );

@@ -16,6 +16,9 @@ mod status;
 #[path = "rmcp_client/provenance_tests.rs"]
 mod provenance_tests;
 
+use codex_i18n::current;
+use codex_i18n::tr;
+use codex_i18n::tr_with;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::collections::HashMap;

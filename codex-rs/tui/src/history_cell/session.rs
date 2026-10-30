@@ -5,6 +5,8 @@ use crate::line_truncation::line_width;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::style::accent_color;
 use crate::width::display_width;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Render `lines` inside a border whose inner width is at least `inner_width`.
 ///
@@ -44,7 +46,7 @@ pub(crate) fn with_border_with_inner_width(
 pub(crate) fn codex_title(version: &str) -> Vec<Span<'static>> {
     vec![
         ">_ ".fg(accent_color()),
-        "OpenAI Codex".bold(),
+        tr(current(), "OpenAI Codex").bold(),
         format!(" (v{version})").dim(),
     ]
 }
@@ -228,12 +230,12 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/status".into(),
-                " - show current session configuration".dim(),
+                tr(current(), " - show current session configuration").dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                " - choose what Codex is allowed to do".dim(),
+                tr(current(), " - choose what Codex is allowed to do").dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -243,7 +245,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/review".into(),
-                " - review any changes and find issues".dim(),
+                tr(current(), " - review any changes and find issues").dim(),
             ]),
         ];
 
@@ -258,7 +260,7 @@ pub(crate) fn new_session_info(
         }
         if requested_model != session.model.as_str() {
             let lines = vec![
-                "model changed:".magenta().bold().into(),
+                tr(current(), "model changed:").magenta().bold().into(),
                 format!("requested: {requested_model}").into(),
                 format!("used: {}", session.model).into(),
             ];
@@ -372,7 +374,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
         if self.yolo_mode {
             lines.push(Line::from(vec![
                 "  permissions: ".dim(),
-                "YOLO mode".magenta().bold(),
+                tr(current(), "YOLO mode").magenta().bold(),
             ]));
         }
         lines
@@ -397,7 +399,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
             )),
         ];
         if self.yolo_mode {
-            lines.push(Line::from("permissions: YOLO mode"));
+            lines.push(Line::from(tr(current(), "permissions: YOLO mode")));
         }
         lines
     }

@@ -5,9 +5,13 @@ use crate::style::accent_color;
 use crate::terminal_hyperlinks::LineWrapPolicy;
 use crate::terminal_hyperlinks::remap_source_wrapped_line;
 use crate::wrapping::adaptive_wrap_line_to_width;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 #[cfg_attr(not(test), allow(dead_code))]
-const RECAP_HEADING: &str = "Conversation recap";
+fn recap_heading() -> &'static str {
+    tr(current(), "Conversation recap")
+}
 
 #[cfg_attr(debug_assertions, allow(dead_code))]
 #[derive(Debug)]
@@ -32,17 +36,17 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         use ratatui_macros::text;
         let update_instruction = if let Some(update_action) = self.update_action {
             line![
-                "Run ",
+                tr(current(), "Run "),
                 update_action.command_str().fg(accent_color()),
-                " to update."
+                tr(current(), " to update.")
             ]
         } else {
             line![
-                "See ",
+                tr(current(), "See "),
                 "https://github.com/openai/codex"
                     .fg(accent_color())
                     .underlined(),
-                " for installation options."
+                tr(current(), " for installation options.")
             ]
         };
 
@@ -153,7 +157,7 @@ const SAFETY_ACCESS_BLOCK_LEARN_MORE_URL: &str = "https://help.openai.com/en/art
 
 pub(crate) fn new_safety_access_block_event() -> SafetyAccessBlockCell {
     SafetyAccessBlockCell {
-        title: "This content can't be shown",
+        title: tr(current(), "This content can't be shown"),
         body: "We take extra caution with requests involving biological research and applications that could pose safety risks. Eligible researchers can apply for Trusted Access.",
         actions: &[
             (
@@ -194,7 +198,7 @@ pub(crate) fn new_cyber_policy_error_event(
         ),
     };
     SafetyAccessBlockCell {
-        title: "This content can’t be shown",
+        title: tr(current(), "This content can’t be shown"),
         body,
         actions,
     }
@@ -362,7 +366,7 @@ impl HistoryCell for ThreadRecapLoadingCell {
                 )
                 .unwrap_or_else(|| "•".dim()),
                 " ".into(),
-                "Generating conversation recap".bold(),
+                tr(current(), "Generating conversation recap").bold(),
                 "…".dim(),
             ]
             .into(),
@@ -464,7 +468,7 @@ impl HistoryCell for ThreadRecapHistoryCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        let mut lines = vec![Line::from(RECAP_HEADING)];
+        let mut lines = vec![Line::from(recap_heading())];
         lines.extend(raw_lines_from_source(&self.recap));
         if let Some(action) = &self.next_action {
             lines.extend(raw_lines_from_source(&format!("Next: {action}")));

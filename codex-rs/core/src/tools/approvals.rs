@@ -22,6 +22,8 @@ use crate::tools::sandboxing::with_cached_approval;
 use codex_analytics::GuardianApprovalRequestSource;
 use codex_config::types::AppToolApproval;
 use codex_hooks::PermissionRequestDecision;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::ToolDecisionSource;
 use codex_prompts::ResolvedModelMessages;
 use codex_protocol::approvals::ExecApprovalKind;
@@ -434,16 +436,16 @@ impl ApprovalResolution {
             ReviewDecision::ApprovedMcpPolicyAmendment => {
                 error!("Tool approval received ApprovedMcpPolicyAmendment");
                 Err(ToolError::Rejected(
-                    "Error while requesting approval".to_string(),
+                    tr(current(), "Error while requesting approval").to_string(),
                 ))
             }
             ReviewDecision::NetworkPolicyAmendment {
                 network_policy_amendment,
             } if network_policy_amendment.action == NetworkPolicyRuleAction::Deny => {
                 let rejection = match source {
-                    ApprovalResolutionSource::Hook => "rejected by configuration",
+                    ApprovalResolutionSource::Hook => tr(current(), "rejected by configuration"),
                     ApprovalResolutionSource::Guardian => {
-                        "automatic approval review denied the action"
+                        tr(current(), "automatic approval review denied the action")
                     }
                     ApprovalResolutionSource::User => "rejected by user",
                 };
@@ -546,7 +548,7 @@ impl Session {
                 (ReviewDecision::Abort, ApprovalResolutionSource::Guardian) => {
                     return ApprovalResult {
                         result: Err(ToolError::Rejected(
-                            "automatic approval review was cancelled".to_string(),
+                            tr(current(), "automatic approval review was cancelled").to_string(),
                         )),
                         source,
                         cancellation_reason,

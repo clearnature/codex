@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::io::Write;
 use std::time::Duration;
 
@@ -132,7 +134,10 @@ pub(crate) async fn run(
             print_remote_control_start_output(&output, command.json)?;
         }
         Some(RemoteControlSubcommand::Stop) => {
-            print_remote_control_progress(command.json, "Stopping remote control...")?;
+            print_remote_control_progress(
+                command.json,
+                tr(current(), "Stopping remote control..."),
+            )?;
             let output = codex_app_server_daemon::run(AppServerLifecycleCommand::Stop).await?;
             print_remote_control_stop_output(&output, command.json)?;
         }
@@ -308,8 +313,8 @@ async fn wait_for_foreground_app_server(
     tokio::select! {
         app_server_result = &mut app_server_task => {
             app_server_result
-                .context("foreground app-server task failed to join")?
-                .context("foreground app-server exited with an error")?;
+                .context(tr(current(), "foreground app-server task failed to join"))?
+                .context(tr(current(), "foreground app-server exited with an error"))?;
         }
         _ = wait_for_stop_signal(&mut stop_rx) => {
             abort_foreground_app_server(app_server_task).await;
@@ -565,8 +570,10 @@ fn format_remote_control_pairing_output(
 
 fn remote_control_stop_human_message(output: &AppServerLifecycleOutput) -> String {
     match output.status {
-        AppServerLifecycleStatus::Stopped => "Remote control stopped.".to_string(),
-        AppServerLifecycleStatus::NotRunning => "Remote control is not running.".to_string(),
+        AppServerLifecycleStatus::Stopped => tr(current(), "Remote control stopped.").to_string(),
+        AppServerLifecycleStatus::NotRunning => {
+            tr(current(), "Remote control is not running.").to_string()
+        }
         AppServerLifecycleStatus::Started
         | AppServerLifecycleStatus::Restarted
         | AppServerLifecycleStatus::AlreadyRunning

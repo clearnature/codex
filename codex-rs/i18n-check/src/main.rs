@@ -664,7 +664,7 @@ fn read_not_translated(path: &Path) -> Result<BTreeMap<String, String>, String> 
 
 /// Nested `tr`/`tr_with` calls, which double-translate.
 ///
-/// `tr(current(), tr(current(), "…"))` looks harmless and renders correctly in
+/// `tr(current(), "…")` looks harmless and renders correctly in
 /// English, but the inner call already returns the translation, and the outer
 /// one then looks that up again -- a no-op in English and a missed lookup in
 /// Chinese. Round 33 fixed one of these by hand; this makes the property

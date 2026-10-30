@@ -4,6 +4,8 @@ use codex_feedback::DOCTOR_REPORT_ATTACHMENT_FILENAME;
 use codex_feedback::FEEDBACK_DIAGNOSTICS_ATTACHMENT_FILENAME;
 use codex_feedback::FeedbackDiagnostics;
 use codex_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 
@@ -52,9 +54,9 @@ pub(crate) fn feedback_success_cell(
     feedback_audience: FeedbackAudience,
 ) -> history_cell::WebHyperlinkHistoryCell {
     let prefix = if include_logs {
-        "• Feedback uploaded."
+        tr(current(), "• Feedback uploaded.")
     } else {
-        "• Feedback recorded (no logs)."
+        tr(current(), "• Feedback recorded (no logs).")
     };
     let issue_url = issue_url_for_category(category, thread_id, feedback_audience);
     let mut lines = vec![Line::from(match issue_url.as_ref() {
@@ -74,11 +76,11 @@ pub(crate) fn feedback_success_cell(
                 ]),
                 "".into(),
                 Line::from(vec![
-                    "  Sentry Feedback ID: ".into(),
+                    tr(current(), "  Sentry Feedback ID: ").into(),
                     thread_id.to_string().bold(),
                 ]),
                 Line::from(vec![
-                    "  Sentry URL: ".into(),
+                    tr(current(), "  Sentry URL: ").into(),
                     format!("https://go/codex-feedback/{thread_id}")
                         .fg(crate::style::accent_color())
                         .underlined(),
@@ -94,16 +96,19 @@ pub(crate) fn feedback_success_cell(
                 ]),
                 "".into(),
                 Line::from(vec![
-                    "  Or mention your thread ID ".into(),
+                    tr(current(), "  Or mention your thread ID ").into(),
                     thread_id.to_string().bold(),
-                    " in an existing issue.".into(),
+                    tr(current(), " in an existing issue.").into(),
                 ]),
             ]);
         }
         None => {
             lines.extend([
                 "".into(),
-                Line::from(vec!["  Thread ID: ".into(), thread_id.to_string().bold()]),
+                Line::from(vec![
+                    tr(current(), "  Thread ID: ").into(),
+                    thread_id.to_string().bold(),
+                ]),
             ]);
         }
     }
@@ -145,7 +150,7 @@ pub(crate) fn feedback_selection_params(
     app_event_tx: AppEventSender,
 ) -> super::SelectionViewParams {
     super::SelectionViewParams {
-        title: Some("How was this?".to_string()),
+        title: Some(tr(current(), "How was this?").to_string()),
         items: vec![
             make_feedback_item(
                 app_event_tx.clone(),
@@ -155,19 +160,19 @@ pub(crate) fn feedback_selection_params(
             ),
             make_feedback_item(
                 app_event_tx.clone(),
-                "bad result",
+                tr(current(), "bad result"),
                 "Output was off-target, incorrect, incomplete, or unhelpful",
                 FeedbackCategory::BadResult,
             ),
             make_feedback_item(
                 app_event_tx.clone(),
-                "good result",
+                tr(current(), "good result"),
                 "Helpful, correct, high‑quality, or delightful result worth celebrating",
                 FeedbackCategory::GoodResult,
             ),
             make_feedback_item(
                 app_event_tx.clone(),
-                "safety check",
+                tr(current(), "safety check"),
                 "Benign usage blocked due to safety checks or refusals",
                 FeedbackCategory::SafetyCheck,
             ),
@@ -185,11 +190,11 @@ pub(crate) fn feedback_selection_params(
 /// Build the selection popup params shown when feedback is disabled.
 pub(crate) fn feedback_disabled_params() -> super::SelectionViewParams {
     super::SelectionViewParams {
-        title: Some("Sending feedback is disabled".to_string()),
-        subtitle: Some("This action is disabled by configuration.".to_string()),
+        title: Some(tr(current(), "Sending feedback is disabled").to_string()),
+        subtitle: Some(tr(current(), "This action is disabled by configuration.").to_string()),
         footer_hint: Some(standard_popup_hint_line()),
         items: vec![super::SelectionItem {
-            name: "Close".to_string(),
+            name: tr(current(), "Close").to_string(),
             dismiss_on_select: true,
             ..Default::default()
         }],
@@ -249,9 +254,9 @@ pub(crate) fn feedback_upload_consent_params(
 
     // Build header listing files that would be sent if user consents.
     let mut header_lines: Vec<Box<dyn crate::render::renderable::Renderable>> = vec![
-        Line::from("Upload logs?".bold()).into(),
+        Line::from(tr(current(), "Upload logs?").bold()).into(),
         Line::from("").into(),
-        Line::from("The following files will be sent:".dim()).into(),
+        Line::from(tr(current(), "The following files will be sent:").dim()).into(),
         Line::from(vec!["  • ".into(), "codex-logs.log".into()]).into(),
         Line::from(vec!["  • ".into(), "client-logs.txt (if available)".into()]).into(),
         Line::from(vec![
@@ -298,7 +303,7 @@ pub(crate) fn feedback_upload_consent_params(
     }
     if should_show_feedback_connectivity_details(category, feedback_diagnostics) {
         header_lines.push(Line::from("").into());
-        header_lines.push(Line::from("Connectivity diagnostics".bold()).into());
+        header_lines.push(Line::from(tr(current(), "Connectivity diagnostics").bold()).into());
         for diagnostic in feedback_diagnostics.diagnostics() {
             header_lines
                 .push(Line::from(vec!["  - ".into(), diagnostic.headline.clone().into()]).into());
@@ -312,7 +317,7 @@ pub(crate) fn feedback_upload_consent_params(
         footer_hint: Some(standard_popup_hint_line()),
         items: vec![
             super::SelectionItem {
-                name: "Yes".to_string(),
+                name: tr(current(), "Yes").to_string(),
                 description: Some(
                     "Share the current Codex session logs and diagnostics with the team for troubleshooting"
                         .to_string(),
@@ -322,7 +327,7 @@ pub(crate) fn feedback_upload_consent_params(
                 ..Default::default()
             },
             super::SelectionItem {
-                name: "No".to_string(),
+                name: tr(current(), "No").to_string(),
                 actions: vec![no_action],
                 dismiss_on_select: true,
                 ..Default::default()

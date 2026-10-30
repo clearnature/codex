@@ -9,6 +9,8 @@ use codex_config::NoopThreadConfigLoader;
 use codex_core::config::Config;
 use codex_core::config::UnsupportedUntrustedApprovalPolicyError;
 use codex_core::resolve_installation_id;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthManager;
 #[cfg(debug_assertions)]
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -370,7 +372,7 @@ fn exec_policy_warning_location(err: &ExecPolicyError) -> (Option<String>, Optio
 fn exec_policy_config_warning(err: &ExecPolicyError) -> ConfigWarningNotification {
     let (path, range) = exec_policy_warning_location(err);
     ConfigWarningNotification {
-        summary: "Error parsing rules; custom rules not applied.".to_string(),
+        summary: tr(current(), "Error parsing rules; custom rules not applied.").to_string(),
         details: Some(err.to_string()),
         path,
         range,
@@ -582,7 +584,10 @@ pub async fn run_main_with_transport_options(
                 return Err(err);
             }
 
-            let message = config_warning_from_error("Invalid configuration; using defaults.", &err);
+            let message = config_warning_from_error(
+                tr(current(), "Invalid configuration; using defaults."),
+                &err,
+            );
             config_warnings.push(message);
             plugin_startup_config = PluginStartupConfig::Defaults;
             config_manager.load_default_config().await.map_err(|e| {

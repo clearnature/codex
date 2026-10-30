@@ -1,5 +1,7 @@
 //! Startup hook consent using the shared picker while retaining explicit trust confirmation.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyEventKind;
 use ratatui::buffer::Buffer;
@@ -231,11 +233,11 @@ fn selection_view_params(
 ) -> SelectionViewParams {
     let count = review_needed_count(entry);
     let count_line = match count {
-        1 => "1 hook is new or changed.".to_string(),
+        1 => tr(current(), "1 hook is new or changed.").to_string(),
         count => format!("{count} hooks are new or changed."),
     };
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Hooks need review".bold()));
+    header.push(Line::from(tr(current(), "Hooks need review").bold()));
     header.push(Paragraph::new(Line::from(count_line).yellow()).wrap(Wrap { trim: false }));
     header.push(
         Paragraph::new(Line::from(
@@ -246,7 +248,7 @@ fn selection_view_params(
     if let Some(error) = trust_all_error {
         header.push(Paragraph::new(Line::from(error.to_string()).red()).wrap(Wrap { trim: false }));
     } else if trusting_all {
-        header.push(Line::from("Trusting hooks...".dim()));
+        header.push(Line::from(tr(current(), "Trusting hooks...").dim()));
     }
 
     let mut hints = Vec::new();
@@ -268,12 +270,15 @@ fn selection_view_params(
     SelectionViewParams {
         footer_hint: Some(hints.into()),
         items: vec![
-            selection_item("Review hooks", trusting_all),
+            selection_item(tr(current(), "Review hooks"), trusting_all),
             SelectionItem {
                 require_explicit_confirmation: true,
-                ..selection_item("Trust all and continue", trusting_all)
+                ..selection_item(tr(current(), "Trust all and continue"), trusting_all)
             },
-            selection_item("Continue without trusting (hooks won't run)", trusting_all),
+            selection_item(
+                tr(current(), "Continue without trusting (hooks won't run)"),
+                trusting_all,
+            ),
         ],
         header: Box::new(header),
         ..SelectionViewParams::picker()

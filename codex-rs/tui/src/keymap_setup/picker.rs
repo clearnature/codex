@@ -4,6 +4,8 @@
 //! factory so tabs and search stay anchored in the live picker.
 
 use codex_config::types::TuiKeymap;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::style::Styled;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
@@ -213,14 +215,14 @@ fn build_keymap_picker_params_for_action(
     let mut tabs = Vec::new();
     tabs.push(SelectionTab {
         id: KEYMAP_ALL_TAB_ID.to_string(),
-        label: "All".to_string(),
+        label: tr(current(), "All").to_string(),
         header: keymap_header(
-            "All configurable shortcuts.".to_string(),
+            tr(current(), "All configurable shortcuts.").to_string(),
             format!("{total} actions, {custom_count} customized, {unbound_count} unbound."),
         ),
         items: keymap_selection_items(
             rows.iter(),
-            "No shortcuts available",
+            tr(current(), "No shortcuts available"),
             "No configurable shortcuts are available",
         ),
     });
@@ -229,14 +231,14 @@ fn build_keymap_picker_params_for_action(
     let common_count = common_rows.len();
     tabs.push(SelectionTab {
         id: KEYMAP_COMMON_TAB_ID.to_string(),
-        label: "Common".to_string(),
+        label: tr(current(), "Common").to_string(),
         header: keymap_header(
-            "Frequently customized shortcuts.".to_string(),
+            tr(current(), "Frequently customized shortcuts.").to_string(),
             action_count_line(common_count),
         ),
         items: keymap_selection_items(
             common_rows,
-            "No common shortcuts",
+            tr(current(), "No common shortcuts"),
             "No common shortcut actions are available",
         ),
     });
@@ -249,12 +251,12 @@ fn build_keymap_picker_params_for_action(
         id: KEYMAP_CUSTOM_TAB_ID.to_string(),
         label: format!("Customized ({custom_count})"),
         header: keymap_header(
-            "Root-level shortcut overrides.".to_string(),
+            tr(current(), "Root-level shortcut overrides.").to_string(),
             action_count_line(custom_count),
         ),
         items: keymap_selection_items(
             custom_rows,
-            "No customized shortcuts",
+            tr(current(), "No customized shortcuts"),
             "No root-level keymap overrides have been configured",
         ),
     });
@@ -267,12 +269,12 @@ fn build_keymap_picker_params_for_action(
         id: KEYMAP_UNBOUND_TAB_ID.to_string(),
         label: format!("Unbound ({unbound_count})"),
         header: keymap_header(
-            "Actions without an active shortcut.".to_string(),
+            tr(current(), "Actions without an active shortcut.").to_string(),
             action_count_line(unbound_count),
         ),
         items: keymap_selection_items(
             unbound_rows,
-            "No unbound shortcuts",
+            tr(current(), "No unbound shortcuts"),
             "Every configurable action currently has a shortcut",
         ),
     });
@@ -285,11 +287,14 @@ fn build_keymap_picker_params_for_action(
         let count = tab_rows.len();
         tabs.push(SelectionTab {
             id: tab.id.to_string(),
-            label: tab.label.to_string(),
-            header: keymap_header(tab.description.to_string(), action_count_line(count)),
+            label: tr(current(), tab.label).to_string(),
+            header: keymap_header(
+                tr(current(), tab.description).to_string(),
+                action_count_line(count),
+            ),
             items: keymap_selection_items(
                 tab_rows,
-                "No shortcuts in this group",
+                tr(current(), "No shortcuts in this group"),
                 "No configurable actions are available in this group",
             ),
         });
@@ -308,7 +313,7 @@ fn build_keymap_picker_params_for_action(
         tabs,
         initial_tab_id: Some(KEYMAP_ALL_TAB_ID.to_string()),
         is_searchable: true,
-        search_placeholder: Some("Type to search shortcuts".to_string()),
+        search_placeholder: Some(tr(current(), "Type to search shortcuts").to_string()),
         col_width_mode: ColumnWidthMode::AutoAllRows,
         row_display: SelectionRowDisplay::SingleLine,
         name_column_width,
@@ -320,13 +325,13 @@ fn build_keymap_picker_params_for_action(
 fn keymap_debug_tab() -> SelectionTab {
     SelectionTab {
         id: KEYMAP_DEBUG_TAB_ID.to_string(),
-        label: "Debug".to_string(),
+        label: tr(current(), "Debug").to_string(),
         header: keymap_header(
-            "Inspect keypresses from your terminal.".to_string(),
-            "See the key Codex detects and any shortcuts assigned to it.".to_string(),
+            tr(current(), "Inspect keypresses from your terminal.").to_string(),
+            tr(current(), "See the key Codex detects and any shortcuts assigned to it.").to_string(),
         ),
         items: vec![SelectionItem {
-            name: "Inspect keypresses".to_string(),
+            name: tr(current(), "Inspect keypresses").to_string(),
             description: Some(
                 "Press Enter, then any key to inspect it (Ctrl+C exits)"
                     .to_string(),
@@ -456,7 +461,7 @@ fn keymap_row_prefix(row: &KeymapActionRow) -> Vec<Span<'static>> {
 
 fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Keymap".bold()));
+    header.push(Line::from(tr(current(), "Keymap").bold()));
     header.push(Line::from(description.dim()));
     header.push(Line::from(summary.dim()));
     Box::new(header)
@@ -464,17 +469,17 @@ fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
 
 fn action_count_line(count: usize) -> String {
     match count {
-        1 => "1 action.".to_string(),
+        1 => tr(current(), "1 action.").to_string(),
         _ => format!("{count} actions."),
     }
 }
 
 fn keymap_picker_hint_line() -> Line<'static> {
     [
-        ("left/right", " group · "),
-        ("enter", " edit shortcut · "),
-        ("*", " custom · "),
-        ("-", " unbound · "),
+        ("left/right", tr(current(), " group · ")),
+        ("enter", tr(current(), " edit shortcut · ")),
+        ("*", tr(current(), " custom · ")),
+        ("-", tr(current(), " unbound · ")),
         ("esc", " close"),
     ]
     .into_iter()
@@ -488,7 +493,9 @@ fn keymap_picker_hint_line() -> Line<'static> {
 
 fn keymap_debug_hint_line() -> Line<'static> {
     let mut spans = crate::key_hint::key_label_spans("enter");
-    spans.push(" start inspector · ".set_style(crate::style::footer_hint_label_style()));
+    spans.push(
+        tr(current(), " start inspector · ").set_style(crate::style::footer_hint_label_style()),
+    );
     spans.extend(crate::key_hint::key_label_spans("esc"));
     spans.push(" close".set_style(crate::style::footer_hint_label_style()));
     spans.into()

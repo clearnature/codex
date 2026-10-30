@@ -8,6 +8,8 @@ use crate::app_event::ManagedWorktreeTransition;
 use crate::app_server_session::ForkGoalContinuation::DeferUntilNextTurn;
 use crate::history_cell::McpInventoryLoadingCell as LoadingCell;
 use crate::terminal_visualization_instructions::with_terminal_visualization_instructions;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 enum DestinationConfig {
     Load,
@@ -54,7 +56,7 @@ impl App {
             self.environment_manager.as_ref(),
         ) {
             return self.working_directory_error(
-                "Changing directories is not supported for remote workspaces or remote execution environments.",
+                tr(current(), "Changing directories is not supported for remote workspaces or remote execution environments."),
             );
         }
         self.change_working_directory(tui, app_server, pending.destination)
@@ -155,7 +157,8 @@ impl App {
         destination_config: DestinationConfig,
     ) {
         if self.config.ephemeral || !cwd.as_path().is_dir() {
-            return self.working_directory_error("This task cannot be safely replaced.");
+            return self
+                .working_directory_error(tr(current(), "This task cannot be safely replaced."));
         }
         let Some(thread_id) = self.chat_widget.thread_id() else {
             return;
@@ -193,7 +196,7 @@ impl App {
         }
         let cells = &self.transcript_cells;
         if cells.iter().any(|cell| cell.as_any().is::<LoadingCell>()) {
-            return self.working_directory_error("MCP inventory is still loading.");
+            return self.working_directory_error(tr(current(), "MCP inventory is still loading."));
         }
         let agents = self.agent_navigation.ordered_threads();
         let closed_agents: HashSet<_> = agents
@@ -240,7 +243,8 @@ impl App {
                     })
                 }))
         {
-            return self.working_directory_error("Conversation history is not saved.");
+            return self
+                .working_directory_error(tr(current(), "Conversation history is not saved."));
         }
         let mut ids: HashSet<_> = channels
             .keys()

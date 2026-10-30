@@ -6,6 +6,8 @@
 
 use super::*;
 use codex_config::ConfigLayerSource;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 async fn build_config_on_runtime_worker(
     builder: ConfigBuilder,
@@ -178,7 +180,7 @@ impl App {
             && !self.try_set_approval_policy_on_config(
                 &mut config,
                 policy,
-                "Failed to set approval policy",
+                tr(current(), "Failed to set approval policy"),
                 "failed to set selected permission profile approval policy on app config",
             )
         {
@@ -734,7 +736,7 @@ impl App {
                         serde_json::json!(auto_review_preset.approvals_reviewer.to_string()),
                     ));
                     if previous_approvals_reviewer != auto_review_preset.approvals_reviewer {
-                        permissions_history_label = Some("Approve for me");
+                        permissions_history_label = Some(tr(current(), "Approve for me"));
                     }
                 } else if !effective_enabled {
                     feature_edits.push(crate::config_update::clear_config_value(
@@ -742,7 +744,7 @@ impl App {
                     ));
                     feature_config.approvals_reviewer = ApprovalsReviewer::User;
                     if previous_approvals_reviewer != ApprovalsReviewer::User {
-                        permissions_history_label = Some("Ask for approval");
+                        permissions_history_label = Some(tr(current(), "Ask for approval"));
                     }
                 }
                 approvals_reviewer_override = Some(feature_config.approvals_reviewer);
@@ -824,7 +826,7 @@ impl App {
             if let Some(effective_config) = self
                 .read_effective_config_after_overridden_write(
                     app_server,
-                    "Experimental feature changes",
+                    tr(current(), "Experimental feature changes"),
                 )
                 .await
             {
@@ -964,7 +966,10 @@ impl App {
                 "Memory setting changes were saved but not applied: {message}"
             ));
             let Some(effective_config) = self
-                .read_effective_config_after_overridden_write(app_server, "Memory setting changes")
+                .read_effective_config_after_overridden_write(
+                    app_server,
+                    tr(current(), "Memory setting changes"),
+                )
                 .await
             else {
                 return false;
@@ -1029,13 +1034,15 @@ impl App {
             return;
         }
 
-        self.chat_widget
-            .add_info_message("Reset local memories.".to_string(), /*hint*/ None);
+        self.chat_widget.add_info_message(
+            tr(current(), "Reset local memories.").to_string(),
+            /*hint*/ None,
+        );
     }
 
     pub(super) fn reasoning_label(reasoning_effort: Option<&ReasoningEffortConfig>) -> String {
         match reasoning_effort {
-            None | Some(ReasoningEffortConfig::None) => "default".to_string(),
+            None | Some(ReasoningEffortConfig::None) => tr(current(), "default").to_string(),
             Some(reasoning_effort) => reasoning_effort.as_str().to_string(),
         }
     }

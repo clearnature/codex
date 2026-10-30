@@ -135,6 +135,8 @@ use codex_app_server_protocol::TurnSteerParams;
 use codex_app_server_protocol::TurnSteerResponse;
 use codex_app_server_protocol::UserInput;
 use codex_config::ConfigLayerSource;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::TelemetryAuthMode;
 use codex_protocol::ThreadId;
 use codex_protocol::approvals::GuardianAssessmentEvent;
@@ -1335,7 +1337,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to archive session")?;
+            .wrap_err(tr(current(), "failed to archive session"))?;
         Ok(())
     }
 
@@ -1350,7 +1352,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to delete session")?;
+            .wrap_err(tr(current(), "failed to delete session"))?;
         Ok(())
     }
 
@@ -1365,7 +1367,7 @@ impl AppServerSession {
                 },
             })
             .await
-            .wrap_err("failed to unarchive session")?;
+            .wrap_err(tr(current(), "failed to unarchive session"))?;
         Ok(response.thread)
     }
 

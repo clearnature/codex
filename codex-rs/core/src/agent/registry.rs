@@ -1,5 +1,7 @@
 use crate::agent::types::AgentMetadata;
 use crate::environment_selection::TurnEnvironmentSnapshot;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::AgentPath;
 use codex_protocol::ThreadId;
 use codex_protocol::error::AgentErrorContext;
@@ -371,8 +373,10 @@ impl SpawnReservation {
             .state
             .reserve_agent_nickname(names, preferred)
             .ok_or_else(|| {
-                CodexErr::UnsupportedOperation("no available agent nicknames".to_string())
-                    .with_agent_context(AgentErrorContext::NicknameUnavailable)
+                CodexErr::UnsupportedOperation(
+                    tr(current(), "no available agent nicknames").to_string(),
+                )
+                .with_agent_context(AgentErrorContext::NicknameUnavailable)
             })?;
         self.reserved_agent_nickname = Some(agent_nickname.clone());
         Ok(agent_nickname)

@@ -2,6 +2,8 @@
 //! Tool grouping spans hidden reasoning but stops at visible content and turn boundaries.
 //! Only one computer or exploration group can be pending at a time.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::Arc;
 
 use crate::app_server_session::AppServerSession;
@@ -115,7 +117,10 @@ pub(crate) fn thread_to_transcript_cells(
         .collect::<TranscriptCells>();
     if cells.is_empty() {
         cells.push(Arc::new(PlainHistoryCell::new(vec![
-            "No transcript content available".italic().dim().into(),
+            tr(current(), "No transcript content available")
+                .italic()
+                .dim()
+                .into(),
         ])));
     }
     cells

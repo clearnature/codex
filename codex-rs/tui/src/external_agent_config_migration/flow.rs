@@ -5,6 +5,8 @@ use codex_app_server_protocol::ExternalAgentConfigDetectParams;
 use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
 use codex_app_server_protocol::ExternalAgentConfigMigrationItemType;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::prelude::Stylize as _;
 use ratatui::text::Line;
 use std::path::Path;
@@ -16,8 +18,9 @@ use super::run_external_agent_config_migration_prompt;
 use super::source::ExternalAgentConfigMigrationSource;
 use super::source::run_external_agent_config_source_prompt;
 
-pub(crate) const EXTERNAL_AGENT_CONFIG_MIGRATION_NO_ITEMS_MESSAGE: &str =
-    "No compatible setup was found to import.";
+pub(crate) fn external_agent_config_migration_no_items_message() -> &'static str {
+    tr(current(), "No compatible setup was found to import.")
+}
 
 pub(crate) enum ExternalAgentConfigMigrationFlowOutcome {
     Started(Vec<Line<'static>>),
@@ -145,11 +148,15 @@ fn external_agent_config_migration_started_lines(
     let mut lines = vec![
         vec![
             "• ".dim(),
-            "Import started.".cyan(),
-            " You can keep working while it finishes.".into(),
+            tr(current(), "Import started.").cyan(),
+            tr(current(), " You can keep working while it finishes.").into(),
         ]
         .into(),
-        vec!["  ".into(), "Imported setup will apply to new chats.".dim()].into(),
+        vec![
+            "  ".into(),
+            tr(current(), "Imported setup will apply to new chats.").dim(),
+        ]
+        .into(),
         vec!["  ".into(), "Importing:".cyan().bold()].into(),
     ];
     lines.extend(
@@ -201,7 +208,7 @@ pub(crate) fn external_agent_config_migration_finished_lines(
     let mut lines = vec![
         vec![
             "• ".dim(),
-            "Import finished: ".into(),
+            tr(current(), "Import finished: ").into(),
             format!("{imported_count} imported").green(),
             ", ".into(),
             failed_count,
@@ -210,7 +217,7 @@ pub(crate) fn external_agent_config_migration_finished_lines(
         .into(),
     ];
     if !notification.item_type_results.is_empty() {
-        lines.push(vec!["  ".into(), "Results by type:".cyan().bold()].into());
+        lines.push(vec!["  ".into(), tr(current(), "Results by type:").cyan().bold()].into());
         lines.extend(notification.item_type_results.iter().map(|type_result| {
             let failed_count = format!("{} failed", type_result.failures.len());
             let failed_count = if type_result.failures.is_empty() {
@@ -314,7 +321,7 @@ pub(crate) async fn handle_external_agent_config_migration_prompt(
         .into_iter()
         .find(|detected| detected.source == selected_source)
     else {
-        return Err("Selected import source is no longer available.".to_string());
+        return Err(tr(current(), "Selected import source is no longer available.").to_string());
     };
     let detected_items = detected_source.items;
 

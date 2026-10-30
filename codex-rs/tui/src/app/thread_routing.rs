@@ -12,6 +12,8 @@ use codex_app_server_protocol::ThreadStartedNotification;
 use codex_app_server_protocol::TurnInterruptParams;
 use codex_app_server_protocol::TurnInterruptResponse;
 use codex_app_server_protocol::WarningNotification;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 // Leave time for side-thread cleanup and unsubscribe inside the two-second exit budget.
 const REALTIME_STOP_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 1);
@@ -165,7 +167,7 @@ impl App {
     pub(super) fn thread_label(&self, thread_id: ThreadId) -> String {
         let is_primary = self.primary_thread_id == Some(thread_id);
         let fallback_label = if is_primary {
-            "Main [default]".to_string()
+            tr(current(), "Main [default]").to_string()
         } else {
             let thread_id = thread_id.to_string();
             let short_id: String = thread_id.chars().take(8).collect();
@@ -491,7 +493,7 @@ impl App {
                 self.chat_widget.reset_realtime_conversation();
             }
             self.chat_widget
-                .add_error_message("No active thread is available.".to_string());
+                .add_error_message(tr(current(), "No active thread is available.").to_string());
             return Ok(());
         };
 
@@ -750,7 +752,7 @@ impl App {
                             force_reload: *force_reload,
                         })
                         .await,
-                    "failed to refresh skills",
+                    tr(current(), "failed to refresh skills"),
                 );
                 Ok(true)
             }

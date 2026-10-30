@@ -26,6 +26,8 @@ use codex_app_server_protocol::MarketplaceUpgradeParams;
 use codex_app_server_protocol::MarketplaceUpgradeResponse;
 use codex_app_server_protocol::McpServerOauthLoginParams;
 use codex_app_server_protocol::RequestId;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 use crate::hooks_rpc::fetch_hooks_list;
 use crate::hooks_rpc::write_hook_trust;
@@ -166,7 +168,7 @@ impl App {
                 fetch_thread_usage(request_handle, thread_id),
             )
             .await
-            .map_err(|_| "thread usage request timed out in TUI".to_string())
+            .map_err(|_| tr(current(), "thread usage request timed out in TUI").to_string())
             .and_then(|result| result.map_err(|err| err.to_string()));
             app_event_tx.send(AppEvent::ThreadUsageLoaded {
                 thread_id,
@@ -1101,7 +1103,8 @@ async fn request_plugin_list_with_marketplace_kinds(
     cwd: PathBuf,
     marketplace_kinds: Option<Vec<PluginListMarketplaceKind>>,
 ) -> Result<PluginListResponse> {
-    let cwd = AbsolutePathBuf::try_from(cwd).wrap_err("plugin list cwd must be absolute")?;
+    let cwd = AbsolutePathBuf::try_from(cwd)
+        .wrap_err(tr(current(), "plugin list cwd must be absolute"))?;
     let request_id = RequestId::String(format!("plugin-list-{}", Uuid::new_v4()));
     request_handle
         .request_typed(ClientRequest::PluginList {

@@ -7,6 +7,8 @@ use crate::realtime_conversation::handle_start as handle_realtime_conversation_s
 use crate::realtime_conversation::handle_text as handle_realtime_conversation_text;
 use async_channel::Receiver;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_otel::set_parent_from_w3c_trace_context;
 use tracing::Instrument;
 use tracing::debug_span;
@@ -261,7 +263,8 @@ pub(super) async fn persist_thread_memory_mode_update(
     sess: &Arc<Session>,
     mode: ThreadMemoryMode,
 ) -> anyhow::Result<()> {
-    let live_thread = sess.live_thread_for_persistence("update thread memory mode")?;
+    let live_thread =
+        sess.live_thread_for_persistence(tr(current(), "update thread memory mode"))?;
     live_thread.persist(PersistContext::Standard).await?;
     live_thread.flush().await?;
     live_thread
@@ -382,7 +385,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
             id: sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 misalignment: None,
-                message: "Failed to shutdown thread persistence".to_string(),
+                message: tr(current(), "Failed to shutdown thread persistence").to_string(),
                 codex_error_info: Some(CodexErrorInfo::Other),
             }),
         };

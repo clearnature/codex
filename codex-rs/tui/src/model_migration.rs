@@ -14,6 +14,8 @@ use crate::render::renderable::RenderableItem;
 use crate::tui::FrameRequester;
 use crate::tui::Tui;
 use crate::tui::TuiEvent;
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -58,8 +60,8 @@ impl MigrationMenuOption {
 
     fn label(self) -> &'static str {
         match self {
-            Self::TryNewModel => "Try new model",
-            Self::UseExistingModel => "Use existing model",
+            Self::TryNewModel => tr(current(), "Try new model"),
+            Self::UseExistingModel => tr(current(), "Use existing model"),
         }
     }
 }

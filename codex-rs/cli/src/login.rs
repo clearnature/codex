@@ -11,6 +11,8 @@ use codex_config::types::AuthCredentialsStoreMode;
 use codex_core::config::Config;
 use codex_core::config::edit::ConfigEdit;
 use codex_core::config::edit::ConfigEditsBuilder;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthKeyringBackendKind;
 use codex_login::AuthManager;
 use codex_login::AuthRouteConfig;
@@ -39,13 +41,27 @@ use tracing_subscriber::Layer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-const CHATGPT_LOGIN_DISABLED_MESSAGE: &str =
-    "ChatGPT login is disabled. Use API key login instead.";
-const API_KEY_LOGIN_DISABLED_MESSAGE: &str =
-    "API key login is disabled. Use ChatGPT login instead.";
-const ACCESS_TOKEN_LOGIN_DISABLED_MESSAGE: &str =
-    "Access token login is disabled. Use API key login instead.";
-const LOGIN_SUCCESS_MESSAGE: &str = "Successfully logged in";
+fn chatgpt_login_disabled_message() -> &'static str {
+    tr(
+        current(),
+        "ChatGPT login is disabled. Use API key login instead.",
+    )
+}
+fn api_key_login_disabled_message() -> &'static str {
+    tr(
+        current(),
+        "API key login is disabled. Use ChatGPT login instead.",
+    )
+}
+fn access_token_login_disabled_message() -> &'static str {
+    tr(
+        current(),
+        "Access token login is disabled. Use API key login instead.",
+    )
+}
+fn login_success_message() -> &'static str {
+    tr(current(), "Successfully logged in")
+}
 const API_KEY_AUTHENTICATION_NOTICE: &str = "Authentication is checked when you send a request.";
 const DEFAULT_LOGIN_LOG_FILTER: &str =
     "codex_cli=info,codex_core=info,codex_login=info,codex_otel::auth_storage=warn";
@@ -181,7 +197,7 @@ pub async fn run_login_with_chatgpt(cli_config_overrides: CliConfigOverrides) ->
         .auth_config()
         .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
     {
-        eprintln!("{CHATGPT_LOGIN_DISABLED_MESSAGE}");
+        eprintln!("{}", chatgpt_login_disabled_message());
         std::process::exit(1);
     }
 
@@ -196,7 +212,7 @@ pub async fn run_login_with_chatgpt(cli_config_overrides: CliConfigOverrides) ->
     .await
     {
         Ok(_) => {
-            eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+            eprintln!("{}", login_success_message());
             std::process::exit(0);
         }
         Err(e) => {
@@ -218,7 +234,7 @@ pub async fn run_login_with_api_key(
         .auth_config()
         .is_login_method_allowed(ForcedLoginMethod::Api)
     {
-        eprintln!("{API_KEY_LOGIN_DISABLED_MESSAGE}");
+        eprintln!("{}", api_key_login_disabled_message());
         std::process::exit(1);
     }
 
@@ -251,7 +267,7 @@ pub async fn run_login_with_access_token(
         .auth_config()
         .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
     {
-        eprintln!("{ACCESS_TOKEN_LOGIN_DISABLED_MESSAGE}");
+        eprintln!("{}", access_token_login_disabled_message());
         std::process::exit(1);
     }
 
@@ -269,7 +285,7 @@ pub async fn run_login_with_access_token(
     .await
     {
         Ok(_) => {
-            eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+            eprintln!("{}", login_success_message());
             std::process::exit(0);
         }
         Err(e) => {
@@ -282,16 +298,16 @@ pub async fn run_login_with_access_token(
 pub fn read_api_key_from_stdin() -> String {
     read_stdin_secret(
         "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`.",
-        "Reading API key from stdin...",
-        "No API key provided via stdin.",
+        tr(current(), "Reading API key from stdin..."),
+        tr(current(), "No API key provided via stdin."),
     )
 }
 
 pub fn read_access_token_from_stdin() -> String {
     read_stdin_secret(
         "--with-access-token expects the access token on stdin. Try piping it, e.g. `printenv CODEX_ACCESS_TOKEN | codex login --with-access-token`.",
-        "Reading access token from stdin...",
-        "No access token provided via stdin.",
+        tr(current(), "Reading access token from stdin..."),
+        tr(current(), "No access token provided via stdin."),
     )
 }
 
@@ -333,7 +349,7 @@ pub async fn run_login_with_device_code(
         .auth_config()
         .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
     {
-        eprintln!("{CHATGPT_LOGIN_DISABLED_MESSAGE}");
+        eprintln!("{}", chatgpt_login_disabled_message());
         std::process::exit(1);
     }
     let auth_route_config = config.auth_route_config();
@@ -358,7 +374,7 @@ pub async fn run_login_with_device_code(
     }
     match run_device_code_login(opts).await {
         Ok(()) => {
-            eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+            eprintln!("{}", login_success_message());
             std::process::exit(0);
         }
         Err(e) => {
@@ -384,7 +400,7 @@ pub async fn run_login_with_device_code_fallback_to_browser(
         .auth_config()
         .is_login_method_allowed(ForcedLoginMethod::Chatgpt)
     {
-        eprintln!("{CHATGPT_LOGIN_DISABLED_MESSAGE}");
+        eprintln!("{}", chatgpt_login_disabled_message());
         std::process::exit(1);
     }
     let auth_route_config = config.auth_route_config();
@@ -412,18 +428,24 @@ pub async fn run_login_with_device_code_fallback_to_browser(
 
     match run_device_code_login(opts.clone()).await {
         Ok(()) => {
-            eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+            eprintln!("{}", login_success_message());
             std::process::exit(0);
         }
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
-                eprintln!("Device code login is not enabled; falling back to browser login.");
+                eprintln!(
+                    "{}",
+                    tr(
+                        current(),
+                        "Device code login is not enabled; falling back to browser login."
+                    )
+                );
                 match run_login_server(opts) {
                     Ok(server) => {
                         print_login_server_start(server.actual_port, &server.auth_url);
                         match server.block_until_done().await {
                             Ok(()) => {
-                                eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+                                eprintln!("{}", login_success_message());
                                 std::process::exit(0);
                             }
                             Err(e) => {
@@ -451,7 +473,7 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
     if is_workload_identity_selected() {
         match AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false).await {
             Ok(_) => {
-                eprintln!("Logged in using workload identity");
+                eprintln!("{}", tr(current(), "Logged in using workload identity"));
                 std::process::exit(0);
             }
             Err(err) => {
@@ -479,7 +501,7 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
                 }
             },
             AuthMode::Chatgpt | AuthMode::ChatgptAuthTokens => {
-                eprintln!("Logged in using ChatGPT");
+                eprintln!("{}", tr(current(), "Logged in using ChatGPT"));
                 std::process::exit(0);
             }
             AuthMode::Headers => {
@@ -490,15 +512,21 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
                 std::process::exit(0);
             }
             AuthMode::PersonalAccessToken => {
-                eprintln!("Logged in using personal access token");
+                eprintln!("{}", tr(current(), "Logged in using personal access token"));
                 std::process::exit(0);
             }
             AuthMode::BedrockApiKey => {
-                eprintln!("Logged in using Amazon Bedrock API key");
+                eprintln!(
+                    "{}",
+                    tr(current(), "Logged in using Amazon Bedrock API key")
+                );
                 std::process::exit(0);
             }
             AuthMode::BedrockAccessKeys => {
-                eprintln!("Logged in using Amazon Bedrock AWS access keys");
+                eprintln!(
+                    "{}",
+                    tr(current(), "Logged in using Amazon Bedrock AWS access keys")
+                );
                 std::process::exit(0);
             }
         },
@@ -583,7 +611,7 @@ pub async fn run_logout(cli_config_overrides: CliConfigOverrides) -> ! {
         };
 
     if logged_out || cleared_bedrock_config {
-        eprintln!("Successfully logged out");
+        eprintln!("{}", tr(current(), "Successfully logged out"));
     } else {
         eprintln!("Not logged in");
     }

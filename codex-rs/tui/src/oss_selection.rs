@@ -1,6 +1,8 @@
 //! Local provider discovery and shared startup picker presentation.
 //! Discovery and selection outcomes stay independent of the picker layout.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::io;
 use std::sync::LazyLock;
 
@@ -65,8 +67,8 @@ struct SelectOption {
 static OSS_SELECT_OPTIONS: LazyLock<Vec<SelectOption>> = LazyLock::new(|| {
     vec![
         SelectOption {
-            label: Line::from(vec!["L".underlined(), "M Studio".into()]),
-            description: "Local LM Studio server (default port 1234)",
+            label: Line::from(vec!["L".underlined(), tr(current(), "M Studio").into()]),
+            description: tr(current(), "Local LM Studio server (default port 1234)"),
             key: KeyCode::Char('l'),
             provider_id: LMSTUDIO_OSS_PROVIDER_ID,
         },
@@ -210,7 +212,7 @@ impl WidgetRef for &OssSelectionWidget<'_> {
         column.push(/*flex*/ 1, RenderableItem::Borrowed(&""));
         column.push(
             /*flex*/ 0,
-            Paragraph::new("Select an open-source provider".bold())
+            Paragraph::new(tr(current(), "Select an open-source provider").bold())
                 .wrap(Wrap { trim: false })
                 .inset(Insets::vh(/*v*/ 0, /*h*/ 2)),
         );

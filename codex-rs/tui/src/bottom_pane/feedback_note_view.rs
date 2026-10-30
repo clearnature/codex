@@ -2,6 +2,8 @@
 //! The editor and submission controls remain visible when the disclosure must scroll.
 //! Unbracketed paste bursts insert newlines; Enter submits after the burst ends.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -323,7 +325,7 @@ impl Renderable for FeedbackNoteView {
                     key_hint::plain(KeyCode::PageUp).into(),
                     "/".into(),
                     key_hint::plain(KeyCode::PageDown).into(),
-                    " scroll disclosure".into(),
+                    tr(current(), " scroll disclosure").into(),
                 ]))
                 .render(blank_area, buf);
             }
@@ -333,9 +335,9 @@ impl Renderable for FeedbackNoteView {
         if hint_y < area.y.saturating_add(area.height) {
             Paragraph::new(accept_cancel_hint_line(
                 Some(key_hint::plain(KeyCode::Enter).into()),
-                "to submit",
+                tr(current(), "to submit"),
                 Some(key_hint::plain(KeyCode::Esc).into()),
-                "to cancel",
+                tr(current(), "to cancel"),
             ))
             .render(
                 Rect {
@@ -387,14 +389,16 @@ impl FeedbackNoteView {
                         .into(),
                 );
                 lines.push(Line::from(vec![
-                    "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ".dim(),
+                    tr(current(), "By submitting feedback, you agree that OpenAI can use your feedback for safety purposes and internal model training, as explained in more detail ").dim(),
                     "here".fg(crate::style::accent_color()).underlined(),
                     ". Please avoid sharing tented information under NDA, or privileged, HR-related, or sensitive personal information.".dim(),
                 ]));
             }
             FeedbackAudience::External => lines.push(Line::from(vec![
-                "Your feedback can be used to improve ChatGPT. ".dim(),
-                "Learn more".fg(crate::style::accent_color()).underlined(),
+                tr(current(), "Your feedback can be used to improve ChatGPT. ").dim(),
+                tr(current(), "Learn more")
+                    .fg(crate::style::accent_color())
+                    .underlined(),
                 ".".dim(),
             ])),
         }
@@ -414,23 +418,23 @@ fn gutter() -> Span<'static> {
 fn feedback_title_and_placeholder(category: FeedbackCategory) -> (String, String) {
     match category {
         FeedbackCategory::BadResult => (
-            "Tell us more (bad result)".to_string(),
+            tr(current(), "Tell us more (bad result)").to_string(),
             "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::GoodResult => (
-            "Tell us more (good result)".to_string(),
+            tr(current(), "Tell us more (good result)").to_string(),
             "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::Bug => (
-            "Tell us more (bug)".to_string(),
+            tr(current(), "Tell us more (bug)").to_string(),
             "(optional) Write a short description to help us further".to_string(),
         ),
         FeedbackCategory::SafetyCheck => (
-            "Tell us more (safety check)".to_string(),
+            tr(current(), "Tell us more (safety check)").to_string(),
             "(optional) Share what was refused and why it should have been allowed".to_string(),
         ),
         FeedbackCategory::Other => (
-            "Tell us more (other)".to_string(),
+            tr(current(), "Tell us more (other)").to_string(),
             "(optional) Write a short description to help us further".to_string(),
         ),
     }

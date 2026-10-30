@@ -11,6 +11,8 @@ use crate::version::CODEX_CLI_VERSION;
 use chrono::DateTime;
 use chrono::Local;
 use codex_app_server_protocol::AskForApproval;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_model_provider_info::WireApi;
 use codex_protocol::ThreadId;
 use codex_protocol::account::PlanType;
@@ -430,7 +432,7 @@ impl StatusHistoryCell {
             Span::from(format!("{percent}% left")),
             Span::from(" (").dim(),
             Span::from(used_fmt).dim(),
-            Span::from(" used / ").dim(),
+            Span::from(tr(current(), " used / ")).dim(),
             Span::from(window_fmt).dim(),
             Span::from(")").dim(),
         ])
@@ -459,9 +461,9 @@ impl StatusHistoryCell {
                 lines.push(formatter.line(
                     "Warning",
                     vec![Span::from(if state.refreshing_rate_limits {
-                        "limits may be stale - run /status again shortly."
+                        tr(current(), "limits may be stale - run /status again shortly.")
                     } else {
-                        "limits may be stale - start new turn to refresh."
+                        tr(current(), "limits may be stale - start new turn to refresh.")
                     })
                     .dim()],
                 ));
@@ -477,9 +479,9 @@ impl StatusHistoryCell {
                 vec![formatter.line(
                     "Limits",
                     vec![Span::from(if state.refreshing_rate_limits {
-                        "refresh requested; run /status again shortly."
+                        tr(current(), "refresh requested; run /status again shortly.")
                     } else {
-                        "data not available yet"
+                        tr(current(), "data not available yet")
                     })
                     .dim()],
                 )]
@@ -622,7 +624,7 @@ fn status_permission_summary(
         return "workspace".to_string();
     }
     if summary == "custom permissions (network access enabled)" {
-        return "custom permissions with network access".to_string();
+        return tr(current(), "custom permissions with network access").to_string();
     }
     summary
 }
@@ -652,9 +654,9 @@ fn status_permissions_label(
     match active_id {
         Some(BUILT_IN_PERMISSION_PROFILE_READ_ONLY) => {
             let label = if sandbox == "read-only with network access" {
-                "Read Only with network access"
+                tr(current(), "Read Only with network access")
             } else {
-                "Read Only"
+                tr(current(), "Read Only")
             };
             return format!("{label} ({approval})");
         }
@@ -721,8 +723,8 @@ fn status_approval_label(
 ) -> String {
     if approval_policy == AskForApproval::OnRequest {
         return match approvals_reviewer {
-            ApprovalsReviewer::AutoReview => "Approve for me".to_string(),
-            ApprovalsReviewer::User => "Ask for approval".to_string(),
+            ApprovalsReviewer::AutoReview => tr(current(), "Approve for me").to_string(),
+            ApprovalsReviewer::User => tr(current(), "Ask for approval").to_string(),
         };
     }
 
@@ -888,9 +890,9 @@ impl StatusHistoryCell {
                     Line::from(vec![
                         "Visit ".fg(accent_color()),
                         CHATGPT_USAGE_URL.fg(accent_color()).underlined(),
-                        " for up-to-date".fg(accent_color()),
+                        tr(current(), " for up-to-date").fg(accent_color()),
                     ]),
-                    "information on rate limits and credits"
+                    tr(current(), "information on rate limits and credits")
                         .fg(accent_color())
                         .into(),
                 ],

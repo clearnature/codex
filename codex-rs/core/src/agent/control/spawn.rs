@@ -34,6 +34,8 @@ use codex_context_fragments::set_annotated_content;
 use codex_context_fragments::to_annotated_content;
 use codex_features::Feature;
 use codex_history::ResponseItemEnvelope;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_prompts::ResolvedModelMessages;
 use codex_protocol::error::AgentErrorContext;
 use codex_protocol::intersect_effective_permission_profiles;
@@ -1071,7 +1073,7 @@ impl LocalAgentControl {
         }
         if options.fork_mode.is_none() {
             return Err(CodexErr::Fatal(
-                "spawn_agent fork requires a fork mode".to_string(),
+                tr(current(), "spawn_agent fork requires a fork mode").to_string(),
             ));
         }
         let SessionSource::SubAgent(SubAgentSource::ThreadSpawn {

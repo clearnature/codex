@@ -154,7 +154,10 @@ impl ChatWidget {
         lines.push(line![
             tr(
                 current(),
-                "Couldn't set up your sandbox with Administrator permissions"
+                tr(
+                    current(),
+                    "Couldn't set up your sandbox with Administrator permissions"
+                )
             )
             .bold()
         ]);
@@ -166,7 +169,10 @@ impl ChatWidget {
         } else {
             lines.push(line![tr(
                 current(),
-                "Your organization requires the default sandbox before Codex can continue."
+                tr(
+                    current(),
+                    "Your organization requires the default sandbox before Codex can continue."
+                )
             )]);
         }
         lines.push(line![

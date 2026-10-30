@@ -1,4 +1,6 @@
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 const RATE_LIMIT_RESET_REQUEST_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 10);
 const RATE_LIMIT_RESET_DETAILS_REQUEST_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 5);
@@ -50,7 +52,7 @@ impl AccountRequestProcessor {
             return Err(invalid_request("idempotencyKey must not be empty"));
         }
         if params.credit_id.as_deref().is_some_and(str::is_empty) {
-            return Err(invalid_request("creditId must not be empty"));
+            return Err(invalid_request(tr(current(), "creditId must not be empty")));
         }
 
         let client = self.rate_limit_reset_backend_client().await?;
@@ -76,7 +78,7 @@ impl AccountRequestProcessor {
             }
         })
         .await
-        .map_err(|_| internal_error("rate limit reset consume timed out"))?
+        .map_err(|_| internal_error(tr(current(), "rate limit reset consume timed out")))?
         .map_err(|err| internal_error(format!("failed to consume rate limit reset: {err}")))?;
         let outcome = match response.code {
             BackendConsumeRateLimitResetCreditCode::Reset => {

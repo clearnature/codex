@@ -1,5 +1,7 @@
 //! Tracks pending approvals and retains their originating connection until resolution.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
@@ -200,13 +202,15 @@ impl PendingAppServerRequests {
             ServerRequest::AttestationGenerate { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Attestation generation is not available in TUI.".to_string(),
+                    message: tr(current(), "Attestation generation is not available in TUI.")
+                        .to_string(),
                 })
             }
             ServerRequest::CurrentTimeRead { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "External current time is not available in TUI.".to_string(),
+                    message: tr(current(), "External current time is not available in TUI.")
+                        .to_string(),
                 })
             }
             ServerRequest::ApplyPatchApproval { request_id, .. } => {

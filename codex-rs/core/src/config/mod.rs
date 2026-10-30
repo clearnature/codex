@@ -80,6 +80,8 @@ use codex_features::TokenBudgetConfigToml;
 use codex_git_utils::resolve_root_git_project_for_trust;
 use codex_http_client::HttpClientFactory;
 use codex_http_client::OutboundProxyPolicy;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthManagerConfig;
 use codex_login::AuthRouteConfig;
 use codex_mcp::DEFAULT_OPTIONAL_MCP_STARTUP_GRACE;
@@ -2465,9 +2467,10 @@ pub(crate) fn set_project_trust_level_inner(
         }
     }
     let Some(projects_tbl) = doc["projects"].as_table_mut() else {
-        return Err(anyhow::anyhow!(
+        return Err(anyhow::anyhow!(tr(
+            current(),
             "projects table missing after initialization"
-        ));
+        )));
     };
 
     // Ensure the per-project entry is its own explicit table. If it exists but
@@ -3014,7 +3017,7 @@ fn resolve_rollout_budget_config(
             .ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
-                    "features.rollout_budget.reminder_at_remaining_tokens is required when rollout_budget is enabled",
+                    tr(current(), "features.rollout_budget.reminder_at_remaining_tokens is required when rollout_budget is enabled"),
                 )
             })?;
     if reminder_at_remaining_tokens
@@ -3334,7 +3337,7 @@ impl Config {
         if cfg.experimental_thread_store_endpoint.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "`experimental_thread_store_endpoint` is no longer supported; remove it from config.toml",
+                tr(current(), "`experimental_thread_store_endpoint` is no longer supported; remove it from config.toml"),
             ));
         }
 
@@ -3475,7 +3478,7 @@ impl Config {
 
         if bypass_hook_trust {
             startup_warnings.push(
-                "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+                tr(current(), "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.")
                     .to_string(),
             );
         }
@@ -3483,19 +3486,19 @@ impl Config {
         if sandbox_mode.is_some() && permission_profile.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "`sandbox_mode` and `permission_profile` overrides cannot both be set",
+                tr(current(), "`sandbox_mode` and `permission_profile` overrides cannot both be set"),
             ));
         }
         if sandbox_mode.is_some() && default_permissions_override.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "`sandbox_mode` and `default_permissions` overrides cannot both be set",
+                tr(current(), "`sandbox_mode` and `default_permissions` overrides cannot both be set"),
             ));
         }
         if permission_profile.is_some() && default_permissions_override.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "`permission_profile` and `default_permissions` overrides cannot both be set",
+                tr(current(), "`permission_profile` and `default_permissions` overrides cannot both be set"),
             ));
         }
         if let Some(profile) = cfg.profile.as_deref() {
@@ -3649,7 +3652,7 @@ impl Config {
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "config defines `[permissions]` profiles but does not set `default_permissions`",
+                tr(current(), "config defines `[permissions]` profiles but does not set `default_permissions`"),
             ));
         }
 
@@ -4034,7 +4037,7 @@ impl Config {
         if multi_agent_v2.max_concurrent_threads_per_session == 0 {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "features.multi_agent_v2.max_concurrent_threads_per_session must be at least 1",
+                tr(current(), "features.multi_agent_v2.max_concurrent_threads_per_session must be at least 1"),
             ));
         }
         validate_multi_agent_v2_wait_timeout(
@@ -4052,19 +4055,19 @@ impl Config {
         if multi_agent_v2.min_wait_timeout_ms > multi_agent_v2.max_wait_timeout_ms {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "features.multi_agent_v2.min_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms",
+                tr(current(), "features.multi_agent_v2.min_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms"),
             ));
         }
         if multi_agent_v2.default_wait_timeout_ms < multi_agent_v2.min_wait_timeout_ms {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "features.multi_agent_v2.default_wait_timeout_ms must be at least features.multi_agent_v2.min_wait_timeout_ms",
+                tr(current(), "features.multi_agent_v2.default_wait_timeout_ms must be at least features.multi_agent_v2.min_wait_timeout_ms"),
             ));
         }
         if multi_agent_v2.default_wait_timeout_ms > multi_agent_v2.max_wait_timeout_ms {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "features.multi_agent_v2.default_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms",
+                tr(current(), "features.multi_agent_v2.default_wait_timeout_ms must be at most features.multi_agent_v2.max_wait_timeout_ms"),
             ));
         }
         validate_multi_agent_v2_tool_namespace(multi_agent_v2.tool_namespace.as_deref())?;
@@ -4080,7 +4083,7 @@ impl Config {
         if agent_max_threads == Some(0) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "agents.max_concurrent_threads_per_session must be at least 1",
+                tr(current(), "agents.max_concurrent_threads_per_session must be at least 1"),
             ));
         }
         let agent_max_depth = cfg
@@ -4113,7 +4116,7 @@ impl Config {
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "thread_unload_delay_secs is too large",
+                tr(current(), "thread_unload_delay_secs is too large"),
             ));
         }
 
@@ -4597,7 +4600,7 @@ impl Config {
                     i64::try_from(max_goal_token_budget.get()).map_err(|_| {
                         std::io::Error::new(
                             std::io::ErrorKind::InvalidInput,
-                            "goals.max_goal_token_budget exceeds the maximum supported token budget",
+                            tr(current(), "goals.max_goal_token_budget exceeds the maximum supported token budget"),
                         )
                     })
                 })

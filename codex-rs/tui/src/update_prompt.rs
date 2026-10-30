@@ -21,6 +21,8 @@ use crate::tui::TuiEvent;
 use crate::update_action::UpdateAction;
 #[cfg(not(debug_assertions))]
 use crate::updates;
+use codex_i18n::current;
+use codex_i18n::tr;
 #[cfg(not(debug_assertions))]
 use color_eyre::Result;
 use crossterm::event::KeyCode;
@@ -226,7 +228,7 @@ impl WidgetRef for &UpdatePromptScreen {
         column.push(
             /*flex*/ 1,
             Paragraph::new(Line::from(vec![
-                "Release notes: ".dim(),
+                tr(current(), "Release notes: ").dim(),
                 RELEASE_NOTES_URL.dim().underlined(),
             ]))
             .wrap(Wrap { trim: false })
@@ -242,8 +244,8 @@ impl WidgetRef for &UpdatePromptScreen {
             picker_option_list(
                 vec![
                     format!("Update now (runs `{update_command}`)"),
-                    "Skip".to_string(),
-                    "Skip until next version".to_string(),
+                    tr(current(), "Skip").to_string(),
+                    tr(current(), "Skip until next version").to_string(),
                 ],
                 selected_index,
             ),

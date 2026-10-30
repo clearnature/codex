@@ -33,6 +33,8 @@ use codex_app_server_protocol::ThreadSectionMoveResponse;
 use codex_config::types::WindowsSandboxModeToml;
 use codex_extension_api::ExtensionDataInit;
 use codex_extension_api::ThreadIdleCause;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::SanitizedGitUrl;
 use codex_protocol::config_types::MultiAgentMode;
 use codex_protocol::error::CodexErrorDetails;
@@ -364,7 +366,7 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
     ) -> Result<(), String> {
         let name = tool.name.trim();
         if name.is_empty() {
-            return Err("dynamic tool name must not be empty".to_string());
+            return Err(tr(current(), "dynamic tool name must not be empty").to_string());
         }
         if name != tool.name {
             return Err(format!(
@@ -372,7 +374,11 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
                 escape_identifier_for_error(&tool.name),
             ));
         }
-        validate_dynamic_tool_identifier(name, "dynamic tool name", DYNAMIC_TOOL_NAME_MAX_LEN)?;
+        validate_dynamic_tool_identifier(
+            name,
+            tr(current(), "dynamic tool name"),
+            DYNAMIC_TOOL_NAME_MAX_LEN,
+        )?;
         if name == "mcp" || name.starts_with("mcp__") {
             return Err(format!("dynamic tool name is reserved: {name}"));
         }
@@ -408,7 +414,9 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
             DynamicToolSpec::Namespace(namespace) => {
                 let name = namespace.name.trim();
                 if name.is_empty() {
-                    return Err("dynamic tool namespace must not be empty".to_string());
+                    return Err(
+                        tr(current(), "dynamic tool namespace must not be empty").to_string()
+                    );
                 }
                 if name != namespace.name {
                     return Err(format!(
@@ -418,7 +426,7 @@ fn validate_dynamic_tools(tools: &[DynamicToolSpec]) -> Result<(), String> {
                 }
                 validate_dynamic_tool_identifier(
                     name,
-                    "dynamic tool namespace",
+                    tr(current(), "dynamic tool namespace"),
                     DYNAMIC_TOOL_NAMESPACE_MAX_LEN,
                 )?;
                 if namespace.description.chars().count()
@@ -779,7 +787,9 @@ impl ThreadRequestProcessor {
             self.thread_manager
                 .move_thread_to_section(thread_uuid, section_id.as_deref(), before_thread_uuid)
                 .await
-                .map_err(|err| core_thread_write_error("move thread in section", err))?;
+                .map_err(|err| {
+                    core_thread_write_error(tr(current(), "move thread in section"), err)
+                })?;
         }
 
         Ok(Some(ClientResponsePayload::ThreadSectionMove(
@@ -1924,7 +1934,7 @@ impl ThreadRequestProcessor {
                 /*include_archived*/ false,
             )
             .await
-            .map_err(|err| core_thread_write_error("set thread name", err))?;
+            .map_err(|err| core_thread_write_error(tr(current(), "set thread name"), err))?;
 
         Ok((
             ThreadSetNameResponse {},
@@ -1953,7 +1963,7 @@ impl ThreadRequestProcessor {
                 /*include_archived*/ false,
             )
             .await
-            .map_err(|err| core_thread_write_error("set thread memory mode", err))?;
+            .map_err(|err| core_thread_write_error(tr(current(), "set thread memory mode"), err))?;
 
         Ok(ThreadMemoryModeSetResponse {})
     }
@@ -2096,7 +2106,9 @@ impl ThreadRequestProcessor {
                 .thread_manager
                 .update_thread_metadata(thread_uuid, patch, /*include_archived*/ true)
                 .await
-                .map_err(|err| core_thread_write_error("update thread metadata", err))?;
+                .map_err(|err| {
+                    core_thread_write_error(tr(current(), "update thread metadata"), err)
+                })?;
             if let Some(project_id) = project_update.as_ref()
                 && previous_project_id.as_ref() != Some(project_id)
             {
@@ -2170,7 +2182,7 @@ impl ThreadRequestProcessor {
             .thread_store
             .unarchive_thread(StoreArchiveThreadParams { thread_id })
             .await
-            .map_err(|err| thread_store_mutation_error("unarchive", err))?;
+            .map_err(|err| thread_store_mutation_error(tr(current(), "unarchive"), err))?;
         let (mut thread, _) =
             thread_from_stored_thread(stored_thread, fallback_provider.as_str(), &self.config.cwd);
 
@@ -2352,7 +2364,7 @@ impl ThreadRequestProcessor {
                 multi_agent_version: thread.multi_agent_version(),
             })
             .await
-            .map_err(|err| thread_store_mutation_error("revert", err));
+            .map_err(|err| thread_store_mutation_error(tr(current(), "revert"), err));
         // Receipt lookup or update errors cannot prevent reload or misreport a committed revert.
         // A concurrent mark wins over this cleanup, even while the thread was being truncated.
         if revert_result.is_ok()
@@ -2615,7 +2627,7 @@ impl ThreadRequestProcessor {
         } = params;
         let command = command.trim().to_string();
         if command.is_empty() {
-            return Err(invalid_request("command must not be empty"));
+            return Err(invalid_request(tr(current(), "command must not be empty")));
         }
 
         let timeout_ms = timeout_ms
@@ -4921,7 +4933,7 @@ impl ThreadRequestProcessor {
         history: &[ResponseItem],
     ) -> Result<InitialHistory, JSONRPCErrorError> {
         if history.is_empty() {
-            return Err(invalid_request("history must not be empty"));
+            return Err(invalid_request(tr(current(), "history must not be empty")));
         }
         Ok(InitialHistory::Forked(
             history
@@ -5748,7 +5760,9 @@ impl ThreadRequestProcessor {
                     /*include_archived*/ true,
                 )
                 .await
-                .map_err(|err| core_thread_write_error("inherit source thread name", err))?;
+                .map_err(|err| {
+                    core_thread_write_error(tr(current(), "inherit source thread name"), err)
+                })?;
         }
         let inherited_goal = if defer_goal_continuation
             && session_configured.rollout_path.is_some()

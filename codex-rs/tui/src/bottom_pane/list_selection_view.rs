@@ -3,6 +3,8 @@
 //! Controls and overflow indicators keep their own rows outside the result viewport.
 //! Letter-labeled children are indented and do not consume numeric shortcuts.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -762,7 +764,11 @@ impl ListSelectionView {
                     let is_selected = self.state.selected_idx == Some(visible_idx);
                     let prefix = if is_selected { '›' } else { ' ' };
                     let name = item.name.as_str();
-                    let marker = if item.is_current { " (current)" } else { "" };
+                    let marker = if item.is_current {
+                        tr(current(), " (current)")
+                    } else {
+                        ""
+                    };
                     let name_with_marker = format!("{name}{marker}");
                     let is_disabled = item.is_disabled || item.disabled_reason.is_some();
                     let wrap_prefix = if self.is_searchable {

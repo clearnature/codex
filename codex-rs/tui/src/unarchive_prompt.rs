@@ -11,6 +11,8 @@ use crate::render::renderable::RenderableItem;
 use crate::session_start::SessionStartAction;
 use crate::tui::Tui;
 use crate::tui::TuiEvent;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use color_eyre::Result;
 use crossterm::event::KeyCode;
@@ -169,7 +171,7 @@ impl UnarchivePrompt {
         column.push(/*flex*/ 1, RenderableItem::Borrowed(&""));
         column.push(
             /*flex*/ 0,
-            Paragraph::new("This conversation is archived".bold())
+            Paragraph::new(tr(current(), "This conversation is archived").bold())
                 .wrap(Wrap { trim: false })
                 .inset(Insets::vh(/*v*/ 0, /*h*/ 2)),
         );
@@ -188,7 +190,7 @@ impl UnarchivePrompt {
             picker_option_list(
                 vec![
                     format!("Unarchive and {}", self.action.verb()),
-                    "Cancel".to_string(),
+                    tr(current(), "Cancel").to_string(),
                 ],
                 selected_index,
             ),

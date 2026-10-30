@@ -4,6 +4,8 @@ use codex_agent_extension::AgentInvocation;
 use codex_agent_extension::AgentRun;
 use codex_agent_extension::AgentRunner;
 use codex_app_server_protocol::ImageReference as V2ImageReference;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::error::CodexErrorDetails;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::FunctionCallOutputBody;
@@ -428,14 +430,18 @@ impl TurnRequestProcessor {
             ApiReviewTarget::BaseBranch { branch } => {
                 let branch = branch.trim().to_string();
                 if branch.is_empty() {
-                    return Err(invalid_request("branch must not be empty".to_string()));
+                    return Err(invalid_request(
+                        tr(current(), "branch must not be empty").to_string(),
+                    ));
                 }
                 ApiReviewTarget::BaseBranch { branch }
             }
             ApiReviewTarget::Commit { sha, title } => {
                 let sha = sha.trim().to_string();
                 if sha.is_empty() {
-                    return Err(invalid_request("sha must not be empty".to_string()));
+                    return Err(invalid_request(
+                        tr(current(), "sha must not be empty").to_string(),
+                    ));
                 }
                 let title = title
                     .map(|t| t.trim().to_string())
@@ -446,7 +452,7 @@ impl TurnRequestProcessor {
                 let trimmed = instructions.trim().to_string();
                 if trimmed.is_empty() {
                     return Err(invalid_request(
-                        "instructions must not be empty".to_string(),
+                        tr(current(), "instructions must not be empty").to_string(),
                     ));
                 }
                 ApiReviewTarget::Custom {
@@ -1123,11 +1129,11 @@ impl TurnRequestProcessor {
                     NotSubmittedReason::ActiveTurnNotSteerable { turn_kind } => {
                         let (message, turn_steer_error) = match turn_kind {
                             codex_protocol::protocol::NonSteerableTurnKind::Review => (
-                                "cannot steer a review turn".to_string(),
+                                tr(current(), "cannot steer a review turn").to_string(),
                                 TurnSteerRequestError::NonSteerableReview,
                             ),
                             codex_protocol::protocol::NonSteerableTurnKind::Compact => (
-                                "cannot steer a compact turn".to_string(),
+                                tr(current(), "cannot steer a compact turn").to_string(),
                                 TurnSteerRequestError::NonSteerableCompact,
                             ),
                         };
@@ -1156,12 +1162,12 @@ impl TurnRequestProcessor {
                         )
                     }
                     NotSubmittedReason::EmptyInput => (
-                        "input must not be empty".to_string(),
+                        tr(current(), "input must not be empty").to_string(),
                         None,
                         Some(AnalyticsJsonRpcError::Input(InputError::Empty)),
                     ),
                     NotSubmittedReason::ActiveTurnOutputSchemaMismatch => (
-                        "active turn uses a different output schema".to_string(),
+                        tr(current(), "active turn uses a different output schema").to_string(),
                         None,
                         None,
                     ),

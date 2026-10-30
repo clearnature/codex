@@ -13,6 +13,8 @@ use crate::app_server_session::is_server_shutting_down_error;
 use crate::app_server_session::source_agent_path;
 use crate::app_server_session::thread_blocks_direct_input;
 use crate::chatwidget::ThreadInputStateRestoreMode;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashSet;
 
 #[derive(Clone, Copy)]
@@ -147,8 +149,10 @@ impl App {
         }
 
         if self.agent_navigation.is_empty() {
-            self.chat_widget
-                .add_info_message("No agents available yet.".to_string(), /*hint*/ None);
+            self.chat_widget.add_info_message(
+                tr(current(), "No agents available yet.").to_string(),
+                /*hint*/ None,
+            );
             return;
         }
 
@@ -215,7 +219,7 @@ impl App {
 
         SelectionViewParams {
             view_id: Some(AGENT_PICKER_VIEW_ID),
-            title: Some("Subagents".to_string()),
+            title: Some(tr(current(), "Subagents").to_string()),
             subtitle: Some(AgentNavigationState::picker_subtitle()),
             footer_hint: Some(standard_popup_hint_line()),
             items,

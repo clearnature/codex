@@ -5,6 +5,8 @@
 use super::*;
 use crate::app_server_session::ResumeModelSettings;
 use crate::dynamic_tools_mcp::ThreadToolTransport;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum ReconnectPresentation {
@@ -44,7 +46,10 @@ pub(super) async fn reconnect(
 ) -> Result<Reconnected> {
     let mode = target.thread_params_mode();
     if matches!(target, AppServerTarget::Embedded) {
-        color_eyre::eyre::bail!("in-process sessions have no connection to restore");
+        color_eyre::eyre::bail!(tr(
+            current(),
+            "in-process sessions have no connection to restore"
+        ));
     }
     if let ThreadToolTransport::Mcp(server) = &task_tools {
         server.suspend();
@@ -265,7 +270,8 @@ impl App {
                         .is_some())
             {
                 if let Ok(mut state) = self.agents_overview.view_state.lock() {
-                    state.connection_notice = Some("Reconnecting — agent list is stale");
+                    state.connection_notice =
+                        Some(tr(current(), "Reconnecting — agent list is stale"));
                 }
                 ReconnectPresentation::Overview
             } else {

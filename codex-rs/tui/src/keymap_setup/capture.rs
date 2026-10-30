@@ -16,6 +16,8 @@ use crate::bottom_pane::render_menu_surface;
 use crate::render::renderable::Renderable;
 use crate::style::accent_color;
 use crate::wrapping::word_wrap_lines;
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -72,22 +74,24 @@ impl KeymapCaptureView {
     fn lines(&self, width: u16) -> Vec<Line<'static>> {
         let wrap_width = usize::from(width.max(1));
         let header = vec![
-            Line::from("Remap Shortcut".bold()),
+            Line::from(tr(current(), "Remap Shortcut").bold()),
             Line::from(vec![
-                "Action: ".dim(),
+                tr(current(), "Action: ").dim(),
                 self.label.clone().into(),
                 "  ".into(),
                 format!("{}.{}", self.context, self.action).dim(),
             ]),
             Line::from(vec![
-                "Current: ".dim(),
+                tr(current(), "Current: ").dim(),
                 self.current_binding.clone().fg(accent_color()),
             ]),
         ];
         let mut lines = word_wrap_lines(&header, wrap_width);
 
         let instructions = match (self.capture_mode, self.first_stroke.as_deref()) {
-            (KeymapCaptureMode::SingleKey, _) => "Press the new key now. Esc cancels.".to_string(),
+            (KeymapCaptureMode::SingleKey, _) => {
+                tr(current(), "Press the new key now. Esc cancels.").to_string()
+            }
             (KeymapCaptureMode::Chord, None) => {
                 "Press the first key, then the second. Esc cancels.".to_string()
             }

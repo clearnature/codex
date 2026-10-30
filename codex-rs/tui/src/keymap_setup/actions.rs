@@ -9,6 +9,8 @@
 //! action must remain both writable in `TuiKeymap` and readable from the shared
 //! runtime inventory.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::BTreeSet;
 
 use codex_config::types::KeybindingsSpec;
@@ -364,11 +366,11 @@ pub(super) enum KeymapDebugBindingSource {
 }
 
 impl KeymapDebugBindingSource {
-    pub(super) const fn label(&self) -> &'static str {
+    pub(super) fn label(&self) -> &'static str {
         match self {
-            Self::Custom => "Custom",
-            Self::CustomGlobal => "Custom global",
-            Self::Default => "Default",
+            Self::Custom => tr(current(), "Custom"),
+            Self::CustomGlobal => tr(current(), "Custom global"),
+            Self::Default => tr(current(), "Default"),
         }
     }
 }

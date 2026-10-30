@@ -5,6 +5,8 @@
 
 use super::*;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 use codex_protocol::mcp::is_node_repl_backed_server;
 
@@ -40,10 +42,10 @@ mod tests;
 
 fn mcp_auth_status_label(status: McpAuthStatus) -> &'static str {
     match status {
-        McpAuthStatus::Unknown => "Unknown",
-        McpAuthStatus::Unsupported => "Unsupported",
-        McpAuthStatus::NotLoggedIn => "Not logged in",
-        McpAuthStatus::BearerToken => "Bearer token",
+        McpAuthStatus::Unknown => tr(current(), "Unknown"),
+        McpAuthStatus::Unsupported => tr(current(), "Unsupported"),
+        McpAuthStatus::NotLoggedIn => tr(current(), "Not logged in"),
+        McpAuthStatus::BearerToken => tr(current(), "Bearer token"),
         McpAuthStatus::OAuth => "OAuth",
     }
 }
@@ -439,19 +441,26 @@ pub(crate) fn new_active_mcp_tool_call(
 }
 /// Render a summary of configured MCP servers from the current `Config`.
 pub(crate) fn empty_mcp_output() -> WebHyperlinkHistoryCell {
-    let mut docs_line = HyperlinkLine::new(Line::from("    See the "));
+    let mut docs_line = HyperlinkLine::new(Line::from(tr(current(), "    See the ")));
     docs_line.push_span(
-        "MCP docs".underlined(),
+        tr(current(), "MCP docs").underlined(),
         Some("https://developers.openai.com/codex/mcp"),
     );
-    docs_line.push_span(" to configure them.".into(), /*destination*/ None);
+    docs_line.push_span(
+        tr(current(), " to configure them.").into(),
+        /*destination*/ None,
+    );
 
     let lines = vec![
         HyperlinkLine::new("/mcp".magenta().into()),
         HyperlinkLine::from(""),
         HyperlinkLine::new(vec!["🔌  ".into(), "MCP Tools".bold()].into()),
         HyperlinkLine::from(""),
-        HyperlinkLine::new("  • No MCP servers configured.".italic().into()),
+        HyperlinkLine::new(
+            tr(current(), "  • No MCP servers configured.")
+                .italic()
+                .into(),
+        ),
         docs_line.style(Style::default().add_modifier(Modifier::DIM)),
     ];
 
@@ -662,20 +671,29 @@ pub(crate) fn new_mcp_tools_output_from_statuses(
 
     for status in statuses {
         let (label, style) = match status.runtime_status {
-            Some(McpServerConnectionStatus::Connected) => {
-                ("connected", status_style(StatusTone::Success))
+            Some(McpServerConnectionStatus::Connected) => (
+                tr(current(), "connected"),
+                status_style(StatusTone::Success),
+            ),
+            Some(McpServerConnectionStatus::Starting) => {
+                (tr(current(), "starting"), accent_style())
             }
-            Some(McpServerConnectionStatus::Starting) => ("starting", accent_style()),
             Some(McpServerConnectionStatus::AuthenticationRequired) => (
                 "authentication required",
                 status_style(StatusTone::Attention),
             ),
             Some(McpServerConnectionStatus::Failed) => {
-                ("failed", status_style(StatusTone::Failure))
+                (tr(current(), "failed"), status_style(StatusTone::Failure))
             }
-            Some(McpServerConnectionStatus::NotStarted) => ("not started", Style::default().dim()),
-            Some(McpServerConnectionStatus::Disabled) => ("disabled", Style::default().dim()),
-            Some(McpServerConnectionStatus::Cancelled) => ("cancelled", Style::default().dim()),
+            Some(McpServerConnectionStatus::NotStarted) => {
+                (tr(current(), "not started"), Style::default().dim())
+            }
+            Some(McpServerConnectionStatus::Disabled) => {
+                (tr(current(), "disabled"), Style::default().dim())
+            }
+            Some(McpServerConnectionStatus::Cancelled) => {
+                (tr(current(), "cancelled"), Style::default().dim())
+            }
             None if matches!(
                 status.auth_status,
                 codex_app_server_protocol::McpAuthStatus::NotLoggedIn
@@ -686,10 +704,14 @@ pub(crate) fn new_mcp_tools_output_from_statuses(
                     status_style(StatusTone::Attention),
                 )
             }
-            None => ("unknown", Style::default().dim()),
+            None => (tr(current(), "unknown"), Style::default().dim()),
         };
         let count = status.tools.len();
-        let unit = if count == 1 { "tool" } else { "tools" };
+        let unit = if count == 1 {
+            tr(current(), "tool")
+        } else {
+            tr(current(), "tools")
+        };
         lines.push(
             vec![
                 "  • ".set_style(style),
@@ -773,7 +795,11 @@ pub(crate) fn new_mcp_tools_output_from_statuses(
 
     if matches!(detail, McpServerStatusDetail::ToolsAndAuthOnly) {
         lines.push("".into());
-        lines.push("  Use /mcp verbose for tools and resources.".dim().into());
+        lines.push(
+            tr(current(), "  Use /mcp verbose for tools and resources.")
+                .dim()
+                .into(),
+        );
     }
 
     PlainHistoryCell { lines }
@@ -811,7 +837,7 @@ impl HistoryCell for McpInventoryLoadingCell {
                 )
                 .unwrap_or_else(|| "•".dim()),
                 " ".into(),
-                "Loading MCP inventory".bold(),
+                tr(current(), "Loading MCP inventory").bold(),
                 "…".dim(),
             ]
             .into(),
@@ -819,7 +845,7 @@ impl HistoryCell for McpInventoryLoadingCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from("Loading MCP inventory...")]
+        vec![Line::from(tr(current(), "Loading MCP inventory..."))]
     }
 
     fn transcript_animation_tick(&self) -> Option<u64> {

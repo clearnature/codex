@@ -15,6 +15,8 @@ use crate::tools::sandboxing::ToolError;
 use crate::windows_sandbox::windows_sandbox_level_for_legacy_checks;
 use codex_features::Feature;
 use codex_file_system::FileSystemSandboxContext;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_network_proxy::EnvironmentNetworkPolicy;
 use codex_protocol::models::AdditionalPermissionProfile;
 use codex_protocol::models::PermissionProfile;
@@ -161,9 +163,11 @@ impl TerminalPermissions {
             "This terminal runs without a filesystem sandbox."
         } else {
             match sandbox_permissions {
-                SandboxPermissions::UseDefault => "This terminal uses the current permissions.",
+                SandboxPermissions::UseDefault => {
+                    tr(current(), "This terminal uses the current permissions.")
+                }
                 SandboxPermissions::WithAdditionalPermissions => {
-                    "This terminal retains additional permissions."
+                    tr(current(), "This terminal retains additional permissions.")
                 }
                 SandboxPermissions::RequireEscalated => {
                     "This terminal retains sandbox or network settings that differ from the current permissions."

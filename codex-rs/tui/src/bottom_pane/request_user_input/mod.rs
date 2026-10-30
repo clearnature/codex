@@ -6,6 +6,8 @@
 //! - Typing while focused on options jumps into notes to keep freeform input fast.
 //! - The composer submit binding advances to the next question; the last question submits all answers.
 //! - Freeform-only questions submit an empty answer list when empty.
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -68,8 +70,12 @@ const UNANSWERED_CONFIRM_TITLE: &str = "Submit with unanswered questions?";
 const UNANSWERED_CONFIRM_GO_BACK: &str = "Go back";
 const UNANSWERED_CONFIRM_GO_BACK_DESC: &str = "Return to the first unanswered question";
 const UNANSWERED_CONFIRM_SUBMIT: &str = "Proceed";
-const UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR: &str = "question";
-const UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL: &str = "questions";
+fn unanswered_confirm_submit_desc_singular() -> &'static str {
+    tr(current(), "question")
+}
+fn unanswered_confirm_submit_desc_plural() -> &'static str {
+    tr(current(), "questions")
+}
 const AUTO_RESOLUTION_HIDDEN_GRACE: Duration = Duration::from_secs(/*secs*/ 60);
 const AUTO_RESOLUTION_VISIBLE_COUNTDOWN: Duration = Duration::from_secs(/*secs*/ 60);
 
@@ -335,7 +341,7 @@ impl RequestUserInputOverlay {
                 base
             }
         } else {
-            "No questions".to_string()
+            tr(current(), "No questions").to_string()
         }
     }
 
@@ -976,9 +982,9 @@ impl RequestUserInputOverlay {
     fn unanswered_submit_description(&self) -> String {
         let count = self.unanswered_question_count();
         let suffix = if count == 1 {
-            UNANSWERED_CONFIRM_SUBMIT_DESC_SINGULAR
+            unanswered_confirm_submit_desc_singular()
         } else {
-            UNANSWERED_CONFIRM_SUBMIT_DESC_PLURAL
+            unanswered_confirm_submit_desc_plural()
         };
         format!("Submit with {count} unanswered {suffix}")
     }
@@ -2482,9 +2488,9 @@ mod tests {
         assert_eq!(
             tip_texts,
             vec![
-                "tab to add notes",
+                tr(current(), "tab to add notes"),
                 "enter to submit answer",
-                "←/→ to navigate questions",
+                tr(current(), "←/→ to navigate questions"),
                 "esc to interrupt",
             ]
         );

@@ -15,6 +15,8 @@ use codex_app_server_protocol::CancelLoginAccountParams;
 use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::LoginAccountParams;
 use codex_app_server_protocol::LoginAccountResponse;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthConfig;
 use codex_login::read_openai_api_key_from_env;
 use codex_protocol::auth::AuthMode;
@@ -101,7 +103,9 @@ pub(crate) enum SignInOption {
     Bedrock,
 }
 
-const API_KEY_DISABLED_MESSAGE: &str = "API key login is disabled.";
+fn api_key_disabled_message() -> &'static str {
+    tr(current(), "API key login is disabled.")
+}
 pub(super) fn onboarding_request_id() -> codex_app_server_protocol::RequestId {
     codex_app_server_protocol::RequestId::String(Uuid::new_v4().to_string())
 }
@@ -431,14 +435,17 @@ impl AuthModeWidget {
 
     fn disallow_api_login(&mut self) {
         self.highlighted_mode = SignInOption::ChatGpt;
-        self.set_error(Some(API_KEY_DISABLED_MESSAGE.to_string()));
+        self.set_error(Some(api_key_disabled_message().to_string()));
         *self.sign_in_state.write().unwrap() = SignInState::PickMode;
         self.request_frame.schedule_frame();
     }
 
     fn render_pick_mode(&self, area: Rect, buf: &mut Buffer) {
         let mut lines: Vec<Line> = if self.bedrock_setup_enabled {
-            vec!["  Choose how you want to use Codex.".into(), "".into()]
+            vec![
+                tr(current(), "  Choose how you want to use Codex.").into(),
+                "".into(),
+            ]
         } else {
             vec![
                 Line::from(vec![
@@ -447,7 +454,7 @@ impl AuthModeWidget {
                 ]),
                 Line::from(vec![
                     "  ".into(),
-                    "or connect an API key for usage-based billing".into(),
+                    tr(current(), "or connect an API key for usage-based billing").into(),
                 ]),
                 "".into(),
             ]
@@ -483,7 +490,7 @@ impl AuthModeWidget {
         };
 
         let chatgpt_description = if !self.is_chatgpt_login_allowed() {
-            "ChatGPT login is disabled"
+            tr(current(), "ChatGPT login is disabled")
         } else {
             "Usage included with Plus, Pro, Business, and Enterprise plans"
         };
@@ -495,7 +502,7 @@ impl AuthModeWidget {
                     lines.extend(create_mode_item(
                         idx,
                         option,
-                        "Sign in with ChatGPT",
+                        tr(current(), "Sign in with ChatGPT"),
                         chatgpt_description,
                     ));
                 }
@@ -512,19 +519,19 @@ impl AuthModeWidget {
                         idx,
                         option,
                         if self.bedrock_setup_enabled {
-                            "Use an OpenAI API key"
+                            tr(current(), "Use an OpenAI API key")
                         } else {
-                            "Provide your own API key"
+                            tr(current(), "Provide your own API key")
                         },
-                        "Pay for what you use",
+                        tr(current(), "Pay for what you use"),
                     ));
                 }
                 SignInOption::Bedrock => {
                     lines.extend(create_mode_item(
                         idx,
                         option,
-                        "Use Amazon Bedrock",
-                        "Connect using your AWS credentials",
+                        tr(current(), "Use Amazon Bedrock"),
+                        tr(current(), "Connect using your AWS credentials"),
                     ));
                 }
             }
@@ -590,11 +597,11 @@ impl AuthModeWidget {
             ]));
             lines.push("".into());
             lines.push(Line::from(vec![
-                "  On a remote or headless machine? Press ".into(),
+                tr(current(), "  On a remote or headless machine? Press ").into(),
                 self.cancel_binding().into(),
-                " and choose ".into(),
+                tr(current(), " and choose ").into(),
                 "Sign in with Device Code".cyan(),
-                ".".into(),
+                tr(current(), ".").into(),
             ]));
             lines.push("".into());
             Some(state.auth_url.clone())
@@ -605,7 +612,7 @@ impl AuthModeWidget {
         lines.push(Line::from(vec![
             "  Press ".dim(),
             self.cancel_binding().into(),
-            " to cancel".dim(),
+            tr(current(), " to cancel").dim(),
         ]));
         Paragraph::new(lines)
             .wrap(Wrap { trim: false })
@@ -643,7 +650,7 @@ impl AuthModeWidget {
             "  You're in control".into(),
             docs_line,
             "".into(),
-            "  Codex can make mistakes".into(),
+            tr(current(), "  Codex can make mistakes").into(),
             HyperlinkLine::new(
                 "  Review the code it writes and commands it runs"
                     .dim()
@@ -680,7 +687,9 @@ impl AuthModeWidget {
 
     fn render_api_key_configured(&self, area: Rect, buf: &mut Buffer) {
         let lines = vec![
-            "✓ API key configured".fg(Color::Green).into(),
+            tr(current(), "✓ API key configured")
+                .fg(Color::Green)
+                .into(),
             "".into(),
             "  Codex will use usage-based billing with your API key.".into(),
         ];
@@ -708,7 +717,8 @@ impl AuthModeWidget {
             "".into(),
         ];
         if state.prepopulated_from_env {
-            intro_lines.push("  Detected OPENAI_API_KEY environment variable.".into());
+            intro_lines
+                .push(tr(current(), "  Detected OPENAI_API_KEY environment variable.").into());
             intro_lines.push(
                 "  Paste a different key if you prefer to use another account."
                     .dim()
@@ -721,7 +731,7 @@ impl AuthModeWidget {
             .render(intro_area, buf);
 
         let content_line: Line = if state.value.is_empty() {
-            vec!["Paste or type your API key".dim()].into()
+            vec![tr(current(), "Paste or type your API key").dim()].into()
         } else {
             Line::from(state.value.clone())
         };
@@ -729,7 +739,7 @@ impl AuthModeWidget {
             .wrap(Wrap { trim: false })
             .block(
                 Block::default()
-                    .title("API key")
+                    .title(tr(current(), "API key"))
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(Color::Cyan)),
@@ -740,12 +750,12 @@ impl AuthModeWidget {
             Line::from(vec![
                 "  Press ".dim(),
                 self.confirm_binding().into(),
-                " to save".dim(),
+                tr(current(), " to save").dim(),
             ]),
             Line::from(vec![
                 "  Press ".dim(),
                 self.cancel_binding().into(),
-                " to go back".dim(),
+                tr(current(), " to go back").dim(),
             ]),
         ];
         if let Some(error) = self.error_message() {
@@ -771,7 +781,7 @@ impl AuthModeWidget {
                 } else if keys::CONFIRM.is_pressed(*key_event) {
                     let trimmed = state.value.trim().to_string();
                     if trimmed.is_empty() {
-                        self.set_error(Some("API key cannot be empty".to_string()));
+                        self.set_error(Some(tr(current(), "API key cannot be empty").to_string()));
                         should_request_frame = true;
                     } else {
                         should_save = Some(trimmed);
@@ -1087,7 +1097,7 @@ impl WidgetRef for AuthModeWidget {
                 state.render(area, buf, self.error_message());
             }
             SignInState::BedrockConfigured => {
-                Paragraph::new("✓ Amazon Bedrock configured".green())
+                Paragraph::new(tr(current(), "✓ Amazon Bedrock configured").green())
                     .wrap(Wrap { trim: false })
                     .render(area, buf);
             }
@@ -1308,7 +1318,7 @@ mod tests {
 
         assert_eq!(
             widget.error_message().as_deref(),
-            Some(API_KEY_DISABLED_MESSAGE)
+            Some(api_key_disabled_message())
         );
         assert!(matches!(
             &*widget.sign_in_state.read().unwrap(),
@@ -1388,7 +1398,7 @@ mod tests {
 
         assert_eq!(
             widget.error_message().as_deref(),
-            Some(API_KEY_DISABLED_MESSAGE)
+            Some(api_key_disabled_message())
         );
         assert!(matches!(
             &*widget.sign_in_state.read().unwrap(),

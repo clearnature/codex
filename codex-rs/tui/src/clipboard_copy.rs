@@ -120,7 +120,7 @@ fn copy_to_clipboard(
     };
     #[cfg(target_os = "android")]
     let native_copy = |_text: &str, _html: Option<&str>| {
-        Err("native clipboard unavailable on Android".to_string())
+        Err(tr(current(), "native clipboard unavailable on Android").to_string())
     };
     // Decide before propagating setup success or failure: either result could otherwise
     // start a native write or fallback long after the user abandoned this request.

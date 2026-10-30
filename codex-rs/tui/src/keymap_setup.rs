@@ -28,6 +28,8 @@ mod menu_tests;
 
 pub(crate) use actions::KeymapActionFilter;
 use capture::KeymapCaptureView;
+use codex_i18n::current;
+use codex_i18n::tr;
 pub(crate) use debug::build_keymap_debug_view;
 pub(crate) use picker::KEYMAP_PICKER_VIEW_ID;
 #[cfg(test)]
@@ -167,15 +169,15 @@ pub(crate) fn build_keymap_action_menu_params(
     let remove_action = action.clone();
     let config_path = format!("tui.keymap.{context}.{action}");
     let source = if custom_binding {
-        "Custom root override".fg(accent_color())
+        tr(current(), "Custom root override").fg(accent_color())
     } else {
-        "Default keymap".dim()
+        tr(current(), "Default keymap").dim()
     };
     let header = vec![
-        Line::from("Edit Shortcut".bold()),
+        Line::from(tr(current(), "Edit Shortcut").bold()),
         Line::from(vec![label.bold(), " · ".dim(), context_label.dim()]),
         Line::from(vec![
-            "Current ".dim(),
+            tr(current(), "Current ").dim(),
             key_binding_span(&current_binding),
             " · ".dim(),
             source,
@@ -221,7 +223,7 @@ pub(crate) fn build_keymap_action_menu_params(
             let replace_one_context = context.clone();
             let replace_one_action = action.clone();
             items.push(SelectionItem {
-                name: "Replace one binding...".to_string(),
+                name: tr(current(), "Replace one binding...").to_string(),
                 description: Some("Choose which existing binding to replace".to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenKeymapReplaceBindingMenu {
@@ -232,7 +234,7 @@ pub(crate) fn build_keymap_action_menu_params(
                 ..Default::default()
             });
             items.push(action_menu_item(
-                "Replace all bindings",
+                tr(current(), "Replace all bindings"),
                 format!("Replace `{current_binding}` with one key"),
                 &context,
                 &action,
@@ -279,7 +281,7 @@ pub(crate) fn build_keymap_action_menu_params(
     }
     if action != "leader" && active_binding_count == 0 {
         items.push(action_menu_item(
-            "Set key chord",
+            tr(current(), "Set key chord"),
             "Capture two consecutive keys for this action".to_string(),
             &context,
             &action,
@@ -288,7 +290,7 @@ pub(crate) fn build_keymap_action_menu_params(
         ));
     } else if action != "leader" {
         items.push(action_menu_item(
-            "Replace with key chord",
+            tr(current(), "Replace with key chord"),
             format!("Replace `{current_binding}` with a two-stroke key chord"),
             &context,
             &action,
@@ -296,7 +298,7 @@ pub(crate) fn build_keymap_action_menu_params(
             KeymapCaptureMode::Chord,
         ));
         items.push(action_menu_item(
-            "Add alternate key chord",
+            tr(current(), "Add alternate key chord"),
             format!("Keep `{current_binding}` and add a two-stroke key chord"),
             &context,
             &action,
@@ -329,9 +331,9 @@ pub(crate) fn build_keymap_action_menu_params(
         view_id: Some(KEYMAP_ACTION_MENU_VIEW_ID),
         header: Box::new(Paragraph::new(header).wrap(Wrap { trim: false })),
         footer_note: Some(Line::from(vec![
-            "Changes write the root ".dim(),
+            tr(current(), "Changes write the root ").dim(),
             "`tui.keymap.*`".fg(accent_color()),
-            " override.".dim(),
+            tr(current(), " override.").dim(),
         ])),
         footer_hint: Some(picker_hint_line_for_keymap(&runtime_keymap.list)),
         items,
@@ -353,7 +355,7 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
             " · ".dim(),
             format!("{context}.{action}").dim(),
         ]),
-        Line::from("Choose the binding to replace.".dim()),
+        Line::from(tr(current(), "Choose the binding to replace.").dim()),
     ];
 
     let items = bindings
@@ -421,7 +423,7 @@ pub(crate) fn build_keymap_conflict_params(
         allow_input_when_disconnected: true,
         header: Box::new(
             Paragraph::new(vec![
-                Line::from("Shortcut Conflict".bold()),
+                Line::from(tr(current(), "Shortcut Conflict").bold()),
                 Line::from(format!("{context}.{action} cannot use `{key}`.").dim()),
                 Line::from(error.red()),
             ])
@@ -430,7 +432,7 @@ pub(crate) fn build_keymap_conflict_params(
         footer_hint: Some(picker_hint_line_for_keymap(&runtime_keymap.list)),
         items: vec![
             SelectionItem {
-                name: "Pick another key".to_string(),
+                name: tr(current(), "Pick another key").to_string(),
                 description: Some("Return to key capture for this action".to_string()),
                 actions: vec![open_capture_action(context, action, intent, capture_mode)],
                 dismiss_on_select: true,
@@ -738,7 +740,7 @@ fn key_parts_to_config_key_spec(
             ch.to_string()
         }
         _ => {
-            return Err("That key is not supported by `tui.keymap`.".to_string());
+            return Err(tr(current(), "That key is not supported by `tui.keymap`.").to_string());
         }
     };
 

@@ -4,6 +4,8 @@ use super::markdown_render_cache::MarkdownRenderCache;
 use super::*;
 use crate::style::accent_color;
 use crate::terminal_hyperlinks::lines_with_sources_eq;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Apply the plan surface after Markdown layout, keeping retained reflow styles in sync.
 pub(crate) fn style_proposed_plan_line(
@@ -149,7 +151,7 @@ impl ProposedPlanCell {
     ) -> Vec<HyperlinkLine> {
         self.rendered_lines.render(width, list_spacing, || {
             let mut lines = vec![
-                HyperlinkLine::new(vec!["• ".dim(), "Proposed Plan".bold()].into()),
+                HyperlinkLine::new(vec!["• ".dim(), tr(current(), "Proposed Plan").bold()].into()),
                 HyperlinkLine::new(Line::from(" ")),
             ];
 

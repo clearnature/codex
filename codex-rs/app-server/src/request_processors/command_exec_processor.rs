@@ -2,6 +2,8 @@ use super::*;
 use codex_core::exec_env::inject_apply_patch_env;
 use codex_core::windows_sandbox::local_binding_policy_for_sandbox;
 use codex_core::windows_sandbox::managed_proxy_routing_for_windows_sandbox;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::shell_environment::is_non_inheritable_env_var;
 
 #[derive(Clone)]
@@ -87,7 +89,7 @@ impl CommandExecRequestProcessor {
             .try_local_environment()
             .is_some()
             .then_some(())
-            .ok_or_else(|| internal_error("local environment is not configured"))
+            .ok_or_else(|| internal_error(tr(current(), "local environment is not configured")))
     }
 
     async fn exec_one_off_command(
@@ -109,7 +111,7 @@ impl CommandExecRequestProcessor {
         let request = request_id.clone();
 
         if params.command.is_empty() {
-            return Err(invalid_request("command must not be empty"));
+            return Err(invalid_request(tr(current(), "command must not be empty")));
         }
 
         let CommandExecParams {

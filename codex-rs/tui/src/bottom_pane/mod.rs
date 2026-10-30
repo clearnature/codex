@@ -23,6 +23,8 @@
 pub(crate) use chat_composer::CommandPopupPlacement;
 pub(crate) use chat_composer::ComposerRenderOptions;
 pub(crate) use chat_composer::TranscriptFooter;
+use codex_i18n::current;
+use codex_i18n::tr;
 pub(crate) use composer_gap::ComposerGap;
 pub(crate) use footer::footer_hint_items_line;
 pub(crate) use footer::inset_footer_hint_area;
@@ -2108,7 +2110,7 @@ impl BottomPane {
         self.pause_status_timer_for_modal();
         self.set_composer_input_enabled(
             /*enabled*/ false,
-            Some("Answer the questions to continue.".to_string()),
+            Some(tr(current(), "Answer the questions to continue.").to_string()),
         );
         self.push_view(Box::new(modal));
     }
@@ -2192,7 +2194,7 @@ impl BottomPane {
             self.pause_status_timer_for_modal();
             self.set_composer_input_enabled(
                 /*enabled*/ false,
-                Some("Respond to the tool suggestion to continue.".to_string()),
+                Some(tr(current(), "Respond to the tool suggestion to continue.").to_string()),
             );
             self.push_view(Box::new(view));
             return;
@@ -2209,7 +2211,7 @@ impl BottomPane {
         self.pause_status_timer_for_modal();
         self.set_composer_input_enabled(
             /*enabled*/ false,
-            Some("Respond to the MCP server request to continue.".to_string()),
+            Some(tr(current(), "Respond to the MCP server request to continue.").to_string()),
         );
         self.push_view(Box::new(modal));
     }

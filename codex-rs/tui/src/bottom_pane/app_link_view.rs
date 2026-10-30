@@ -2,6 +2,8 @@
 use crate::app_command::AppCommand as Op;
 use codex_app_server_protocol::McpServerElicitationAction;
 use codex_app_server_protocol::RequestId as AppServerRequestId;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -292,14 +294,16 @@ impl AppLinkView {
     fn action_labels(&self) -> Vec<&'static str> {
         if self.is_auth_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec!["Open sign-in URL", "Back"],
-                AppLinkScreen::InstallConfirmation => vec!["I already signed in", "Back"],
+                AppLinkScreen::Link => vec![tr(current(), "Open sign-in URL"), "Back"],
+                AppLinkScreen::InstallConfirmation => {
+                    vec![tr(current(), "I already signed in"), "Back"]
+                }
             };
         }
         if self.is_external_action_suggestion() {
             return match self.screen {
-                AppLinkScreen::Link => vec!["Open link", "Back"],
-                AppLinkScreen::InstallConfirmation => vec!["I finished", "Back"],
+                AppLinkScreen::Link => vec![tr(current(), "Open link"), "Back"],
+                AppLinkScreen::InstallConfirmation => vec![tr(current(), "I finished"), "Back"],
             };
         }
 
@@ -316,10 +320,12 @@ impl AppLinkView {
                         "Back",
                     ]
                 } else {
-                    vec!["Install on ChatGPT", "Back"]
+                    vec![tr(current(), "Install on ChatGPT"), "Back"]
                 }
             }
-            AppLinkScreen::InstallConfirmation => vec!["I already Installed it", "Back"],
+            AppLinkScreen::InstallConfirmation => {
+                vec![tr(current(), "I already Installed it"), "Back"]
+            }
         }
     }
 
@@ -508,7 +514,10 @@ impl AppLinkView {
         }
         let is_browser_action_suggestion = self.is_browser_action_suggestion();
         if self.is_installed && !is_browser_action_suggestion {
-            for line in wrap("Use $ to insert this app into the prompt.", usable_width) {
+            for line in wrap(
+                tr(current(), "Use $ to insert this app into the prompt."),
+                usable_width,
+            ) {
                 lines.push(Line::from(line.into_owned()));
             }
             lines.push(Line::from(""));
@@ -563,14 +572,14 @@ impl AppLinkView {
         lines.push(Line::from(
             if is_auth_suggestion {
                 if is_codex_apps_auth {
-                    "Finish App Sign In"
+                    tr(current(), "Finish App Sign In")
                 } else {
-                    "Finish Authentication"
+                    tr(current(), "Finish Authentication")
                 }
             } else if is_external_action_suggestion {
-                "Finish in Browser"
+                tr(current(), "Finish in Browser")
             } else {
-                "Finish App Setup"
+                tr(current(), "Finish App Setup")
             }
             .bold(),
         ));
@@ -621,11 +630,11 @@ impl AppLinkView {
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
             if is_auth_suggestion {
-                "Sign-in URL:"
+                tr(current(), "Sign-in URL:")
             } else if is_external_action_suggestion {
                 "Link:"
             } else {
-                "Setup URL:"
+                tr(current(), "Setup URL:")
             }
             .dim(),
         ]));
@@ -884,7 +893,7 @@ impl crate::render::renderable::Renderable for AppLinkView {
                 &action_rows,
                 &action_state,
                 action_rows.len().max(1),
-                "No actions",
+                tr(current(), "No actions"),
             );
         }
 

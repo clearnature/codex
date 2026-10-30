@@ -2,6 +2,8 @@
 //! Source distrust is never upgraded; ownership is bound before exposing the new thread.
 //! Failed startup retains the checkout and reports manual recovery until ownership is bound.
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
@@ -17,7 +19,7 @@ impl ManagedTuiWorktree {
         self.manager
             .bind_thread(&self.checkout.root, &thread_id.to_string())
             .map_err(std::io::Error::other)
-            .wrap_err("failed to bind managed worktree thread")?;
+            .wrap_err(tr(current(), "failed to bind managed worktree thread"))?;
         self.recovery.finished.store(true, Ordering::Relaxed);
         Ok(())
     }
@@ -140,7 +142,10 @@ pub(super) async fn prepare(
         }
         .map_err(std::io::Error::other)?;
         if prepared.default_environment_is_remote() {
-            color_eyre::eyre::bail!("`--worktree` is only supported for local sessions");
+            color_eyre::eyre::bail!(tr(
+                current(),
+                "`--worktree` is only supported for local sessions"
+            ));
         }
         let environment = prepared.build(
             Some(ExecServerRuntimeOptions::from_optional_paths(

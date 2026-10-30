@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
@@ -160,8 +162,8 @@ pub enum SessionPickerLaunchContext {
 impl SessionPickerAction {
     fn title(self) -> &'static str {
         match self {
-            SessionPickerAction::Resume => "Resume a previous session",
-            SessionPickerAction::Fork => "Fork a previous session",
+            SessionPickerAction::Resume => tr(current(), "Resume a previous session"),
+            SessionPickerAction::Fork => tr(current(), "Fork a previous session"),
         }
     }
 
@@ -1388,7 +1390,7 @@ impl PickerState {
                             format!("Failed to read session metadata from {}", path.display())
                         }
                         None => {
-                            String::from("Failed to read session metadata from selected session")
+                            String::from(tr(current(), "Failed to read session metadata from selected session"))
                         }
                     });
                     self.request_frame();
@@ -2135,7 +2137,7 @@ fn row_from_app_server_thread(thread: Thread) -> Option<Row> {
     Some(Row {
         path: thread.path,
         preview: if preview.is_empty() {
-            String::from("(no message yet)")
+            String::from(tr(current(), "(no message yet)"))
         } else {
             preview.to_string()
         },
@@ -2234,7 +2236,9 @@ fn search_line(state: &PickerState, width: u16) -> Line<'_> {
         return Line::from(truncate_text(error, usize::from(width)).red());
     }
     if state.query.is_empty() {
-        "Type to search".set_style(secondary_text_style()).into()
+        tr(current(), "Type to search")
+            .set_style(secondary_text_style())
+            .into()
     } else {
         truncate_text(&format!("Search: {}", state.query), usize::from(width)).into()
     }
@@ -2290,7 +2294,7 @@ fn toolbar_line(state: &PickerState, compact: bool) -> Line<'static> {
                 status_focused,
             ));
         } else {
-            spans.push("Status: ".set_style(secondary_text_style()));
+            spans.push(tr(current(), "Status: ").set_style(secondary_text_style()));
             spans.push(toolbar_value(
                 "Active",
                 state.status == SessionStatus::Active,
@@ -2348,7 +2352,7 @@ fn filter_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>
         ];
     }
     let mut values = vec![
-        "Filter: ".set_style(secondary_text_style()),
+        tr(current(), "Filter: ").set_style(secondary_text_style()),
         toolbar_value(
             filter_mode_label(SessionFilterMode::Cwd),
             state.filter_mode == SessionFilterMode::Cwd,
@@ -2546,19 +2550,19 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
     };
     let (esc_label, esc_compact_label) = if state.query.is_empty() {
         match state.launch_context {
-            SessionPickerLaunchContext::Startup => ("start new", "new"),
+            SessionPickerLaunchContext::Startup => (tr(current(), "start new"), "new"),
             SessionPickerLaunchContext::ExistingSession { .. } => ("exit", "exit"),
         }
     } else {
-        ("clear search", "clear")
+        (tr(current(), "clear search"), "clear")
     };
     let ctrl_c_label = match state.launch_context {
         SessionPickerLaunchContext::Startup => "quit",
         SessionPickerLaunchContext::ExistingSession { .. } => "exit",
     };
     let density_label = match state.density {
-        SessionListDensity::Comfortable => "dense view",
-        SessionListDensity::Dense => "comfortable view",
+        SessionListDensity::Comfortable => tr(current(), "dense view"),
+        SessionListDensity::Dense => tr(current(), "comfortable view"),
     };
     let density_compact_label = match state.density {
         SessionListDensity::Comfortable => "dense",
@@ -2690,7 +2694,7 @@ fn render_transcript_loading_overlay(frame: &mut crate::custom_terminal::Frame, 
         return;
     }
 
-    let message = "Loading transcript…";
+    let message = tr(current(), "Loading transcript…");
     let message_width = UnicodeWidthStr::width(message) as u16;
     let overlay_width = if area.width >= message_width.saturating_add(10) {
         message_width + 10
@@ -2890,7 +2894,7 @@ fn render_list(frame: &mut crate::custom_terminal::Frame, area: Rect, state: &Pi
     }
     if show_more_below {
         let label = if state.pagination.is_loading() {
-            "↓ loading more"
+            tr(current(), "↓ loading more")
         } else {
             "↓ more"
         };
@@ -3356,7 +3360,7 @@ fn render_transcript_preview_lines(
             vec![
                 vec![
                     "  │ ".set_style(secondary_text_style()),
-                    "Loading recent transcript..."
+                    tr(current(), "Loading recent transcript...")
                         .set_style(secondary_text_style())
                         .italic(),
                 ]
@@ -3441,7 +3445,7 @@ fn render_conversation_preview_lines(
         return vec![
             vec![
                 "  └ ".set_style(secondary_text_style()),
-                "No transcript preview available"
+                tr(current(), "No transcript preview available")
                     .set_style(secondary_text_style())
                     .italic(),
             ]
@@ -3610,13 +3614,13 @@ fn format_relative_time_long(reference: DateTime<Utc>, ts: DateTime<Utc>) -> Str
     }
     let minutes = seconds / 60;
     if minutes < 60 {
-        return plural_time(minutes, "minute");
+        return plural_time(minutes, tr(current(), "minute"));
     }
     let hours = minutes / 60;
     if hours < 24 {
-        return plural_time(hours, "hour");
+        return plural_time(hours, tr(current(), "hour"));
     }
-    plural_time(hours / 24, "day")
+    plural_time(hours / 24, tr(current(), "day"))
 }
 
 fn plural_time(value: i64, unit: &str) -> String {
@@ -3640,7 +3644,12 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
         if state.search_state.is_active()
             || (state.pagination.is_loading() && state.pagination.next_cursor.is_some())
         {
-            return vec!["Searching…".set_style(secondary_text_style()).italic()].into();
+            return vec![
+                tr(current(), "Searching…")
+                    .set_style(secondary_text_style())
+                    .italic(),
+            ]
+            .into();
         }
         if state.pagination.reached_scan_cap {
             let msg = format!(
@@ -3650,7 +3659,7 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
             return vec![Span::from(msg).set_style(secondary_text_style()).italic()].into();
         }
         return vec![
-            "No results for your search"
+            tr(current(), "No results for your search")
                 .set_style(secondary_text_style())
                 .italic(),
         ]
@@ -3660,7 +3669,7 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
     if state.pagination.is_loading() {
         if state.all_rows.is_empty() && state.pagination.num_scanned_files == 0 {
             return vec![
-                "Loading sessions…"
+                tr(current(), "Loading sessions…")
                     .set_style(secondary_text_style())
                     .italic(),
             ]
@@ -3674,7 +3683,12 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
         .into();
     }
 
-    vec!["No sessions yet".set_style(secondary_text_style()).italic()].into()
+    vec![
+        tr(current(), "No sessions yet")
+            .set_style(secondary_text_style())
+            .italic(),
+    ]
+    .into()
 }
 
 #[cfg(test)]

@@ -1,5 +1,7 @@
 //! Resume/fork directory choices with shared picker presentation and caller-owned persistence.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::path::Path;
 
 use crate::bottom_pane::picker_option_list;
@@ -42,15 +44,15 @@ pub(crate) enum CwdPromptAction {
 impl CwdPromptAction {
     fn verb(self) -> &'static str {
         match self {
-            CwdPromptAction::Resume => "resume",
-            CwdPromptAction::Fork => "fork",
+            CwdPromptAction::Resume => tr(current(), "resume"),
+            CwdPromptAction::Fork => tr(current(), "fork"),
         }
     }
 
     fn past_participle(self) -> &'static str {
         match self {
-            CwdPromptAction::Resume => "resumed",
-            CwdPromptAction::Fork => "forked",
+            CwdPromptAction::Resume => tr(current(), "resumed"),
+            CwdPromptAction::Fork => tr(current(), "forked"),
         }
     }
 }
@@ -308,11 +310,11 @@ impl WidgetRef for &CwdPromptScreen {
         let mut labels = vec![
             format!("Use session directory ({session_cwd})"),
             format!("Use current directory ({current_cwd})"),
-            "Always use session directory".to_string(),
+            tr(current(), "Always use session directory").to_string(),
         ];
         if self.allow_remember_current {
             let label = if self.remembered_current_cwd == self.current_cwd {
-                "Always use current directory".to_string()
+                tr(current(), "Always use current directory").to_string()
             } else {
                 format!(
                     "Always use current directory ({})",

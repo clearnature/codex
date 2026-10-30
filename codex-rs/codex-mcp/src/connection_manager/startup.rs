@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 
 use anyhow::Result;
@@ -113,15 +115,15 @@ pub(super) fn mcp_init_error_display(
             if config.is_some_and(|config| matches!(config.auth, McpServerAuth::EmaAuth)) {
                 "Sign in to your enterprise provider in Codex, then start a new thread.".to_string()
             } else if config.is_some_and(|config| !config.is_local_environment()) {
-                "Use your client's MCP OAuth sign-in flow.".to_string()
+                tr(current(), "Use your client's MCP OAuth sign-in flow.").to_string()
             } else {
                 format!("Run `codex mcp login {server_name}`.")
             };
         let auth_status = match reason {
             Some(McpStartupFailureReason::ReauthenticationRequired) => {
-                "requires OAuth reauthentication"
+                tr(current(), "requires OAuth reauthentication")
             }
-            None => "is not logged in",
+            None => tr(current(), "is not logged in"),
         };
         format!("The {server_name} MCP server {auth_status}. {recovery_hint}")
     } else if matches!(

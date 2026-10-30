@@ -22,6 +22,8 @@ use codex_app_server_client::AppServerEvent;
 use codex_app_server_protocol::ThreadGoalStatus;
 #[cfg(target_os = "windows")]
 use codex_app_server_protocol::WindowsSandboxSetupMode;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 pub(super) const SHUTDOWN_FIRST_EXIT_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 2);
 
@@ -215,7 +217,7 @@ impl App {
             AppEvent::StartManagedWorktree { mode, name } => {
                 if self.pending_start_managed_worktree.is_some() {
                     self.chat_widget
-                        .add_error_message("A worktree is already being created.".to_string());
+                        .add_error_message(tr(current(), "A worktree is already being created.").to_string());
                 } else {
                     self.pending_start_managed_worktree = Some((mode, name));
                 }
@@ -510,7 +512,7 @@ impl App {
                     }
                     Ok(ExternalAgentConfigMigrationFlowOutcome::NoItems) => {
                         self.chat_widget.add_info_message(
-                            crate::external_agent_config_migration::flow::EXTERNAL_AGENT_CONFIG_MIGRATION_NO_ITEMS_MESSAGE
+                            crate::external_agent_config_migration::flow::external_agent_config_migration_no_items_message()
                                 .to_string(),
                             /*hint*/ None,
                         );
@@ -578,7 +580,7 @@ impl App {
                 if let Some(thread_id) = self.chat_widget.thread_id() {
                     if self.pending_server_profiles.contains_key(&thread_id) {
                         self.chat_widget.add_error_message(
-                            "Wait for permissions to update before forking.".into(),
+                            tr(current(), "Wait for permissions to update before forking.").into(),
                         );
                         return Ok(AppRunControl::Continue);
                     }
@@ -686,7 +688,7 @@ impl App {
                     }
                 } else {
                     self.chat_widget.add_error_message(
-                        "A thread must contain at least one turn before it can be forked."
+                        tr(current(), "A thread must contain at least one turn before it can be forked.")
                             .to_string(),
                     );
                 }
@@ -718,7 +720,7 @@ impl App {
                 if self.pending_server_profiles.contains_key(&thread_id) {
                     self.chat_widget.restore_user_message_to_composer(prompt);
                     self.chat_widget.add_error_message(
-                        "Wait for permissions to update before editing this prompt.".into(),
+                        tr(current(), "Wait for permissions to update before editing this prompt.").into(),
                     );
                     tui.frame_requester().schedule_frame();
                     return Ok(AppRunControl::Continue);
@@ -1297,13 +1299,13 @@ impl App {
                 // Enter alternate screen using TUI helper and build pager lines
                 let _ = tui.enter_alt_screen();
                 let pager_lines: Vec<ratatui::text::Line<'static>> = if text.trim().is_empty() {
-                    vec!["No changes detected.".italic().into()]
+                    vec![tr(current(), "No changes detected.").italic().into()]
                 } else {
                     text.lines().map(ansi_escape_line).collect()
                 };
                 self.overlay = Some(Overlay::new_static_with_lines(
                     pager_lines,
-                    "D I F F".to_string(),
+                    tr(current(), "D I F F").to_string(),
                     self.keymap.pager.clone(),
                 ));
                 tui.frame_requester().schedule_frame();
@@ -1743,7 +1745,7 @@ impl App {
             AppEvent::SkillsListLoaded { result, .. } => {
                 self.handle_skills_list_result(
                     result.map_err(|err| color_eyre::eyre::eyre!(err)),
-                    "failed to load skills on startup",
+                    tr(current(), "failed to load skills on startup"),
                 );
                 self.skill_load_warnings.startup_complete = true;
             }
@@ -2552,10 +2554,10 @@ impl App {
                                     ));
                             }
                                 self.chat_widget.add_plain_history_lines(vec![
-                                    Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
+                                    Line::from(vec!["• ".dim(), tr(current(), "Sandbox ready").into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "Codex can now safely edit files and execute commands in your computer"
+                                        tr(current(), "Codex can now safely edit files and execute commands in your computer")
                                             .dark_gray(),
                                     ]),
                                 ]);
@@ -2698,14 +2700,14 @@ impl App {
                 let edits = crate::config_update::build_service_tier_selection_edits(
                     service_tier.as_deref(),
                 );
-                match self.persist_model_defaults(app_server.request_handle(), edits, "default service tier")
+                match self.persist_model_defaults(app_server.request_handle(), edits, tr(current(), "default service tier"))
                     .await
                 {
                     Ok(()) => {
                         let message = if let Some(service_tier) = service_tier {
                             format!("Service tier set to {service_tier}")
                         } else {
-                            "Service tier cleared".to_string()
+                            tr(current(), "Service tier cleared").to_string()
                         };
                         self.chat_widget.add_info_message(message, /*hint*/ None);
                     }
@@ -2727,7 +2729,7 @@ impl App {
                 if !self.try_set_approval_policy_on_config(
                     &mut config,
                     policy,
-                    "Failed to set approval policy",
+                    tr(current(), "Failed to set approval policy"),
                     "failed to set approval policy on app config",
                 ) {
                     return Ok(AppRunControl::Continue);
@@ -2750,7 +2752,7 @@ impl App {
                     .try_set_builtin_active_permission_profile_on_config(
                         &mut config,
                         active_permission_profile.clone(),
-                        "Failed to set permission profile",
+                        tr(current(), "Failed to set permission profile"),
                         "failed to set active permission profile on app config",
                     )
                 else {
@@ -2882,7 +2884,7 @@ impl App {
                 if let Err(err) = self.persist_model_defaults(
                     app_server.request_handle(),
                     vec![edit],
-                    "Plan mode reasoning effort",
+                    tr(current(), "Plan mode reasoning effort"),
                 )
                 .await
                 {
@@ -3309,7 +3311,7 @@ impl App {
                     let diff_summary = DiffSummary::new(request.changes, request.cwd);
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![diff_summary.into()],
-                        "P A T C H".to_string(),
+                        tr(current(), "P A T C H").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -3319,7 +3321,7 @@ impl App {
                     let full_cmd_lines = highlight_bash_to_lines(&full_cmd);
                     self.overlay = Some(Overlay::new_static_with_lines(
                         full_cmd_lines,
-                        "E X E C".to_string(),
+                        tr(current(), "E X E C").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -3328,40 +3330,40 @@ impl App {
                     let mut lines = Vec::new();
                     if let Some(environment_id) = request.environment_id {
                         lines.push(Line::from(vec![
-                            "Environment: ".into(),
+                            tr(current(), "Environment: ").into(),
                             environment_id.bold(),
                         ]));
                         lines.push(Line::from(""));
                     }
                     if let Some(reason) = request.reason {
-                        lines.push(Line::from(vec!["Reason: ".into(), reason.italic()]));
+                        lines.push(Line::from(vec![tr(current(), "Reason: ").into(), reason.italic()]));
                         lines.push(Line::from(""));
                     }
                     if let Some(rule_line) =
                         crate::bottom_pane::format_requested_permissions_rule(&request.permissions)
                     {
                         lines.push(Line::from(vec![
-                            "Permission rule: ".into(),
+                            tr(current(), "Permission rule: ").into(),
                             rule_line.cyan(),
                         ]));
                     }
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![Box::new(Paragraph::new(lines).wrap(Wrap { trim: false }))],
-                        "P E R M I S S I O N S".to_string(),
+                        tr(current(), "P E R M I S S I O N S").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
                 ApprovalRequest::McpElicitation(request) => {
                     let _ = tui.enter_alt_screen();
                     let paragraph = Paragraph::new(vec![
-                        Line::from(vec!["Server: ".into(), request.server_name.bold()]),
+                        Line::from(vec![tr(current(), "Server: ").into(), request.server_name.bold()]),
                         Line::from(""),
                         Line::from(request.message),
                     ])
                     .wrap(Wrap { trim: false });
                     self.overlay = Some(Overlay::new_static_with_renderables(
                         vec![Box::new(paragraph)],
-                        "E L I C I T A T I O N".to_string(),
+                        tr(current(), "E L I C I T A T I O N").to_string(),
                         self.keymap.pager.clone(),
                     ));
                 }
@@ -3877,8 +3879,9 @@ impl App {
         app_server: &mut AppServerSession,
     ) -> Result<AppRunControl> {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
-            self.chat_widget
-                .add_error_message("A thread must start before it can be archived.".to_string());
+            self.chat_widget.add_error_message(
+                tr(current(), "A thread must start before it can be archived.").to_string(),
+            );
             return Ok(AppRunControl::Continue);
         };
         if self.side_threads.contains_key(&thread_id) {
@@ -3945,8 +3948,9 @@ impl App {
         app_server: &mut AppServerSession,
     ) -> Result<AppRunControl> {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
-            self.chat_widget
-                .add_error_message("A thread must start before it can be deleted.".to_string());
+            self.chat_widget.add_error_message(
+                tr(current(), "A thread must start before it can be deleted.").to_string(),
+            );
             return Ok(AppRunControl::Continue);
         };
         if self.side_threads.contains_key(&thread_id) {

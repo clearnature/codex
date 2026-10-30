@@ -131,12 +131,10 @@ impl ChatWidget {
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             picker_surface: PickerSurface::Panel,
-            title: Some(tr(current(), tr(current(), "Select a commit to review")).into()),
+            title: Some(tr(current(), "Select a commit to review").into()),
             items,
             is_searchable: true,
-            search_placeholder: Some(
-                tr(current(), tr(current(), "Type to search commits")).to_string(),
-            ),
+            search_placeholder: Some(tr(current(), "Type to search commits").to_string()),
             ..Default::default()
         });
     }

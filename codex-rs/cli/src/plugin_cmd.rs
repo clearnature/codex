@@ -29,6 +29,8 @@ use codex_core_plugins::remote::RemoteMarketplace;
 use codex_core_plugins::remote::RemoteMarketplaceSource;
 use codex_core_plugins::remote::RemotePluginCatalogCacheMode;
 use codex_core_plugins::remote::RemotePluginSummary;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
 use codex_plugin::PluginId;
@@ -351,7 +353,7 @@ fn render_plugin_list(
                 "No plugins found in marketplace `{marketplace_name}`."
             )?;
         } else {
-            writeln!(writer, "No marketplace plugins found.")?;
+            writeln!(writer, "{}", tr(current(), "No marketplace plugins found."))?;
         }
     } else {
         for (index, marketplace) in marketplaces.into_iter().enumerate() {
@@ -416,7 +418,7 @@ fn render_plugin_list(
             if let Some(path) = &marketplace.path {
                 writeln!(writer, "{}", path.display())?;
             } else {
-                writeln!(writer, "Remote catalog")?;
+                writeln!(writer, "{}", tr(current(), "Remote catalog"))?;
             }
             writeln!(writer)?;
             writeln!(
@@ -767,10 +769,10 @@ struct PluginCommandContext {
 async fn load_plugin_command_context(
     overrides: Vec<(String, toml::Value)>,
 ) -> Result<PluginCommandContext> {
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_codex_home().context(tr(current(), "failed to resolve CODEX_HOME"))?;
     let config = Config::load_with_cli_overrides(overrides)
         .await
-        .context("failed to load configuration")?;
+        .context(tr(current(), "failed to load configuration"))?;
     let plugins_input = config.plugins_config_input();
     let auth_manager = load_cli_auth_manager(&config).await?;
     let manager = Arc::new(plugins_manager_for_config(
@@ -828,7 +830,10 @@ fn parse_plugin_selection(
             marketplace_name,
         )?)),
         (Err(_), None) => {
-            bail!("plugin requires --marketplace unless passed as <plugin>@<marketplace>")
+            bail!(tr(
+                current(),
+                "plugin requires --marketplace unless passed as <plugin>@<marketplace>"
+            ))
         }
     }
 }
@@ -857,7 +862,10 @@ async fn fetch_remote_marketplaces(
     if !auth.is_some_and(CodexAuth::uses_codex_backend) {
         ensure!(
             marketplace_name.is_none(),
-            "chatgpt authentication required for remote plugin catalog"
+            tr(
+                current(),
+                "chatgpt authentication required for remote plugin catalog"
+            )
         );
         return Ok(RemoteMarketplaceListing::default());
     }
@@ -896,7 +904,7 @@ async fn fetch_remote_marketplaces(
             eprintln!("Warning: failed to list remote marketplace plugins: {err}");
             Ok(RemoteMarketplaceListing::default())
         }
-        Err(err) => Err(err).context("failed to list remote marketplace plugins"),
+        Err(err) => Err(err).context(tr(current(), "failed to list remote marketplace plugins")),
     }
 }
 
@@ -1027,7 +1035,7 @@ pub(crate) fn configured_marketplace_snapshot_issues(
             issues.push(ConfiguredMarketplaceSnapshotIssue {
                 marketplace_name: configured_name.clone(),
                 path: PathBuf::from("<invalid config>"),
-                message: "configured marketplace entry must be a table".to_string(),
+                message: tr(current(), "configured marketplace entry must be a table").to_string(),
             });
             continue;
         }

@@ -8,6 +8,8 @@ use super::*;
 use crate::app_backtrack::SIDE_EDIT_PREVIOUS_UNAVAILABLE_MESSAGE;
 use crate::keymap::bindings_for_action;
 use crate::keymap::keymap_action_ids;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 impl App {
     pub(super) fn should_recover_vim_insert_escape(&self, key_event: KeyEvent) -> bool {
@@ -282,7 +284,7 @@ impl App {
             Err(external_editor::EditorError::MissingEditor) => {
                 self.chat_widget
                     .add_to_history(history_cell::new_error_event(
-                    "Cannot open external editor: set $VISUAL or $EDITOR before starting Codex."
+                    tr(current(), "Cannot open external editor: set $VISUAL or $EDITOR before starting Codex.")
                         .to_string(),
                 ));
                 self.reset_external_editor_state(tui);
@@ -527,23 +529,25 @@ impl App {
                 let allow_background = running_side_thread_id.is_none()
                     && !self.chat_widget.has_queued_follow_up_messages();
                 self.chat_widget.show_selection_view(SelectionViewParams {
-                    title: Some("Task is still running".to_string()),
-                    subtitle: Some("Choose what happens to the current task.".to_string()),
+                    title: Some(tr(current(), "Task is still running").to_string()),
+                    subtitle: Some(
+                        tr(current(), "Choose what happens to the current task.").to_string(),
+                    ),
                     footer_hint: Some(standard_popup_hint_line()),
                     items: [
                         (
-                            "Cancel task",
-                            "Stop the current task and stay in Codex",
+                            tr(current(), "Cancel task"),
+                            tr(current(), "Stop the current task and stay in Codex"),
                             RunningTaskExitAction::CancelTask,
                         ),
                         (
-                            "Run in background",
-                            "Exit Codex and leave the task running",
+                            tr(current(), "Run in background"),
+                            tr(current(), "Exit Codex and leave the task running"),
                             RunningTaskExitAction::RunInBackground,
                         ),
                         (
                             "Exit",
-                            "Stop the current task and exit Codex",
+                            tr(current(), "Stop the current task and exit Codex"),
                             RunningTaskExitAction::Exit,
                         ),
                     ]

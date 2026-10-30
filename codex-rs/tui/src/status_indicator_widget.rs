@@ -6,6 +6,8 @@
 //! Hook activity uses the remaining space or its own line on overflow, so it
 //! never displaces background-process controls.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -259,7 +261,7 @@ impl StatusIndicator<'_> {
         {
             spans.push(format!("({pretty_elapsed} • ").dim());
             spans.extend(interrupt_binding.spans());
-            spans.push(" to interrupt)".dim());
+            spans.push(tr(current(), " to interrupt)").dim());
         } else {
             spans.push(format!("({pretty_elapsed})").dim());
         }

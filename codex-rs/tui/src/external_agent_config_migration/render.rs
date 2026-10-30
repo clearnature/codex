@@ -7,6 +7,8 @@ use crate::key_hint;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 use crate::render::Insets;
 use crate::render::RectExt as _;
+use codex_i18n::current;
+use codex_i18n::tr;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::layout::Layout;
@@ -88,7 +90,7 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
                 Line::from("Your existing setup will not be changed."),
             ],
             MigrationView::Customize => vec![
-                Line::from("Choose items to import."),
+                Line::from(tr(current(), "Choose items to import.")),
                 Line::from("Codex may add files to your current project folder."),
                 Line::from("Your existing setup will not be changed."),
             ],
@@ -123,8 +125,8 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         .areas(inner_area);
 
         let title = match self.view {
-            MigrationView::Summary => "Import setup",
-            MigrationView::Customize => "Choose what to import",
+            MigrationView::Summary => tr(current(), "Import setup"),
+            MigrationView::Customize => tr(current(), "Choose what to import"),
         };
         let heading = Line::from(vec!["> ".into(), title.bold()]);
         heading.render(header_area, buf);
@@ -148,9 +150,9 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         ))
         .split(actions_area);
         let item_label = if self.items.len() == 1 {
-            "item"
+            tr(current(), "item")
         } else {
-            "items"
+            tr(current(), "items")
         };
         let actions_intro = format!(
             "Selected {} of {} {item_label}.",
@@ -177,14 +179,14 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
                 key_hint::plain(KeyCode::Down).into(),
                 " to move, ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to select, ".dim(),
+                tr(current(), " to select, ").dim(),
                 "c".fg(crate::style::accent_color()),
-                " to customize".dim(),
+                tr(current(), " to customize").dim(),
             ]),
             MigrationView::Customize if self.focus == FocusArea::Actions => Line::from(vec![
                 "Press ".dim(),
                 key_hint::plain(KeyCode::Enter).into(),
-                " to continue, ".dim(),
+                tr(current(), " to continue, ").dim(),
                 key_hint::plain(KeyCode::Up).into(),
                 "/".dim(),
                 key_hint::plain(KeyCode::Down).into(),
@@ -199,7 +201,7 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
                 key_hint::plain(KeyCode::Down).into(),
                 " to move, ".dim(),
                 key_hint::plain(KeyCode::Char(' ')).into(),
-                " to toggle, ".dim(),
+                tr(current(), " to toggle, ").dim(),
                 "b".fg(crate::style::accent_color()),
                 " to go back".dim(),
             ]),

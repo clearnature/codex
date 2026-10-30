@@ -11,6 +11,8 @@ use codex_app_server_protocol::ThreadQueueAddParams;
 use codex_app_server_protocol::ThreadQueueAddResponse;
 use codex_app_server_protocol::UserInput;
 use codex_app_server_protocol::experimental_required_message;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::ThreadId;
 use codex_utils_home_dir::find_codex_home;
 use color_eyre::Report;
@@ -34,7 +36,7 @@ pub async fn run_session_queue_command(
             "--no-daemon cannot be used with codex queue. Queuing must discover the shared server to avoid writing through a separate server."
         ));
     }
-    let codex_home = find_codex_home().wrap_err("failed to find Codex home")?;
+    let codex_home = find_codex_home().wrap_err(tr(current(), "failed to find Codex home"))?;
     let explicit_remote = options.explicit_remote_endpoint.is_some();
     let mut app_server =
         start_app_server_for_session_command(options, codex_home.to_path_buf()).await?;
@@ -64,9 +66,9 @@ pub async fn run_session_queue_command(
             if (implicit_local_daemon || explicit_remote) && is_unsupported_queue_error(&error) =>
         {
             let server = if explicit_remote {
-                "remote app server"
+                tr(current(), "remote app server")
             } else {
-                "local app-server daemon"
+                tr(current(), "local app-server daemon")
             };
             return Err(error.wrap_err(format!(
                 "the {server} does not support thread/queue/add; update or restart the {server}"
@@ -123,7 +125,7 @@ pub(super) async fn run_session_queue_action_with_app_server(
             },
         })
         .await
-        .wrap_err("failed to queue session message")?;
+        .wrap_err(tr(current(), "failed to queue session message"))?;
     Ok((thread_id, response))
 }
 

@@ -11,6 +11,8 @@
 //! This module does not evaluate whether an action is safe to run; it only
 //! presents choices and routes user decisions.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -274,7 +276,10 @@ impl ApprovalOverlay {
                     )
                 } else {
                     request.network_approval_context.as_ref().map_or_else(
-                        || "Would you like to run the following command?".to_string(),
+                        || {
+                            tr(current(), "Would you like to run the following command?")
+                                .to_string()
+                        },
                         |network_approval_context| {
                             format!(
                                 "Do you want to approve network access to \"{}\"?",
@@ -295,11 +300,11 @@ impl ApprovalOverlay {
             }
             ApprovalRequest::Permissions(_) => (
                 permissions_options(approval_keymap),
-                "Would you like to grant these permissions?".to_string(),
+                tr(current(), "Would you like to grant these permissions?").to_string(),
             ),
             ApprovalRequest::ApplyPatch(_) => (
                 patch_options(approval_keymap),
-                "Would you like to make the following edits?".to_string(),
+                tr(current(), "Would you like to make the following edits?").to_string(),
             ),
             ApprovalRequest::McpElicitation(request) => (
                 elicitation_options(approval_keymap),
@@ -445,13 +450,13 @@ impl ApprovalOverlay {
         );
         if request.thread_label().is_none() {
             let message = if granted_permissions.is_empty() {
-                "You did not grant additional permissions"
+                tr(current(), "You did not grant additional permissions")
             } else if strict_auto_review {
                 "You granted additional permissions with strict auto review"
             } else if matches!(scope, PermissionGrantScope::Session) {
                 "You granted additional permissions for this session"
             } else {
-                "You granted additional permissions"
+                tr(current(), "You granted additional permissions")
             };
             self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
                 crate::history_cell::PlainHistoryCell::new(vec![message.into()]),
@@ -663,9 +668,9 @@ fn approval_footer_hint(
 ) -> Line<'static> {
     let mut spans = accept_cancel_hint_line(
         list_keymap.primary_hint(ListAction::Accept),
-        "to confirm",
+        tr(current(), "to confirm"),
         list_keymap.primary_hint(ListAction::Cancel),
-        "to cancel",
+        tr(current(), "to cancel"),
     )
     .spans;
     if request.thread_label().is_some()
@@ -677,7 +682,7 @@ fn approval_footer_hint(
         } else {
             spans.push("Press ".into());
         }
-        spans.extend([open_thread.into(), " to open thread".into()]);
+        spans.extend([open_thread.into(), tr(current(), " to open thread").into()]);
     }
     Line::from(spans)
 }
@@ -744,7 +749,9 @@ fn build_header(request: &ApprovalRequest) -> Box<dyn Renderable> {
             }
             if request.kind == CommandExecutionApprovalKind::WriteStdin {
                 let input = request.command.last().map_or("", String::as_str);
-                header.push(vec!["Input: ".into(), format!("{input:?}").into()].into());
+                header.push(
+                    vec![tr(current(), "Input: ").into(), format!("{input:?}").into()].into(),
+                );
             } else {
                 let full_cmd = strip_bash_lc_and_escape(&request.command);
                 let mut full_cmd_lines = highlight_bash_to_lines(&full_cmd);
@@ -796,7 +803,10 @@ fn build_header(request: &ApprovalRequest) -> Box<dyn Renderable> {
                 lines.push(Line::from(""));
             }
             lines.extend([
-                Line::from(vec!["Server: ".into(), request.server_name.clone().bold()]),
+                Line::from(vec![
+                    tr(current(), "Server: ").into(),
+                    request.server_name.clone().bold(),
+                ]),
                 Line::from(""),
                 Line::from(request.message.clone()),
             ]);
@@ -909,7 +919,7 @@ fn exec_options(
                         keymap.approve_for_prefix.clone(),
                     ),
                     NetworkPolicyRuleAction::Deny => (
-                        "No, and block this host in the future".to_string(),
+                        tr(current(), "No, and block this host in the future").to_string(),
                         keymap.deny.clone(),
                     ),
                 };
@@ -924,7 +934,7 @@ fn exec_options(
                 })
             }
             CommandExecutionApprovalDecision::Decline => Some(ApprovalOption {
-                label: "No, continue without running it".to_string(),
+                label: tr(current(), "No, continue without running it").to_string(),
                 decision: ApprovalDecision::Command(CommandExecutionApprovalDecision::Decline),
                 shortcuts: keymap.deny.clone(),
             }),
@@ -1040,7 +1050,7 @@ fn patch_options(keymap: &ApprovalKeymap) -> Vec<ApprovalOption> {
             shortcuts: keymap.approve.clone(),
         },
         ApprovalOption {
-            label: "Yes, and don't ask again for these files".to_string(),
+            label: tr(current(), "Yes, and don't ask again for these files").to_string(),
             decision: ApprovalDecision::FileChange(FileChangeApprovalDecision::AcceptForSession),
             shortcuts: keymap.approve_for_session.clone(),
         },
@@ -1110,17 +1120,17 @@ fn elicitation_options(keymap: &ApprovalKeymap) -> Vec<ApprovalOption> {
 
     vec![
         ApprovalOption {
-            label: "Yes, provide the requested info".to_string(),
+            label: tr(current(), "Yes, provide the requested info").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Accept),
             shortcuts: keymap.approve.clone(),
         },
         ApprovalOption {
-            label: "No, but continue without it".to_string(),
+            label: tr(current(), "No, but continue without it").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Decline),
             shortcuts: decline_shortcuts,
         },
         ApprovalOption {
-            label: "Cancel this request".to_string(),
+            label: tr(current(), "Cancel this request").to_string(),
             decision: ApprovalDecision::McpElicitation(McpServerElicitationAction::Cancel),
             shortcuts: cancel_shortcuts,
         },

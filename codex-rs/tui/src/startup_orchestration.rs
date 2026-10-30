@@ -4,6 +4,8 @@
 //! configuration and app-server initialization remain responsive to safe local editing.
 
 use super::*;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_terminal_detection::Multiplexer;
 use codex_terminal_detection::TerminalName;
 
@@ -690,7 +692,13 @@ pub(super) async fn run_main_inner(
         Err(_) => {
             #[allow(clippy::print_stderr)]
             {
-                eprintln!("Could not create otel exporter: panicked during initialization");
+                eprintln!(
+                    "{}",
+                    tr(
+                        current(),
+                        "Could not create otel exporter: panicked during initialization"
+                    )
+                );
             }
             startup_draft.tui_mut().recover_after_caught_panic()?;
             None

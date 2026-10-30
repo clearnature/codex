@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::ffi::OsStr;
@@ -815,7 +817,7 @@ fn validate_glob_scan_max_depth(max_depth: Option<usize>) -> io::Result<Option<u
     match max_depth {
         Some(0) => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "glob_scan_max_depth must be at least 1",
+            tr(current(), "glob_scan_max_depth must be at least 1"),
         )),
         _ => Ok(max_depth),
     }

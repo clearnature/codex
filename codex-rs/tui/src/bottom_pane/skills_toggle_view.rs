@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -33,7 +35,9 @@ use super::popup_consts::MAX_POPUP_ROWS;
 use super::scroll_state::ScrollState;
 use super::selection_popup_common::GenericDisplayRow;
 
-const SEARCH_PLACEHOLDER: &str = "Type to search skills";
+fn search_placeholder() -> &'static str {
+    tr(current(), "Type to search skills")
+}
 
 pub(crate) struct SkillsToggleItem {
     pub name: String,
@@ -301,7 +305,7 @@ impl Renderable for SkillsToggleView {
 
         if search_area.height > 0 {
             let query_span = if self.search_query.is_empty() {
-                SEARCH_PLACEHOLDER.dim()
+                search_placeholder().dim()
             } else {
                 self.search_query.clone().into()
             };
@@ -315,7 +319,7 @@ impl Renderable for SkillsToggleView {
                 &rows,
                 &self.state,
                 render_area.height as usize,
-                "no matches",
+                tr(current(), "no matches"),
             );
         }
 

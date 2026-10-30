@@ -5,6 +5,8 @@
 
 use crate::text_formatting::format_json_compact;
 use base64::Engine;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::mcp::CallToolResult;
 use image::DynamicImage;
 use image::ImageReader;
@@ -77,7 +79,7 @@ impl McpToolResult {
                         McpContentDisplay::Summary("Returned image".into())
                     }
                     Ok(ContentBlock::Audio(_)) => {
-                        McpContentDisplay::Summary("<audio content>".into())
+                        McpContentDisplay::Summary(tr(current(), "<audio content>").into())
                     }
                     Ok(ContentBlock::Resource(resource)) => {
                         let summary = match resource.resource {
@@ -85,7 +87,7 @@ impl McpToolResult {
                             | ResourceContents::BlobResourceContents { uri, .. } => {
                                 format!("embedded resource: {uri}").into()
                             }
-                            _ => "<unknown embedded resource>".into(),
+                            _ => tr(current(), "<unknown embedded resource>").into(),
                         };
                         McpContentDisplay::Summary(summary)
                     }

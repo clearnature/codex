@@ -8,6 +8,8 @@ pub(super) mod command_center;
 #[path = "agents_overview_grouping.rs"]
 mod grouping;
 
+use codex_i18n::current;
+use codex_i18n::tr;
 pub(super) use grouping::AgentsOverviewGrouping;
 use grouping::model_name;
 
@@ -463,7 +465,7 @@ impl AgentsOverviewView {
             width,
         );
         let mut lines = vec![
-            Line::from("Task details".bold()),
+            Line::from(tr(current(), "Task details").bold()),
             Line::default(),
             crate::line_truncation::truncate_line_with_ellipsis_if_overflow(
                 Line::from(Span::styled(
@@ -506,7 +508,7 @@ impl AgentsOverviewView {
         lines.extend([Line::default(), Line::from("Prompt".dim())]);
         let prompt = crate::markdown_render::render_markdown_lines_with_width_and_cwd(
             match preview.as_str() {
-                "" => "No prompt available.",
+                "" => tr(current(), "No prompt available."),
                 preview => preview,
             },
             Some(width),

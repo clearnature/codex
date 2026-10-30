@@ -1,5 +1,7 @@
 //! Keyboard help for the live mention popup; filter tabs live above the results.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -13,8 +15,11 @@ use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
 pub(super) fn render_footer(area: Rect, buf: &mut Buffer) {
     let mut spans = Vec::new();
     for (keys, label) in [
-        (vec![KeyCode::Enter, KeyCode::Tab], " insert · "),
-        (vec![KeyCode::Esc], " close · "),
+        (
+            vec![KeyCode::Enter, KeyCode::Tab],
+            tr(current(), " insert · "),
+        ),
+        (vec![KeyCode::Esc], tr(current(), " close · ")),
         (vec![KeyCode::Up, KeyCode::Down], " select · "),
         (vec![KeyCode::Left, KeyCode::Right], " filter"),
     ] {

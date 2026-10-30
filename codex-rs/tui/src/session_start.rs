@@ -11,6 +11,8 @@ use crate::legacy_core::config::Config;
 use crate::local_settings::LocalSettings;
 use crate::resume_picker::SessionTarget;
 use crate::unarchive_prompt::UnarchiveChoice;
+use codex_i18n::current;
+use codex_i18n::tr;
 use color_eyre::Result;
 use color_eyre::eyre::WrapErr;
 
@@ -26,8 +28,8 @@ pub(crate) enum SessionStartAction {
 impl SessionStartAction {
     pub(crate) fn verb(self) -> &'static str {
         match self {
-            Self::Resume(..) => "resume",
-            Self::Fork(_) => "fork",
+            Self::Resume(..) => tr(current(), "resume"),
+            Self::Fork(_) => tr(current(), "fork"),
         }
     }
 

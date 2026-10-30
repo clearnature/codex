@@ -19,6 +19,8 @@
 //! - `ThemePreviewNarrowRenderable` -- compact 4-line snippet stacked below the
 //!   list when side-by-side does not fit.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::path::Path;
 
 use crate::app_event::AppEvent;
@@ -135,7 +137,9 @@ const WIDE_PREVIEW_LEFT_INSET: u16 = 2;
 /// Minimum frame padding used for vertically centered wide preview.
 const PREVIEW_FRAME_PADDING: u16 = 1;
 
-const PREVIEW_FALLBACK_SUBTITLE: &str = "Move up/down to live preview themes";
+fn preview_fallback_subtitle() -> &'static str {
+    tr(current(), "Move up/down to live preview themes")
+}
 
 /// Side-by-side preview: syntax-highlighted Rust diff snippet, vertically
 /// centered with a 2-column left inset.  Fills the entire side panel height.
@@ -296,7 +300,7 @@ fn theme_picker_subtitle(codex_home: Option<&Path>, terminal_width: Option<u16>)
         }
     }
 
-    PREVIEW_FALLBACK_SUBTITLE.to_string()
+    preview_fallback_subtitle().to_string()
 }
 
 /// Builds [`SelectionViewParams`] for the `/theme` picker dialog.
@@ -389,7 +393,7 @@ pub(crate) fn build_theme_picker_params(
     );
     SelectionViewParams {
         allow_input_when_disconnected: true,
-        title: Some("Select Syntax Theme".to_string()),
+        title: Some(tr(current(), "Select Syntax Theme").to_string()),
         subtitle: Some(theme_picker_subtitle(
             codex_home_owned.as_deref(),
             terminal_width,
@@ -397,7 +401,7 @@ pub(crate) fn build_theme_picker_params(
         footer_hint: Some(standard_popup_hint_line()),
         items,
         is_searchable: true,
-        search_placeholder: Some("Type to filter themes...".to_string()),
+        search_placeholder: Some(tr(current(), "Type to filter themes...").to_string()),
         initial_selected_idx: initial_idx,
         side_content: Box::new(ThemePreviewWideRenderable),
         side_content_width: SideContentWidth::Half,
@@ -586,14 +590,14 @@ mod tests {
 
         let subtitle = theme_picker_subtitle(Some(&codex_home), Some(140));
 
-        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
+        assert_eq!(subtitle, preview_fallback_subtitle());
     }
 
     #[test]
     fn subtitle_falls_back_to_preview_instructions_without_tilde_path() {
         let subtitle =
             theme_picker_subtitle(/*codex_home*/ None, /*terminal_width*/ None);
-        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
+        assert_eq!(subtitle, preview_fallback_subtitle());
     }
 
     #[test]
@@ -603,7 +607,7 @@ mod tests {
 
         let subtitle = theme_picker_subtitle(Some(&codex_home), Some(94));
 
-        assert_eq!(subtitle, PREVIEW_FALLBACK_SUBTITLE);
+        assert_eq!(subtitle, preview_fallback_subtitle());
     }
 
     #[test]

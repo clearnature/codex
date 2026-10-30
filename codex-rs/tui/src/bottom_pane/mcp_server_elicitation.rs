@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -269,7 +271,7 @@ impl McpServerElicitationFormRequest {
                     "Allow this request and remember this choice for this session"
                 };
                 options.push(McpServerElicitationOption {
-                    label: "Allow for this session".to_string(),
+                    label: tr(current(), "Allow for this session").to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_SESSION_VALUE.to_string()),
                 });
@@ -281,7 +283,7 @@ impl McpServerElicitationFormRequest {
                     "Allow this request and remember this choice for future requests"
                 };
                 options.push(McpServerElicitationOption {
-                    label: "Always allow".to_string(),
+                    label: tr(current(), "Always allow").to_string(),
                     description: Some(description.to_string()),
                     value: Value::String(APPROVAL_ACCEPT_ALWAYS_VALUE.to_string()),
                 });
@@ -1176,7 +1178,8 @@ impl McpServerElicitationOverlay {
     fn submit_answers(&mut self) {
         self.save_current_draft();
         if let Some(idx) = self.first_required_unanswered_index() {
-            self.validation_error = Some("Answer required fields before submitting.".to_string());
+            self.validation_error =
+                Some(tr(current(), "Answer required fields before submitting.").to_string());
             self.jump_to_field(idx);
             return;
         }
@@ -1338,7 +1341,14 @@ impl McpServerElicitationOverlay {
                 state.selected_idx = Some(0);
             }
             state.ensure_visible(rows.len(), area.height as usize);
-            render_rows(area, buf, &rows, &state, rows.len().max(1), "No options");
+            render_rows(
+                area,
+                buf,
+                &rows,
+                &state,
+                rows.len().max(1),
+                tr(current(), "No options"),
+            );
             return;
         }
         if self.current_field_is_secret() {
@@ -1475,7 +1485,7 @@ impl Renderable for McpServerElicitationOverlay {
                 Line::from(base.dim())
             }
         } else {
-            Line::from("No fields".dim())
+            Line::from(tr(current(), "No fields").dim())
         };
         Paragraph::new(progress_line).render(progress_area, buf);
         self.render_prompt(prompt_area, buf);

@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -2860,7 +2862,7 @@ async fn try_run_sampling_request(
 
         let event = match event.unwrap_or_else(|| {
             Err(CodexErr::Stream(
-                "stream closed before response.completed".into(),
+                tr(current(), "stream closed before response.completed").into(),
             ))
         }) {
             Ok(event) => event,

@@ -42,6 +42,8 @@ use crate::unified_exec::UnifiedExecProcess;
 use crate::unified_exec::UnifiedExecProcessManager;
 use codex_core_plugins::PluginMetricsSidecar;
 use codex_features::Feature;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_network_proxy::CREDENTIAL_BROKER_ACTIVE_ENV_KEY;
 use codex_network_proxy::ManagedNetworkSandboxContext;
 use codex_network_proxy::NetworkProxy;
@@ -139,7 +141,7 @@ fn build_unified_exec_sandbox_command(
 ) -> Result<SandboxCommand, ToolError> {
     let (program, args) = command
         .split_first()
-        .ok_or_else(|| ToolError::Rejected("command args are empty".to_string()))?;
+        .ok_or_else(|| ToolError::Rejected(tr(current(), "command args are empty").to_string()))?;
     Ok(SandboxCommand {
         program: program.clone().into(),
         args: args.to_vec(),
@@ -633,7 +635,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecAttempt> for UnifiedExecRunt
         )
         .map_err(|error| match error {
             ToolError::Rejected(_) => {
-                ToolError::Rejected("missing command line for PTY".to_string())
+                ToolError::Rejected(tr(current(), "missing command line for PTY").to_string())
             }
             error @ ToolError::Codex(_) => error,
         })?;

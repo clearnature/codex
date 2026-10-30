@@ -31,6 +31,8 @@ use codex_core::path_utils;
 use codex_core::path_utils::SymlinkWritePaths;
 use codex_core::path_utils::resolve_symlink_write_paths;
 use codex_core::path_utils::write_atomically;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::protocol::AskForApproval;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use serde_json::Value as JsonValue;
@@ -138,16 +140,18 @@ impl ConfigManager {
         let effective = layers.effective_config();
         let mut effective_config_toml: ConfigToml = effective
             .try_into()
-            .map_err(|err| ConfigManagerError::toml("invalid configuration", err))?;
+            .map_err(|err| ConfigManagerError::toml(tr(current(), "invalid configuration"), err))?;
         layers
             .requirements_toml()
             .apply_exact_to_config(&mut effective_config_toml);
         effective_config_toml.allow_login_shell.get_or_insert(true);
 
-        let json_value = serde_json::to_value(&effective_config_toml)
-            .map_err(|err| ConfigManagerError::json("failed to serialize configuration", err))?;
-        let config: ApiConfig = serde_json::from_value(json_value)
-            .map_err(|err| ConfigManagerError::json("failed to deserialize configuration", err))?;
+        let json_value = serde_json::to_value(&effective_config_toml).map_err(|err| {
+            ConfigManagerError::json(tr(current(), "failed to serialize configuration"), err)
+        })?;
+        let config: ApiConfig = serde_json::from_value(json_value).map_err(|err| {
+            ConfigManagerError::json(tr(current(), "failed to deserialize configuration"), err)
+        })?;
 
         let mut origins = layers.origins_with_path_filter(|segments| {
             layers
@@ -234,14 +238,13 @@ impl ConfigManager {
         if !paths_match(&allowed_path, &provided_path) {
             return Err(ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigLayerReadonly,
-                "Only writes to the user config are allowed",
+                tr(current(), "Only writes to the user config are allowed"),
             ));
         }
 
-        let layers = self
-            .load_thread_agnostic_config()
-            .await
-            .map_err(|err| ConfigManagerError::io("failed to load configuration", err))?;
+        let layers = self.load_thread_agnostic_config().await.map_err(|err| {
+            ConfigManagerError::io(tr(current(), "failed to load configuration"), err)
+        })?;
         let user_layer = match layers.get_active_user_layer() {
             Some(layer) => Cow::Borrowed(layer),
             None => Cow::Owned(create_empty_user_layer(&allowed_path).await?),
@@ -447,7 +450,9 @@ impl ConfigManager {
                 .with_edits(config_edits)
                 .apply()
                 .await
-                .map_err(|err| ConfigManagerError::anyhow("failed to persist config.toml", err))?;
+                .map_err(|err| {
+                    ConfigManagerError::anyhow(tr(current(), "failed to persist config.toml"), err)
+                })?;
         }
 
         let overridden = first_overridden_edit(&updated_layers, &effective, &parsed_segments);
@@ -463,7 +468,7 @@ impl ConfigManager {
                 .ok_or_else(|| {
                     ConfigManagerError::write(
                         ConfigWriteErrorCode::UserLayerNotFound,
-                        "user layer not found in updated layers",
+                        tr(current(), "user layer not found in updated layers"),
                     )
                 })?
                 .version
@@ -492,7 +497,10 @@ async fn create_empty_user_layer(
     let toml_value = match read_path {
         Some(path) => match tokio::fs::read_to_string(&path).await {
             Ok(contents) => toml::from_str(&contents).map_err(|e| {
-                ConfigManagerError::toml("failed to parse existing user config.toml", e)
+                ConfigManagerError::toml(
+                    tr(current(), "failed to parse existing user config.toml"),
+                    e,
+                )
             })?,
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 write_empty_user_config(write_path.clone()).await?;
@@ -500,7 +508,7 @@ async fn create_empty_user_layer(
             }
             Err(err) => {
                 return Err(ConfigManagerError::io(
-                    "failed to read user config.toml",
+                    tr(current(), "failed to read user config.toml"),
                     err,
                 ));
             }
@@ -523,7 +531,12 @@ async fn write_empty_user_config(write_path: PathBuf) -> Result<(), ConfigManage
     task::spawn_blocking(move || write_atomically(&write_path, ""))
         .await
         .map_err(|err| ConfigManagerError::anyhow("config persistence task panicked", err.into()))?
-        .map_err(|err| ConfigManagerError::io("failed to create empty user config.toml", err))
+        .map_err(|err| {
+            ConfigManagerError::io(
+                tr(current(), "failed to create empty user config.toml"),
+                err,
+            )
+        })
 }
 
 fn parse_value(value: JsonValue) -> Result<Option<TomlValue>, String> {
@@ -557,7 +570,7 @@ fn parse_key_path(path: &str) -> Result<Vec<String>, String> {
                 // Quoted segments may escape punctuation that would otherwise
                 // participate in parsing, such as `.` or `"`.
                 let Some(escaped) = chars.next() else {
-                    return Err("unterminated escape in keyPath".to_string());
+                    return Err(tr(current(), "unterminated escape in keyPath").to_string());
                 };
                 segment.push(escaped);
             }
@@ -567,13 +580,13 @@ fn parse_key_path(path: &str) -> Result<Vec<String>, String> {
                 }
                 segments.push(std::mem::take(&mut segment));
             }
-            '"' => return Err("invalid quoted keyPath segment".to_string()),
+            '"' => return Err(tr(current(), "invalid quoted keyPath segment").to_string()),
             _ => segment.push(ch),
         }
     }
 
     if quoted {
-        return Err("unterminated quoted keyPath segment".to_string());
+        return Err(tr(current(), "unterminated quoted keyPath segment").to_string());
     }
     if segment.is_empty() {
         return Err("keyPath segments must not be empty".to_string());
@@ -836,7 +849,7 @@ fn override_message(layer: &ConfigLayerSource) -> String {
             "Overridden by project config: {}/{CONFIG_TOML_FILE}",
             dot_codex_folder.display(),
         ),
-        ConfigLayerSource::SessionFlags => "Overridden by session flags".to_string(),
+        ConfigLayerSource::SessionFlags => tr(current(), "Overridden by session flags").to_string(),
         ConfigLayerSource::User { file, .. } => {
             format!("Overridden by user config: {}", file.display())
         }

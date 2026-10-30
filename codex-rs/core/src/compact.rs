@@ -1,4 +1,6 @@
 use crate::context::UserGoalUpdate;
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
@@ -851,7 +853,7 @@ async fn drain_to_completed(
         let maybe_event = stream.next().await;
         let Some(event) = maybe_event else {
             return Err(CodexErr::Stream(
-                "stream closed before response.completed".into(),
+                tr(current(), "stream closed before response.completed").into(),
             ));
         };
         match event {

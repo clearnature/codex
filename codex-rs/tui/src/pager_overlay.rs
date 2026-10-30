@@ -12,6 +12,8 @@ pub(crate) use transcript::TranscriptOverlay;
 #[path = "pager_overlay/transcript_tests.rs"]
 mod transcript_tests;
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::io::Result;
 use std::sync::Arc;
 
@@ -154,7 +156,11 @@ fn render_navigation_hints(area: Rect, buf: &mut Buffer, keymap: &PagerKeymap) {
         .as_chunks::<2>()
         .0
         .iter()
-        .zip(["to scroll", "to page", "to jump"])
+        .zip([
+            tr(current(), "to scroll"),
+            tr(current(), "to page"),
+            tr(current(), "to jump"),
+        ])
         .map(|(actions, description)| {
             (
                 actions

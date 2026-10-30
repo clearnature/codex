@@ -52,6 +52,8 @@ use crate::render::line_utils::prefix_lines;
 use crate::status::format_tokens_compact;
 use crate::style::secondary_text_style;
 use crate::ui_consts::FOOTER_INDENT_COLS;
+use codex_i18n::current;
+use codex_i18n::tr;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -354,7 +356,9 @@ fn left_side_line(
         SummaryHintKind::QueueMessage => {
             if let Some(key) = key_hints.queue {
                 line.extend(key.spans());
-                line.push_span(" to queue message".set_style(secondary_text_style()));
+                line.push_span(
+                    tr(current(), " to queue message").set_style(secondary_text_style()),
+                );
             }
         }
         SummaryHintKind::QueueShort => {
@@ -587,24 +591,26 @@ pub(crate) fn goal_status_indicator_line(
             if let Some(usage) = usage {
                 format!("Pursuing goal ({usage})")
             } else {
-                "Pursuing goal".to_string()
+                tr(current(), "Pursuing goal").to_string()
             }
         }
-        GoalStatusIndicator::Paused => "Goal paused (/goal resume)".to_string(),
-        GoalStatusIndicator::Blocked => "Goal stalled (/goal resume)".to_string(),
-        GoalStatusIndicator::UsageLimited => "Goal hit usage limits (/goal resume)".to_string(),
+        GoalStatusIndicator::Paused => tr(current(), "Goal paused (/goal resume)").to_string(),
+        GoalStatusIndicator::Blocked => tr(current(), "Goal stalled (/goal resume)").to_string(),
+        GoalStatusIndicator::UsageLimited => {
+            tr(current(), "Goal hit usage limits (/goal resume)").to_string()
+        }
         GoalStatusIndicator::BudgetLimited { usage } => {
             if let Some(usage) = usage {
                 format!("Goal unmet ({usage})")
             } else {
-                "Goal abandoned".to_string()
+                tr(current(), "Goal abandoned").to_string()
             }
         }
         GoalStatusIndicator::Complete { usage } => {
             if let Some(usage) = usage {
                 format!("Goal achieved ({usage})")
             } else {
-                "Goal achieved".to_string()
+                tr(current(), "Goal achieved").to_string()
             }
         }
     };
@@ -620,7 +626,8 @@ pub(crate) fn status_line_right_indicator_line(
 ) -> Option<Line<'static>> {
     let primary_indicator = mode_indicator_line(collaboration_mode_indicator, show_cycle_hint)
         .or_else(|| goal_status_indicator_line(goal_status_indicator));
-    let ide_context_indicator = ide_context_active.then(|| Line::from(vec!["IDE context".cyan()]));
+    let ide_context_indicator =
+        ide_context_active.then(|| Line::from(vec![tr(current(), "IDE context").cyan()]));
     let mut line: Option<Line<'static>> = None;
 
     for indicator in [primary_indicator, ide_context_indicator]
@@ -782,7 +789,7 @@ fn footer_from_props_lines(
             vec![quit_shortcut_reminder_line(props.quit_shortcut_key)]
         }
         FooterMode::HistorySearch => {
-            vec![Line::from("reverse-i-search: ").set_style(secondary_text_style())]
+            vec![Line::from(tr(current(), "reverse-i-search: ")).set_style(secondary_text_style())]
         }
         FooterMode::ComposerEmpty => {
             let state = LeftSideState {
@@ -932,7 +939,7 @@ pub(crate) fn footer_hint_items_line(items: &[(String, String)]) -> Line<'static
 
 fn quit_shortcut_reminder_line(key: KeyBinding) -> Line<'static> {
     let mut line = Line::from(key.spans());
-    line.push_span(" again to quit".set_style(secondary_text_style()));
+    line.push_span(tr(current(), " again to quit").set_style(secondary_text_style()));
     line
 }
 
@@ -940,13 +947,17 @@ fn esc_hint_line(esc_backtrack_hint: bool) -> Line<'static> {
     let esc = key_hint::plain(KeyCode::Esc);
     if esc_backtrack_hint {
         let mut line = Line::from(esc.spans());
-        line.push_span(" again to edit previous message".set_style(secondary_text_style()));
+        line.push_span(
+            tr(current(), " again to edit previous message").set_style(secondary_text_style()),
+        );
         line
     } else {
         let mut line = Line::from(esc.spans());
         line.push_span(" ".set_style(secondary_text_style()));
         line.extend(esc.spans());
-        line.push_span(" to edit previous message".set_style(secondary_text_style()));
+        line.push_span(
+            tr(current(), " to edit previous message").set_style(secondary_text_style()),
+        );
         line
     }
 }
@@ -967,7 +978,7 @@ pub(crate) fn context_window_line(percent: Option<i64>, used_tokens: Option<i64>
     }
 
     Line::from(vec![
-        Span::from("100% context left").set_style(secondary_text_style()),
+        Span::from(tr(current(), "100% context left")).set_style(secondary_text_style()),
     ])
 }
 

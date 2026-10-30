@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::style::accent_color;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Renders a completed (or interrupted) request_user_input exchange in history.
 #[derive(Debug)]
@@ -33,7 +35,7 @@ impl HistoryCell for RequestUserInputResultCell {
         let mut header = vec!["•".dim(), " ".into(), "Questions".bold()];
         header.push(format!(" {answered}/{total} answered").dim());
         if self.interrupted {
-            header.push(" (interrupted)".fg(accent_color()));
+            header.push(tr(current(), " (interrupted)").fg(accent_color()));
         }
 
         let mut lines = vec![HyperlinkLine::new(header.into())];
@@ -52,7 +54,7 @@ impl HistoryCell for RequestUserInputResultCell {
                 Style::default(),
             );
             if answer_missing && let Some(last) = question_lines.last_mut() {
-                let suffix = " (unanswered)";
+                let suffix = tr(current(), " (unanswered)");
                 last.line.spans.push(suffix.dim());
                 if let Some(source) = &mut last.source {
                     // The suffix is deliberately appended after wrapping, matching the existing UI.
@@ -101,7 +103,7 @@ impl HistoryCell for RequestUserInputResultCell {
             if let Some(note) = note {
                 let (label, continuation, style) = if question.options.is_some() {
                     (
-                        "    note: ".dim(),
+                        tr(current(), "    note: ").dim(),
                         "          ".dim(),
                         Style::default().fg(accent_color()),
                     )
@@ -157,7 +159,7 @@ impl HistoryCell for RequestUserInputResultCell {
                 .filter(|answer| !answer.answers.is_empty())
             {
                 if question.is_secret {
-                    lines.push(Line::from("answer: ******"));
+                    lines.push(Line::from(tr(current(), "answer: ******")));
                 } else {
                     let (options, note) = split_request_user_input_answer(answer);
                     lines.extend(

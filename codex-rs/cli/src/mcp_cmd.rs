@@ -1,3 +1,5 @@
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -290,7 +292,7 @@ async fn validate_profile_v2_migration(
         .loader_overrides(loader_overrides)
         .build()
         .await
-        .context("failed to load configuration")?;
+        .context(tr(current(), "failed to load configuration"))?;
     Ok(())
 }
 
@@ -312,7 +314,7 @@ async fn run_add(config: &Config, add_args: AddArgs) -> Result<()> {
                 let mut command_parts = stdio.command.into_iter();
                 let command_bin = command_parts
                     .next()
-                    .ok_or_else(|| anyhow!("command is required"))?;
+                    .ok_or_else(|| anyhow!(tr(current(), "command is required")))?;
                 let command_args: Vec<String> = command_parts.collect();
 
                 let env_map = if stdio.env.is_empty() {
@@ -404,7 +406,10 @@ async fn run_add(config: &Config, add_args: AddArgs) -> Result<()> {
         .as_ref()
         .map(|_| {
             let McpServerTransportConfig::StreamableHttp { url, .. } = &transport else {
-                bail!("OAuth client IDs require a streamable HTTP MCP server");
+                bail!(tr(
+                    current(),
+                    "OAuth client IDs require a streamable HTTP MCP server"
+                ));
             };
             resolve_mcp_oauth_callback_url(
                 url,
@@ -462,7 +467,10 @@ async fn run_add(config: &Config, add_args: AddArgs) -> Result<()> {
     }
     match login_support {
         McpOAuthLoginSupport::Supported(oauth_config) => {
-            println!("Detected OAuth support. Starting OAuth flow…");
+            println!(
+                "{}",
+                tr(current(), "Detected OAuth support. Starting OAuth flow…")
+            );
             let resolved_scopes = resolve_oauth_scopes(
                 /*explicit_scopes*/ None,
                 /*configured_scopes*/ None,
@@ -488,7 +496,7 @@ async fn run_add(config: &Config, add_args: AddArgs) -> Result<()> {
                 McpLoginMode::Browser,
             )
             .await?;
-            println!("Successfully logged in.");
+            println!("{}", tr(current(), "Successfully logged in."));
         }
         McpOAuthLoginSupport::Unsupported => {}
         McpOAuthLoginSupport::Unknown(_) => println!(
@@ -508,7 +516,7 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_codex_home().context(tr(current(), "failed to resolve CODEX_HOME"))?;
     let mut servers = load_global_mcp_servers(&codex_home)
         .await
         .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
@@ -571,7 +579,10 @@ async fn run_login(config: &Config, login_args: LoginArgs) -> Result<()> {
             env_http_headers,
             ..
         } => (url.clone(), http_headers.clone(), env_http_headers.clone()),
-        _ => bail!("OAuth login is only supported for streamable HTTP servers."),
+        _ => bail!(tr(
+            current(),
+            "OAuth login is only supported for streamable HTTP servers."
+        )),
     };
 
     // Standalone `mcp login` runs OAuth from the local CLI process; execution
@@ -667,7 +678,10 @@ async fn run_logout(config: &Config, logout_args: LogoutArgs) -> Result<()> {
 
     let url = match &server.transport {
         McpServerTransportConfig::StreamableHttp { url, .. } => url.clone(),
-        _ => bail!("OAuth logout is only supported for streamable_http transports."),
+        _ => bail!(tr(
+            current(),
+            "OAuth logout is only supported for streamable_http transports."
+        )),
     };
     let credential_name = server.oauth_credential_name(&name);
 
@@ -781,7 +795,13 @@ async fn run_list(config: &Config, list_args: ListArgs) -> Result<()> {
     }
 
     if entries.is_empty() {
-        println!("No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`.");
+        println!(
+            "{}",
+            tr(
+                current(),
+                "No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`."
+            )
+        );
         return Ok(());
     }
 

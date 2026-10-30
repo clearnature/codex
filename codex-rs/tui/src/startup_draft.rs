@@ -2,6 +2,8 @@
 //! Submit keys confirm one draft locally; session dispatch waits for the protected handoff.
 //! Presentation accepts client preferences and cwd; effective permissions remain unknown here.
 
+use codex_i18n::current;
+use codex_i18n::tr;
 use std::future::Future;
 use std::io;
 use std::path::Path;
@@ -483,8 +485,8 @@ fn startup_draft_renderable<'a>(
     renderable.push(/*flex*/ 1, RenderableItem::Borrowed(header));
     let loading_message = match session_action {
         StartupDraftSessionAction::New | StartupDraftSessionAction::NewFromCommandCenter => None,
-        StartupDraftSessionAction::Resume => Some("  Resuming session…"),
-        StartupDraftSessionAction::Fork => Some("  Forking session…"),
+        StartupDraftSessionAction::Resume => Some(tr(current(), "  Resuming session…")),
+        StartupDraftSessionAction::Fork => Some(tr(current(), "  Forking session…")),
     };
     if let Some(loading_message) = loading_message {
         renderable.push(
@@ -517,7 +519,7 @@ fn startup_draft_bottom_pane(
             frame_requester,
             has_input_focus: true,
             enhanced_keys_supported,
-            placeholder_text: "Ask Codex to do anything".to_string(),
+            placeholder_text: tr(current(), "Ask Codex to do anything").to_string(),
             disable_paste_burst: false,
             animations_enabled: crate::system_motion::mode() == crate::motion::MotionMode::Animated,
             effects: Default::default(),

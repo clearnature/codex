@@ -10,6 +10,8 @@ use crate::outgoing_message::AccountNotification;
 use chrono::DateTime;
 use codex_app_server_protocol::DesktopOnboardingEntrypoint;
 use codex_app_server_protocol::GetAccountRateLimitsParams;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_login::LoginOnboardingEntrypoint;
 use codex_login::login_with_bedrock_access_keys;
 use codex_mcp::ema_auth_scope;
@@ -711,7 +713,11 @@ impl AccountRequestProcessor {
                 Ok(Err(err)) => (false, Some(format!("Login server error: {err}")), None),
                 Err(_elapsed) => {
                     shutdown_handle.shutdown();
-                    (false, Some("Login timed out".to_string()), None)
+                    (
+                        false,
+                        Some(tr(current(), "Login timed out").to_string()),
+                        None,
+                    )
                 }
             };
 
@@ -777,7 +783,7 @@ impl AccountRequestProcessor {
         let task = async move {
             let (success, error_msg) = tokio::select! {
                 _ = cancel.cancelled() => {
-                    (false, Some("Login was not completed".to_string()))
+                    (false, Some(tr(current(), "Login was not completed").to_string()))
                 }
                 r = complete_device_code_login(opts, device_code) => {
                     match r {
@@ -1294,7 +1300,7 @@ impl AccountRequestProcessor {
                 client.get_thread_usage(&thread_id),
             )
             .await
-            .map_err(|_| internal_error("thread usage fetch timed out"))?;
+            .map_err(|_| internal_error(tr(current(), "thread usage fetch timed out")))?;
             let thread_usage = match usage {
                 Ok(usage) => Some(codex_app_server_protocol::ThreadUsage {
                     thread_id: usage.thread_id,
@@ -1347,7 +1353,7 @@ impl AccountRequestProcessor {
             client.get_token_usage_profile(),
         )
         .await
-        .map_err(|_| internal_error("token usage profile fetch timed out"))?
+        .map_err(|_| internal_error(tr(current(), "token usage profile fetch timed out")))?
         .map_err(|err| internal_error(format!("failed to fetch token usage profile: {err}")))?;
         Ok(Self::account_token_usage_response(profile))
     }
@@ -1379,7 +1385,7 @@ impl AccountRequestProcessor {
             client.list_workspace_messages(),
         )
         .await
-        .map_err(|_| internal_error("workspace messages fetch timed out"))?;
+        .map_err(|_| internal_error(tr(current(), "workspace messages fetch timed out")))?;
 
         match messages {
             Ok(messages) => {

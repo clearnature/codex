@@ -6,6 +6,8 @@ use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Local;
 use chrono::NaiveDate;
+use codex_i18n::current;
+use codex_i18n::tr;
 
 /// Completion metadata shown after the assistant's final response.
 ///
@@ -150,8 +152,16 @@ pub(crate) fn runtime_metrics_label(summary: RuntimeMetricsSummary) -> Option<St
     }
     if summary.streaming_events.count > 0 {
         let duration = format_duration_ms(summary.streaming_events.duration_ms);
-        let stream_label = pluralize(summary.streaming_events.count, "Stream", "Streams");
-        let events = pluralize(summary.streaming_events.count, "event", "events");
+        let stream_label = pluralize(
+            summary.streaming_events.count,
+            tr(current(), "Stream"),
+            tr(current(), "Streams"),
+        );
+        let events = pluralize(
+            summary.streaming_events.count,
+            tr(current(), "event"),
+            tr(current(), "events"),
+        );
         parts.push(format!(
             "{stream_label}: {} {events} ({duration})",
             summary.streaming_events.count

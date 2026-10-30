@@ -31,6 +31,8 @@ use crate::startup_draft::StartupDraftPump;
 use codex_app_server_protocol::SessionSource;
 use codex_app_server_protocol::Thread;
 use codex_app_server_protocol::ThreadHistoryMode;
+use codex_i18n::current;
+use codex_i18n::tr;
 use codex_protocol::protocol::SubAgentSource;
 
 pub(crate) const AGENTS_OVERVIEW_VIEW_ID: &str = "agents-overview";
@@ -93,27 +95,27 @@ impl App {
         if matches!(self.app_server_target, AppServerTarget::Embedded) {
             let workload_identity_selected = codex_login::is_workload_identity_selected();
             self.chat_widget.show_selection_view(SelectionViewParams {
-                title: Some("Shared agents unavailable".to_string()),
+                title: Some(tr(current(), "Shared agents unavailable").to_string()),
                 subtitle: Some(
                     if workload_identity_selected {
-                        "The agents dashboard is unavailable while workload identity is active."
+                        tr(current(), "The agents dashboard is unavailable while workload identity is active.")
                     } else if cfg!(any(unix, windows)) {
-                        "This session isn’t connected to a shared background server."
+                        tr(current(), "This session isn’t connected to a shared background server.")
                     } else {
-                        "Connect to a remote background server to use the agents dashboard."
+                        tr(current(), "Connect to a remote background server to use the agents dashboard.")
                     }
                     .to_string(),
                 ),
                 footer_note: (cfg!(any(unix, windows)) && !workload_identity_selected).then(|| {
                     Line::from(
-                        "Starting a background server will not interrupt or move this session."
+                        tr(current(), "Starting a background server will not interrupt or move this session.")
                             .dim(),
                     )
                 }),
                 items: [
                     #[cfg(any(unix, windows))]
                     (!workload_identity_selected).then(|| SelectionItem {
-                        name: "Start background server".to_string(),
+                        name: tr(current(), "Start background server").to_string(),
                         description: Some(
                             "Open `codex agents` in another terminal afterward".to_string(),
                         ),
@@ -122,7 +124,7 @@ impl App {
                         ..Default::default()
                     }),
                     Some(SelectionItem {
-                        name: "Return to this session".to_string(),
+                        name: tr(current(), "Return to this session").to_string(),
                         dismiss_on_select: true,
                         ..Default::default()
                     }),
@@ -1004,7 +1006,7 @@ impl App {
                     != self.config.permissions.profile_workspace_roots())
         {
             self.add_agents_overview_error(
-                "Permission profile has different settings.".to_string(),
+                tr(current(), "Permission profile has different settings.").to_string(),
             );
             return None;
         }

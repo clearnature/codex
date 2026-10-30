@@ -243,6 +243,7 @@ impl ChatWidget {
     }
 
     /// Applies a configured-pet result only if it belongs to this widget's current load.
+    #[cfg(test)]
     pub(crate) fn finish_configured_pet_load(
         &mut self,
         generation: ConfiguredPetLoadGeneration,

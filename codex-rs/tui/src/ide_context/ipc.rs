@@ -906,6 +906,34 @@ fn ensure_success_response(response: &Value) -> Result<(), IdeContextError> {
 
 #[cfg(all(test, unix))]
 mod tests {
+    /// `validate_unix_socket_path` rejects socket directories that are group- or
+    /// other-writable. `tempfile::tempdir()` honors the process umask, so on a
+    /// developer machine with `umask 0002` the directory comes out 0775 and the
+    /// security check fails -- upstream CI (umask 0022) never sees this. Pin the
+    /// test directories to 0700 so the tests exercise the same state CI does.
+    // Test helpers: a failed setup must panic the test (expect_used is denied
+    // workspace-wide, so these use explicit panic instead).
+    fn restrict_dir_0700(path: &std::path::Path) {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = match std::fs::symlink_metadata(path) {
+            Ok(md) => md.permissions(),
+            Err(err) => panic!("tempdir metadata: {err}"),
+        };
+        perms.set_mode(0o700);
+        if let Err(err) = std::fs::set_permissions(path, perms) {
+            panic!("set tempdir permissions: {err}");
+        }
+    }
+
+    fn tempdir_0700() -> tempfile::TempDir {
+        let dir = match tempfile::tempdir() {
+            Ok(dir) => dir,
+            Err(err) => panic!("tempdir: {err}"),
+        };
+        restrict_dir_0700(dir.path());
+        dir
+    }
+
     use super::*;
     #[cfg(unix)]
     use pretty_assertions::assert_eq;
@@ -1007,7 +1035,7 @@ mod tests {
     fn fetch_ide_context_prefers_primary_socket() {
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("primary.sock");
         let legacy_socket_path = tempdir.path().join("legacy.sock");
         let primary_listener = UnixListener::bind(&primary_socket_path).expect("bind primary");
@@ -1032,7 +1060,7 @@ mod tests {
     fn fetch_ide_context_falls_back_to_legacy_socket() {
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("missing-primary.sock");
         let legacy_socket_path = tempdir.path().join("legacy.sock");
         let legacy_listener = UnixListener::bind(&legacy_socket_path).expect("bind legacy");
@@ -1055,7 +1083,7 @@ mod tests {
     fn fetch_ide_context_falls_back_to_uid_zero_legacy_socket() {
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("missing-primary.sock");
         let legacy_socket_path = legacy_ipc_socket_paths(tempdir.path(), /*uid*/ 0)
             .into_iter()
@@ -1063,6 +1091,7 @@ mod tests {
             .expect("UID-0 legacy socket path");
         std::fs::create_dir(legacy_socket_path.parent().expect("legacy parent"))
             .expect("create legacy parent");
+        restrict_dir_0700(legacy_socket_path.parent().expect("legacy parent"));
         let legacy_listener = UnixListener::bind(&legacy_socket_path).expect("bind legacy");
         let server = spawn_ide_context_server(legacy_listener, "legacy-root");
 
@@ -1083,7 +1112,7 @@ mod tests {
     fn fetch_ide_context_falls_back_to_pre_migration_uid_zero_legacy_socket() {
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("missing-primary.sock");
         let legacy_socket_paths = legacy_ipc_socket_paths(tempdir.path(), /*uid*/ 0);
         let pre_migration_socket_path = legacy_socket_paths
@@ -1091,6 +1120,7 @@ mod tests {
             .expect("pre-migration UID-0 legacy socket path");
         std::fs::create_dir(pre_migration_socket_path.parent().expect("legacy parent"))
             .expect("create legacy parent");
+        restrict_dir_0700(pre_migration_socket_path.parent().expect("legacy parent"));
         let legacy_listener =
             UnixListener::bind(pre_migration_socket_path).expect("bind pre-migration legacy");
         let server = spawn_ide_context_server(legacy_listener, "legacy-root-pre-migration");
@@ -1117,7 +1147,7 @@ mod tests {
     fn fetch_ide_context_does_not_fall_back_after_primary_timeout() {
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("missing-primary.sock");
         let legacy_socket_path = tempdir.path().join("legacy.sock");
         let legacy_listener = UnixListener::bind(&legacy_socket_path).expect("bind legacy");
@@ -1142,7 +1172,7 @@ mod tests {
         use std::os::unix::net::UnixListener;
         use std::thread;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let primary_socket_path = tempdir.path().join("primary.sock");
         let legacy_socket_path = tempdir.path().join("legacy.sock");
         let primary_listener = UnixListener::bind(&primary_socket_path).expect("bind primary");
@@ -1186,7 +1216,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         use std::os::unix::net::UnixListener;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         std::fs::set_permissions(tempdir.path(), std::fs::Permissions::from_mode(0o777))
             .expect("set unsafe permissions");
         let socket_path = tempdir.path().join("codex-ipc.sock");
@@ -1204,7 +1234,7 @@ mod tests {
         use std::os::unix::net::UnixListener;
         use std::thread;
 
-        let tempdir = tempfile::tempdir().expect("tempdir");
+        let tempdir = tempdir_0700();
         let socket_path = tempdir.path().join("codex-ipc.sock");
         let listener = UnixListener::bind(&socket_path).expect("bind socket");
 

@@ -99,3 +99,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# NOTE: regenerate 后必须跑 `just fmt`（rustfmt 对齐 ENTRIES 排版），否则云端 A 类脚本套件的 formatter gate 会挂。
